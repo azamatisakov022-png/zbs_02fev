@@ -1,0 +1,77 @@
+<svg viewBox="0 0 267 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background chart bars -->
+  <rect x="68" y="130" width="20" height="74" rx="2" fill="#0e888d" opacity="0.3"/>
+  <rect x="98" y="112" width="20" height="92" rx="2" fill="#0e888d" opacity="0.5"/>
+  <rect x="128" y="130" width="20" height="74" rx="2" fill="#0e888d" opacity="0.3"/>
+  <rect x="158" y="95" width="20" height="109" rx="2" fill="#0e888d" opacity="0.7"/>
+  <rect x="188" y="78" width="20" height="126" rx="2" fill="#0e888d"/>
+
+  <!-- Shadow -->
+  <ellipse cx="133" cy="220" rx="80" ry="12" fill="#e0e0e0" opacity="0.5"/>
+
+  <!-- Coins stack 1 -->
+  <ellipse cx="55" cy="195" rx="22" ry="8" fill="#d4a017"/>
+  <ellipse cx="55" cy="190" rx="22" ry="8" fill="#ffc107"/>
+  <ellipse cx="55" cy="185" rx="22" ry="8" fill="#d4a017"/>
+  <ellipse cx="55" cy="180" rx="22" ry="8" fill="#ffc107"/>
+  <ellipse cx="55" cy="175" rx="22" ry="8" fill="#fea629"/>
+
+  <!-- Coins stack 2 -->
+  <ellipse cx="85" cy="205" rx="18" ry="6" fill="#d4a017"/>
+  <ellipse cx="85" cy="200" rx="18" ry="6" fill="#ffc107"/>
+  <ellipse cx="85" cy="195" rx="18" ry="6" fill="#fea629"/>
+
+  <!-- Coins stack 3 -->
+  <ellipse cx="180" cy="210" rx="15" ry="5" fill="#d4a017"/>
+  <ellipse cx="180" cy="206" rx="15" ry="5" fill="#ffc107"/>
+
+  <!-- Person sitting on bar -->
+  <!-- Head -->
+  <circle cx="118" cy="72" r="18" fill="#ffcba4"/>
+  <!-- Hair -->
+  <path d="M100 65 Q105 50 118 48 Q131 50 136 65 Q136 58 118 55 Q100 58 100 65" fill="#2d2d2d"/>
+  <!-- Face details -->
+  <circle cx="112" cy="70" r="2" fill="#2d2d2d"/>
+  <circle cx="124" cy="70" r="2" fill="#2d2d2d"/>
+  <path d="M114 78 Q118 82 122 78" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+
+  <!-- Body - sitting -->
+  <path d="M100 90 L105 88 L108 130 L128 130 L131 88 L136 90 L140 95 L138 100 L130 98 L128 140 L108 140 L106 98 L98 100 L96 95 Z" fill="#fea629"/>
+
+  <!-- Legs -->
+  <path d="M108 140 L100 175 L95 178 L100 180 L110 155 L115 175 L110 185 L118 188 L125 160" fill="#2d2d2d"/>
+  <path d="M128 140 L140 160 L155 155 L158 160 L142 168 L130 175" fill="#2d2d2d"/>
+
+  <!-- Shoes -->
+  <ellipse cx="97" cy="180" rx="8" ry="4" fill="#1a1a1a"/>
+  <ellipse cx="115" cy="187" rx="8" ry="4" fill="#1a1a1a"/>
+  <ellipse cx="157" cy="158" rx="8" ry="4" fill="#1a1a1a"/>
+
+  <!-- Laptop -->
+  <rect x="95" y="105" width="45" height="28" rx="3" fill="#333"/>
+  <rect x="98" y="108" width="39" height="22" rx="2" fill="#4fc3f7"/>
+  <rect x="90" y="133" width="55" height="4" rx="1" fill="#555"/>
+
+  <!-- Arms -->
+  <path d="M100 95 L88 115 L95 120 L105 105" fill="#ffcba4"/>
+  <path d="M136 95 L148 115 L141 120 L131 105" fill="#ffcba4"/>
+
+  <!-- Arrow up -->
+  <path d="M45 85 L55 60 L65 85" stroke="#0e888d" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <line x1="55" y1="60" x2="55" y2="100" stroke="#0e888d" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Percent badge -->
+  <rect x="195" y="45" width="50" height="35" rx="5" fill="#fea629"/>
+  <text x="208" y="70" font-family="Arial" font-size="20" font-weight="bold" fill="white">%</text>
+
+  <!-- Small chart icon -->
+  <rect x="30" y="45" width="35" height="25" rx="3" fill="white" stroke="#e0e0e0"/>
+  <rect x="35" y="58" width="5" height="8" fill="#0e888d"/>
+  <rect x="43" y="53" width="5" height="13" fill="#fea629"/>
+  <rect x="51" y="48" width="5" height="18" fill="#0e888d"/>
+
+  <!-- Circular chart -->
+  <circle cx="220" cy="100" r="20" fill="#e0e0e0"/>
+  <path d="M220 100 L220 80 A20 20 0 0 1 238 108 Z" fill="#0e888d"/>
+  <circle cx="220" cy="100" r="10" fill="white"/>
+</svg>

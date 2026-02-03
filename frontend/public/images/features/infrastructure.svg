@@ -1,0 +1,86 @@
+<svg viewBox="0 0 267 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background grid/calendar -->
+  <rect x="135" y="30" width="110" height="85" rx="5" fill="white" stroke="#e0e0e0" stroke-width="2"/>
+  <line x1="135" y1="50" x2="245" y2="50" stroke="#e0e0e0"/>
+  <line x1="160" y1="30" x2="160" y2="115" stroke="#e0e0e0"/>
+  <line x1="185" y1="30" x2="185" y2="115" stroke="#e0e0e0"/>
+  <line x1="210" y1="30" x2="210" y2="115" stroke="#e0e0e0"/>
+  <line x1="135" y1="70" x2="245" y2="70" stroke="#e0e0e0"/>
+  <line x1="135" y1="90" x2="245" y2="90" stroke="#e0e0e0"/>
+
+  <!-- Charts on calendar -->
+  <rect x="165" y="55" width="15" height="10" rx="2" fill="#0e888d" opacity="0.5"/>
+  <rect x="215" y="75" width="15" height="10" rx="2" fill="#fea629" opacity="0.5"/>
+
+  <!-- Shadow -->
+  <ellipse cx="133" cy="230" rx="100" ry="15" fill="#e0e0e0" opacity="0.5"/>
+
+  <!-- Person 1 - with magnifying glass -->
+  <!-- Body -->
+  <rect x="55" y="120" width="35" height="70" rx="5" fill="#fea629"/>
+  <!-- Legs -->
+  <rect x="58" y="190" width="12" height="35" rx="3" fill="#2d2d2d"/>
+  <rect x="75" y="190" width="12" height="35" rx="3" fill="#2d2d2d"/>
+  <!-- Shoes -->
+  <ellipse cx="64" cy="227" rx="10" ry="5" fill="#1a1a1a"/>
+  <ellipse cx="81" cy="227" rx="10" ry="5" fill="#1a1a1a"/>
+  <!-- Head -->
+  <circle cx="72" cy="100" r="20" fill="#ffcba4"/>
+  <!-- Hair -->
+  <path d="M52 95 Q55 75 72 72 Q89 75 92 95 Q90 82 72 80 Q54 82 52 95" fill="#8B4513"/>
+  <!-- Face -->
+  <circle cx="66" cy="98" r="2.5" fill="#2d2d2d"/>
+  <circle cx="78" cy="98" r="2.5" fill="#2d2d2d"/>
+  <path d="M68 108 Q72 112 76 108" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+
+  <!-- Magnifying glass -->
+  <circle cx="115" cy="75" r="25" stroke="#fea629" stroke-width="8" fill="white"/>
+  <line x1="95" y1="95" x2="70" y2="120" stroke="#fea629" stroke-width="8" stroke-linecap="round"/>
+  <!-- Chart inside magnifying glass -->
+  <polyline points="100,85 108,75 116,80 124,65 132,72" stroke="#0e888d" stroke-width="3" fill="none"/>
+  <circle cx="108" cy="75" r="3" fill="#0e888d"/>
+  <circle cx="124" cy="65" r="3" fill="#0e888d"/>
+
+  <!-- Arm holding magnifying glass -->
+  <path d="M90 125 L100 100 L85 90" fill="#ffcba4"/>
+
+  <!-- Person 2 - woman pointing -->
+  <!-- Body -->
+  <rect x="165" y="125" width="30" height="55" rx="5" fill="#0e888d"/>
+  <!-- Skirt -->
+  <path d="M160 175 L200 175 L195 210 L165 210 Z" fill="#2d2d2d"/>
+  <!-- Legs -->
+  <rect x="170" y="205" width="8" height="25" rx="2" fill="#ffcba4"/>
+  <rect x="185" y="205" width="8" height="25" rx="2" fill="#ffcba4"/>
+  <!-- Shoes -->
+  <ellipse cx="174" cy="232" rx="8" ry="4" fill="#c41e3a"/>
+  <ellipse cx="189" cy="232" rx="8" ry="4" fill="#c41e3a"/>
+  <!-- Head -->
+  <circle cx="180" cy="108" r="18" fill="#ffcba4"/>
+  <!-- Hair -->
+  <path d="M162 105 Q165 85 180 82 Q195 85 198 105 L198 115 Q195 108 180 108 Q165 108 162 115 Z" fill="#2d2d2d"/>
+  <!-- Face -->
+  <circle cx="175" cy="106" r="2" fill="#2d2d2d"/>
+  <circle cx="185" cy="106" r="2" fill="#2d2d2d"/>
+  <path d="M176 114 Q180 117 184 114" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+  <!-- Glasses -->
+  <circle cx="175" cy="106" r="5" stroke="#333" stroke-width="1" fill="none"/>
+  <circle cx="185" cy="106" r="5" stroke="#333" stroke-width="1" fill="none"/>
+  <line x1="180" y1="106" x2="180" y2="106" stroke="#333"/>
+
+  <!-- Arm pointing -->
+  <path d="M195 130 L220 110 L225 115 L200 140" fill="#ffcba4"/>
+
+  <!-- Briefcase -->
+  <rect x="210" y="200" width="35" height="25" rx="3" fill="#8B4513"/>
+  <rect x="220" y="195" width="15" height="8" rx="2" fill="#8B4513"/>
+  <line x1="227" y1="195" x2="227" y2="200" stroke="#6B4513" stroke-width="2"/>
+
+  <!-- Pie chart icon -->
+  <circle cx="35" cy="70" r="20" fill="#e0e0e0"/>
+  <path d="M35 70 L35 50 A20 20 0 0 1 53 78 Z" fill="#0e888d"/>
+  <path d="M35 70 L53 78 A20 20 0 0 1 20 80 Z" fill="#fea629"/>
+
+  <!-- Arrow/pointer -->
+  <path d="M230 90 L250 95 L235 105 Z" fill="#fea629"/>
+</svg>
