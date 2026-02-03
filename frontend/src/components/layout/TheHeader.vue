@@ -103,9 +103,9 @@ const toggleMobileMenu = () => {
             </div>
 
             <!-- Registration link -->
-            <a href="#" class="hidden lg:block text-[#415861] text-sm font-bold uppercase hover:text-[#0e888d] transition-colors">
+            <RouterLink to="/register" class="hidden lg:block text-[#415861] text-sm font-bold uppercase hover:text-[#0e888d] transition-colors">
               регистрация
-            </a>
+            </RouterLink>
 
             <!-- Login button -->
             <RouterLink
@@ -154,7 +154,7 @@ const toggleMobileMenu = () => {
 
         <!-- Auth buttons -->
         <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
-          <a href="#" class="text-[#415861] text-sm font-bold uppercase">регистрация</a>
+          <RouterLink to="/register" class="text-[#415861] text-sm font-bold uppercase" @click="mobileMenuOpen = false">регистрация</RouterLink>
           <RouterLink
             to="/login"
             class="flex items-center gap-2 bg-[#fea629] text-[#415861] font-bold text-sm uppercase px-4 py-2.5 rounded-full"
