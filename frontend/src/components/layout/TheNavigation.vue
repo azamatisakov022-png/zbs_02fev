@@ -36,12 +36,12 @@ const closeNav = () => {
   <nav class="bg-white border-b border-gray-100">
     <div class="container-main">
       <!-- Desktop navigation -->
-      <ul class="hidden lg:flex items-center justify-between py-[22px]">
+      <ul class="hidden lg:flex items-center justify-between py-5">
         <li v-for="item in navItems" :key="item.name">
           <router-link
             :to="item.path"
             :class="[
-              'text-base font-medium uppercase transition-colors duration-200',
+              'text-base leading-normal font-medium uppercase transition-colors duration-200',
               isActive(item.path)
                 ? 'text-[#0e888d]'
                 : 'text-[#415861] hover:text-[#0e888d]'
@@ -76,7 +76,7 @@ const closeNav = () => {
               :to="item.path"
               @click="closeNav"
               :class="[
-                'block py-2 text-sm font-medium uppercase transition-colors duration-200',
+                'block py-2 text-sm leading-normal font-medium uppercase transition-colors duration-200',
                 isActive(item.path)
                   ? 'text-[#0e888d]'
                   : 'text-[#415861] hover:text-[#0e888d]'

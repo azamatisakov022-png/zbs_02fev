@@ -4,7 +4,7 @@ import IconArrowRight from '../icons/IconArrowRight.vue'
 
 <template>
   <section class="container-main py-4 lg:py-0 lg:pt-[30px]">
-    <div class="relative h-[400px] md:h-[520px] lg:h-[640px] rounded-[30px] md:rounded-[40px] lg:rounded-[50px] overflow-hidden">
+    <div class="relative min-h-[400px] md:min-h-[520px] lg:min-h-[640px] rounded-[30px] md:rounded-[40px] lg:rounded-[50px] overflow-hidden">
       <!-- Background image -->
       <img
         src="/images/hero-bg.jpg"

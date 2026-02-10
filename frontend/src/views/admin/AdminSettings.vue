@@ -147,6 +147,146 @@ const createBackup = () => {
 const getIntegrationStatusColor = (status: string) => {
   return status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
 }
+
+// Integration configure modal
+const showIntegrationModal = ref(false)
+const selectedIntegration = ref<typeof integrations.value[0] | null>(null)
+const integrationSaving = ref(false)
+
+const openIntegrationModal = (integration: typeof integrations.value[0]) => {
+  selectedIntegration.value = { ...integration }
+  showIntegrationModal.value = true
+}
+
+const handleOverlay = (e: MouseEvent) => {
+  if (e.target === e.currentTarget) {
+    showIntegrationModal.value = false
+    showConfirmModal.value = false
+    showUpdateModal.value = false
+  }
+}
+
+const toggleIntegrationStatus = () => {
+  if (!selectedIntegration.value) return
+  integrationSaving.value = true
+  setTimeout(() => {
+    const idx = integrations.value.findIndex(i => i.id === selectedIntegration.value!.id)
+    if (idx !== -1) {
+      integrations.value[idx].status = selectedIntegration.value!.status === 'active' ? 'inactive' : 'active'
+      selectedIntegration.value!.status = integrations.value[idx].status
+    }
+    integrationSaving.value = false
+  }, 800)
+}
+
+const syncIntegration = () => {
+  if (!selectedIntegration.value) return
+  integrationSaving.value = true
+  setTimeout(() => {
+    const idx = integrations.value.findIndex(i => i.id === selectedIntegration.value!.id)
+    if (idx !== -1) {
+      const now = new Date()
+      const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
+      integrations.value[idx].lastSync = ts
+      selectedIntegration.value!.lastSync = ts
+    }
+    integrationSaving.value = false
+  }, 1200)
+}
+
+// Confirm modal for maintenance actions
+const showConfirmModal = ref(false)
+const confirmAction = ref<'cache' | 'queues' | null>(null)
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const confirmProcessing = ref(false)
+const confirmDone = ref(false)
+const confirmResult = ref('')
+
+const openClearCache = () => {
+  confirmAction.value = 'cache'
+  confirmTitle.value = 'Очистить кэш'
+  confirmMessage.value = 'Будет очищен кэш приложения, шаблонов и маршрутов. Первые запросы после очистки могут выполняться медленнее.'
+  confirmDone.value = false
+  confirmResult.value = ''
+  showConfirmModal.value = true
+}
+
+const openRestartQueues = () => {
+  confirmAction.value = 'queues'
+  confirmTitle.value = 'Перезапустить очереди'
+  confirmMessage.value = 'Все задачи в очередях будут перезапущены. Выполняющиеся задачи будут прерваны и запущены заново.'
+  confirmDone.value = false
+  confirmResult.value = ''
+  showConfirmModal.value = true
+}
+
+const executeConfirmAction = () => {
+  confirmProcessing.value = true
+  setTimeout(() => {
+    confirmProcessing.value = false
+    confirmDone.value = true
+    if (confirmAction.value === 'cache') {
+      confirmResult.value = 'Кэш успешно очищен. Удалено 156 МБ кэшированных данных.'
+    } else {
+      confirmResult.value = 'Очереди перезапущены. 3 воркера запущены, 12 задач в очереди.'
+    }
+  }, 1500)
+}
+
+// Check updates modal
+const showUpdateModal = ref(false)
+const updateChecking = ref(false)
+const updateResult = ref<{ hasUpdate: boolean; version: string; changes: string[] } | null>(null)
+
+const checkUpdates = () => {
+  showUpdateModal.value = true
+  updateChecking.value = true
+  updateResult.value = null
+  setTimeout(() => {
+    updateChecking.value = false
+    updateResult.value = {
+      hasUpdate: true,
+      version: '2.6.0',
+      changes: [
+        'Улучшена производительность формирования отчётов',
+        'Добавлена поддержка массового импорта деклараций',
+        'Исправлена ошибка при расчёте утильсбора для категории "Электроника"',
+        'Обновлены зависимости безопасности',
+      ]
+    }
+  }, 2000)
+}
+
+// Backup download/restore
+const downloadBackup = (backup: typeof recentBackups.value[0]) => {
+  const blob = new Blob([`Резервная копия #${backup.id}\nДата: ${backup.date}\nРазмер: ${backup.size}\nТип: ${backup.type}\n\n[Имитация файла резервной копии]`], { type: 'application/octet-stream' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `backup_${backup.date.replace(/[: ]/g, '_')}.sql.gz`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const showRestoreConfirm = ref(false)
+const restoreTarget = ref<typeof recentBackups.value[0] | null>(null)
+const restoring = ref(false)
+const restoreDone = ref(false)
+
+const openRestoreConfirm = (backup: typeof recentBackups.value[0]) => {
+  restoreTarget.value = backup
+  restoreDone.value = false
+  showRestoreConfirm.value = true
+}
+
+const executeRestore = () => {
+  restoring.value = true
+  setTimeout(() => {
+    restoring.value = false
+    restoreDone.value = true
+  }, 2500)
+}
 </script>
 
 <template>
@@ -596,7 +736,7 @@ const getIntegrationStatusColor = (status: string) => {
                   <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(integration.status)]">
                     {{ integration.status === 'active' ? 'Активно' : 'Отключено' }}
                   </span>
-                  <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+                  <button @click="openIntegrationModal(integration)" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors">
                     Настроить
                   </button>
                 </div>
@@ -719,12 +859,12 @@ const getIntegrationStatusColor = (status: string) => {
                     </td>
                     <td class="px-4 py-3 text-center">
                       <div class="flex items-center justify-center gap-2">
-                        <button class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Скачать">
+                        <button @click="downloadBackup(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Скачать">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
                         </button>
-                        <button class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Восстановить">
+                        <button @click="openRestoreConfirm(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Восстановить">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
@@ -846,13 +986,13 @@ const getIntegrationStatusColor = (status: string) => {
               </div>
 
               <div class="mt-6 flex gap-3">
-                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <button @click="openClearCache" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Очистить кэш
                 </button>
-                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <button @click="openRestartQueues" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Перезапустить очереди
                 </button>
-                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <button @click="checkUpdates" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Проверить обновления
                 </button>
               </div>
@@ -861,5 +1001,272 @@ const getIntegrationStatusColor = (status: string) => {
         </div>
       </div>
     </div>
+
+    <!-- Integration Configure Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showIntegrationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900">Настройка интеграции</h3>
+                <button @click="showIntegrationModal = false" class="p-2 text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="selectedIntegration" class="p-6 space-y-5">
+              <div class="p-4 bg-gray-50 rounded-xl">
+                <h4 class="font-semibold text-gray-900">{{ selectedIntegration.name }}</h4>
+                <p class="text-sm text-gray-500 mt-1">{{ selectedIntegration.description }}</p>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-gray-700 font-medium">Статус подключения</span>
+                <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(selectedIntegration.status)]">
+                  {{ selectedIntegration.status === 'active' ? 'Активно' : 'Отключено' }}
+                </span>
+              </div>
+
+              <div>
+                <label class="text-sm text-gray-500">Последняя синхронизация</label>
+                <p class="font-medium text-gray-900">{{ selectedIntegration.lastSync }}</p>
+              </div>
+
+              <div class="flex gap-3">
+                <button
+                  @click="toggleIntegrationStatus"
+                  :disabled="integrationSaving"
+                  :class="[
+                    'flex-1 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50',
+                    selectedIntegration.status === 'active'
+                      ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  ]"
+                >
+                  {{ selectedIntegration.status === 'active' ? 'Отключить' : 'Включить' }}
+                </button>
+                <button
+                  @click="syncIntegration"
+                  :disabled="integrationSaving || selectedIntegration.status !== 'active'"
+                  class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <svg v-if="integrationSaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Синхронизировать
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex justify-end">
+              <button @click="showIntegrationModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Confirm Action Modal (Cache / Queues) -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showConfirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200">
+              <h3 class="text-xl font-bold text-gray-900">{{ confirmTitle }}</h3>
+            </div>
+
+            <div class="p-6">
+              <template v-if="!confirmDone">
+                <p class="text-gray-600">{{ confirmMessage }}</p>
+                <p class="text-sm text-amber-600 mt-3 p-3 bg-amber-50 rounded-lg">Вы уверены, что хотите продолжить?</p>
+              </template>
+              <template v-else>
+                <div class="text-center">
+                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p class="text-gray-900 font-medium">{{ confirmResult }}</p>
+                </div>
+              </template>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <template v-if="!confirmDone">
+                <button @click="showConfirmModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                  Отмена
+                </button>
+                <button
+                  @click="executeConfirmAction"
+                  :disabled="confirmProcessing"
+                  class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <svg v-if="confirmProcessing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ confirmProcessing ? 'Выполнение...' : 'Подтвердить' }}
+                </button>
+              </template>
+              <template v-else>
+                <button @click="showConfirmModal = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
+                  Готово
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Check Updates Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showUpdateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-900">Проверка обновлений</h3>
+                <button @click="showUpdateModal = false" class="p-2 text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6">
+              <template v-if="updateChecking">
+                <div class="text-center py-8">
+                  <svg class="w-12 h-12 animate-spin text-rose-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <p class="text-gray-600">Проверка обновлений...</p>
+                  <p class="text-sm text-gray-400 mt-1">Текущая версия: {{ systemInfo.version }}</p>
+                </div>
+              </template>
+              <template v-else-if="updateResult">
+                <template v-if="updateResult.hasUpdate">
+                  <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-4">
+                    <div class="flex items-center gap-2 mb-1">
+                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span class="font-semibold text-blue-800">Доступно обновление</span>
+                    </div>
+                    <p class="text-blue-700">Версия {{ updateResult.version }}</p>
+                  </div>
+                  <h4 class="font-medium text-gray-900 mb-2">Что нового:</h4>
+                  <ul class="space-y-2">
+                    <li v-for="(change, idx) in updateResult.changes" :key="idx" class="flex items-start gap-2 text-sm text-gray-600">
+                      <span class="text-green-500 mt-0.5">+</span>
+                      {{ change }}
+                    </li>
+                  </ul>
+                </template>
+                <template v-else>
+                  <div class="text-center py-4">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p class="font-medium text-gray-900">Система обновлена</p>
+                    <p class="text-sm text-gray-500 mt-1">Версия {{ systemInfo.version }} — последняя</p>
+                  </div>
+                </template>
+              </template>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex justify-end">
+              <button @click="showUpdateModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Restore Backup Confirm Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showRestoreConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => { if (e.target === e.currentTarget) showRestoreConfirm = false }">
+          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div class="p-6 border-b border-gray-200">
+              <h3 class="text-xl font-bold text-gray-900">Восстановление из копии</h3>
+            </div>
+
+            <div class="p-6">
+              <template v-if="!restoreDone">
+                <div v-if="restoreTarget" class="p-4 bg-gray-50 rounded-xl mb-4">
+                  <p class="text-sm text-gray-500">Копия от</p>
+                  <p class="font-medium text-gray-900">{{ restoreTarget.date }}</p>
+                  <p class="text-sm text-gray-500 mt-1">Размер: {{ restoreTarget.size }}</p>
+                </div>
+                <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p class="text-sm text-red-700 font-medium">Внимание! Текущие данные будут заменены данными из резервной копии. Это действие необратимо.</p>
+                </div>
+              </template>
+              <template v-else>
+                <div class="text-center py-4">
+                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p class="font-medium text-gray-900">Восстановление завершено</p>
+                  <p class="text-sm text-gray-500 mt-1">Данные успешно восстановлены из копии от {{ restoreTarget?.date }}</p>
+                </div>
+              </template>
+            </div>
+
+            <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <template v-if="!restoreDone">
+                <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                  Отмена
+                </button>
+                <button
+                  @click="executeRestore"
+                  :disabled="restoring"
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  <svg v-if="restoring" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ restoring ? 'Восстановление...' : 'Восстановить' }}
+                </button>
+              </template>
+              <template v-else>
+                <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
+                  Готово
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

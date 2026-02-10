@@ -47,8 +47,8 @@ const responsibilities = [
         <div class="relative">
           <div class="rounded-[30px] lg:rounded-[50px] overflow-hidden h-[300px] md:h-[450px] lg:h-[653px] w-full lg:w-[620px]">
             <img
-              src="/images/economics.jpg"
-              alt="РОП"
+              src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600"
+              alt="Расширенные обязательства производителей"
               class="w-full h-full object-cover"
             />
           </div>
