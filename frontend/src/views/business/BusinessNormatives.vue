@@ -62,8 +62,7 @@ const getRateColorClass = (rate: number) => {
   return 'text-green-600'
 }
 
-// Export norms data for use in calculator
-export const recyclingNormsData = {
+const recyclingNormsData = {
   goods: goodsNorms,
   packaging: packagingNorms
 }
