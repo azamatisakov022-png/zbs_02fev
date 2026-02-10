@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import bigTreeImg from '../../assets/images/big-tree.jpg'
+
 const benefits = [
   'создание и развитие инфраструктуры переработки',
   'поддержку перерабатывающих предприятий',
@@ -24,7 +26,7 @@ const benefits = [
         <div class="relative order-2 lg:order-1">
           <div class="rounded-[30px] lg:rounded-[50px] overflow-hidden h-[300px] md:h-[450px] lg:h-[653px] w-full lg:w-[620px]">
             <img
-              src="/images/economics.jpg"
+              :src="bigTreeImg"
               alt="Экономические аспекты"
               class="w-full h-full object-cover"
             />

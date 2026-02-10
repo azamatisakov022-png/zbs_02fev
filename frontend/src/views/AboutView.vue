@@ -114,6 +114,35 @@ const mainFunctions = {
           <div class="about-card-accent-bottom"></div>
         </div>
       </div>
+
+      <!-- Glossary Link Card -->
+      <div class="mt-10 lg:mt-[50px]">
+        <router-link
+          to="/glossary"
+          class="block bg-gradient-to-r from-[#0e888d]/10 to-[#0e888d]/5 border border-[#0e888d]/20 rounded-2xl p-6 lg:p-8 hover:border-[#0e888d]/40 transition-colors group"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 lg:w-14 lg:h-14 bg-[#0e888d] rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 lg:w-7 lg:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg lg:text-xl font-semibold text-[#415861] group-hover:text-[#0e888d] transition-colors">
+                  Глоссарий
+                </h3>
+                <p class="text-sm text-gray-500">
+                  Сокращения и условные обозначения, используемые в системе
+                </p>
+              </div>
+            </div>
+            <svg class="w-6 h-6 text-[#0e888d] group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

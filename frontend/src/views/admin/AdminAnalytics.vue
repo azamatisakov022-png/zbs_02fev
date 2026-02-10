@@ -78,6 +78,49 @@ const categoryData = ref([
 
 const formatNumber = (num: number) => num.toLocaleString('ru-RU')
 const maxRevenue = Math.max(...monthlyData.value.map(d => Math.max(d.revenue, d.target)))
+
+// Export report
+const exportReport = () => {
+  const bom = '\uFEFF'
+  let csv = bom + 'Раздел;Показатель;Значение\n'
+
+  // Metrics
+  metrics.value.forEach(m => {
+    csv += `Ключевые показатели;${m.label};${m.value} ${m.subvalue} (${m.change})\n`
+  })
+
+  // Monthly data
+  monthlyData.value.forEach(d => {
+    csv += `Динамика по месяцам;${d.month} — Факт;${d.revenue} млн сом\n`
+    csv += `Динамика по месяцам;${d.month} — План;${d.target} млн сом\n`
+  })
+
+  // Regional data
+  regionalData.value.forEach(r => {
+    csv += `По регионам;${r.region};${r.revenue} млн сом / ${r.organizations} орг. / ${r.share}%\n`
+  })
+
+  // Category data
+  categoryData.value.forEach(c => {
+    csv += `По категориям;${c.category};${c.amount} млн сом (${c.percentage}%)\n`
+  })
+
+  // System stats
+  csv += `Система;Всего пользователей;${systemStats.value.totalUsers}\n`
+  csv += `Система;Активных пользователей;${systemStats.value.activeUsers}\n`
+  csv += `Система;Всего деклараций;${systemStats.value.totalDeclarations}\n`
+  csv += `Система;Всего отчётов;${systemStats.value.totalReports}\n`
+  csv += `Система;Среднее время обработки;${systemStats.value.avgProcessingTime} дней\n`
+  csv += `Система;Аптайм;${systemStats.value.systemUptime}%\n`
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `analytics_report_${selectedPeriod.value}_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -100,7 +143,7 @@ const maxRevenue = Math.max(...monthlyData.value.map(d => Math.max(d.revenue, d.
             <option value="quarter">Квартал</option>
             <option value="year">Год</option>
           </select>
-          <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="exportReport" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>

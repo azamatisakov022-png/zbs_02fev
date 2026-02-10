@@ -176,6 +176,22 @@ const openDetail = (entry: AuditEntry) => {
   selectedEntry.value = entry
   showDetailModal.value = true
 }
+
+// Export audit log to CSV
+const exportAuditLog = () => {
+  const bom = '\uFEFF'
+  let csv = bom + 'ID;Дата и время;Пользователь;Роль;Тип действия;Действие;Объект;ID объекта;IP адрес;Детали;Статус\n'
+  filteredLog.value.forEach(e => {
+    csv += `${e.id};${e.timestamp};${e.user};${getRoleLabel(e.userRole)};${getActionTypeLabel(e.actionType)};${e.action};${e.entity};${e.entityId};${e.ipAddress};"${e.details}";${e.status === 'success' ? 'Успешно' : e.status === 'warning' ? 'Предупреждение' : 'Ошибка'}\n`
+  })
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `audit_log_${dateFrom.value}_${dateTo.value}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -193,7 +209,7 @@ const openDetail = (entry: AuditEntry) => {
           <p class="text-gray-600 mt-1">Аудит всех операций в системе</p>
         </div>
         <div class="flex items-center gap-3">
-          <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="exportAuditLog" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
