@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
   { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
@@ -381,7 +382,7 @@ const copyLegalToActual = () => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН"
+    roleTitle="Сотрудник МПРЭТН КР"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
@@ -498,34 +499,18 @@ const copyLegalToActual = () => {
                   </span>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="flex items-center justify-center gap-1">
-                    <button
-                      @click="openView(org)"
-                      class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
-                      title="Просмотреть"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
+                  <div class="flex items-center justify-center gap-2">
+                    <button @click="openView(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      Просмотреть
                     </button>
-                    <button
-                      @click="openEdit(org)"
-                      class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                      title="Редактировать"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
+                    <button @click="openEdit(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      Редактировать
                     </button>
-                    <button
-                      @click="openDelete(org)"
-                      class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Удалить"
-                    >
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                    <button @click="openDelete(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      Удалить
                     </button>
                   </div>
                 </td>

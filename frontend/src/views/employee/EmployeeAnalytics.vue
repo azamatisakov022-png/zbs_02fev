@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
   { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
@@ -85,7 +86,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН"
+    roleTitle="Сотрудник МПРЭТН КР"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >

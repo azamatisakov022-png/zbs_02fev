@@ -48,30 +48,19 @@ const handleView = (_license: License) => {
   // TODO: Implement view logic
 }
 
-const handleApply = () => {
-  // TODO: Implement application logic
-}
 </script>
 
 <template>
   <div class="py-10 lg:py-[60px]">
     <!-- Page header with button on same line -->
     <div class="container-main">
-      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 lg:gap-6">
-        <div>
-          <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[8px]">
-            Реестр лицензий
-          </h1>
-          <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] mb-6 lg:mb-[30px]">
-            Лицензии на деятельность по обращению с отходами
-          </p>
-        </div>
-        <button
-          @click="handleApply"
-          class="bg-[#0e888d] text-white text-sm lg:text-[14px] font-bold uppercase px-5 py-[15px] rounded-[30px] hover:bg-[#0a6d71] transition-colors whitespace-nowrap self-start lg:mt-1"
-        >
-          Подать заявку на лицензию
-        </button>
+      <div>
+        <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[8px]">
+          Реестр лицензий
+        </h1>
+        <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] mb-6 lg:mb-[30px]">
+          Лицензии на деятельность по обращению с отходами
+        </p>
       </div>
     </div>
 

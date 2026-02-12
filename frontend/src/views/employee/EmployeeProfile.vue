@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
   { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
@@ -21,7 +22,7 @@ const userData = ref({
   middleName: 'Бакытовна',
   position: 'Ведущий специалист',
   department: 'Отдел учёта и контроля отходов',
-  employeeId: 'МПРЭТН-2021-0456',
+  employeeId: 'ЭКО-2021-0456',
   email: 'a.mamytova@mpretn.gov.kg',
   phone: '+996 312 62-05-47',
   mobilePhone: '+996 555 12-34-56',
@@ -104,7 +105,7 @@ const changePassword = async () => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН"
+    roleTitle="Сотрудник МПРЭТН КР"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >

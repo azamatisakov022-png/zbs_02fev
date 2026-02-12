@@ -25,7 +25,7 @@ const mainFunctions = {
         О портале АИС «ЦРО»
       </h1>
       <p class="text-lg md:text-2xl lg:text-[30px] lg:leading-[41px] font-medium text-[#415861] max-w-[601px] mx-auto mb-10 lg:mb-[50px]">
-        Автоматизированная информационная система «Цифровой реестр отходов»
+        Автоматизированная информационная система «ГП Эко Оператор»
       </p>
     </div>
 

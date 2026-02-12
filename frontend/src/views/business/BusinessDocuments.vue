@@ -5,13 +5,12 @@ import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'reports', label: 'Отчёты', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
+  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
+  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы переработки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'recyclers', label: 'Переработчики отходов', icon: icons.recycle, route: '/business/recyclers' },
+  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
 
@@ -287,7 +286,11 @@ const deleteDocument = (doc: Document) => {
         <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]">
           <option value="">За всё время</option>
           <option value="2025">2025</option>
-          <option value="2024">2024</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+          <option value="2029">2029</option>
+          <option value="2030">2030</option>
         </select>
       </div>
     </div>
@@ -351,34 +354,34 @@ const deleteDocument = (doc: Document) => {
           </span>
 
           <!-- Actions -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-2">
             <button
               @click="viewDocument(doc)"
-              class="p-2 text-[#0ea5e9] hover:bg-sky-50 rounded-lg transition-colors"
-              title="Просмотреть"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
+              Просмотреть
             </button>
             <button
               @click="downloadDocument(doc)"
-              class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg transition-colors"
-              title="Скачать"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
+              Скачать
             </button>
             <button
               @click="deleteDocument(doc)"
-              class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="Удалить"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
+              Удалить
             </button>
           </div>
         </div>

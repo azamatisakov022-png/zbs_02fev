@@ -2,11 +2,14 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
+import { calculationStore } from '../../stores/calculations'
+import { reportStore } from '../../stores/reports'
 
-const menuItems = [
+const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports' },
+  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
   { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
@@ -14,7 +17,7 @@ const menuItems = [
   { id: 'payments', label: 'Аналитика платежей', icon: icons.money, route: '/eco-operator/payments' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-]
+])
 
 // Регионы Кыргызстана
 const regions = [
@@ -175,12 +178,12 @@ const productAnalytics = computed(() => {
 // Аналитическая таблица 2: Сводка по периодам (кварталы)
 const periodAnalytics = computed(() => {
   return [
-    { period: 'Q1 2024', declarations: 45, reports: 22, volume: 3200, companies: 8 },
-    { period: 'Q2 2024', declarations: 62, reports: 31, volume: 4100, companies: 10 },
-    { period: 'Q3 2024', declarations: 78, reports: 38, volume: 5300, companies: 12 },
-    { period: 'Q4 2024', declarations: 95, reports: 47, volume: 6800, companies: 14 },
-    { period: 'Январь 2025', declarations: 35, reports: 17, volume: 2400, companies: 14 },
-    { period: 'Февраль 2025', declarations: 28, reports: 14, volume: 1900, companies: 12 },
+    { period: 'Q1 2025', declarations: 45, reports: 22, volume: 3200, companies: 8 },
+    { period: 'Q2 2025', declarations: 62, reports: 31, volume: 4100, companies: 10 },
+    { period: 'Q3 2025', declarations: 78, reports: 38, volume: 5300, companies: 12 },
+    { period: 'Q4 2025', declarations: 95, reports: 47, volume: 6800, companies: 14 },
+    { period: 'Январь 2026', declarations: 35, reports: 17, volume: 2400, companies: 14 },
+    { period: 'Февраль 2026', declarations: 28, reports: 14, volume: 1900, companies: 12 },
   ]
 })
 
@@ -313,7 +316,7 @@ const exportToExcel = async (type: 'companies' | 'products' | 'periods') => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="Эко Оператор"
+    roleTitle="ГП «Эко Оператор»"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -621,11 +624,12 @@ const exportToExcel = async (type: 'companies' | 'products' | 'periods') => {
                     </span>
                   </td>
                   <td class="px-4 py-4 text-center">
-                    <button @click="openCompanyDetail(company)" class="p-2 text-gray-400 hover:text-lime-600 transition-colors" title="Подробнее">
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button @click="openCompanyDetail(company)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
+                      Подробнее
                     </button>
                   </td>
                 </tr>
@@ -780,7 +784,7 @@ const exportToExcel = async (type: 'companies' | 'products' | 'periods') => {
                   class="w-full bg-gradient-to-t from-lime-500 to-lime-400 rounded-t-lg transition-all hover:from-lime-600 hover:to-lime-500"
                   :style="{ height: `${(item.volume / Math.max(...periodAnalytics.map(p => p.volume))) * 100}%` }"
                 ></div>
-                <p class="text-xs text-gray-500 mt-2 text-center">{{ item.period.replace(' 2024', '').replace(' 2025', '') }}</p>
+                <p class="text-xs text-gray-500 mt-2 text-center">{{ item.period.replace(' 2025', '').replace(' 2026', '') }}</p>
                 <p class="text-xs font-semibold text-gray-700">{{ (item.volume / 1000).toFixed(1) }}k</p>
               </div>
             </div>

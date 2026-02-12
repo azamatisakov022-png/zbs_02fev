@@ -25,23 +25,23 @@ const roles: Role[] = [
   },
   {
     id: 'employee',
-    title: 'Сотрудник',
-    description: 'Специалисты МПРЭТН',
+    title: 'Сотрудник МПРЭТН КР',
+    description: 'Министерство природных ресурсов, экологии и технического надзора',
     icon: 'id-card'
   },
   {
     id: 'eco-operator',
-    title: 'Эко Оператор',
-    description: 'Переработчики и утилизаторы',
+    title: 'ГП «Эко Оператор»',
+    description: '',
     icon: 'recycle'
   }
 ]
 
 const handleRoleSelect = (role: Role) => {
-  // Navigate to the corresponding dashboard
+  // Navigate to the corresponding dashboard (business goes to login page)
   const roleRoutes: Record<string, string> = {
     'admin': '/admin',
-    'business': '/business',
+    'business': '/login/business',
     'employee': '/employee',
     'eco-operator': '/eco-operator'
   }
@@ -135,7 +135,7 @@ const goBack = () => {
           </h3>
 
           <!-- Description -->
-          <p class="text-[#70868f] text-sm lg:text-[16px] font-medium">
+          <p v-if="role.description" class="text-[#70868f] text-sm lg:text-[16px] font-medium">
             {{ role.description }}
           </p>
         </button>
@@ -147,9 +147,9 @@ const goBack = () => {
       <div class="text-center">
         <p class="text-[#70868f] text-sm lg:text-[16px]">
           Нет аккаунта?
-          <a href="#" class="text-[#0e888d] font-medium hover:underline">
+          <router-link to="/register" class="text-[#0e888d] font-medium hover:underline">
             Зарегистрироваться
-          </a>
+          </router-link>
         </p>
       </div>
     </div>

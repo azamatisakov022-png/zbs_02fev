@@ -29,7 +29,7 @@ const tabs = [
 
 // General settings
 const generalSettings = ref({
-  systemName: 'АИС Цифровой реестр отходов',
+  systemName: 'ГП Эко Оператор',
   systemDescription: 'Автоматизированная информационная система учёта отходов и утилизационного сбора',
   supportEmail: 'support@eco.gov.kg',
   supportPhone: '+996 (312) 123-456',
@@ -62,7 +62,7 @@ const emailSettings = ref({
   smtpUser: 'noreply@eco.gov.kg',
   smtpPassword: '********',
   useTLS: true,
-  senderName: 'АИС Цифровой реестр отходов',
+  senderName: 'ГП Эко Оператор',
   senderEmail: 'noreply@eco.gov.kg',
 })
 

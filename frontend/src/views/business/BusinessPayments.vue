@@ -6,13 +6,12 @@ import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'reports', label: 'Отчёты', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
+  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
+  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы переработки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'recyclers', label: 'Переработчики отходов', icon: icons.recycle, route: '/business/recyclers' },
+  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
 
@@ -40,7 +39,7 @@ interface PendingPayment {
 }
 
 const pendingPayments = ref<PendingPayment[]>([
-  { id: 1, number: 'РС-2025-018', type: 'Утилизационный сбор', period: 'Q1 2025', amount: 48500, dueDate: '20.04.2025', isOverdue: false, selected: false },
+  { id: 1, number: 'РС-2026-018', type: 'Утилизационный сбор', period: 'Q1 2026', amount: 48500, dueDate: '20.04.2026', isOverdue: false, selected: false },
 ])
 
 const hasPendingPayments = computed(() => pendingPayments.value.length > 0)
@@ -80,7 +79,7 @@ const bankRequisites = {
   account: '1234567890123456',
   bank: 'Национальный банк КР',
   bik: '123456',
-  purpose: 'Утилизационный сбор за Q1 2025, ОсОО «ТехПром», ИНН 01234567890123'
+  purpose: 'Утилизационный сбор за Q1 2026, ОсОО «ТехПром», ИНН 01234567890123'
 }
 
 // Navigation
@@ -147,19 +146,19 @@ const handleExpiryInput = (e: Event) => {
 
 // History table
 const columns = [
-  { key: 'number', label: 'Номер', width: '140px' },
-  { key: 'type', label: 'Тип платежа' },
-  { key: 'period', label: 'Период', width: '120px' },
-  { key: 'amount', label: 'Сумма', width: '140px' },
-  { key: 'paidAt', label: 'Дата оплаты', width: '130px' },
-  { key: 'status', label: 'Статус', width: '120px' },
+  { key: 'number', label: 'Номер', width: '10%' },
+  { key: 'type', label: 'Тип платежа', width: '15%' },
+  { key: 'period', label: 'Период', width: '8%' },
+  { key: 'amount', label: 'Сумма', width: '10%' },
+  { key: 'paidAt', label: 'Дата оплаты', width: '10%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
 const paymentHistory = ref([
-  { id: 1, number: 'ПЛ-2025-0156', type: 'Утилизационный сбор', period: 'Q4 2024', amount: '45 200 сом', paidAt: '18.01.2025', status: 'Оплачен' },
-  { id: 2, number: 'ПЛ-2024-0892', type: 'Утилизационный сбор', period: 'Q3 2024', amount: '38 750 сом', paidAt: '12.10.2024', status: 'Оплачен' },
-  { id: 3, number: 'ПЛ-2024-0567', type: 'Утилизационный сбор', period: 'Q2 2024', amount: '41 300 сом', paidAt: '08.07.2024', status: 'Оплачен' },
-  { id: 4, number: 'ПЛ-2024-0234', type: 'Утилизационный сбор', period: 'Q1 2024', amount: '35 800 сом', paidAt: '15.04.2024', status: 'Оплачен' },
+  { id: 1, number: 'ПЛ-2026-0156', type: 'Утилизационный сбор', period: 'Q4 2025', amount: '45 200 сом', paidAt: '18.01.2026', status: 'Оплачен' },
+  { id: 2, number: 'ПЛ-2025-0892', type: 'Утилизационный сбор', period: 'Q3 2025', amount: '38 750 сом', paidAt: '12.10.2025', status: 'Оплачен' },
+  { id: 3, number: 'ПЛ-2025-0567', type: 'Утилизационный сбор', period: 'Q2 2025', amount: '41 300 сом', paidAt: '08.07.2025', status: 'Оплачен' },
+  { id: 4, number: 'ПЛ-2025-0234', type: 'Утилизационный сбор', period: 'Q1 2025', amount: '35 800 сом', paidAt: '15.04.2025', status: 'Оплачен' },
 ])
 
 const getStatusClass = (status: string) => {
@@ -277,8 +276,14 @@ const getStatusClass = (status: string) => {
         <template #cell-status="{ value }"><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">{{ value }}</span></template>
         <template #actions>
           <div class="flex items-center justify-end gap-2">
-            <button class="p-2 text-[#8b5cf6] hover:bg-purple-50 rounded-lg transition-colors" title="Просмотреть"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-            <button class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg transition-colors" title="Скачать"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              Просмотреть
+            </button>
+            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Скачать PDF
+            </button>
           </div>
         </template>
       </DataTable>

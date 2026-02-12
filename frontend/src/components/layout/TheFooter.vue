@@ -7,6 +7,7 @@ const footerLinks = [
   { name: 'calculator', path: '/calculator', label: 'Калькулятор' },
   { name: 'contests', path: '/contests', label: 'Конкурсы' },
   { name: 'reception-points', path: '/reception-points', label: 'Пункты приема' },
+  { name: 'recyclers', path: '/recyclers', label: 'Переработчики' },
   { name: 'glossary', path: '/glossary', label: 'Глоссарий' },
 ]
 
@@ -33,10 +34,7 @@ const socialLinks = [
           </div>
           <div class="flex flex-col ml-2">
             <span class="text-[#0e888d] font-bold text-xs md:text-sm lg:text-base uppercase leading-[16px]">
-              Цифровой реестр<br/>отходов МПРЭТН
-            </span>
-            <span class="text-[#0e888d] text-[10px] lg:text-[11.76px] lowercase hidden sm:block">
-              КЫРГЫЗСКОЙ РЕСПУБЛИКИ
+              ГП Эко Оператор
             </span>
           </div>
         </div>

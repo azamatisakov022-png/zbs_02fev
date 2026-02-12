@@ -4,37 +4,36 @@ import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'reports', label: 'Отчёты', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
+  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
+  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы переработки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'recyclers', label: 'Переработчики отходов', icon: icons.recycle, route: '/business/recyclers' },
+  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
 
 const actionCards = [
-  {
-    icon: '📝',
-    title: 'Подать декларацию',
-    description: 'Заполните и отправьте декларацию о товарах и упаковке',
-    route: '/business/declarations/new',
-    color: 'blue'
-  },
-  {
-    icon: '📊',
-    title: 'Подать отчёт о переработке',
-    description: 'Отчёт о переработке отходов от использования товаров',
-    route: '/business/reports/new',
-    color: 'green'
-  },
   {
     icon: '💰',
     title: 'Расчёт утилизационного сбора',
     description: 'Расчёт суммы утилизационного сбора за товары и упаковку',
     route: '/business/calculator',
     color: 'orange'
+  },
+  {
+    icon: '📊',
+    title: 'Подать отчёт о переработке',
+    description: 'Отчёт о переработке отходов от использования товаров',
+    route: '/business/reports',
+    color: 'green'
+  },
+  {
+    icon: '📝',
+    title: 'Подать декларацию',
+    description: 'Заполните и отправьте декларацию о товарах и упаковке',
+    route: '/business/declarations',
+    color: 'blue'
   }
 ]
 
@@ -64,7 +63,7 @@ const getStatusClass = (status: string) => {
   >
     <div class="content__header mb-8">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Главная</h1>
-      <p class="text-[#64748b]">Управление отчётами, декларациями и платежами</p>
+      <p class="text-[#64748b]">Управление расчётами, отчётами и декларациями</p>
     </div>
 
     <!-- Action Cards -->
@@ -144,7 +143,7 @@ const getStatusClass = (status: string) => {
         </div>
         <div>
           <h4 class="font-semibold text-lg mb-1">Напоминание</h4>
-          <p class="opacity-90">Срок подачи декларации за I квартал 2025 года — до 20 апреля 2025 г. Не забудьте своевременно подать отчётность.</p>
+          <p class="opacity-90">Срок подачи декларации за I квартал 2026 года — до 20 апреля 2026 г. Не забудьте своевременно подать отчётность.</p>
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ const menuItems = [
   { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
   { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
@@ -16,11 +17,11 @@ const menuItems = [
 ]
 
 const columns = [
-  { key: 'number', label: 'Номер заявки', width: '150px' },
-  { key: 'applicant', label: 'Заявитель' },
-  { key: 'type', label: 'Тип заявки' },
-  { key: 'submittedAt', label: 'Дата подачи', width: '120px' },
-  { key: 'status', label: 'Статус', width: '150px' },
+  { key: 'number', label: 'Номер заявки', width: '10%' },
+  { key: 'applicant', label: 'Заявитель', width: '18%' },
+  { key: 'type', label: 'Тип заявки', width: '18%' },
+  { key: 'submittedAt', label: 'Дата подачи', width: '10%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
 const applications = ref([
@@ -45,7 +46,7 @@ const getStatusClass = (status: string) => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН"
+    roleTitle="Сотрудник МПРЭТН КР"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
@@ -86,32 +87,17 @@ const getStatusClass = (status: string) => {
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button
-            class="p-2 text-[#0e888d] hover:bg-[#e8f5f5] rounded-lg transition-colors"
-            title="Просмотреть"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+          <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            Просмотреть
           </button>
-          <button
-            v-if="row.status === 'На рассмотрении'"
-            class="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
-            title="Одобрить"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
+          <button v-if="row.status === 'На рассмотрении'" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            Одобрить
           </button>
-          <button
-            v-if="row.status === 'На рассмотрении'"
-            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            title="Отклонить"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button v-if="row.status === 'На рассмотрении'" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            Отклонить
           </button>
         </div>
       </template>

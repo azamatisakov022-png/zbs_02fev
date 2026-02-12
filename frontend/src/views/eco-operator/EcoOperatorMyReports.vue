@@ -2,11 +2,14 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
+import { calculationStore } from '../../stores/calculations'
+import { reportStore } from '../../stores/reports'
 
-const menuItems = [
+const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports' },
+  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
   { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
@@ -14,7 +17,7 @@ const menuItems = [
   { id: 'payments', label: 'Аналитика платежей', icon: icons.money, route: '/eco-operator/payments' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-]
+])
 
 // Current view
 const currentView = ref<'list' | 'detail'>('list')
@@ -22,11 +25,11 @@ const selectedReport = ref<Report | null>(null)
 
 // Filters
 const searchQuery = ref('')
-const selectedYear = ref(2025)
+const selectedYear = ref(2026)
 const selectedQuarter = ref('all')
 const selectedStatus = ref('all')
 
-const years = [2026, 2025, 2024, 2023, 2022]
+const years = [2030, 2029, 2028, 2027, 2026, 2025]
 const quarters = [
   { id: 'all', name: 'Все кварталы' },
   { id: 'q1', name: 'I квартал' },
@@ -424,8 +427,8 @@ const downloadPDF = async () => {
     </head>
     <body>
       <div class="header">
-        <h1>ЦИФРОВОЙ РЕЕСТР ОТХОДОВ</h1>
-        <p>Министерство природных ресурсов, экологии и технического надзора КР</p>
+        <h1>ГП ЭКО ОПЕРАТОР</h1>
+        <p>Государственное предприятие «Эко Оператор»</p>
       </div>
 
       <div class="company">
@@ -485,7 +488,7 @@ const downloadPDF = async () => {
 
       <div class="footer">
         <p>Документ сформирован: ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU')}</p>
-        <p>Цифровой реестр отходов МПРЭТН КР | www.eco.gov.kg</p>
+        <p>ГП Эко Оператор | www.eco.gov.kg</p>
       </div>
     </body>
     </html>
@@ -547,7 +550,7 @@ const wizardStep = ref(1)
 const reportForm = ref({
   type: 'quarterly',
   quarter: 'q4',
-  year: 2025,
+  year: 2026,
   wasteData: [
     { wasteType: 'ПЭТ (полиэтилентерефталат)', code: 'ПЛ-01', accepted: 450, processed: 430 },
     { wasteType: 'Гофрокартон', code: 'БМ-01', accepted: 680, processed: 670 },
@@ -590,7 +593,7 @@ const saveDraft = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="Эко Оператор"
+    roleTitle="ГП «Эко Оператор»"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -1005,9 +1008,12 @@ const saveDraft = () => {
                     v-model="reportForm.year"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                   >
-                    <option :value="2026">2026</option>
                     <option :value="2025">2025</option>
-                    <option :value="2024">2024</option>
+                    <option :value="2026">2026</option>
+                    <option :value="2027">2027</option>
+                    <option :value="2028">2028</option>
+                    <option :value="2029">2029</option>
+                    <option :value="2030">2030</option>
                   </select>
                 </div>
               </div>

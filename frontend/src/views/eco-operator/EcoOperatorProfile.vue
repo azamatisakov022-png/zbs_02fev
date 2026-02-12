@@ -2,11 +2,14 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
+import { calculationStore } from '../../stores/calculations'
+import { reportStore } from '../../stores/reports'
 
-const menuItems = [
+const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports' },
+  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
   { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
@@ -14,7 +17,7 @@ const menuItems = [
   { id: 'payments', label: 'Аналитика платежей', icon: icons.money, route: '/eco-operator/payments' },
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-]
+])
 
 // View state
 const currentView = ref<'list' | 'detail'>('list')
@@ -600,7 +603,7 @@ const isLicenseExpired = (expiryDate: string) => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="Эко Оператор"
+    roleTitle="ГП «Эко Оператор»"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >

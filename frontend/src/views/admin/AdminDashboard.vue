@@ -59,7 +59,7 @@ const pendingItems = [
   >
     <div class="content__header mb-8">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Панель управления</h1>
-      <p class="text-[#64748b]">АИС «Цифровой реестр отходов» — обзор системы</p>
+      <p class="text-[#64748b]">ГП «Эко Оператор» — обзор системы</p>
     </div>
 
     <!-- Stats Cards -->

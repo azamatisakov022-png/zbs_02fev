@@ -24,16 +24,16 @@ interface FeeRate {
 }
 
 const feeRates = ref<FeeRate[]>([
-  { id: 1, category: 'Упаковка', subcategory: 'Пластик ПЭТ', code: 'УП-ПЭТ', rate: 120, unit: 'сом/кг', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 2, category: 'Упаковка', subcategory: 'Пластик ПП/ПЭ', code: 'УП-ПП', rate: 100, unit: 'сом/кг', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 3, category: 'Упаковка', subcategory: 'Стекло', code: 'УП-СТ', rate: 40, unit: 'сом/кг', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 4, category: 'Упаковка', subcategory: 'Металл', code: 'УП-МТ', rate: 80, unit: 'сом/кг', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 5, category: 'Упаковка', subcategory: 'Картон', code: 'УП-КР', rate: 50, unit: 'сом/кг', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 6, category: 'Электроника', subcategory: 'Крупная бытовая', code: 'ЭЛ-КБТ', rate: 500, unit: 'сом/шт', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 7, category: 'Электроника', subcategory: 'Мелкая бытовая', code: 'ЭЛ-МБТ', rate: 200, unit: 'сом/шт', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 8, category: 'Батареи', subcategory: 'Портативные', code: 'БТ-ПТ', rate: 50, unit: 'сом/шт', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 9, category: 'Батареи', subcategory: 'Автомобильные', code: 'БТ-АВТ', rate: 300, unit: 'сом/шт', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
-  { id: 10, category: 'Шины', subcategory: 'Легковые', code: 'ШН-ЛГ', rate: 150, unit: 'сом/шт', effectiveFrom: '2024-01-01', effectiveTo: null, isActive: true },
+  { id: 1, category: 'Упаковка', subcategory: 'Пластик ПЭТ', code: 'УП-ПЭТ', rate: 120, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 2, category: 'Упаковка', subcategory: 'Пластик ПП/ПЭ', code: 'УП-ПП', rate: 100, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 3, category: 'Упаковка', subcategory: 'Стекло', code: 'УП-СТ', rate: 40, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 4, category: 'Упаковка', subcategory: 'Металл', code: 'УП-МТ', rate: 80, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 5, category: 'Упаковка', subcategory: 'Картон', code: 'УП-КР', rate: 50, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 6, category: 'Электроника', subcategory: 'Крупная бытовая', code: 'ЭЛ-КБТ', rate: 500, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 7, category: 'Электроника', subcategory: 'Мелкая бытовая', code: 'ЭЛ-МБТ', rate: 200, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 8, category: 'Батареи', subcategory: 'Портативные', code: 'БТ-ПТ', rate: 50, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 9, category: 'Батареи', subcategory: 'Автомобильные', code: 'БТ-АВТ', rate: 300, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 10, category: 'Шины', subcategory: 'Легковые', code: 'ШН-ЛГ', rate: 150, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
 ])
 
 interface Normative {
@@ -41,12 +41,12 @@ interface Normative {
 }
 
 const normatives = ref<Normative[]>([
-  { id: 1, category: 'Пластик', year: 2024, targetPercent: 20, currentPercent: 18 },
-  { id: 2, category: 'Пластик', year: 2025, targetPercent: 25, currentPercent: 0 },
-  { id: 3, category: 'Бумага и картон', year: 2024, targetPercent: 25, currentPercent: 28 },
-  { id: 4, category: 'Стекло', year: 2024, targetPercent: 30, currentPercent: 25 },
-  { id: 5, category: 'Металл', year: 2024, targetPercent: 35, currentPercent: 42 },
-  { id: 6, category: 'Электроника', year: 2024, targetPercent: 40, currentPercent: 35 },
+  { id: 1, category: 'Пластик', year: 2026, targetPercent: 20, currentPercent: 18 },
+  { id: 2, category: 'Пластик', year: 2027, targetPercent: 25, currentPercent: 0 },
+  { id: 3, category: 'Бумага и картон', year: 2026, targetPercent: 25, currentPercent: 28 },
+  { id: 4, category: 'Стекло', year: 2026, targetPercent: 30, currentPercent: 25 },
+  { id: 5, category: 'Металл', year: 2026, targetPercent: 35, currentPercent: 42 },
+  { id: 6, category: 'Электроника', year: 2026, targetPercent: 40, currentPercent: 35 },
 ])
 
 const formulas = ref([
@@ -220,11 +220,13 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               <td class="px-6 py-4 text-center"><span :class="rate.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ rate.isActive ? 'Активна' : 'Неактивна' }}</span></td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
-                  <button @click="openEditModal(rate)" class="p-1.5 text-gray-400 hover:text-rose-600 transition-colors" title="Редактировать">
+                  <button @click="openEditModal(rate)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    Изменить
                   </button>
-                  <button @click="confirmDeleteRate(rate)" class="p-1.5 text-gray-400 hover:text-red-600 transition-colors" title="Удалить">
+                  <button @click="confirmDeleteRate(rate)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Удалить
                   </button>
                 </div>
               </td>

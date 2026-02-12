@@ -4,7 +4,174 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Steps
+// Registration mode: 'choose' = initial screen, 'esi' = simplified after ESI, 'manual' = existing wizard
+const registrationMode = ref<'choose' | 'esi' | 'manual'>('choose')
+const isEsiLoading = ref(false)
+
+// ESI mock data
+const esiData = {
+  inn: '02301200510234',
+  shortName: 'ОсОО "ЭкоИмпорт Бишкек"',
+  directorFullName: 'Асанов Бакыт Жумабекович',
+  legalAddress: 'г. Бишкек, ул. Московская, 187',
+  phone: '+996 312 90-12-34',
+  email: 'info@ecoimport.kg',
+}
+
+// ESI simplified form
+const esiForm = reactive({
+  activityType: '',
+  wasteCategories: [] as string[],
+  confirmData: false,
+})
+
+interface WasteCategory {
+  value: string
+  label: string
+}
+
+interface WasteGroup {
+  id: string
+  letter: string
+  title: string
+  items: WasteCategory[]
+}
+
+const wasteGroups: WasteGroup[] = [
+  {
+    id: 'a',
+    letter: 'А',
+    title: 'Упаковка',
+    items: [
+      { value: 'a1', label: '1. Упаковка из пластмасс (ПЭТ, полиэтилен, полипропилен)' },
+      { value: 'a2', label: '2. Упаковка из бумаги и картона' },
+      { value: 'a3', label: '3. Упаковка из комбинированных материалов (тетрапак)' },
+      { value: 'a4', label: '4. Упаковка из стекла' },
+      { value: 'a5', label: '5. Упаковка из металла (алюминий, жесть)' },
+      { value: 'a6', label: '6. Упаковка из дерева' },
+      { value: 'a7', label: '7. Пластиковые пакеты и мешки' },
+    ],
+  },
+  {
+    id: 'b',
+    letter: 'Б',
+    title: 'Автотранспортные товары',
+    items: [
+      { value: 'b8', label: '8. Шины и покрышки пневматические' },
+      { value: 'b9', label: '9. Аккумуляторы свинцовые (автотранспорт)' },
+      { value: 'b10', label: '10. Аккумуляторы для электромобилей' },
+      { value: 'b11', label: '11. Масла моторные отработанные' },
+      { value: 'b12', label: '12. Масла трансмиссионные и гидравлические' },
+      { value: 'b13', label: '13. Фильтры масляные и топливные' },
+      { value: 'b14', label: '14. Антифризы и тормозные жидкости' },
+    ],
+  },
+  {
+    id: 'v',
+    letter: 'В',
+    title: 'Электроника и электрооборудование',
+    items: [
+      { value: 'v15', label: '15. Крупногабаритное электрооборудование (холодильники, стиральные машины)' },
+      { value: 'v16', label: '16. Среднегабаритное электрооборудование (микроволновки, пылесосы)' },
+      { value: 'v17', label: '17. Мелкогабаритное электрооборудование (фены, утюги, тостеры)' },
+      { value: 'v18', label: '18. IT и телекоммуникационное оборудование (компьютеры, телефоны, планшеты)' },
+      { value: 'v19', label: '19. Элементы питания (батарейки)' },
+      { value: 'v20', label: '20. Ртутьсодержащие изделия (лампы, термометры)' },
+    ],
+  },
+  {
+    id: 'g',
+    letter: 'Г',
+    title: 'Прочие товары',
+    items: [
+      { value: 'g21', label: '21. Текстиль и одежда' },
+      { value: 'g22', label: '22. Мебель' },
+      { value: 'g23', label: '23. Нефтепродукты и смазочные материалы' },
+      { value: 'g24', label: '24. Строительные материалы и отходы' },
+    ],
+  },
+]
+
+const esiFormErrors = reactive<Record<string, string>>({})
+
+const handleEsiLogin = async () => {
+  isEsiLoading.value = true
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  isEsiLoading.value = false
+  registrationMode.value = 'esi'
+}
+
+const toggleWasteCategory = (value: string) => {
+  const idx = esiForm.wasteCategories.indexOf(value)
+  if (idx === -1) {
+    esiForm.wasteCategories.push(value)
+  } else {
+    esiForm.wasteCategories.splice(idx, 1)
+  }
+}
+
+const isGroupAllSelected = (group: WasteGroup): boolean => {
+  return group.items.every(item => esiForm.wasteCategories.includes(item.value))
+}
+
+const toggleGroupAll = (group: WasteGroup) => {
+  if (isGroupAllSelected(group)) {
+    // Deselect all in group
+    for (const item of group.items) {
+      const idx = esiForm.wasteCategories.indexOf(item.value)
+      if (idx !== -1) esiForm.wasteCategories.splice(idx, 1)
+    }
+  } else {
+    // Select all in group
+    for (const item of group.items) {
+      if (!esiForm.wasteCategories.includes(item.value)) {
+        esiForm.wasteCategories.push(item.value)
+      }
+    }
+  }
+}
+
+const validateEsiForm = (): boolean => {
+  esiFormErrors.activityType = ''
+  esiFormErrors.wasteCategories = ''
+
+  if (!esiForm.activityType) {
+    esiFormErrors.activityType = 'Выберите вид деятельности'
+  }
+  if (esiForm.wasteCategories.length === 0) {
+    esiFormErrors.wasteCategories = 'Выберите хотя бы одну категорию'
+  }
+
+  return !esiFormErrors.activityType && !esiFormErrors.wasteCategories
+}
+
+const isEsiSubmitting = ref(false)
+const isEsiSuccess = ref(false)
+const esiRegistrationNumber = ref('')
+
+const submitEsiRegistration = async () => {
+  if (!esiForm.confirmData) {
+    alert('Подтвердите согласие с условиями')
+    return
+  }
+  if (!validateEsiForm()) return
+
+  isEsiSubmitting.value = true
+  await new Promise(resolve => setTimeout(resolve, 2000))
+
+  const num = String(Math.floor(Math.random() * 9000) + 1000)
+  esiRegistrationNumber.value = `РЕГ-2026-${num}`
+
+  isEsiSubmitting.value = false
+  isEsiSuccess.value = true
+}
+
+const startManualRegistration = () => {
+  registrationMode.value = 'manual'
+}
+
+// ===== Existing 5-step wizard logic (unchanged) =====
+
 const currentStep = ref(1)
 const totalSteps = 5
 
@@ -16,7 +183,6 @@ const steps = [
   { number: 5, title: 'Проверка и отправка' },
 ]
 
-// Step 1: Organization type
 const orgTypes = [
   { value: 'osoo', label: 'ОсОО (Общество с ограниченной ответственностью)' },
   { value: 'oao', label: 'ОАО (Открытое акционерное общество)' },
@@ -31,11 +197,8 @@ const activityTypes = [
 ]
 
 const formData = reactive({
-  // Step 1
   orgType: '',
   activityType: '',
-
-  // Step 2
   shortName: '',
   fullName: '',
   inn: '',
@@ -51,8 +214,6 @@ const formData = reactive({
   actualBuilding: '',
   phone: '+996 ',
   email: '',
-
-  // Step 3
   directorFullName: '',
   directorPosition: '',
   directorPhone: '+996 ',
@@ -60,12 +221,9 @@ const formData = reactive({
   contactPosition: '',
   contactPhone: '+996 ',
   contactEmail: '',
-
-  // Step 5
   confirmData: false,
 })
 
-// Regions of Kyrgyzstan
 const regions = [
   'г. Бишкек',
   'г. Ош',
@@ -78,7 +236,6 @@ const regions = [
   'Баткенская область',
 ]
 
-// Validation
 const errors = reactive<Record<string, string>>({})
 
 const validateINN = (inn: string): boolean => {
@@ -97,14 +254,8 @@ const validatePhone = (phone: string): boolean => {
 const validateStep1 = (): boolean => {
   errors.orgType = ''
   errors.activityType = ''
-
-  if (!formData.orgType) {
-    errors.orgType = 'Выберите тип организации'
-  }
-  if (!formData.activityType) {
-    errors.activityType = 'Выберите вид деятельности'
-  }
-
+  if (!formData.orgType) errors.orgType = 'Выберите тип организации'
+  if (!formData.activityType) errors.activityType = 'Выберите вид деятельности'
   return !errors.orgType && !errors.activityType
 }
 
@@ -117,23 +268,15 @@ const validateStep2 = (): boolean => {
   errors.phone = ''
   errors.email = ''
 
-  if (!formData.shortName.trim()) {
-    errors.shortName = 'Введите краткое наименование'
-  }
-  if (!formData.fullName.trim()) {
-    errors.fullName = 'Введите полное наименование'
-  }
+  if (!formData.shortName.trim()) errors.shortName = 'Введите краткое наименование'
+  if (!formData.fullName.trim()) errors.fullName = 'Введите полное наименование'
   if (!formData.inn.trim()) {
     errors.inn = 'Введите ИНН'
   } else if (!validateINN(formData.inn)) {
     errors.inn = 'ИНН должен содержать 14 цифр'
   }
-  if (!formData.legalRegion) {
-    errors.legalRegion = 'Выберите область/город'
-  }
-  if (!formData.legalCity.trim()) {
-    errors.legalCity = 'Введите город/район'
-  }
+  if (!formData.legalRegion) errors.legalRegion = 'Выберите область/город'
+  if (!formData.legalCity.trim()) errors.legalCity = 'Введите город/район'
   if (!formData.phone || formData.phone === '+996 ') {
     errors.phone = 'Введите номер телефона'
   } else if (!validatePhone(formData.phone)) {
@@ -144,7 +287,6 @@ const validateStep2 = (): boolean => {
   } else if (!validateEmail(formData.email)) {
     errors.email = 'Неверный формат email'
   }
-
   return Object.keys(errors).filter(k => errors[k]).length === 0
 }
 
@@ -156,32 +298,20 @@ const validateStep3 = (): boolean => {
   errors.contactPhone = ''
   errors.contactEmail = ''
 
-  if (!formData.directorFullName.trim()) {
-    errors.directorFullName = 'Введите ФИО руководителя'
-  }
-  if (!formData.directorPosition.trim()) {
-    errors.directorPosition = 'Введите должность'
-  }
-  if (!formData.directorPhone || formData.directorPhone === '+996 ') {
-    errors.directorPhone = 'Введите телефон руководителя'
-  }
-  if (!formData.contactFullName.trim()) {
-    errors.contactFullName = 'Введите ФИО контактного лица'
-  }
-  if (!formData.contactPhone || formData.contactPhone === '+996 ') {
-    errors.contactPhone = 'Введите телефон контактного лица'
-  }
+  if (!formData.directorFullName.trim()) errors.directorFullName = 'Введите ФИО руководителя'
+  if (!formData.directorPosition.trim()) errors.directorPosition = 'Введите должность'
+  if (!formData.directorPhone || formData.directorPhone === '+996 ') errors.directorPhone = 'Введите телефон руководителя'
+  if (!formData.contactFullName.trim()) errors.contactFullName = 'Введите ФИО контактного лица'
+  if (!formData.contactPhone || formData.contactPhone === '+996 ') errors.contactPhone = 'Введите телефон контактного лица'
   if (!formData.contactEmail.trim()) {
     errors.contactEmail = 'Введите email контактного лица'
   } else if (!validateEmail(formData.contactEmail)) {
     errors.contactEmail = 'Неверный формат email'
   }
-
   return !errors.directorFullName && !errors.directorPosition && !errors.directorPhone &&
          !errors.contactFullName && !errors.contactPhone && !errors.contactEmail
 }
 
-// File upload
 interface UploadedFile {
   id: number
   name: string
@@ -206,39 +336,31 @@ const fileCategories = [
 const handleDrop = (e: DragEvent) => {
   isDragging.value = false
   const files = e.dataTransfer?.files
-  if (files) {
-    addFiles(files)
-  }
+  if (files) addFiles(files)
 }
 
 const handleFileSelect = (e: Event, category: UploadedFile['category']) => {
   activeUploadCategory.value = category
   const input = e.target as HTMLInputElement
-  if (input.files) {
-    addFiles(input.files)
-  }
+  if (input.files) addFiles(input.files)
   input.value = ''
 }
 
 const addFiles = (files: FileList) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
-  const maxSize = 10 * 1024 * 1024 // 10MB
+  const maxSize = 10 * 1024 * 1024
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-
     if (!allowedTypes.includes(file.type)) {
       alert(`Файл "${file.name}" имеет недопустимый формат. Разрешены: PDF, JPG, PNG`)
       continue
     }
-
     if (file.size > maxSize) {
       alert(`Файл "${file.name}" превышает максимальный размер 10 МБ`)
       continue
     }
-
     const category = fileCategories.find(c => c.value === activeUploadCategory.value)
-
     uploadedFiles.value.push({
       id: nextFileId++,
       name: file.name,
@@ -268,17 +390,11 @@ const hasRequiredDocuments = computed(() => {
   return uploadedFiles.value.some(f => f.category === 'certificate')
 })
 
-// Navigation
 const nextStep = () => {
   let isValid = true
-
-  if (currentStep.value === 1) {
-    isValid = validateStep1()
-  } else if (currentStep.value === 2) {
-    isValid = validateStep2()
-  } else if (currentStep.value === 3) {
-    isValid = validateStep3()
-  }
+  if (currentStep.value === 1) isValid = validateStep1()
+  else if (currentStep.value === 2) isValid = validateStep2()
+  else if (currentStep.value === 3) isValid = validateStep3()
 
   if (isValid && currentStep.value < totalSteps) {
     currentStep.value++
@@ -294,12 +410,9 @@ const prevStep = () => {
 }
 
 const goToStep = (step: number) => {
-  if (step < currentStep.value) {
-    currentStep.value = step
-  }
+  if (step < currentStep.value) currentStep.value = step
 }
 
-// Submission
 const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const registrationNumber = ref('')
@@ -309,25 +422,18 @@ const submitRegistration = async () => {
     alert('Подтвердите достоверность данных')
     return
   }
-
   if (!hasRequiredDocuments.value) {
     alert('Загрузите обязательный документ: Свидетельство о регистрации')
     return
   }
-
   isSubmitting.value = true
-
-  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 2000))
-
   const num = String(Math.floor(Math.random() * 9000) + 1000)
   registrationNumber.value = `РЕГ-2026-${num}`
-
   isSubmitting.value = false
   isSuccess.value = true
 }
 
-// Helpers
 const getOrgTypeLabel = (value: string) => {
   return orgTypes.find(t => t.value === value)?.label || value
 }
@@ -352,7 +458,310 @@ const goHome = () => {
 
 <template>
   <div class="bg-[#f8fafc] py-8 lg:py-12">
-      <div class="container-main">
+    <div class="container-main">
+
+      <!-- ==================== MODE: CHOOSE (Initial ESI Screen) ==================== -->
+      <div v-if="registrationMode === 'choose' && !isEsiLoading" class="max-w-lg mx-auto py-8">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Регистрация плательщика утилизационного сбора</h1>
+          <p class="text-[#64748b]">Выберите способ регистрации</p>
+        </div>
+
+        <!-- ESI Button -->
+        <button
+          @click="handleEsiLogin"
+          class="w-full flex items-center justify-center gap-3 px-6 py-5 bg-[#0e888d] hover:bg-[#0a6b6f] text-white rounded-2xl font-semibold text-lg transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 mb-4"
+        >
+          <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.83-3.23 9.36-7 10.57-3.77-1.21-7-5.74-7-10.57V6.3l7-3.12zM12 7a3 3 0 00-3 3v1H8v6h8v-6h-1v-1a3 3 0 00-3-3zm0 1.5a1.5 1.5 0 011.5 1.5v1h-3v-1A1.5 1.5 0 0112 8.5z"/>
+          </svg>
+          Зарегистрироваться через ЕСИ Түндүк
+        </button>
+
+        <p class="text-center text-sm text-[#64748b] mb-6">
+          Быстрая регистрация — данные будут заполнены автоматически из ЕСИ
+        </p>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-4 my-6">
+          <div class="flex-1 h-px bg-[#e2e8f0]"></div>
+          <span class="text-sm text-[#70868f] font-medium">или</span>
+          <div class="flex-1 h-px bg-[#e2e8f0]"></div>
+        </div>
+
+        <!-- Manual registration link -->
+        <div class="text-center">
+          <button
+            @click="startManualRegistration"
+            class="text-[#0e888d] text-sm font-medium hover:underline"
+          >
+            Зарегистрироваться без ЕСИ (заполнить вручную)
+          </button>
+        </div>
+
+        <!-- Login link -->
+        <div class="text-center mt-8">
+          <p class="text-[#70868f] text-sm">
+            Уже есть аккаунт?
+            <router-link to="/login" class="text-[#0e888d] font-medium hover:underline">
+              Войти
+            </router-link>
+          </p>
+        </div>
+      </div>
+
+      <!-- ESI Loading -->
+      <div v-if="isEsiLoading" class="max-w-lg mx-auto text-center py-20">
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-[#e8f5f5] flex items-center justify-center">
+          <svg class="w-10 h-10 text-[#0e888d] animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-[#415861] mb-2">Подключение к ЕСИ Түндүк...</h2>
+        <p class="text-[#70868f]">Получение данных организации</p>
+      </div>
+
+      <!-- ==================== MODE: ESI (Simplified Form) ==================== -->
+      <div v-if="registrationMode === 'esi' && !isEsiLoading && !isEsiSuccess" class="max-w-3xl mx-auto">
+        <div class="mb-6 text-center">
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Регистрация через ЕСИ Түндүк</h1>
+          <p class="text-[#64748b]">Проверьте данные и заполните дополнительную информацию</p>
+        </div>
+
+        <!-- ESI Data (readonly) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6">
+          <div class="px-6 py-4 bg-[#e8f5f5] border-b border-[#d1e7e8] flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#0e888d]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.83-3.23 9.36-7 10.57-3.77-1.21-7-5.74-7-10.57V6.3l7-3.12z"/>
+            </svg>
+            <span class="font-semibold text-[#0e888d]">Данные из ЕСИ Түндүк</span>
+            <span class="ml-auto text-xs text-[#0e888d] bg-[#d1e7e8] px-2 py-0.5 rounded-full">Подтверждено</span>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">ИНН</label>
+                <input
+                  type="text"
+                  :value="esiData.inn"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] font-mono cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">Наименование</label>
+                <input
+                  type="text"
+                  :value="esiData.shortName"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">ФИО руководителя</label>
+                <input
+                  type="text"
+                  :value="esiData.directorFullName"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">Юридический адрес</label>
+                <input
+                  type="text"
+                  :value="esiData.legalAddress"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">Телефон</label>
+                <input
+                  type="text"
+                  :value="esiData.phone"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[#64748b] mb-1">Email</label>
+                <input
+                  type="text"
+                  :value="esiData.email"
+                  readonly
+                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl bg-[#f8fafc] text-[#1e293b] cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional fields to fill -->
+        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6">
+          <div class="px-6 py-4 bg-[#f8fafc] border-b border-[#e2e8f0]">
+            <span class="font-semibold text-[#1e293b]">Дополнительная информация</span>
+          </div>
+          <div class="p-6 space-y-6">
+            <!-- Activity Type -->
+            <div>
+              <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label
+                  v-for="type in activityTypes"
+                  :key="type.value"
+                  :class="[
+                    'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
+                    esiForm.activityType === type.value
+                      ? 'border-[#0e888d] bg-[#f0fdfa]'
+                      : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                  ]"
+                >
+                  <input
+                    type="radio"
+                    v-model="esiForm.activityType"
+                    :value="type.value"
+                    class="w-5 h-5 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                  />
+                  <span class="text-sm text-[#1e293b]">{{ type.label }}</span>
+                </label>
+              </div>
+              <p v-if="esiFormErrors.activityType" class="mt-2 text-sm text-red-600">{{ esiFormErrors.activityType }}</p>
+            </div>
+
+            <!-- Waste Categories (24 группы по ПКМ КР №322) -->
+            <div>
+              <label class="block text-sm font-medium text-[#1e293b] mb-1">Категории товаров (группы отходов) *</label>
+              <p class="text-xs text-[#64748b] mb-4">Согласно постановлению КМ КР №322. Выберите все применимые категории.</p>
+
+              <div class="space-y-5">
+                <div v-for="group in wasteGroups" :key="group.id" class="border border-[#e2e8f0] rounded-2xl overflow-hidden">
+                  <!-- Group header -->
+                  <div class="flex items-center justify-between px-4 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8]">
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#0e888d] text-white text-xs font-bold">{{ group.letter }}</span>
+                      <span class="font-semibold text-[#0e888d] text-sm">ГРУППА {{ group.letter }} — {{ group.title }}</span>
+                    </div>
+                    <button
+                      type="button"
+                      @click="toggleGroupAll(group)"
+                      :class="[
+                        'text-xs font-medium px-3 py-1 rounded-lg transition-colors',
+                        isGroupAllSelected(group)
+                          ? 'bg-[#0e888d] text-white hover:bg-[#0a6b6f]'
+                          : 'bg-white text-[#0e888d] border border-[#0e888d] hover:bg-[#f0fdfa]'
+                      ]"
+                    >
+                      {{ isGroupAllSelected(group) ? 'Снять все' : 'Выбрать все' }}
+                    </button>
+                  </div>
+                  <!-- Group items -->
+                  <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <label
+                      v-for="item in group.items"
+                      :key="item.value"
+                      :class="[
+                        'flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                        esiForm.wasteCategories.includes(item.value)
+                          ? 'border-[#0e888d] bg-[#f0fdfa]'
+                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                      ]"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="esiForm.wasteCategories.includes(item.value)"
+                        @change="toggleWasteCategory(item.value)"
+                        class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                      />
+                      <span class="text-sm text-[#1e293b] leading-snug">{{ item.label }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <p v-if="esiFormErrors.wasteCategories" class="mt-2 text-sm text-red-600">{{ esiFormErrors.wasteCategories }}</p>
+            </div>
+
+            <!-- Confirm -->
+            <label class="flex items-start gap-3 p-4 rounded-xl border-2 border-[#e2e8f0] cursor-pointer hover:border-[#0e888d]/50 transition-colors">
+              <input
+                type="checkbox"
+                v-model="esiForm.confirmData"
+                class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d]"
+              />
+              <span class="text-sm text-[#1e293b]">
+                Подтверждаю достоверность предоставленных данных и соглашаюсь с условиями обработки персональных данных
+              </span>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <div class="px-6 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
+            <button
+              @click="registrationMode = 'choose'"
+              class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
+            >
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Назад
+            </button>
+            <button
+              @click="submitEsiRegistration"
+              :disabled="!esiForm.confirmData || isEsiSubmitting"
+              class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg v-if="isEsiSubmitting" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ isEsiSubmitting ? 'Отправка...' : 'Отправить заявку на регистрацию' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESI Success -->
+      <div v-if="isEsiSuccess" class="max-w-2xl mx-auto text-center py-12">
+        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
+          <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Заявка на регистрацию отправлена!</h1>
+
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
+          <div class="text-center">
+            <p class="text-sm text-[#64748b] mb-2">Номер заявки</p>
+            <p class="text-2xl font-bold text-[#0e888d] font-mono mb-4">{{ esiRegistrationNumber }}</p>
+
+            <div class="bg-[#f0fdf4] rounded-xl p-4 text-left">
+              <p class="text-[#166534] text-sm">
+                <strong>Ваша заявка будет рассмотрена в течение 3 рабочих дней.</strong><br><br>
+                Уведомление о результате будет отправлено на email: <strong>{{ esiData.email }}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          @click="goHome"
+          class="inline-flex items-center gap-2 px-8 py-4 bg-[#0e888d] text-white rounded-xl font-semibold hover:bg-[#0a6b6f] transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Вернуться на главную
+        </button>
+      </div>
+
+      <!-- ==================== MODE: MANUAL (Existing 5-step Wizard) ==================== -->
+      <template v-if="registrationMode === 'manual'">
         <!-- Success Screen -->
         <div v-if="isSuccess" class="max-w-2xl mx-auto text-center py-12">
           <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
@@ -449,7 +858,6 @@ const goHome = () => {
               <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Тип организации</h2>
 
               <div class="space-y-6">
-                <!-- Organization Type -->
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">Организационно-правовая форма *</label>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -475,7 +883,6 @@ const goHome = () => {
                   <p v-if="errors.orgType" class="mt-2 text-sm text-red-600">{{ errors.orgType }}</p>
                 </div>
 
-                <!-- Activity Type -->
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -508,7 +915,6 @@ const goHome = () => {
               <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Данные организации</h2>
 
               <div class="space-y-6">
-                <!-- Names -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-[#1e293b] mb-2">Краткое наименование *</label>
@@ -538,7 +944,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- INN & OKPO -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-[#1e293b] mb-2">ИНН (14 цифр) *</label>
@@ -565,7 +970,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Legal Address -->
                 <div>
                   <h3 class="text-sm font-semibold text-[#1e293b] mb-3 uppercase tracking-wide">Юридический адрес</h3>
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -612,7 +1016,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Actual Address -->
                 <div>
                   <div class="flex items-center justify-between mb-3">
                     <h3 class="text-sm font-semibold text-[#1e293b] uppercase tracking-wide">Фактический адрес</h3>
@@ -668,7 +1071,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Contact Info -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-[#1e293b] mb-2">Контактный телефон *</label>
@@ -705,7 +1107,6 @@ const goHome = () => {
               <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Руководитель и контактное лицо</h2>
 
               <div class="space-y-8">
-                <!-- Director -->
                 <div>
                   <h3 class="text-sm font-semibold text-[#1e293b] mb-4 uppercase tracking-wide flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -756,7 +1157,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Contact Person -->
                 <div>
                   <h3 class="text-sm font-semibold text-[#1e293b] mb-4 uppercase tracking-wide flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -846,7 +1246,6 @@ const goHome = () => {
                     </label>
                   </div>
 
-                  <!-- Uploaded files for this category -->
                   <div v-if="getFilesForCategory(cat.value).length > 0" class="space-y-2">
                     <div
                       v-for="file in getFilesForCategory(cat.value)"
@@ -875,7 +1274,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Drag & Drop Zone -->
                 <div
                   @dragover.prevent="isDragging = true; activeUploadCategory = 'certificate'"
                   @dragleave="isDragging = false"
@@ -905,7 +1303,6 @@ const goHome = () => {
               <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Проверка и отправка</h2>
 
               <div class="space-y-6">
-                <!-- Organization Type Summary -->
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
                   <h3 class="font-medium text-[#1e293b] mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -925,7 +1322,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Organization Data Summary -->
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
                   <h3 class="font-medium text-[#1e293b] mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -961,7 +1357,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Director & Contact Summary -->
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
                   <h3 class="font-medium text-[#1e293b] mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -983,7 +1378,6 @@ const goHome = () => {
                   </div>
                 </div>
 
-                <!-- Documents Summary -->
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
                   <h3 class="font-medium text-[#1e293b] mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1002,7 +1396,6 @@ const goHome = () => {
                   <p v-else class="text-sm text-[#64748b]">Документы не прикреплены</p>
                 </div>
 
-                <!-- Confirmation Checkbox -->
                 <label class="flex items-start gap-3 p-4 rounded-xl border-2 border-[#e2e8f0] cursor-pointer hover:border-[#0e888d]/50 transition-colors">
                   <input
                     type="checkbox"
@@ -1028,7 +1421,16 @@ const goHome = () => {
                 </svg>
                 Назад
               </button>
-              <div v-else></div>
+              <button
+                v-else
+                @click="registrationMode = 'choose'"
+                class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
+              >
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Назад
+              </button>
 
               <div class="flex flex-col sm:flex-row gap-3">
                 <button
@@ -1061,6 +1463,8 @@ const goHome = () => {
             </div>
           </div>
         </div>
-      </div>
+      </template>
+
+    </div>
   </div>
 </template>

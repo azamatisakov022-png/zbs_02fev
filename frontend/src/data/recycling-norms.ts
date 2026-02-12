@@ -40,39 +40,45 @@ export const packagingNorms: RecyclingNorm[] = [
   { id: 6, category: 'Деревянная упаковка', categoryKey: 'wood_packaging', rates: { 2025: 50, 2026: 55, 2027: 60, 2028: 65, 2029: 70, 2030: 75 } },
 ]
 
-// Mapping from product groups to norms categories
+// Mapping from product groups (18 групп из Перечня) to norms categories
 export const productGroupToNormMapping: Record<string, { type: 'goods' | 'packaging', categoryKey: string }> = {
-  // Goods
-  'electronics': { type: 'goods', categoryKey: 'computers' },
-  'phones': { type: 'goods', categoryKey: 'mobile_phones' },
-  'computers': { type: 'goods', categoryKey: 'computers' },
-  'appliances': { type: 'goods', categoryKey: 'refrigerators' },
-  'tires': { type: 'goods', categoryKey: 'tires' },
-  'car_tires': { type: 'goods', categoryKey: 'tires' },
-  'truck_tires': { type: 'goods', categoryKey: 'tires' },
-  'batteries': { type: 'goods', categoryKey: 'accumulators' },
-  'li_ion': { type: 'goods', categoryKey: 'accumulators' },
-  'lead_acid': { type: 'goods', categoryKey: 'accumulators' },
-  'alkaline': { type: 'goods', categoryKey: 'batteries' },
-  'textile': { type: 'goods', categoryKey: 'textiles' },
-  'clothing': { type: 'goods', categoryKey: 'textiles' },
-  'fabric': { type: 'goods', categoryKey: 'textiles' },
-  // Packaging
-  'plastic': { type: 'packaging', categoryKey: 'plastic_packaging' },
-  'bottles': { type: 'packaging', categoryKey: 'plastic_packaging' },
-  'packaging': { type: 'packaging', categoryKey: 'plastic_packaging' },
-  'containers': { type: 'packaging', categoryKey: 'plastic_packaging' },
-  'paper': { type: 'packaging', categoryKey: 'paper_packaging' },
-  'cardboard': { type: 'packaging', categoryKey: 'paper_packaging' },
-  'paper_packaging': { type: 'packaging', categoryKey: 'paper_packaging' },
-  'labels': { type: 'packaging', categoryKey: 'paper_packaging' },
-  'glass': { type: 'packaging', categoryKey: 'glass_packaging' },
-  'bottles_glass': { type: 'packaging', categoryKey: 'glass_packaging' },
-  'jars': { type: 'packaging', categoryKey: 'glass_packaging' },
-  'metal': { type: 'packaging', categoryKey: 'metal_packaging' },
-  'cans_alu': { type: 'packaging', categoryKey: 'metal_packaging' },
-  'cans_steel': { type: 'packaging', categoryKey: 'metal_packaging' },
-  'foil': { type: 'packaging', categoryKey: 'metal_packaging' },
+  // Группы 1-2: Бумага/картон → packaging norms
+  'group_1': { type: 'packaging', categoryKey: 'paper_packaging' },
+  'group_2': { type: 'packaging', categoryKey: 'paper_packaging' },
+  // Группа 3: Масла
+  'group_3': { type: 'goods', categoryKey: 'construction_plastic' },
+  // Группа 4: Шины
+  'group_4': { type: 'goods', categoryKey: 'tires' },
+  // Группа 5: Резина
+  'group_5': { type: 'goods', categoryKey: 'tires' },
+  // Группы 6-7: Пластмассы → packaging norms
+  'group_6': { type: 'packaging', categoryKey: 'plastic_packaging' },
+  'group_7': { type: 'goods', categoryKey: 'construction_plastic' },
+  // Группа 8: Стекло
+  'group_8': { type: 'packaging', categoryKey: 'glass_packaging' },
+  // Группы 9-10: Электроника
+  'group_9': { type: 'goods', categoryKey: 'computers' },
+  'group_10': { type: 'goods', categoryKey: 'monitors' },
+  // Группы 11-13: Батареи и аккумуляторы
+  'group_11': { type: 'goods', categoryKey: 'batteries' },
+  'group_12': { type: 'goods', categoryKey: 'accumulators' },
+  'group_13': { type: 'goods', categoryKey: 'accumulators' },
+  // Группа 14: Освещение
+  'group_14': { type: 'goods', categoryKey: 'lamps' },
+  // Группы 15-16: Бытовая техника
+  'group_15': { type: 'goods', categoryKey: 'washing_machines' },
+  'group_16': { type: 'goods', categoryKey: 'printers' },
+  // Группа 17: Холодильное оборудование
+  'group_17': { type: 'goods', categoryKey: 'refrigerators' },
+  // Группа 18: Фильтры
+  'group_18': { type: 'goods', categoryKey: 'construction_metal' },
+  // Группы упаковки (19-24)
+  'group_19': { type: 'packaging', categoryKey: 'plastic_packaging' },
+  'group_20': { type: 'packaging', categoryKey: 'paper_packaging' },
+  'group_21': { type: 'packaging', categoryKey: 'combined_packaging' },
+  'group_22': { type: 'packaging', categoryKey: 'glass_packaging' },
+  'group_23': { type: 'packaging', categoryKey: 'metal_packaging' },
+  'group_24': { type: 'packaging', categoryKey: 'wood_packaging' },
 }
 
 /**
@@ -105,16 +111,32 @@ export function getRecyclingNormForProduct(groupKey: string, subgroupKey: string
     if (norm !== null) return norm
   }
 
-  // Default fallback based on group type
+  // Default fallback based on group type (24 группы)
   const defaultNorms: Record<string, number> = {
-    'plastic': 25,
-    'paper': 50,
-    'glass': 45,
-    'metal': 40,
-    'textile': 10,
-    'electronics': 20,
-    'tires': 25,
-    'batteries': 35,
+    'group_1': 50,   // Гофрированная бумага
+    'group_2': 50,   // Негофрированная бумага
+    'group_3': 20,   // Масла
+    'group_4': 25,   // Шины
+    'group_5': 20,   // Резина
+    'group_6': 25,   // Пластмассы упаковочные
+    'group_7': 20,   // Пластмассы прочие
+    'group_8': 45,   // Стекло
+    'group_9': 20,   // Компьютеры
+    'group_10': 20,  // Мониторы, ТВ
+    'group_11': 30,  // Батарейки
+    'group_12': 35,  // Аккумуляторы свинцовые
+    'group_13': 35,  // Аккумуляторные батареи
+    'group_14': 30,  // Освещение
+    'group_15': 15,  // Крупная бытовая техника
+    'group_16': 20,  // Мелкая бытовая техника
+    'group_17': 15,  // Холодильное оборудование
+    'group_18': 25,  // Фильтры
+    'group_19': 25,  // Упаковка из пластмасс
+    'group_20': 50,  // Упаковка из бумаги и картона
+    'group_21': 20,  // Упаковка комбинированная (тетрапак)
+    'group_22': 45,  // Упаковка из стекла
+    'group_23': 40,  // Упаковка из металла
+    'group_24': 55,  // Упаковка из дерева
   }
 
   return defaultNorms[groupKey] || 20
