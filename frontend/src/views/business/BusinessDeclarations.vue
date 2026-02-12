@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { calculationStore } from '../../stores/calculations'
@@ -16,6 +18,10 @@ const menuItems = [
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'success'
@@ -68,7 +74,7 @@ const aggregatedItems = computed(() => {
     for (const item of calc.items) {
       const key = `${item.group}_${item.subgroup}`
       const mass = parseFloat(item.mass) || 0
-      const itemAmount = mass * item.rate
+      const itemAmount = item.amount
       const existing = map.get(key)
 
       if (existing) {
@@ -208,6 +214,29 @@ const filteredDeclarations = computed(() => {
     return true
   })
 })
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || filterYear.value !== '' || filterStatus.value !== ''
+})
+
+const isFilteredEmpty = computed(() => {
+  return filteredDeclarations.value.length === 0 && declarations.value.length > 0 && hasActiveFilters.value
+})
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  filterYear.value = ''
+  filterStatus.value = ''
+}
+
+// Export / Print handlers
+const handleDownloadPdf = () => {
+  alert('Функция скачивания PDF в разработке')
+}
+
+const handlePrint = () => {
+  window.print()
+}
 </script>
 
 <template>
@@ -263,6 +292,12 @@ const filteredDeclarations = computed(() => {
         </div>
       </div>
 
+      <template v-if="isLoading">
+        <div class="mb-6"><SkeletonLoader variant="card" /></div>
+        <SkeletonLoader variant="table" />
+      </template>
+
+      <template v-if="!isLoading">
       <!-- Filters -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
         <div class="flex flex-wrap gap-4">
@@ -293,7 +328,27 @@ const filteredDeclarations = computed(() => {
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История деклараций</h2>
       </div>
 
-      <DataTable :columns="columns" :data="filteredDeclarations" :actions="true">
+      <!-- Search no results state -->
+      <div v-if="isFilteredEmpty" class="mb-6">
+        <EmptyState
+          :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M35 35l-10-10m0 0A11.67 11.67 0 1025 25z&quot;/></svg>'"
+          title="Ничего не найдено"
+          description="Попробуйте изменить параметры поиска"
+          actionLabel="Сбросить фильтры"
+          @action="resetFilters"
+        />
+      </div>
+
+      <DataTable v-if="!isFilteredEmpty" :columns="columns" :data="filteredDeclarations" :actions="true">
+        <template #empty>
+          <EmptyState
+            :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M5 11.67v16.66A3.33 3.33 0 008.33 31.67h23.34A3.33 3.33 0 0035 28.33V15A3.33 3.33 0 0031.67 11.67H20l-3.33-3.34H8.33A3.33 3.33 0 005 11.67z&quot;/></svg>'"
+            title="Нет деклараций"
+            description="Сформируйте годовую декларацию"
+            actionLabel="Создать декларацию"
+            @action="startWizard()"
+          />
+        </template>
         <template #cell-number="{ value }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
         </template>
@@ -308,8 +363,8 @@ const filteredDeclarations = computed(() => {
             {{ value }}
           </span>
         </template>
-        <template #actions>
-          <div class="flex items-center justify-end gap-2">
+        <template #actions="{ row }">
+          <div class="flex flex-wrap items-center justify-end gap-2">
             <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -317,20 +372,35 @@ const filteredDeclarations = computed(() => {
               </svg>
               Просмотреть
             </button>
-            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+            <button
+              v-if="row.status === 'Принята'"
+              @click="handleDownloadPdf"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
+            >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
             </button>
+            <button
+              v-if="row.status === 'Принята'"
+              @click="handlePrint"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#64748b] text-white hover:bg-[#475569] transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Печать
+            </button>
           </div>
         </template>
       </DataTable>
+      </template>
     </template>
 
     <!-- WIZARD VIEW -->
     <template v-else-if="viewMode === 'wizard'">
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
           <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
@@ -378,7 +448,7 @@ const filteredDeclarations = computed(() => {
         </div>
 
         <!-- Step Content -->
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
 
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
@@ -745,3 +815,16 @@ const filteredDeclarations = computed(() => {
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+@media print {
+  .dashboard-layout > aside,
+  .dashboard-layout > main > header,
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:ml-72 {
+    margin-left: 0 !important;
+  }
+}
+</style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
@@ -14,6 +15,10 @@ const menuItems = [
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
   { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // Полный список 24 групп товаров (из калькулятора РОП)
 const productGroups = [
@@ -418,6 +423,12 @@ const goBack = () => {
         </div>
       </div>
 
+      <template v-if="isLoading">
+        <div class="mb-6"><SkeletonLoader variant="card" /></div>
+        <SkeletonLoader variant="table" />
+      </template>
+
+      <template v-if="!isLoading">
       <!-- Report Type Cards -->
       <div v-if="!activeReport" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Card 1: Receipts -->
@@ -513,7 +524,11 @@ const goBack = () => {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Подгруппа</label>
-              <select v-model="receiptsFilters.subgroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+              <select
+                :value="receiptsFilters.subgroup"
+                @change="receiptsFilters.subgroup = ($event.target as HTMLSelectElement).value"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0e888d]"
+              >
                 <option v-for="s in availableSubgroups" :key="s" :value="s">{{ s }}</option>
               </select>
             </div>
@@ -552,7 +567,7 @@ const goBack = () => {
             <div class="text-sm text-gray-600">
               Найдено записей: <span class="font-semibold">{{ filteredReceipts.length }}</span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Excel
@@ -722,7 +737,7 @@ const goBack = () => {
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <div class="text-sm text-gray-600">Сводная таблица по группам товаров</div>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
                 <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   Excel
@@ -868,7 +883,7 @@ const goBack = () => {
             <div class="text-sm text-gray-600">
               Найдено должников: <span class="font-semibold text-rose-600">{{ filteredDebtors.length }}</span>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
               <button @click="sendNotifications" class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                 Уведомить должников
@@ -935,6 +950,7 @@ const goBack = () => {
             </table>
           </div>
         </div>
+      </template>
       </template>
     </div>
   </DashboardLayout>

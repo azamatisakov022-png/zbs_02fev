@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
+import { getNormativeForGroup } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { calculationStore, type CalculationStatus, type PaymentData } from '../../stores/calculations'
 
@@ -17,6 +20,10 @@ const menuItems = [
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'result' | 'payment'
@@ -110,7 +117,9 @@ const updateItemRate = (item: ProductItem) => {
 
 const calculateAmount = (item: ProductItem) => {
   const mass = parseFloat(item.mass) || 0
-  item.amount = Math.round(mass * item.rate)
+  const year = parseInt(calculationYear.value) || 2026
+  const normative = getNormativeForGroup(item.group, year)
+  item.amount = Math.round(mass * item.rate * normative)
 }
 
 const getSubgroupsForGroup = (group: string) => {
@@ -119,11 +128,15 @@ const getSubgroupsForGroup = (group: string) => {
 
 // Import from declaration mock
 const importFromDeclaration = () => {
-  productItems.value = [
-    { id: nextProductId++, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '12.5', rate: 8500, amount: 106250 },
-    { id: nextProductId++, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '8.3', rate: 4200, amount: 34860 },
-    { id: nextProductId++, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '5.2', rate: 2800, amount: 14560 },
+  const items: ProductItem[] = [
+    { id: nextProductId++, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '12.5', rate: 0, amount: 0 },
+    { id: nextProductId++, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '8.3', rate: 0, amount: 0 },
+    { id: nextProductId++, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '5.2', rate: 0, amount: 0 },
   ]
+  items.forEach(item => {
+    updateItemRate(item)
+  })
+  productItems.value = items
 }
 
 // Computed
@@ -213,6 +226,63 @@ const createDeclaration = () => {
   alert('Создание декларации на основе расчёта')
 }
 
+// Form validation
+const validationErrors = ref<Record<string, string>>({})
+
+const validateStep1 = (): boolean => {
+  const errors: Record<string, string> = {}
+  if (!calculationQuarter.value) {
+    errors.quarter = 'Выберите квартал'
+  }
+  validationErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
+const validateStep2 = (): boolean => {
+  const errors: Record<string, string> = {}
+  let hasValidProduct = false
+
+  productItems.value.forEach((item, index) => {
+    if (!item.group) {
+      errors[`product_${index}_group`] = 'Выберите группу товара'
+    }
+    if (!item.mass || parseFloat(item.mass) <= 0) {
+      errors[`product_${index}_mass`] = 'Введите массу больше 0'
+    }
+    if (item.group && item.mass && parseFloat(item.mass) > 0) {
+      hasValidProduct = true
+    }
+  })
+
+  if (!hasValidProduct) {
+    errors.products = 'Добавьте хотя бы один товар с заполненной группой и массой'
+  }
+
+  validationErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
+const handleStep1Next = () => {
+  if (validateStep1()) {
+    nextStep()
+  }
+}
+
+const handleStep2Calculate = () => {
+  if (validateStep2()) {
+    performCalculation()
+  }
+}
+
+// Export / Print handlers
+const handleDownloadPdf = () => {
+  alert('Функция скачивания PDF в разработке')
+}
+
+const handlePrint = () => {
+  window.print()
+}
+
 // Watch for changes in mass to recalculate
 watch(productItems, () => {
   productItems.value.forEach(item => {
@@ -221,6 +291,15 @@ watch(productItems, () => {
     }
   })
 }, { deep: true })
+
+// Recalculate amounts when year changes (normative depends on year)
+watch(calculationYear, () => {
+  productItems.value.forEach(item => {
+    if (item.group && item.mass) {
+      calculateAmount(item)
+    }
+  })
+})
 
 // Table data for history
 const columns = [
@@ -247,14 +326,14 @@ const calculations = computed(() => {
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принято': return 'bg-green-100 text-green-800'
-    case 'Отклонено': return 'bg-red-100 text-red-800'
-    case 'Оплата на проверке': return 'bg-purple-100 text-purple-800'
-    case 'Оплачено': return 'bg-blue-100 text-blue-800'
-    case 'Оплата отклонена': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
+    case 'Черновик': return 'badge badge-neutral'
+    case 'На проверке': return 'badge badge-warning'
+    case 'Принято': return 'badge badge-success'
+    case 'Отклонено': return 'badge badge-danger'
+    case 'Оплата на проверке': return 'badge badge-purple'
+    case 'Оплачено': return 'badge badge-info'
+    case 'Оплата отклонена': return 'badge badge-danger'
+    default: return 'badge badge-neutral'
   }
 }
 
@@ -504,6 +583,12 @@ const downloadReceipt = () => {
         </div>
       </div>
 
+      <template v-if="isLoading">
+        <div class="mb-6"><SkeletonLoader variant="card" /></div>
+        <SkeletonLoader variant="table" />
+      </template>
+
+      <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
@@ -530,6 +615,15 @@ const downloadReceipt = () => {
       </div>
 
       <DataTable :columns="columns" :data="calculations" :actions="true">
+        <template #empty>
+          <EmptyState
+            :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 11.67h10m0 16.66v-5m-5 5h.017M15 28.33h.017M15 23.33h.017M20 23.33h.017M25 18.33h.017M20 18.33h.017M15 18.33h.017M11.67 35h16.66A3.33 3.33 0 0031.67 31.67V8.33A3.33 3.33 0 0028.33 5H11.67A3.33 3.33 0 008.33 8.33v23.34A3.33 3.33 0 0011.67 35z&quot;/></svg>'"
+            title="У вас пока нет расчётов"
+            description="Создайте первый расчёт утилизационного сбора"
+            actionLabel="Создать расчёт"
+            @action="startWizard()"
+          />
+        </template>
         <template #cell-number="{ value }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
         </template>
@@ -538,7 +632,7 @@ const downloadReceipt = () => {
         </template>
         <template #cell-status="{ value, row }">
           <div>
-            <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
+            <span :class="getStatusClass(value)">
               {{ value }}
             </span>
             <div v-if="value === 'Отклонено' && row.rejectionReason" class="mt-1 text-xs text-red-600">
@@ -550,9 +644,9 @@ const downloadReceipt = () => {
           </div>
         </template>
         <template #actions="{ row }">
-          <div class="flex items-center justify-end gap-2">
+          <div class="flex flex-wrap items-center justify-end gap-2">
             <button
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
+              class="btn-action btn-action-secondary text-xs px-3 py-1.5"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -563,7 +657,7 @@ const downloadReceipt = () => {
             <button
               v-if="row.status === 'Отклонено'"
               @click="resubmitCalculation(row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
+              class="btn-action btn-action-warning text-xs px-3 py-1.5"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -573,7 +667,7 @@ const downloadReceipt = () => {
             <button
               v-if="row.status === 'Принято' || row.status === 'Оплата отклонена'"
               @click="openPaymentForm(row.id, row.totalAmount, row.number)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm"
+              class="btn-action btn-action-primary text-xs px-3 py-1.5"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -583,7 +677,7 @@ const downloadReceipt = () => {
             <button
               v-if="row.status === 'Черновик'"
               @click="calculationStore.submitForReview(row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
+              class="btn-action btn-action-warning text-xs px-3 py-1.5"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -591,12 +685,24 @@ const downloadReceipt = () => {
               На проверку
             </button>
             <button
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
+              v-if="row.status === 'Оплачено' || row.status === 'Принято'"
+              @click="handleDownloadPdf"
+              class="btn-action btn-action-purple text-xs px-3 py-1.5"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
+            </button>
+            <button
+              v-if="row.status === 'Оплачено' || row.status === 'Принято'"
+              @click="handlePrint"
+              class="btn-action btn-action-ghost text-xs px-3 py-1.5"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Печать
             </button>
           </div>
         </template>
@@ -642,11 +748,12 @@ const downloadReceipt = () => {
           </div>
         </Transition>
       </div>
+      </template>
     </template>
 
     <!-- WIZARD VIEW -->
     <template v-else-if="viewMode === 'wizard'">
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
           <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
@@ -673,13 +780,13 @@ const downloadReceipt = () => {
                   :class="[
                     'w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-colors',
                     currentStep === step.number
-                      ? 'bg-[#f59e0b] text-white'
+                      ? 'bg-[#2D8B4E] text-white step-active-pulse'
                       : currentStep > step.number
-                        ? 'bg-[#f59e0b] text-white'
+                        ? 'bg-[#2D8B4E] text-white'
                         : 'bg-[#e2e8f0] text-[#64748b]'
                   ]"
                 >
-                  <svg v-if="currentStep > step.number" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg v-if="currentStep > step.number" class="w-5 h-5 step-check-enter" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                   <span v-else>{{ step.number }}</span>
@@ -696,8 +803,8 @@ const downloadReceipt = () => {
               <div
                 v-if="index < steps.length - 1"
                 :class="[
-                  'flex-1 h-1 mx-2 lg:mx-4 rounded-full',
-                  currentStep > step.number ? 'bg-[#f59e0b]' : 'bg-[#e2e8f0]'
+                  'flex-1 h-1 mx-2 lg:mx-4 rounded-full transition-all duration-500',
+                  currentStep > step.number ? 'bg-[#2D8B4E]' : 'bg-[#e2e8f0]'
                 ]"
               ></div>
             </template>
@@ -705,7 +812,7 @@ const downloadReceipt = () => {
         </div>
 
         <!-- Step Content -->
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
             <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Период и данные плательщика</h2>
@@ -713,10 +820,16 @@ const downloadReceipt = () => {
             <div class="space-y-6">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Расчётный период *</label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Расчётный период <span class="text-[#EF4444]">*</span></label>
                   <select
                     v-model="calculationQuarter"
-                    class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
+                    :class="[
+                      'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
+                      validationErrors.quarter
+                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20'
+                        : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
+                    ]"
+                    @change="validationErrors.quarter && delete validationErrors.quarter"
                   >
                     <option value="">Выберите квартал</option>
                     <option value="Q1">I квартал</option>
@@ -724,6 +837,7 @@ const downloadReceipt = () => {
                     <option value="Q3">III квартал</option>
                     <option value="Q4">IV квартал</option>
                   </select>
+                  <p v-if="validationErrors.quarter" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors.quarter }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">Год *</label>
@@ -791,12 +905,12 @@ const downloadReceipt = () => {
             </div>
 
             <div class="space-y-4">
-              <div v-for="(item, index) in productItems" :key="item.id" class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
+              <div v-for="(item, index) in productItems" :key="item.id" class="rounded-lg p-6 border border-[#e2e8f0] mb-5">
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-sm font-medium text-[#64748b]">Позиция {{ index + 1 }}</span>
                   <button v-if="productItems.length > 1" @click="removeProductItem(item.id)" class="text-red-500 hover:bg-red-50 p-1 rounded transition-colors">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
@@ -810,21 +924,38 @@ const downloadReceipt = () => {
                   accent-color="#f59e0b"
                 />
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Масса (тонн)</label>
-                    <input type="number" v-model="item.mass" @input="calculateAmount(item)" step="0.01" min="0" placeholder="0.00" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm" />
-                  </div>
-                </div>
+                <!-- Validation error for group -->
+                <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
 
-                <div v-if="item.group" class="mt-3 pt-3 border-t border-[#e2e8f0] flex flex-wrap items-center gap-4 text-sm">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[#64748b]">Ставка:</span>
-                    <span class="font-medium text-[#1e293b]">{{ item.rate.toLocaleString() }} сом/т</span>
+                <!-- Row 4: Mass + Rate/Amount -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">Масса (тонн) <span class="text-[#EF4444]">*</span></label>
+                    <input
+                      type="number"
+                      v-model="item.mass"
+                      @input="calculateAmount(item); validationErrors[`product_${index}_mass`] && delete validationErrors[`product_${index}_mass`]"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      :class="[
+                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
+                        validationErrors[`product_${index}_mass`]
+                          ? 'border-[#EF4444] focus:border-[#EF4444]'
+                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
+                      ]"
+                    />
+                    <p v-if="validationErrors[`product_${index}_mass`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_mass`] }}</p>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[#64748b]">Сумма:</span>
-                    <span class="font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} сом</span>
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">Ставка / Сумма</label>
+                    <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] flex items-center gap-3">
+                      <span class="text-[#64748b]">Ставка:</span>
+                      <span class="font-medium">{{ item.rate.toLocaleString() }} сом/т</span>
+                      <span class="text-[#e2e8f0]">|</span>
+                      <span class="text-[#64748b]">Сумма:</span>
+                      <span class="font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} сом</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -837,7 +968,7 @@ const downloadReceipt = () => {
               Добавить позицию
             </button>
 
-            <div class="mt-6 pt-4 border-t border-[#e2e8f0]">
+            <div class="mt-8 pt-6 border-t border-[#e2e8f0]">
               <div class="bg-gradient-to-r from-[#f59e0b]/10 to-[#d97706]/10 rounded-xl p-5 border border-[#f59e0b]/20">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -942,7 +1073,7 @@ const downloadReceipt = () => {
             <button
               v-if="currentStep > 1"
               @click="prevStep"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
+              class="btn-action btn-action-ghost"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -954,9 +1085,8 @@ const downloadReceipt = () => {
             <div class="flex flex-col sm:flex-row gap-3">
               <button
                 v-if="currentStep === 1"
-                @click="nextStep"
-                :disabled="!canProceedStep1"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#f59e0b] text-white rounded-lg font-medium hover:bg-[#d97706] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="handleStep1Next"
+                class="btn-action btn-action-primary"
               >
                 Далее
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -966,9 +1096,8 @@ const downloadReceipt = () => {
 
               <button
                 v-if="currentStep === 2"
-                @click="performCalculation"
-                :disabled="!canProceedStep2"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#f59e0b] text-white rounded-lg font-medium hover:bg-[#d97706] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="handleStep2Calculate"
+                class="btn-action btn-action-primary"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -980,7 +1109,7 @@ const downloadReceipt = () => {
               <template v-if="currentStep === 3">
                 <button
                   @click="saveDraft"
-                  class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
+                  class="btn-action btn-action-ghost"
                 >
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -990,7 +1119,7 @@ const downloadReceipt = () => {
 
                 <button
                   @click="submitForReview"
-                  class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#f59e0b] text-white rounded-lg font-medium hover:bg-[#d97706] transition-colors"
+                  class="btn-action btn-action-primary"
                 >
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -1228,5 +1357,16 @@ const downloadReceipt = () => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+@media print {
+  .dashboard-layout > aside,
+  .dashboard-layout > main > header,
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:ml-72 {
+    margin-left: 0 !important;
+  }
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref, computed, reactive, watch } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
@@ -457,6 +458,15 @@ watch(() => addUserForm.phone, (val, oldVal) => {
     addUserForm.phone = '+996 ' + val
   }
 })
+
+// Empty state helpers
+const isFiltersActive = computed(() => !!(searchQuery.value || filterRole.value || filterStatus.value))
+
+const resetUserFilters = () => {
+  searchQuery.value = ''
+  filterRole.value = ''
+  filterStatus.value = ''
+}
 </script>
 
 <template>
@@ -546,6 +556,22 @@ watch(() => addUserForm.phone, (val, oldVal) => {
             Удалить
           </button>
         </div>
+      </template>
+      <template #empty>
+        <EmptyState
+          v-if="isFiltersActive && users.length > 0"
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+          title="Ничего не найдено"
+          description="Попробуйте изменить параметры поиска"
+          actionLabel="Сбросить фильтры"
+          @action="resetUserFilters"
+        />
+        <EmptyState
+          v-else
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>'
+          title="Нет пользователей"
+          description="Пользователи появятся после регистрации"
+        />
       </template>
     </DataTable>
 

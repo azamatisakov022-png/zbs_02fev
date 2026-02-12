@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 
-interface SelectOption {
+export interface SelectOption {
   value: string | number | null
   label: string
   shortLabel?: string
@@ -16,12 +16,18 @@ interface Props {
   placeholder?: string
   disabled?: boolean
   maxLabelLength?: number
+  compact?: boolean
+  searchable?: boolean
+  dropdownMinWidth?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: '— Выберите —',
   disabled: false,
-  maxLabelLength: 80
+  maxLabelLength: 80,
+  compact: false,
+  searchable: false,
+  dropdownMinWidth: '',
 })
 
 const emit = defineEmits<{
@@ -31,8 +37,10 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement>()
 const dropdownScrollRef = ref<HTMLElement>()
+const searchInputRef = ref<HTMLInputElement>()
 const hoveredOption = ref<SelectOption | null>(null)
 const tooltipPosition = ref({ x: 0, y: 0 })
+const searchQuery = ref('')
 
 // Group options by their group property
 const groupedOptions = computed(() => {
@@ -53,6 +61,48 @@ const groupedOptions = computed(() => {
   return { groups, ungrouped }
 })
 
+// Filtered options based on search query
+const filteredGroupedOptions = computed(() => {
+  if (!props.searchable || !searchQuery.value.trim()) {
+    return groupedOptions.value
+  }
+
+  const query = searchQuery.value.toLowerCase().trim()
+  const groups = new Map<string, SelectOption[]>()
+  const ungrouped: SelectOption[] = []
+
+  // Filter ungrouped
+  groupedOptions.value.ungrouped.forEach(option => {
+    if (matchesSearch(option, query)) {
+      ungrouped.push(option)
+    }
+  })
+
+  // Filter grouped
+  groupedOptions.value.groups.forEach((options, groupName) => {
+    const filtered = options.filter(option => matchesSearch(option, query))
+    if (filtered.length > 0) {
+      groups.set(groupName, filtered)
+    }
+  })
+
+  return { groups, ungrouped }
+})
+
+function matchesSearch(option: SelectOption, query: string): boolean {
+  // Always show placeholder options (null value)
+  if (option.value === null) return true
+  const label = (option.label || '').toLowerCase()
+  const sublabel = (option.sublabel || '').toLowerCase()
+  const shortLabel = (option.shortLabel || '').toLowerCase()
+  return label.includes(query) || sublabel.includes(query) || shortLabel.includes(query)
+}
+
+const hasFilteredResults = computed(() => {
+  return filteredGroupedOptions.value.ungrouped.some(o => o.value !== null) ||
+    filteredGroupedOptions.value.groups.size > 0
+})
+
 const selectedOption = computed(() => {
   return props.options.find(opt => opt.value === props.modelValue)
 })
@@ -60,6 +110,11 @@ const selectedOption = computed(() => {
 const displayValue = computed(() => {
   if (!selectedOption.value) return props.placeholder
   return truncateText(selectedOption.value.shortLabel || selectedOption.value.label, props.maxLabelLength)
+})
+
+const triggerTitle = computed(() => {
+  if (!selectedOption.value) return ''
+  return selectedOption.value.label
 })
 
 function truncateText(text: string, maxLength: number): string {
@@ -83,6 +138,7 @@ function toggleDropdown() {
 
 function selectOption(option: SelectOption) {
   emit('update:modelValue', option.value)
+  searchQuery.value = ''
   isOpen.value = false
 }
 
@@ -111,14 +167,28 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+function clearSearch() {
+  searchQuery.value = ''
+  nextTick(() => {
+    searchInputRef.value?.focus()
+  })
+}
+
 // Watch for dropdown open to add/remove scroll listeners
 watch(isOpen, (open) => {
   if (open) {
     // Add scroll listener to window (captures page scroll)
     window.addEventListener('scroll', hideTooltip, true)
+    // Auto-focus search input
+    if (props.searchable) {
+      nextTick(() => {
+        searchInputRef.value?.focus()
+      })
+    }
   } else {
     window.removeEventListener('scroll', hideTooltip, true)
     hoveredOption.value = null
+    searchQuery.value = ''
   }
 })
 
@@ -133,11 +203,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="dropdownRef" class="custom-select" :class="{ 'is-disabled': disabled }">
+  <div ref="dropdownRef" class="custom-select" :class="{ 'is-disabled': disabled, 'is-compact': compact }">
     <!-- Selected value display -->
     <div
       class="select-trigger"
       :class="{ 'is-open': isOpen, 'has-value': selectedOption }"
+      :title="triggerTitle"
       @click="toggleDropdown"
     >
       <div class="select-value">
@@ -161,11 +232,38 @@ onUnmounted(() => {
 
     <!-- Dropdown -->
     <Transition name="dropdown">
-      <div v-if="isOpen" class="select-dropdown">
+      <div v-if="isOpen" class="select-dropdown" :style="dropdownMinWidth ? { minWidth: dropdownMinWidth, maxWidth: 'calc(100vw - 32px)' } : {}">
+        <!-- Search input -->
+        <div v-if="searchable" class="search-container">
+          <div class="search-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M7.333 12.667A5.333 5.333 0 107.333 2a5.333 5.333 0 000 10.667zM14 14l-2.9-2.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <input
+            ref="searchInputRef"
+            v-model="searchQuery"
+            type="text"
+            class="search-input"
+            placeholder="Поиск..."
+            @click.stop
+          />
+          <button v-if="searchQuery" class="search-clear" @click.stop="clearSearch">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M10.5 3.5L3.5 10.5M3.5 3.5l7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
         <div class="dropdown-scroll">
+          <!-- No results message -->
+          <div v-if="searchable && searchQuery && !hasFilteredResults" class="no-results">
+            Ничего не найдено
+          </div>
+
           <!-- Ungrouped options first (like placeholder) -->
           <div
-            v-for="option in groupedOptions.ungrouped"
+            v-for="option in filteredGroupedOptions.ungrouped"
             :key="String(option.value)"
             class="select-option"
             :class="{ 'is-selected': option.value === modelValue }"
@@ -181,7 +279,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Grouped options -->
-          <template v-for="[groupName, groupOptions] in groupedOptions.groups" :key="groupName">
+          <template v-for="[groupName, groupOptions] in filteredGroupedOptions.groups" :key="groupName">
             <div class="option-group-header">{{ groupName }}</div>
             <div
               v-for="option in groupOptions"
@@ -314,6 +412,68 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+/* Search input */
+.search-container {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.search-icon {
+  flex-shrink: 0;
+  color: #9ca3af;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #374151;
+  padding: 4px 0;
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.search-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 8px;
+}
+
+.search-clear:hover {
+  background: #d1d5db;
+  color: #374151;
+}
+
+.no-results {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
 .dropdown-scroll {
   max-height: 400px;
   overflow-y: auto;
@@ -396,6 +556,78 @@ onUnmounted(() => {
   font-size: 16px;
   color: #5a6d76;
   margin-top: 8px;
+}
+
+/* Compact mode */
+.is-compact .select-trigger {
+  min-height: 40px;
+  padding: 8px 40px 8px 12px;
+  border-radius: 8px;
+}
+
+.is-compact .select-trigger.is-open {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.is-compact .value-main {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.is-compact .value-sub {
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.is-compact .placeholder {
+  font-size: 14px;
+}
+
+.is-compact .select-arrow {
+  right: 10px;
+}
+
+.is-compact .select-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+
+.is-compact .select-dropdown {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.is-compact .search-container {
+  padding: 8px 12px;
+}
+
+.is-compact .search-input {
+  font-size: 13px;
+}
+
+.is-compact .select-option {
+  padding: 10px 12px;
+}
+
+.is-compact .option-main {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.is-compact .option-sub {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.is-compact .option-group-header {
+  padding: 10px 12px 8px;
+  font-size: 12px;
+}
+
+.is-compact .no-results {
+  padding: 16px;
+  font-size: 13px;
 }
 
 /* Dropdown animation */

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
@@ -178,6 +179,23 @@ const deleteDocument = (doc: Document) => {
   if (confirm(`Удалить документ "${doc.name}"?`)) {
     documents.value = documents.value.filter(d => d.id !== doc.id)
   }
+}
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || activeCategory.value !== 'all'
+})
+
+const isFilteredEmpty = computed(() => {
+  return filteredDocuments.value.length === 0 && documents.value.length > 0 && hasActiveFilters.value
+})
+
+const isAbsolutelyEmpty = computed(() => {
+  return documents.value.length === 0
+})
+
+const resetDocFilters = () => {
+  searchQuery.value = ''
+  activeCategory.value = 'all'
 }
 </script>
 
@@ -387,13 +405,21 @@ const deleteDocument = (doc: Document) => {
         </div>
       </div>
 
-      <div v-else class="px-6 py-12 text-center">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f1f5f9] flex items-center justify-center">
-          <svg class="w-8 h-8 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
-        <p class="text-[#64748b]">Документы не найдены</p>
+      <div v-else-if="isFilteredEmpty">
+        <EmptyState
+          :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M35 35l-10-10m0 0A11.67 11.67 0 1025 25z&quot;/></svg>'"
+          title="Ничего не найдено"
+          description="Попробуйте изменить параметры поиска"
+          actionLabel="Сбросить фильтры"
+          @action="resetDocFilters"
+        />
+      </div>
+      <div v-else-if="isAbsolutelyEmpty">
+        <EmptyState
+          :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 28.33h10m-10 6.67h10M28.33 35H11.67a3.33 3.33 0 01-3.34-3.33V8.33A3.33 3.33 0 0111.67 5h9.31a1.67 1.67 0 011.18.49l9.02 9.02a1.67 1.67 0 01.49 1.18v15.98A3.33 3.33 0 0128.33 35z&quot;/></svg>'"
+          title="Нет документов"
+          description="Документы появятся после завершения расчётов"
+        />
       </div>
     </div>
 

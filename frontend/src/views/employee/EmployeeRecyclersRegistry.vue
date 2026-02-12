@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { recyclerStore, type Recycler, type RecyclerStatus } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
@@ -134,6 +135,15 @@ const saveRecycler = () => {
 const cancelForm = () => {
   resetForm()
   showAddForm.value = false
+}
+
+// Empty state helpers
+const isFiltersActive = computed(() => !!(searchQuery.value || filterStatus.value || filterWasteType.value))
+
+const resetAllFilters = () => {
+  searchQuery.value = ''
+  filterStatus.value = ''
+  filterWasteType.value = ''
 }
 </script>
 
@@ -387,8 +397,23 @@ const cancelForm = () => {
         </table>
       </div>
 
-      <div v-if="filteredRecyclers.length === 0" class="p-8 text-center text-[#64748b]">
-        <p>Переработчики не найдены</p>
+      <div v-if="filteredRecyclers.length === 0">
+        <EmptyState
+          v-if="isFiltersActive && recyclerStore.state.recyclers.length > 0"
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+          title="Ничего не найдено"
+          description="Попробуйте изменить параметры поиска"
+          actionLabel="Сбросить фильтры"
+          @action="resetAllFilters"
+        />
+        <EmptyState
+          v-else
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>'
+          title="Реестр пуст"
+          description="Добавьте первого переработчика"
+          actionLabel="+ Добавить"
+          @action="showAddForm = true"
+        />
       </div>
     </div>
   </DashboardLayout>
