@@ -50,6 +50,10 @@ export interface Calculation {
 
 let nextId = 7
 
+// Ставки (Сус) из постановления: group_1=4793, group_6=9418, group_8=4219
+// Нормативы (Нпер): 2025 — группы 1-4: 0.2, группы 5-24: 0.1
+//                    2026 — группы 1-4: 0.3, группы 5-24: 0.2
+// Формула: Усб = Сус × Мтв/уп × Нпер
 const state = reactive<{ calculations: Calculation[] }>({
   calculations: [
     {
@@ -62,18 +66,18 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q4',
       year: '2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.5', rate: 8500, amount: 29750 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '2.1', rate: 4200, amount: 8820 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.4', rate: 2800, amount: 6720 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.5', rate: 9418, amount: 3296 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '2.1', rate: 4793, amount: 2013 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.4', rate: 4219, amount: 1013 },
       ],
-      totalAmount: 45200,
+      totalAmount: 6322,
       status: 'Оплачено',
       paidAt: '25.01.2026',
       payment: {
         paymentOrderNumber: 'ПП-00412',
         paymentDate: '2026-01-24',
         payerBank: 'Оптима Банк',
-        transferAmount: 45200,
+        transferAmount: 6322,
         fileName: 'payment_pp_00412.pdf',
         fileType: 'application/pdf',
         fileDataUrl: '',
@@ -89,11 +93,11 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q4',
       year: '2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '5.0', rate: 8500, amount: 42500 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '3.5', rate: 4200, amount: 14700 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '3.6', rate: 2800, amount: 10080 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '5.0', rate: 9418, amount: 4709 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '3.5', rate: 4793, amount: 3355 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '3.6', rate: 4219, amount: 1519 },
       ],
-      totalAmount: 67300,
+      totalAmount: 9583,
       status: 'На проверке',
     },
     {
@@ -106,11 +110,11 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q4',
       year: '2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.8', rate: 8500, amount: 15300 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.2', rate: 4200, amount: 5040 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '1.1', rate: 2800, amount: 3080 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.8', rate: 9418, amount: 1695 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.2', rate: 4793, amount: 1150 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '1.1', rate: 4219, amount: 464 },
       ],
-      totalAmount: 23450,
+      totalAmount: 3309,
       status: 'На проверке',
     },
     {
@@ -123,11 +127,11 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q1',
       year: '2026',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.2', rate: 8500, amount: 10200 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '0.8', rate: 4200, amount: 3360 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '0.8', rate: 2800, amount: 2240 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.2', rate: 9418, amount: 2260 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '0.8', rate: 4793, amount: 1150 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '0.8', rate: 4219, amount: 675 },
       ],
-      totalAmount: 15800,
+      totalAmount: 4085,
       status: 'Отклонено',
       rejectionReason: 'Неверно указана масса товаров в группе 6',
     },
@@ -141,11 +145,11 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q3',
       year: '2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.0', rate: 8500, amount: 25500 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.8', rate: 4200, amount: 7560 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.0', rate: 2800, amount: 5600 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.0', rate: 9418, amount: 2825 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.8', rate: 4793, amount: 1725 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.0', rate: 4219, amount: 844 },
       ],
-      totalAmount: 38750,
+      totalAmount: 5394,
       status: 'Принято',
     },
     {
@@ -158,16 +162,16 @@ const state = reactive<{ calculations: Calculation[] }>({
       quarter: 'Q3',
       year: '2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '2.0', rate: 8500, amount: 17000 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.5', rate: 4200, amount: 6300 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '2.0', rate: 9418, amount: 1884 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.5', rate: 4793, amount: 1438 },
       ],
-      totalAmount: 23300,
+      totalAmount: 3322,
       status: 'Оплата на проверке',
       payment: {
         paymentOrderNumber: 'ПП-00587',
         paymentDate: '2026-01-29',
         payerBank: 'Демир Банк',
-        transferAmount: 23300,
+        transferAmount: 3322,
         fileName: 'scan_pp_00587.jpg',
         fileType: 'image/jpeg',
         fileDataUrl: '',

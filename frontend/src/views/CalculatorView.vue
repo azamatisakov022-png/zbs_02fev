@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import CustomSelect from '../components/ui/CustomSelect.vue'
+import SubgroupPickerModalCalc from '../components/SubgroupPickerModalCalc.vue'
 import ropData from '../data/rop-data.json'
 
 // Types
@@ -557,29 +558,61 @@ function handleCalculateWaste() {
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#0e888d] text-white text-base font-bold mr-3">2</span>
             Подгруппа
           </label>
-          <CustomSelect
-            v-model="selectedSubgroupIndex"
-            :options="subgroupOptions"
-            :disabled="!selectedGroup"
-            placeholder="— Выберите подгруппу —"
-            :max-label-length="80"
+          <SubgroupPickerModalCalc
+            :group="selectedGroup"
+            :modelValue="selectedSubgroupIndex"
+            :isPackaging="!!isPackaging"
+            @update:modelValue="(v: number | null) => selectedSubgroupIndex = v"
           />
-          <p class="text-base text-[#6b7280] mt-4 flex items-center gap-2">
-            <span class="inline-block w-5 h-5 rounded bg-[#fef3c7] border border-[#f59e0b]"></span>
-            Текст в【скобках】выделяет ключевые отличия между похожими позициями
-          </p>
         </div>
 
-        <!-- Step 3: TN VED Name (readonly) -->
-        <div v-if="selectedSubgroup" class="mb-8 lg:mb-10">
+        <!-- Step 3: Readonly fields (always visible) -->
+        <div class="mb-8 lg:mb-10">
           <label class="block text-[#415861] text-xl lg:text-2xl font-semibold mb-4">
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#6b7280] text-white text-base font-bold mr-3">3</span>
-            {{ isPackaging ? 'Материал и обозначение упаковки' : 'Наименование позиции ТН ВЭД ЕАЭС' }}
+            {{ isPackaging ? 'Материал и обозначение упаковки' : 'Коды и наименование ТН ВЭД ЕАЭС' }}
           </label>
-          <div class="w-full bg-[#f1f5f9] rounded-xl px-6 py-5 text-[#415861] text-lg lg:text-xl min-h-[70px] border-2 border-[#e2e8f0]">
-            {{ tnVedNameDisplay || '—' }}
+          <div v-if="!isPackaging" class="grid grid-cols-5 gap-4">
+            <div>
+              <label class="block text-sm text-[#6b7280] mb-2">Код ГСКП</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (selectedSubgroup as GoodsSubgroup | null)?.gskpCode || '—' }}
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-[#6b7280] mb-2">Код ТН ВЭД</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (selectedSubgroup as GoodsSubgroup | null)?.tnVedCode || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Наименование ТН ВЭД</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0]">
+                {{ (selectedSubgroup as GoodsSubgroup | null)?.tnVedName || '—' }}
+              </div>
+            </div>
           </div>
-          <p class="text-base text-[#6b7280] mt-4 italic">Поле заполняется автоматически на основе выбранной подгруппы</p>
+          <div v-else class="grid grid-cols-10 gap-4">
+            <div class="col-span-4">
+              <label class="block text-sm text-[#6b7280] mb-2">Материал упаковки</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0]">
+                {{ (selectedSubgroup as PackagingSubgroup | null)?.material || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Обозначение ТР ТС</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (selectedSubgroup as PackagingSubgroup | null)?.letterCode || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Код ТР ТС</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (selectedSubgroup as PackagingSubgroup | null)?.digitalCode || '—' }}
+              </div>
+            </div>
+          </div>
+          <p class="text-base text-[#6b7280] mt-4 italic">Поля заполняются автоматически на основе выбранной подгруппы</p>
         </div>
 
         <!-- Rate Display -->
@@ -716,25 +749,61 @@ function handleCalculateWaste() {
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#0e888d] text-white text-base font-bold mr-3">2</span>
             Подгруппа
           </label>
-          <CustomSelect
-            v-model="wasteSelectedSubgroupIndex"
-            :options="wasteSubgroupOptions"
-            :disabled="!wasteSelectedGroup"
-            placeholder="— Выберите подгруппу —"
-            :max-label-length="80"
+          <SubgroupPickerModalCalc
+            :group="wasteSelectedGroup"
+            :modelValue="wasteSelectedSubgroupIndex"
+            :isPackaging="!!wasteIsPackaging"
+            @update:modelValue="(v: number | null) => wasteSelectedSubgroupIndex = v"
           />
         </div>
 
-        <!-- Step 3: TN VED Name (readonly) -->
-        <div v-if="wasteSelectedSubgroup" class="mb-8 lg:mb-10">
+        <!-- Step 3: Readonly fields (always visible) -->
+        <div class="mb-8 lg:mb-10">
           <label class="block text-[#415861] text-xl lg:text-2xl font-semibold mb-4">
             <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#6b7280] text-white text-base font-bold mr-3">3</span>
-            {{ wasteIsPackaging ? 'Материал и обозначение упаковки' : 'Наименование позиции ТН ВЭД ЕАЭС' }}
+            {{ wasteIsPackaging ? 'Материал и обозначение упаковки' : 'Коды и наименование ТН ВЭД ЕАЭС' }}
           </label>
-          <div class="w-full bg-[#f1f5f9] rounded-xl px-6 py-5 text-[#415861] text-lg lg:text-xl min-h-[70px] border-2 border-[#e2e8f0]">
-            {{ wasteTnVedNameDisplay || '—' }}
+          <div v-if="!wasteIsPackaging" class="grid grid-cols-5 gap-4">
+            <div>
+              <label class="block text-sm text-[#6b7280] mb-2">Код ГСКП</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (wasteSelectedSubgroup as GoodsSubgroup | null)?.gskpCode || '—' }}
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-[#6b7280] mb-2">Код ТН ВЭД</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (wasteSelectedSubgroup as GoodsSubgroup | null)?.tnVedCode || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Наименование ТН ВЭД</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0]">
+                {{ (wasteSelectedSubgroup as GoodsSubgroup | null)?.tnVedName || '—' }}
+              </div>
+            </div>
           </div>
-          <p class="text-base text-[#6b7280] mt-4 italic">Поле заполняется автоматически</p>
+          <div v-else class="grid grid-cols-10 gap-4">
+            <div class="col-span-4">
+              <label class="block text-sm text-[#6b7280] mb-2">Материал упаковки</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0]">
+                {{ (wasteSelectedSubgroup as PackagingSubgroup | null)?.material || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Обозначение ТР ТС</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (wasteSelectedSubgroup as PackagingSubgroup | null)?.letterCode || '—' }}
+              </div>
+            </div>
+            <div class="col-span-3">
+              <label class="block text-sm text-[#6b7280] mb-2">Код ТР ТС</label>
+              <div class="w-full bg-[#f1f5f9] rounded-xl px-5 py-4 text-[#415861] text-lg min-h-[56px] border-2 border-[#e2e8f0] font-mono">
+                {{ (wasteSelectedSubgroup as PackagingSubgroup | null)?.digitalCode || '—' }}
+              </div>
+            </div>
+          </div>
+          <p class="text-base text-[#6b7280] mt-4 italic">Поля заполняются автоматически</p>
         </div>
 
         <!-- Rate Display -->

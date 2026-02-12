@@ -20,7 +20,7 @@ const isDashboard = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-white">
+  <div class="min-h-screen flex flex-col">
     <!-- Public header and navigation - only show on public pages -->
     <template v-if="!isDashboard">
       <TheHeader />
@@ -28,7 +28,11 @@ const isDashboard = computed(() => {
     </template>
 
     <main class="flex-1">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </main>
 
     <!-- Public footer - only show on public pages -->

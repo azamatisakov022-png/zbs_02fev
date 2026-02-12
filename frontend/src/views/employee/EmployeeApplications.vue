@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
@@ -15,6 +17,10 @@ const menuItems = [
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
   { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 const columns = [
   { key: 'number', label: 'Номер заявки', width: '10%' },
@@ -52,6 +58,12 @@ const getStatusClass = (status: string) => {
   >
     <h2 class="text-2xl font-bold text-[#415861] mb-6">Входящие заявки</h2>
 
+    <template v-if="isLoading">
+      <div class="mb-6"><SkeletonLoader variant="card" /></div>
+      <SkeletonLoader variant="table" />
+    </template>
+
+    <template v-if="!isLoading">
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e7eb] mb-6">
       <div class="flex flex-wrap gap-4">
@@ -86,7 +98,7 @@ const getStatusClass = (status: string) => {
         </span>
       </template>
       <template #actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
           <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Просмотреть
@@ -101,6 +113,14 @@ const getStatusClass = (status: string) => {
           </button>
         </div>
       </template>
+      <template #empty>
+        <EmptyState
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>'
+          title="Нет заявок"
+          description="Заявки появятся после регистрации организаций"
+        />
+      </template>
     </DataTable>
+    </template>
   </DashboardLayout>
 </template>

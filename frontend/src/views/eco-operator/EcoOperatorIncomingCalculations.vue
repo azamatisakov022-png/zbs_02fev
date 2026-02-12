@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore, type Calculation } from '../../stores/calculations'
 import { reportStore } from '../../stores/reports'
@@ -176,6 +177,25 @@ const rejectPayment = () => {
     calculationStore.rejectPayment(selectedCalculation.value.id, paymentRejectionReason.value.trim())
     closeDetail()
   }
+}
+
+// Empty state helpers
+const allCalculations = computed(() => calculationStore.state.calculations.filter(c => c.status !== 'Черновик'))
+const isCalcFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
+
+const allPayments = computed(() => calculationStore.state.calculations.filter(c =>
+  c.status === 'Оплата на проверке' || c.status === 'Оплачено' || c.status === 'Оплата отклонена'
+))
+const isPaymentFiltersActive = computed(() => !!paymentSearchQuery.value)
+
+const resetCalcFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  periodFilter.value = ''
+}
+
+const resetPaymentFilters = () => {
+  paymentSearchQuery.value = ''
 }
 </script>
 
@@ -353,6 +373,22 @@ const rejectPayment = () => {
             </button>
           </div>
         </template>
+        <template #empty>
+          <EmptyState
+            v-if="isCalcFiltersActive && allCalculations.length > 0"
+            icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+            title="Ничего не найдено"
+            description="Попробуйте изменить параметры поиска"
+            actionLabel="Сбросить фильтры"
+            @action="resetCalcFilters"
+          />
+          <EmptyState
+            v-else
+            icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
+            title="Нет входящих расчётов"
+            description="Все расчёты обработаны"
+          />
+        </template>
       </DataTable>
     </template>
 
@@ -410,6 +446,22 @@ const rejectPayment = () => {
               Проверить
             </button>
           </div>
+        </template>
+        <template #empty>
+          <EmptyState
+            v-if="isPaymentFiltersActive && allPayments.length > 0"
+            icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+            title="Ничего не найдено"
+            description="Попробуйте изменить параметры поиска"
+            actionLabel="Сбросить фильтры"
+            @action="resetPaymentFilters"
+          />
+          <EmptyState
+            v-else
+            icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>'
+            title="Нет платежей на проверке"
+            description="Все платежи обработаны"
+          />
         </template>
       </DataTable>
     </template>

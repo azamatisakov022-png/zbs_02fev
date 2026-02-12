@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { reportStore } from '../../stores/reports'
@@ -20,6 +22,10 @@ const menuItems = computed(() => [
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
 ])
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 const columns = [
   { key: 'number', label: 'Номер', width: '9%' },
@@ -127,6 +133,12 @@ const openDetail = (id: number) => {
       </div>
     </div>
 
+    <template v-if="isLoading">
+      <div class="mb-6"><SkeletonLoader variant="card" /></div>
+      <SkeletonLoader variant="table" />
+    </template>
+
+    <template v-if="!isLoading">
     <!-- Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
@@ -188,7 +200,7 @@ const openDetail = (id: number) => {
         </span>
       </template>
       <template #actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
           <button
             @click="openDetail(row.id)"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
@@ -218,6 +230,13 @@ const openDetail = (id: number) => {
             Отклонить
           </button>
         </div>
+      </template>
+      <template #empty>
+        <EmptyState
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
+          title="Нет входящих деклараций"
+          description="Все декларации обработаны"
+        />
       </template>
     </DataTable>
 
@@ -283,5 +302,6 @@ const openDetail = (id: number) => {
         </table>
       </div>
     </div>
+    </template>
   </DashboardLayout>
 </template>

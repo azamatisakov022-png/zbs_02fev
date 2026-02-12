@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
+import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { reportStore, type ProcessingItem } from '../../stores/reports'
 import { recyclerStore } from '../../stores/recyclers'
@@ -18,6 +21,10 @@ const menuItems = [
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'success'
@@ -292,6 +299,35 @@ const processingPercent = computed(() => {
   return ((processed / declared) * 100).toFixed(1)
 })
 
+const yearNormativeHigh = computed(() => {
+  const y = parseInt(reportingYear.value) || 2026
+  return Math.round((normativeTiers.high[y] || 0) * 100)
+})
+const yearNormativeStandard = computed(() => {
+  const y = parseInt(reportingYear.value) || 2026
+  return Math.round((normativeTiers.standard[y] || 0) * 100)
+})
+
+const weightedNormativePercent = computed(() => {
+  const items = processingItems.value.filter(i => i.wasteType && parseFloat(i.declared) > 0)
+  if (items.length === 0) return yearNormativeStandard.value
+  const year = parseInt(reportingYear.value) || 2026
+  let weightedSum = 0
+  let totalDecl = 0
+  for (const item of items) {
+    const declared = parseFloat(item.declared) || 0
+    const normative = getNormativeForGroup(item.wasteType, year)
+    weightedSum += declared * normative * 100
+    totalDecl += declared
+  }
+  return totalDecl > 0 ? Math.round(weightedSum / totalDecl * 10) / 10 : yearNormativeStandard.value
+})
+
+const getItemNormativePercent = (wasteType: string) => {
+  const year = parseInt(reportingYear.value) || 2026
+  return getNormativeForGroup(wasteType, year) * 100
+}
+
 // Table data — from store
 const columns = [
   { key: 'number', label: 'Номер', width: '10%' },
@@ -335,6 +371,15 @@ const editDraft = (id: number) => {
     currentStep.value = 1
     viewMode.value = 'wizard'
   }
+}
+
+// Export / Print handlers
+const handleDownloadPdf = () => {
+  alert('Функция скачивания PDF в разработке')
+}
+
+const handlePrint = () => {
+  window.print()
 }
 </script>
 
@@ -391,6 +436,12 @@ const editDraft = (id: number) => {
         </div>
       </div>
 
+      <template v-if="isLoading">
+        <div class="mb-6"><SkeletonLoader variant="card" /></div>
+        <SkeletonLoader variant="table" />
+      </template>
+
+      <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
@@ -417,6 +468,15 @@ const editDraft = (id: number) => {
       </div>
 
       <DataTable :columns="columns" :data="businessReports" :actions="true">
+        <template #empty>
+          <EmptyState
+            :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 28.33h10m-10 6.67h10M28.33 35H11.67a3.33 3.33 0 01-3.34-3.33V8.33A3.33 3.33 0 0111.67 5h9.31a1.67 1.67 0 011.18.49l9.02 9.02a1.67 1.67 0 01.49 1.18v15.98A3.33 3.33 0 0128.33 35z&quot;/></svg>'"
+            title="Нет отчётов о переработке"
+            description="Подайте отчёт о выполнении нормативов"
+            actionLabel="Создать отчёт"
+            @action="startWizard()"
+          />
+        </template>
         <template #cell-number="{ value }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
         </template>
@@ -432,7 +492,7 @@ const editDraft = (id: number) => {
           </span>
         </template>
         <template #actions="{ row }">
-          <div class="flex items-center justify-end gap-2">
+          <div class="flex flex-wrap items-center justify-end gap-2">
             <button
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
             >
@@ -463,12 +523,24 @@ const editDraft = (id: number) => {
               Отправить повторно
             </button>
             <button
+              v-if="row.status === 'Принят'"
+              @click="handleDownloadPdf"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
+            </button>
+            <button
+              v-if="row.status === 'Принят'"
+              @click="handlePrint"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#64748b] text-white hover:bg-[#475569] transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Печать
             </button>
           </div>
         </template>
@@ -486,11 +558,12 @@ const editDraft = (id: number) => {
           </div>
         </div>
       </template>
+      </template>
     </template>
 
     <!-- WIZARD VIEW -->
     <template v-else-if="viewMode === 'wizard'">
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="mb-6">
           <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
@@ -549,7 +622,7 @@ const editDraft = (id: number) => {
         </div>
 
         <!-- Step Content -->
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
             <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Основные данные</h2>
@@ -617,8 +690,8 @@ const editDraft = (id: number) => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b]">Норматив переработки на {{ reportingYear }} год: 15%</p>
-                  <p class="text-sm text-[#64748b]">Необходимо обеспечить переработку не менее 15% от массы задекларированных товаров и упаковки</p>
+                  <p class="font-medium text-[#1e293b]">Норматив переработки на {{ reportingYear }} год: группы 1–4 — {{ yearNormativeHigh }}%, группы 5–24 — {{ yearNormativeStandard }}%</p>
+                  <p class="text-sm text-[#64748b]">Необходимо обеспечить переработку не менее установленного норматива от массы задекларированных товаров и упаковки</p>
                 </div>
               </div>
             </div>
@@ -643,7 +716,7 @@ const editDraft = (id: number) => {
               <div
                 v-for="(item, index) in processingItems"
                 :key="item.id"
-                class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]"
+                class="rounded-lg p-6 border border-[#e2e8f0] mb-5"
               >
                 <div class="flex items-center justify-between mb-4">
                   <span class="text-sm font-medium text-[#64748b]">Позиция {{ index + 1 }}</span>
@@ -653,12 +726,12 @@ const editDraft = (id: number) => {
                     class="text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
                   >
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
 
-                <!-- Row 1: Group, subgroup + auto-fields -->
+                <!-- Rows 1-3: Group, subgroup + auto-fields (vertical) -->
                 <ProductGroupSelector
                   :group="item.wasteType"
                   :subgroup="itemSubgroups[item.id] || ''"
@@ -666,25 +739,23 @@ const editDraft = (id: number) => {
                   @update:subgroup="(v: string) => { itemSubgroups[item.id] = v; onSubgroupChange(item) }"
                   @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.wasteCode = data.code }"
                   accent-color="#10b981"
-                  class="mb-4"
                 />
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Масса задекл. (т)</label>
-                    <input
-                      type="number"
-                      v-model="item.declared"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
-                    />
-                  </div>
+                <!-- Row 4: Declared mass (full width) -->
+                <div class="mt-4">
+                  <label class="block text-xs text-[#64748b] mb-1">Масса задекл. (т)</label>
+                  <input
+                    type="number"
+                    v-model="item.declared"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
+                  />
                 </div>
 
-                <!-- Row 2: Processing data -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Row 5: Processing data — 4 fields at 25% each -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">Масса переработанная (т)</label>
                     <input
@@ -772,7 +843,7 @@ const editDraft = (id: number) => {
             </button>
 
             <!-- Summary -->
-            <div class="mt-6 pt-4 border-t border-[#e2e8f0]">
+            <div class="mt-8 pt-6 border-t border-[#e2e8f0]">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="bg-blue-50 rounded-lg p-4 text-center">
                   <p class="text-sm text-[#64748b] mb-1">Декларировано</p>
@@ -929,36 +1000,36 @@ const editDraft = (id: number) => {
                   Данные о переработке
                 </h3>
                 <div class="overflow-x-auto">
-                  <table class="w-full text-sm">
+                  <table class="w-full text-sm border-collapse">
                     <thead>
                       <tr class="text-left text-[#64748b]">
-                        <th class="pb-2">Группа товаров</th>
-                        <th class="pb-2">Код</th>
-                        <th class="pb-2 text-right">Деклар. (т)</th>
-                        <th class="pb-2 text-right">Перераб. (т)</th>
-                        <th class="pb-2 text-right">%</th>
-                        <th class="pb-2">Переработчик</th>
+                        <th class="px-3 py-2 pb-3" style="min-width: 250px">Группа товаров</th>
+                        <th class="px-3 py-2 pb-3" style="min-width: 80px">Код</th>
+                        <th class="px-3 py-2 pb-3 text-right" style="min-width: 100px">Деклар. (т)</th>
+                        <th class="px-3 py-2 pb-3 text-right" style="min-width: 100px">Перераб. (т)</th>
+                        <th class="px-3 py-2 pb-3 text-right" style="min-width: 80px">%</th>
+                        <th class="px-3 py-2 pb-3" style="min-width: 150px">Переработчик</th>
                       </tr>
                     </thead>
                     <tbody class="text-[#1e293b]">
                       <tr v-for="item in processingItems.filter(i => i.wasteType)" :key="item.id" class="border-t border-[#e2e8f0]">
-                        <td class="py-2">{{ getWasteTypeLabel(item.wasteType) }}</td>
-                        <td class="py-2 font-mono text-xs">{{ item.wasteCode }}</td>
-                        <td class="py-2 text-right">{{ item.declared }}</td>
-                        <td class="py-2 text-right font-medium text-[#10b981]">{{ item.processed }}</td>
-                        <td class="py-2 text-right font-semibold" :class="parseFloat(item.processed) / parseFloat(item.declared) >= 1 ? 'text-[#10b981]' : 'text-[#f59e0b]'">
+                        <td class="px-3 py-2">{{ getWasteTypeLabel(item.wasteType) }}</td>
+                        <td class="px-3 py-2 font-mono text-xs">{{ item.wasteCode }}</td>
+                        <td class="px-3 py-2 text-right">{{ item.declared }}</td>
+                        <td class="px-3 py-2 text-right font-medium text-[#10b981]">{{ item.processed }}</td>
+                        <td class="px-3 py-2 text-right font-semibold" :class="((parseFloat(item.processed) / parseFloat(item.declared)) * 100) >= getItemNormativePercent(item.wasteType) ? 'text-[#10b981]' : 'text-[#ef4444]'">
                           {{ ((parseFloat(item.processed) / parseFloat(item.declared)) * 100).toFixed(1) }}%
                         </td>
-                        <td class="py-2 text-xs">{{ getRecyclerLabel(item.recycler) }}</td>
+                        <td class="px-3 py-2 text-xs">{{ getRecyclerLabel(item.recycler) }}</td>
                       </tr>
                     </tbody>
                     <tfoot>
                       <tr class="border-t-2 border-[#e2e8f0] font-semibold">
-                        <td colspan="2" class="pt-2">Итого:</td>
-                        <td class="pt-2 text-right">{{ totalDeclared }} т</td>
-                        <td class="pt-2 text-right text-[#10b981]">{{ totalProcessed }} т</td>
-                        <td class="pt-2 text-right" :class="parseFloat(processingPercent) >= 100 ? 'text-[#10b981]' : 'text-[#f59e0b]'">{{ processingPercent }}%</td>
-                        <td></td>
+                        <td colspan="2" class="px-3 py-2 pt-3">Итого:</td>
+                        <td class="px-3 py-2 pt-3 text-right">{{ totalDeclared }} т</td>
+                        <td class="px-3 py-2 pt-3 text-right text-[#10b981]">{{ totalProcessed }} т</td>
+                        <td class="px-3 py-2 pt-3 text-right" :class="parseFloat(processingPercent) >= weightedNormativePercent ? 'text-[#10b981]' : 'text-[#ef4444]'">{{ processingPercent }}%</td>
+                        <td class="px-3 py-2"></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -967,16 +1038,16 @@ const editDraft = (id: number) => {
                 <!-- Norm Compliance -->
                 <div :class="[
                   'mt-4 p-3 rounded-lg flex items-center gap-2',
-                  parseFloat(processingPercent) >= 100 ? 'bg-green-100' : 'bg-yellow-100'
+                  parseFloat(processingPercent) >= weightedNormativePercent ? 'bg-green-100' : 'bg-yellow-100'
                 ]">
-                  <svg v-if="parseFloat(processingPercent) >= 100" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg v-if="parseFloat(processingPercent) >= weightedNormativePercent" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <svg v-else class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <span :class="parseFloat(processingPercent) >= 100 ? 'text-green-800' : 'text-yellow-800'">
-                    {{ parseFloat(processingPercent) >= 100 ? 'Норматив переработки выполнен' : 'Внимание: норматив переработки не выполнен' }}
+                  <span :class="parseFloat(processingPercent) >= weightedNormativePercent ? 'text-green-800' : 'text-yellow-800'">
+                    {{ parseFloat(processingPercent) >= weightedNormativePercent ? 'Норматив переработки выполнен' : 'Внимание: норматив переработки не выполнен' }}
                   </span>
                 </div>
               </div>
@@ -1112,3 +1183,16 @@ const editDraft = (id: number) => {
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+@media print {
+  .dashboard-layout > aside,
+  .dashboard-layout > main > header,
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:ml-72 {
+    margin-left: 0 !important;
+  }
+}
+</style>

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { reportStore, type Report } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
+import { getNormativeForGroup } from '../../data/recycling-norms'
 
 const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
@@ -20,6 +23,10 @@ const menuItems = computed(() => [
   { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
 ])
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 const columns = [
   { key: 'number', label: 'Номер', width: '9%' },
@@ -113,6 +120,16 @@ const rejectReport = () => {
     closeDetail()
   }
 }
+
+// Empty state helpers
+const allReports = computed(() => reportStore.state.reports.filter(r => r.status !== 'Черновик'))
+const isFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  periodFilter.value = ''
+}
 </script>
 
 <template>
@@ -192,6 +209,12 @@ const rejectReport = () => {
       </div>
     </div>
 
+    <template v-if="isLoading">
+      <div class="mb-6"><SkeletonLoader variant="card" /></div>
+      <SkeletonLoader variant="table" />
+    </template>
+
+    <template v-if="!isLoading">
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
       <div class="flex flex-wrap gap-4">
@@ -236,7 +259,7 @@ const rejectReport = () => {
         </span>
       </template>
       <template #actions="{ row }">
-        <div class="flex items-center justify-end gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
           <button
             @click="openDetail(row)"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
@@ -259,7 +282,24 @@ const rejectReport = () => {
           </button>
         </div>
       </template>
+      <template #empty>
+        <EmptyState
+          v-if="isFiltersActive && allReports.length > 0"
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+          title="Ничего не найдено"
+          description="Попробуйте изменить параметры поиска"
+          actionLabel="Сбросить фильтры"
+          @action="resetFilters"
+        />
+        <EmptyState
+          v-else
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
+          title="Нет входящих отчётов"
+          description="Все отчёты обработаны"
+        />
+      </template>
     </DataTable>
+    </template>
 
     <!-- Detail Modal -->
     <Teleport to="body">
@@ -334,17 +374,17 @@ const rejectReport = () => {
             <div>
               <h3 class="font-semibold text-[#1e293b] mb-3">Детализация переработки</h3>
               <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
-                <table class="w-full text-sm">
+                <table class="w-full text-sm border-collapse">
                   <thead class="bg-[#f8fafc]">
                     <tr class="text-left text-[#64748b]">
-                      <th class="px-4 py-3 font-medium">Группа товаров</th>
-                      <th class="px-4 py-3 font-medium">Код ГСКП / Материал</th>
-                      <th class="px-4 py-3 font-medium">Код ТН ВЭД / ТР ТС</th>
-                      <th class="px-4 py-3 font-medium">Наименование</th>
-                      <th class="px-4 py-3 font-medium text-right">Деклар. (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Перераб. (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">%</th>
-                      <th class="px-4 py-3 font-medium">Переработчик</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 200px">Группа товаров</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 120px">Код ГСКП / Материал</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 120px">Код ТН ВЭД / ТР ТС</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 150px">Наименование</th>
+                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">Деклар. (т)</th>
+                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">Перераб. (т)</th>
+                      <th class="px-4 py-3 font-medium text-right" style="min-width: 80px">%</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 150px">Переработчик</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[#e2e8f0]">
@@ -362,7 +402,7 @@ const rejectReport = () => {
                       </template>
                       <td class="px-4 py-3 text-right font-medium">{{ item.declared }}</td>
                       <td class="px-4 py-3 text-right font-medium text-[#10b981]">{{ item.processed }}</td>
-                      <td class="px-4 py-3 text-right font-semibold" :class="parseFloat(item.processed) / parseFloat(item.declared) >= 1 ? 'text-[#10b981]' : 'text-[#f59e0b]'">
+                      <td class="px-4 py-3 text-right font-semibold" :class="((parseFloat(item.processed) / parseFloat(item.declared)) * 100) >= (getNormativeForGroup(item.wasteType, parseInt(selectedReport.year)) * 100) ? 'text-[#10b981]' : 'text-[#ef4444]'">
                         {{ ((parseFloat(item.processed) / parseFloat(item.declared)) * 100).toFixed(1) }}%
                       </td>
                       <td class="px-4 py-3 text-xs text-[#64748b]">{{ item.recycler }}</td>
@@ -373,8 +413,8 @@ const rejectReport = () => {
                       <td colspan="4" class="px-4 py-3">Итого</td>
                       <td class="px-4 py-3 text-right">{{ selectedReport.totalDeclared }} т</td>
                       <td class="px-4 py-3 text-right text-[#10b981]">{{ selectedReport.totalProcessed }} т</td>
-                      <td class="px-4 py-3 text-right" :class="selectedReport.processingPercent >= 100 ? 'text-[#10b981]' : 'text-[#f59e0b]'">{{ selectedReport.processingPercent }}%</td>
-                      <td></td>
+                      <td class="px-4 py-3 text-right" :class="selectedReport.processingPercent >= (getNormativeForGroup(selectedReport.items[0]?.wasteType || 'group_5', parseInt(selectedReport.year)) * 100) ? 'text-[#10b981]' : 'text-[#ef4444]'">{{ selectedReport.processingPercent }}%</td>
+                      <td class="px-4 py-3"></td>
                     </tr>
                   </tfoot>
                 </table>

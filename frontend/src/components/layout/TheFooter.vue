@@ -6,8 +6,6 @@ const footerLinks = [
   { name: 'registries', path: '/registries', label: 'Реестры' },
   { name: 'calculator', path: '/calculator', label: 'Калькулятор' },
   { name: 'contests', path: '/contests', label: 'Конкурсы' },
-  { name: 'reception-points', path: '/reception-points', label: 'Пункты приема' },
-  { name: 'recyclers', path: '/recyclers', label: 'Переработчики' },
   { name: 'glossary', path: '/glossary', label: 'Глоссарий' },
 ]
 

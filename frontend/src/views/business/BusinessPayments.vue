@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
@@ -14,6 +16,10 @@ const menuItems = [
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'processing' | 'success'
@@ -226,6 +232,12 @@ const getStatusClass = (status: string) => {
         </div>
       </div>
 
+      <template v-if="isLoading">
+        <div class="mb-6"><SkeletonLoader variant="card" /></div>
+        <SkeletonLoader variant="table" />
+      </template>
+
+      <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
@@ -271,6 +283,13 @@ const getStatusClass = (status: string) => {
       <!-- History -->
       <div class="mb-4"><h2 class="text-lg font-semibold text-[#1e293b] mb-4">История платежей</h2></div>
       <DataTable :columns="columns" :data="paymentHistory" :actions="true">
+        <template #empty>
+          <EmptyState
+            :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M20 13.33v5m0 0v5m0-5h5m-5 0h-5M35 20a15 15 0 11-30 0 15 15 0 0130 0z&quot;/><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M20 8.33c-1.38 0-2.5.75-2.5 1.67s1.12 1.67 2.5 1.67 2.5.75 2.5 1.66-1.12 1.67-2.5 1.67m0-6.67c.93 0 1.73.34 2.17.83M20 8.33V6.67m0 1.66v6.67m0 0v1.67m0-1.67c-.93 0-1.73-.34-2.17-.83&quot;/></svg>'"
+            title="Нет платежей"
+            description="Платежи появятся после подтверждения расчётов"
+          />
+        </template>
         <template #cell-number="{ value }"><span class="font-mono font-medium text-[#8b5cf6]">{{ value }}</span></template>
         <template #cell-amount="{ value }"><span class="font-semibold text-[#1e293b]">{{ value }}</span></template>
         <template #cell-status="{ value }"><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">{{ value }}</span></template>
@@ -287,11 +306,12 @@ const getStatusClass = (status: string) => {
           </div>
         </template>
       </DataTable>
+      </template>
     </template>
 
     <!-- WIZARD VIEW -->
     <template v-else-if="viewMode === 'wizard'">
-      <div class="max-w-3xl mx-auto">
+      <div class="max-w-6xl mx-auto">
         <div class="mb-6">
           <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -513,3 +533,16 @@ const getStatusClass = (status: string) => {
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+@media print {
+  .dashboard-layout > aside,
+  .dashboard-layout > main > header,
+  .lg\:hidden {
+    display: none !important;
+  }
+  .lg\:ml-72 {
+    margin-left: 0 !important;
+  }
+}
+</style>

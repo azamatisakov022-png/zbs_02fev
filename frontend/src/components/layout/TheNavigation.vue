@@ -20,8 +20,6 @@ const navItems: NavItem[] = [
   { name: 'gis-map', path: '/registries', label: 'ГИС-Карта' },
   { name: 'calculator', path: '/calculator', label: 'Калькулятор' },
   { name: 'contests', path: '/contests', label: 'Конкурсы' },
-  { name: 'reception-points', path: '/reception-points', label: 'Пункты приема' },
-  { name: 'recyclers', path: '/recyclers', label: 'Переработчики' },
 ]
 
 const isActive = (path: string) => {
