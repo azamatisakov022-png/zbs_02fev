@@ -18,12 +18,12 @@ const menuItems = [
 ]
 
 const columns = [
-  { key: 'number', label: 'Номер', width: '130px' },
-  { key: 'company', label: 'Организация' },
-  { key: 'type', label: 'Тип отчёта' },
-  { key: 'period', label: 'Период', width: '120px' },
-  { key: 'submittedAt', label: 'Дата подачи', width: '130px' },
-  { key: 'status', label: 'Статус', width: '150px' },
+  { key: 'number', label: 'Номер', width: '9%' },
+  { key: 'company', label: 'Организация', width: '15%' },
+  { key: 'type', label: 'Тип отчёта', width: '18%' },
+  { key: 'period', label: 'Период', width: '8%' },
+  { key: 'submittedAt', label: 'Дата подачи', width: '9%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
 interface Report {
@@ -32,12 +32,12 @@ interface Report {
 }
 
 const reports = ref<Report[]>([
-  { id: 1, number: 'РП-2025-018', company: 'ОсОО "ТехПром"', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '21.01.2025', status: 'На проверке', recycledTons: '145.2 т', categories: '5 категорий' },
-  { id: 2, number: 'РП-2025-017', company: 'ОАО "СтройМаркет"', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '20.01.2025', status: 'На проверке', recycledTons: '89.7 т', categories: '3 категории' },
-  { id: 3, number: 'РП-2025-016', company: 'ОсОО "ПищеПром"', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '19.01.2025', status: 'Принят', recycledTons: '210.5 т', categories: '6 категорий' },
-  { id: 4, number: 'РП-2025-015', company: 'ИП Асанов Б.К.', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '18.01.2025', status: 'Принят', recycledTons: '32.1 т', categories: '2 категории' },
-  { id: 5, number: 'РП-2025-012', company: 'ОсОО "ТехПром"', type: 'Отчёт о нормативах переработки', period: '2023 год', submittedAt: '15.01.2024', status: 'Принят', recycledTons: '120.8 т', categories: '5 категорий' },
-  { id: 6, number: 'РП-2025-010', company: 'ОАО "МегаТорг"', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '12.01.2025', status: 'Отклонён', recycledTons: '78.4 т', categories: '4 категории' },
+  { id: 1, number: 'РП-2026-018', company: 'ОсОО "ТехПром"', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '21.01.2026', status: 'На проверке', recycledTons: '145.2 т', categories: '5 категорий' },
+  { id: 2, number: 'РП-2026-017', company: 'ОАО "СтройМаркет"', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '20.01.2026', status: 'На проверке', recycledTons: '89.7 т', categories: '3 категории' },
+  { id: 3, number: 'РП-2026-016', company: 'ОсОО "ПищеПром"', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '19.01.2026', status: 'Принят', recycledTons: '210.5 т', categories: '6 категорий' },
+  { id: 4, number: 'РП-2026-015', company: 'ИП Асанов Б.К.', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '18.01.2026', status: 'Принят', recycledTons: '32.1 т', categories: '2 категории' },
+  { id: 5, number: 'РП-2026-012', company: 'ОсОО "ТехПром"', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '15.07.2025', status: 'Принят', recycledTons: '120.8 т', categories: '5 категорий' },
+  { id: 6, number: 'РП-2026-010', company: 'ОАО "МегаТорг"', type: 'Отчёт о нормативах переработки', period: '2025 год', submittedAt: '12.01.2026', status: 'Отклонён', recycledTons: '78.4 т', categories: '4 категории' },
 ])
 
 const searchQuery = ref('')
@@ -144,7 +144,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       <div class="flex flex-wrap gap-4">
         <input v-model="searchQuery" type="text" placeholder="Поиск по номеру или организации..." class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]" />
         <select v-model="filterPeriod" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все периоды</option><option value="2024 год">2024 год</option><option value="2023 год">2023 год</option>
+          <option value="">Все периоды</option><option value="2025 год">2025 год</option><option value="2026 год">2026 год</option><option value="2027 год">2027 год</option><option value="2028 год">2028 год</option><option value="2029 год">2029 год</option><option value="2030 год">2030 год</option>
         </select>
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">Все статусы</option><option value="На проверке">На проверке</option><option value="Принят">Принят</option><option value="Отклонён">Отклонён</option>
@@ -159,17 +159,21 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       <template #cell-status="{ value }"><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">{{ value }}</span></template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button @click="openView(row)" class="p-2 text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors" title="Просмотреть">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+          <button @click="openView(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            Просмотреть
           </button>
-          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'accept')" class="p-2 text-[#10b981] hover:bg-green-50 rounded-lg transition-colors" title="Принять">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'accept')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            Принять
           </button>
-          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'reject')" class="p-2 text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors" title="Отклонить">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'reject')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            Отклонить
           </button>
-          <button @click="downloadPdf(row)" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg transition-colors" title="Скачать">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          <button @click="downloadPdf(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Скачать PDF
           </button>
         </div>
       </template>

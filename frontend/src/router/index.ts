@@ -52,6 +52,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ReceptionPointsView.vue'),
   },
   {
+    path: '/recyclers',
+    name: 'recyclers',
+    component: () => import('../views/RecyclersPublicView.vue'),
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('../views/RoleSelectionView.vue'),
@@ -60,6 +65,16 @@ const routes: RouteRecordRaw[] = [
     path: '/register',
     name: 'register',
     component: () => import('../views/RegisterView.vue'),
+  },
+  {
+    path: '/login/business',
+    name: 'login-business',
+    component: () => import('../views/LoginBusinessView.vue'),
+  },
+  {
+    path: '/auth/esi/callback',
+    name: 'esi-callback',
+    redirect: '/business',
   },
 
   // Admin routes
@@ -156,6 +171,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'employee' },
   },
   {
+    path: '/employee/recyclers-registry',
+    name: 'employee-recyclers-registry',
+    component: () => import('../views/employee/EmployeeRecyclersRegistry.vue'),
+    meta: { requiresAuth: true, role: 'employee' },
+  },
+  {
     path: '/employee/reports',
     name: 'employee-reports',
     component: () => import('../views/employee/EmployeeReports.vue'),
@@ -218,12 +239,6 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business' },
   },
   {
-    path: '/business/recyclers',
-    name: 'business-recyclers',
-    component: () => import('../views/business/BusinessRecyclers.vue'),
-    meta: { requiresAuth: true, role: 'business' },
-  },
-  {
     path: '/business/profile',
     name: 'business-profile',
     component: () => import('../views/business/BusinessProfile.vue'),
@@ -238,14 +253,12 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/business/reports/new',
     name: 'business-reports-new',
-    component: () => import('../views/business/BusinessStub.vue'),
-    meta: { requiresAuth: true, role: 'business' },
+    redirect: '/business/reports',
   },
   {
     path: '/business/declarations/new',
     name: 'business-declarations-new',
-    component: () => import('../views/business/BusinessStub.vue'),
-    meta: { requiresAuth: true, role: 'business' },
+    redirect: '/business/declarations',
   },
 
   // Eco Operator routes
@@ -265,6 +278,12 @@ const routes: RouteRecordRaw[] = [
     path: '/eco-operator/incoming-reports',
     name: 'eco-operator-incoming-reports',
     component: () => import('../views/eco-operator/EcoOperatorIncomingReports.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator' },
+  },
+  {
+    path: '/eco-operator/incoming-calculations',
+    name: 'eco-operator-incoming-calculations',
+    component: () => import('../views/eco-operator/EcoOperatorIncomingCalculations.vue'),
     meta: { requiresAuth: true, role: 'eco-operator' },
   },
   {

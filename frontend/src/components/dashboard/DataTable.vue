@@ -9,6 +9,7 @@ interface Props {
   columns: Column[]
   data: Record<string, any>[]
   actions?: boolean
+  rowClass?: (row: Record<string, any>) => string
 }
 
 defineProps<Props>()
@@ -24,12 +25,12 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
             <th
               v-for="col in columns"
               :key="col.key"
-              :style="col.width ? { width: col.width } : {}"
-              class="px-6 py-4 text-left text-sm font-semibold text-[#415861]"
+              :style="col.width ? { width: col.width, minWidth: col.width } : {}"
+              class="px-4 py-4 text-left text-sm font-semibold text-[#415861] whitespace-nowrap"
             >
               {{ col.label }}
             </th>
-            <th v-if="actions" class="px-6 py-4 text-right text-sm font-semibold text-[#415861]">
+            <th v-if="actions" class="px-4 py-4 text-right text-sm font-semibold text-[#415861] whitespace-nowrap">
               Действия
             </th>
           </tr>
@@ -38,18 +39,18 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
           <tr
             v-for="(row, index) in data"
             :key="index"
-            class="border-b border-[#f1f5f9] hover:bg-[#f8fafc] transition-colors"
+            :class="['border-b border-[#f1f5f9] hover:bg-[#f8fafc] transition-colors', rowClass?.(row)]"
           >
             <td
               v-for="col in columns"
               :key="col.key"
-              class="px-6 py-4 text-sm text-[#415861]"
+              class="px-4 py-4 text-sm text-[#415861] whitespace-nowrap"
             >
               <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
                 {{ row[col.key] }}
               </slot>
             </td>
-            <td v-if="actions" class="px-6 py-4 text-right">
+            <td v-if="actions" class="px-4 py-4 text-right whitespace-nowrap">
               <slot name="actions" :row="row">
                 <div class="flex items-center justify-end gap-2">
                   <button

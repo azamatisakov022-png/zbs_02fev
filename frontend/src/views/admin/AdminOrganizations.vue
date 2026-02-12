@@ -18,12 +18,12 @@ const menuItems = [
 ]
 
 const columns = [
-  { key: 'inn', label: 'ИНН', width: '140px' },
-  { key: 'name', label: 'Наименование' },
-  { key: 'type', label: 'Тип', width: '140px' },
-  { key: 'region', label: 'Регион', width: '160px' },
-  { key: 'registeredAt', label: 'Дата регистрации', width: '140px' },
-  { key: 'status', label: 'Статус', width: '130px' },
+  { key: 'inn', label: 'ИНН', width: '10%' },
+  { key: 'name', label: 'Наименование', width: '18%' },
+  { key: 'type', label: 'Тип', width: '8%' },
+  { key: 'region', label: 'Регион', width: '10%' },
+  { key: 'registeredAt', label: 'Дата регистрации', width: '10%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
 interface Organization {
@@ -290,21 +290,17 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button @click="openViewModal(row)" class="p-2 text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors" title="Просмотреть">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
+          <button @click="openViewModal(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            Просмотреть
           </button>
-          <button @click="openEditModal(row)" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg transition-colors" title="Редактировать">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+          <button @click="openEditModal(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+            Редактировать
           </button>
-          <button @click="confirmDelete(row)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Удалить">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+          <button @click="confirmDelete(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Удалить
           </button>
         </div>
       </template>

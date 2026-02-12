@@ -117,7 +117,7 @@ const groupOptions = computed((): SelectOption[] => {
 const selectedGroupNumber = ref<number | null>(null)
 const selectedSubgroupIndex = ref<number | null>(null)
 const mass = ref<string>('')
-const year = ref<string>('2027')
+const year = ref<string>('2026')
 const operationType = ref<string>('import')
 const selfProcessing = ref<boolean>(false)
 const processedAmount = ref<string>('')

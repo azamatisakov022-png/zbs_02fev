@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import { icons } from '../../utils/menuIcons'
+import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
+import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
+import { reportStore, type ProcessingItem } from '../../stores/reports'
+import { recyclerStore } from '../../stores/recyclers'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'reports', label: 'Отчёты', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
+  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
+  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы переработки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'recyclers', label: 'Переработчики отходов', icon: icons.recycle, route: '/business/recyclers' },
+  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
 
@@ -30,13 +33,7 @@ const steps = [
 ]
 
 // Form data - Step 1
-const reportType = ref('')
-const reportTypes = [
-  { value: 'processing_norms', label: 'Отчёт о выполнении нормативов переработки' },
-  { value: 'self_processing', label: 'Отчёт о самостоятельной переработке' },
-  { value: 'contracted_processing', label: 'Отчёт о переработке через подрядчика' },
-]
-const reportingYear = ref('2024')
+const reportingYear = ref('2026')
 
 // Company data (from profile - readonly)
 const companyData = {
@@ -49,39 +46,31 @@ const companyData = {
 }
 
 // Form data - Step 2
-interface ProcessingItem {
-  id: number
-  wasteType: string
-  wasteCode: string
-  declared: string
-  processed: string
-  recycler: string
-  contractNumber: string
-  contractDate: string
-}
-
 const processingItems = ref<ProcessingItem[]>([
   { id: 1, wasteType: '', wasteCode: '', declared: '', processed: '', recycler: '', contractNumber: '', contractDate: '' }
 ])
 
-const wasteTypes = [
-  { value: 'plastic', label: 'Пластик и полимеры', code: '15 01 02' },
-  { value: 'paper', label: 'Бумага и картон', code: '15 01 01' },
-  { value: 'glass', label: 'Стекло', code: '15 01 07' },
-  { value: 'metal', label: 'Металлы', code: '15 01 04' },
-  { value: 'textile', label: 'Текстиль', code: '15 01 09' },
-  { value: 'electronics', label: 'Электронные отходы', code: '20 01 35' },
-  { value: 'batteries', label: 'Батареи и аккумуляторы', code: '20 01 33' },
-  { value: 'tires', label: 'Шины и резина', code: '16 01 03' },
-]
+// Lookup для getWasteTypeLabel
+const wasteTypes = productGroups.map(g => ({ value: g.value, label: g.label, code: g.code }))
 
-const recyclers = [
-  { value: 'ecorecycle', label: 'ОсОО «ЭкоРесайкл»', license: 'ЛИЦ-2023-001' },
-  { value: 'greentech', label: 'ОсОО «ГринТек»', license: 'ЛИЦ-2023-015' },
-  { value: 'plastprom', label: 'ОсОО «ПластПром»', license: 'ЛИЦ-2022-089' },
-  { value: 'metalrecycle', label: 'ОсОО «МеталлРесайкл»', license: 'ЛИЦ-2023-034' },
-  { value: 'glassprom', label: 'ОсОО «СтеклоПром»', license: 'ЛИЦ-2022-056' },
-]
+// Recyclers from shared store, filtered by active status and matching waste types
+const getRecyclersForItem = (item: ProcessingItem) => {
+  const active = item.wasteType
+    ? recyclerStore.getActiveRecyclersByGroup(item.wasteType)
+    : recyclerStore.getActiveRecyclers()
+  return active.map(r => ({
+    value: String(r.id),
+    label: `${r.name} (ИНН: ${r.inn})`,
+  }))
+}
+
+// Tracking state per processing item
+const itemSubgroups = reactive<Record<number, string>>({})
+const recyclerModes = reactive<Record<number, string>>({})
+
+const getSubgroupsForGroup = (groupValue: string) => {
+  return productSubgroups[groupValue] || []
+}
 
 let nextItemId = 2
 
@@ -104,15 +93,39 @@ const removeProcessingItem = (id: number) => {
   }
 }
 
-const updateWasteCode = (item: ProcessingItem) => {
-  const found = wasteTypes.find(w => w.value === item.wasteType)
-  if (found) {
-    item.wasteCode = found.code
+const onGroupChange = (item: ProcessingItem) => {
+  itemSubgroups[item.id] = ''
+  const group = productGroups.find(g => g.value === item.wasteType)
+  item.wasteCode = group?.code || ''
+}
+
+const onSubgroupChange = (item: ProcessingItem) => {
+  const subs = getSubgroupsForGroup(item.wasteType)
+  const sub = subs.find(s => s.value === itemSubgroups[item.id])
+  if (sub) {
+    item.wasteCode = sub.code
   }
 }
 
+const onRecyclerChange = (item: ProcessingItem) => {
+  if (item.recycler === '__manual__') {
+    item.recycler = ''
+    recyclerModes[item.id] = 'manual'
+  }
+}
+
+const switchToSelect = (item: ProcessingItem) => {
+  item.recycler = ''
+  recyclerModes[item.id] = 'select'
+}
+
 const getRecyclerLabel = (value: string) => {
-  return recyclers.find(r => r.value === value)?.label || value
+  const id = parseInt(value)
+  if (!isNaN(id)) {
+    const r = recyclerStore.getRecyclerById(id)
+    if (r) return r.name
+  }
+  return value
 }
 
 const getWasteTypeLabel = (value: string) => {
@@ -121,11 +134,12 @@ const getWasteTypeLabel = (value: string) => {
 
 // Import from declaration mock
 const importFromDeclaration = () => {
-  processingItems.value = [
-    { id: nextItemId++, wasteType: 'plastic', wasteCode: '15 01 02', declared: '12.5', processed: '11.8', recycler: 'ecorecycle', contractNumber: 'ДГ-2024-045', contractDate: '2024-01-15' },
-    { id: nextItemId++, wasteType: 'paper', wasteCode: '15 01 01', declared: '8.3', processed: '8.3', recycler: 'greentech', contractNumber: 'ДГ-2024-046', contractDate: '2024-01-15' },
-    { id: nextItemId++, wasteType: 'glass', wasteCode: '15 01 07', declared: '5.2', processed: '5.0', recycler: 'glassprom', contractNumber: 'ДГ-2024-047', contractDate: '2024-02-01' },
+  const items = [
+    { id: nextItemId++, wasteType: 'group_6', wasteCode: '3923', declared: '12.5', processed: '11.8', recycler: 'ecorecycle', contractNumber: 'ДГ-2024-045', contractDate: '2024-01-15' },
+    { id: nextItemId++, wasteType: 'group_1', wasteCode: '4819 10', declared: '8.3', processed: '8.3', recycler: 'greentech', contractNumber: 'ДГ-2024-046', contractDate: '2024-01-15' },
+    { id: nextItemId++, wasteType: 'group_8', wasteCode: '7010', declared: '5.2', processed: '5.0', recycler: 'glassprom', contractNumber: 'ДГ-2024-047', contractDate: '2024-02-01' },
   ]
+  processingItems.value = items
 }
 
 // Form data - Step 3
@@ -197,23 +211,41 @@ const goToStep = (step: number) => {
 }
 
 // Submission
-const submittedReport = ref({
+const submittedReport = ref<{ number: string; date: string }>({
   number: '',
   date: ''
 })
 
 const submitReport = () => {
-  const now = new Date()
-  const num = String(Math.floor(Math.random() * 900) + 100)
+  const report = reportStore.addReport({
+    company: companyData.name,
+    inn: companyData.inn,
+    year: reportingYear.value,
+    items: [...processingItems.value.filter(i => i.wasteType)],
+    files: [...uploadedFiles.value],
+    totalDeclared: parseFloat(totalDeclared.value),
+    totalProcessed: parseFloat(totalProcessed.value),
+    processingPercent: parseFloat(processingPercent.value),
+  }, 'На проверке')
   submittedReport.value = {
-    number: `РП-${now.getFullYear()}-${num}`,
-    date: now.toLocaleDateString('ru-RU')
+    number: report.number,
+    date: report.date,
   }
   viewMode.value = 'success'
 }
 
 const saveDraft = () => {
-  alert('Черновик сохранён')
+  reportStore.addReport({
+    company: companyData.name,
+    inn: companyData.inn,
+    year: reportingYear.value,
+    items: [...processingItems.value.filter(i => i.wasteType)],
+    files: [...uploadedFiles.value],
+    totalDeclared: parseFloat(totalDeclared.value) || 0,
+    totalProcessed: parseFloat(totalProcessed.value) || 0,
+    processingPercent: parseFloat(processingPercent.value) || 0,
+  }, 'Черновик')
+  viewMode.value = 'list'
 }
 
 const startWizard = () => {
@@ -225,14 +257,16 @@ const backToList = () => {
   viewMode.value = 'list'
   // Reset form
   currentStep.value = 1
-  reportType.value = ''
   processingItems.value = [{ id: 1, wasteType: '', wasteCode: '', declared: '', processed: '', recycler: '', contractNumber: '', contractDate: '' }]
   uploadedFiles.value = []
+  // Clear tracking state
+  Object.keys(itemSubgroups).forEach(k => delete itemSubgroups[Number(k)])
+  Object.keys(recyclerModes).forEach(k => delete recyclerModes[Number(k)])
 }
 
 // Computed
 const canProceedStep1 = computed(() => {
-  return reportType.value && reportingYear.value
+  return reportingYear.value
 })
 
 const canProceedStep2 = computed(() => {
@@ -258,32 +292,48 @@ const processingPercent = computed(() => {
   return ((processed / declared) * 100).toFixed(1)
 })
 
-const getReportTypeLabel = (value: string) => {
-  return reportTypes.find(t => t.value === value)?.label || value
-}
-
-// Table data
+// Table data — from store
 const columns = [
-  { key: 'number', label: 'Номер', width: '120px' },
-  { key: 'type', label: 'Тип отчёта' },
-  { key: 'period', label: 'Период', width: '150px' },
-  { key: 'submittedAt', label: 'Дата подачи', width: '130px' },
-  { key: 'status', label: 'Статус', width: '140px' },
+  { key: 'number', label: 'Номер', width: '10%' },
+  { key: 'year', label: 'Период', width: '8%' },
+  { key: 'date', label: 'Дата подачи', width: '10%' },
+  { key: 'processingPercent', label: '% выполнения', width: '10%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
-const reports = ref([
-  { id: 1, number: 'РП-2025-012', type: 'Отчёт о нормативах переработки', period: '2024 год', submittedAt: '18.01.2025', status: 'На проверке' },
-  { id: 2, number: 'РП-2024-089', type: 'Отчёт о нормативах переработки', period: '2023 год', submittedAt: '15.01.2024', status: 'Принят' },
-  { id: 3, number: 'РП-2023-056', type: 'Отчёт о нормативах переработки', period: '2022 год', submittedAt: '12.01.2023', status: 'Принят' },
-])
+const businessReports = computed(() => {
+  return reportStore.getBusinessReports(companyData.name)
+})
 
 const getStatusClass = (status: string) => {
   switch (status) {
+    case 'Черновик': return 'bg-gray-100 text-gray-800'
     case 'На проверке': return 'bg-yellow-100 text-yellow-800'
     case 'Принят': return 'bg-green-100 text-green-800'
     case 'Отклонён': return 'bg-red-100 text-red-800'
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
     default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const getPercentClass = (percent: number) => {
+  if (percent >= 100) return 'text-[#10b981]'
+  if (percent >= 80) return 'text-[#f59e0b]'
+  return 'text-[#ef4444]'
+}
+
+// Actions on reports
+const resubmitReport = (id: number) => {
+  reportStore.submitForReview(id)
+}
+
+const editDraft = (id: number) => {
+  const report = reportStore.state.reports.find(r => r.id === id)
+  if (report) {
+    reportingYear.value = report.year
+    processingItems.value = report.items.length > 0 ? [...report.items] : [{ id: 1, wasteType: '', wasteCode: '', declared: '', processed: '', recycler: '', contractNumber: '', contractDate: '' }]
+    uploadedFiles.value = [...report.files]
+    currentStep.value = 1
+    viewMode.value = 'wizard'
   }
 }
 </script>
@@ -298,8 +348,8 @@ const getStatusClass = (status: string) => {
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Отчёты</h1>
-        <p class="text-[#64748b]">Управление отчётами по утилизации и нормативам переработки</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Отчёты о переработке</h1>
+        <p class="text-[#64748b]">Отчёты о выполнении нормативов переработки отходов</p>
       </div>
 
       <!-- CTA Banner -->
@@ -366,9 +416,15 @@ const getStatusClass = (status: string) => {
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История отчётов</h2>
       </div>
 
-      <DataTable :columns="columns" :data="reports" :actions="true">
+      <DataTable :columns="columns" :data="businessReports" :actions="true">
         <template #cell-number="{ value }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+        </template>
+        <template #cell-year="{ value }">
+          <span>{{ value }} год</span>
+        </template>
+        <template #cell-processingPercent="{ value }">
+          <span :class="['font-semibold', getPercentClass(value)]">{{ value }}%</span>
         </template>
         <template #cell-status="{ value }">
           <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
@@ -378,25 +434,58 @@ const getStatusClass = (status: string) => {
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
             <button
-              class="p-2 text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors"
-              title="Просмотреть"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
+              Просмотреть
             </button>
             <button
-              class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg transition-colors"
-              title="Скачать PDF"
+              v-if="row.status === 'Черновик'"
+              @click="editDraft(row.id)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
             >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Редактировать
+            </button>
+            <button
+              v-if="row.status === 'Отклонён'"
+              @click="resubmitReport(row.id)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Отправить повторно
+            </button>
+            <button
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
+              Скачать PDF
             </button>
           </div>
         </template>
       </DataTable>
+
+      <!-- Rejection info for declined reports -->
+      <template v-for="report in businessReports" :key="'rej-' + report.id">
+        <div v-if="report.status === 'Отклонён' && report.rejectionReason" class="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <p class="font-medium text-red-800">Отчёт {{ report.number }} отклонён</p>
+            <p class="text-sm text-red-700 mt-1">{{ report.rejectionReason }}</p>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- WIZARD VIEW -->
@@ -466,20 +555,6 @@ const getStatusClass = (status: string) => {
             <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Основные данные</h2>
 
             <div class="space-y-6">
-              <!-- Report Type -->
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">Тип отчёта *</label>
-                <select
-                  v-model="reportType"
-                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
-                >
-                  <option value="">Выберите тип отчёта</option>
-                  <option v-for="type in reportTypes" :key="type.value" :value="type.value">
-                    {{ type.label }}
-                  </option>
-                </select>
-              </div>
-
               <!-- Reporting Period -->
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-2">Отчётный год *</label>
@@ -487,9 +562,11 @@ const getStatusClass = (status: string) => {
                   v-model="reportingYear"
                   class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
                 >
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                  <option value="2029">2029</option>
+                  <option value="2030">2030</option>
                 </select>
               </div>
 
@@ -581,33 +658,20 @@ const getStatusClass = (status: string) => {
                   </button>
                 </div>
 
-                <!-- Row 1: Waste type and code -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div class="lg:col-span-2">
-                    <label class="block text-xs text-[#64748b] mb-1">Вид отхода</label>
-                    <select
-                      v-model="item.wasteType"
-                      @change="updateWasteCode(item)"
-                      class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
-                    >
-                      <option value="">Выберите вид отхода</option>
-                      <option v-for="waste in wasteTypes" :key="waste.value" :value="waste.value">
-                        {{ waste.label }}
-                      </option>
-                    </select>
-                  </div>
+                <!-- Row 1: Group, subgroup + auto-fields -->
+                <ProductGroupSelector
+                  :group="item.wasteType"
+                  :subgroup="itemSubgroups[item.id] || ''"
+                  @update:group="(v: string) => { item.wasteType = v; onGroupChange(item) }"
+                  @update:subgroup="(v: string) => { itemSubgroups[item.id] = v; onSubgroupChange(item) }"
+                  @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.wasteCode = data.code }"
+                  accent-color="#10b981"
+                  class="mb-4"
+                />
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Код отхода</label>
-                    <input
-                      type="text"
-                      v-model="item.wasteCode"
-                      readonly
-                      placeholder="Авто"
-                      class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm cursor-not-allowed"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Декларировано (т)</label>
+                    <label class="block text-xs text-[#64748b] mb-1">Масса задекл. (т)</label>
                     <input
                       type="number"
                       v-model="item.declared"
@@ -622,7 +686,7 @@ const getStatusClass = (status: string) => {
                 <!-- Row 2: Processing data -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Переработано (т)</label>
+                    <label class="block text-xs text-[#64748b] mb-1">Масса переработанная (т)</label>
                     <input
                       type="number"
                       v-model="item.processed"
@@ -634,15 +698,39 @@ const getStatusClass = (status: string) => {
                   </div>
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">Переработчик</label>
-                    <select
-                      v-model="item.recycler"
-                      class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
-                    >
-                      <option value="">Выберите переработчика</option>
-                      <option v-for="r in recyclers" :key="r.value" :value="r.value">
-                        {{ r.label }}
-                      </option>
-                    </select>
+                    <template v-if="recyclerModes[item.id] !== 'manual'">
+                      <select
+                        v-model="item.recycler"
+                        @change="onRecyclerChange(item)"
+                        class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
+                      >
+                        <option value="">Выберите переработчика</option>
+                        <option v-for="r in getRecyclersForItem(item)" :key="r.value" :value="r.value">
+                          {{ r.label }}
+                        </option>
+                        <option value="__manual__">+ Ввести вручную</option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <div class="flex gap-1 min-w-0">
+                        <input
+                          type="text"
+                          v-model="item.recycler"
+                          placeholder="Название переработчика"
+                          class="flex-1 min-w-0 px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
+                        />
+                        <button
+                          @click="switchToSelect(item)"
+                          type="button"
+                          class="px-2 py-2 border border-[#e2e8f0] text-[#10b981] hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
+                          title="Выбрать из списка"
+                        >
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                          </svg>
+                        </button>
+                      </div>
+                    </template>
                   </div>
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">№ договора</label>
@@ -661,6 +749,14 @@ const getStatusClass = (status: string) => {
                       class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
                     />
                   </div>
+                </div>
+
+                <!-- Percent per item -->
+                <div v-if="item.declared && item.processed" class="mt-3 text-sm">
+                  <span class="text-[#64748b]">Выполнение: </span>
+                  <span :class="['font-semibold', parseFloat(item.processed) / parseFloat(item.declared) >= 1 ? 'text-[#10b981]' : 'text-[#f59e0b]']">
+                    {{ ((parseFloat(item.processed) / parseFloat(item.declared)) * 100).toFixed(1) }}%
+                  </span>
                 </div>
               </div>
             </div>
@@ -810,10 +906,6 @@ const getStatusClass = (status: string) => {
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span class="text-[#64748b]">Тип отчёта:</span>
-                    <p class="font-medium text-[#1e293b]">{{ getReportTypeLabel(reportType) }}</p>
-                  </div>
-                  <div>
                     <span class="text-[#64748b]">Отчётный год:</span>
                     <p class="font-medium text-[#1e293b]">{{ reportingYear }}</p>
                   </div>
@@ -840,10 +932,11 @@ const getStatusClass = (status: string) => {
                   <table class="w-full text-sm">
                     <thead>
                       <tr class="text-left text-[#64748b]">
-                        <th class="pb-2">Вид отхода</th>
+                        <th class="pb-2">Группа товаров</th>
                         <th class="pb-2">Код</th>
                         <th class="pb-2 text-right">Деклар. (т)</th>
                         <th class="pb-2 text-right">Перераб. (т)</th>
+                        <th class="pb-2 text-right">%</th>
                         <th class="pb-2">Переработчик</th>
                       </tr>
                     </thead>
@@ -853,6 +946,9 @@ const getStatusClass = (status: string) => {
                         <td class="py-2 font-mono text-xs">{{ item.wasteCode }}</td>
                         <td class="py-2 text-right">{{ item.declared }}</td>
                         <td class="py-2 text-right font-medium text-[#10b981]">{{ item.processed }}</td>
+                        <td class="py-2 text-right font-semibold" :class="parseFloat(item.processed) / parseFloat(item.declared) >= 1 ? 'text-[#10b981]' : 'text-[#f59e0b]'">
+                          {{ ((parseFloat(item.processed) / parseFloat(item.declared)) * 100).toFixed(1) }}%
+                        </td>
                         <td class="py-2 text-xs">{{ getRecyclerLabel(item.recycler) }}</td>
                       </tr>
                     </tbody>
@@ -861,7 +957,8 @@ const getStatusClass = (status: string) => {
                         <td colspan="2" class="pt-2">Итого:</td>
                         <td class="pt-2 text-right">{{ totalDeclared }} т</td>
                         <td class="pt-2 text-right text-[#10b981]">{{ totalProcessed }} т</td>
-                        <td class="pt-2 text-right">{{ processingPercent }}%</td>
+                        <td class="pt-2 text-right" :class="parseFloat(processingPercent) >= 100 ? 'text-[#10b981]' : 'text-[#f59e0b]'">{{ processingPercent }}%</td>
+                        <td></td>
                       </tr>
                     </tfoot>
                   </table>

@@ -7,6 +7,7 @@ interface MenuItem {
   label: string
   icon: string
   route: string
+  badge?: number
 }
 
 interface Props {
@@ -88,8 +89,7 @@ const toggleSidebar = () => {
             </svg>
           </div>
           <div class="flex flex-col">
-            <span class="text-[#0e888d] font-bold text-sm leading-tight">Цифровой реестр</span>
-            <span class="text-[#70868f] text-xs">отходов МПРЭТН</span>
+            <span class="text-[#0e888d] font-bold text-sm leading-tight">ГП Эко Оператор</span>
           </div>
         </div>
       </div>
@@ -109,6 +109,7 @@ const toggleSidebar = () => {
         >
           <span class="w-6 h-6 flex items-center justify-center" v-html="item.icon"></span>
           <span class="font-medium text-[15px]">{{ item.label }}</span>
+          <span v-if="item.badge && item.badge > 0" class="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto">{{ item.badge }}</span>
         </button>
       </nav>
 

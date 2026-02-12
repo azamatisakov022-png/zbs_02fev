@@ -58,13 +58,12 @@ import IconArrowRight from '../icons/IconArrowRight.vue'
             <!-- Card inner content -->
             <div class="bg-[rgba(243,244,245,0.3)] m-[10px] rounded-[20px] h-[calc(100%-20px)] lg:h-[190px] p-6 lg:p-[30px] flex flex-col justify-center">
               <h3 class="text-white text-lg lg:text-[20px] lg:leading-[25px] font-black uppercase mb-4 lg:mb-[61px]">
-                ЗАКЛЮЧИТЬ<br/>
-                ДОГОВОР/ПОДАТЬ<br/>
+                ПОДАТЬ<br/>
                 ОТЧЕТ
               </h3>
 
-              <a href="#" class="inline-flex items-center gap-[10px] text-white text-xs font-black uppercase hover:text-[#fea629] transition-colors">
-                Подробнее
+              <a href="/login" class="inline-flex items-center gap-[10px] text-white text-xs font-black uppercase hover:text-[#fea629] transition-colors">
+                Подать отчет
                 <IconArrowRight class="w-[21px] h-[9px]" />
               </a>
             </div>
