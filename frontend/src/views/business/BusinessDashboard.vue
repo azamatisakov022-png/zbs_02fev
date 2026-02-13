@@ -110,7 +110,7 @@ onMounted(() => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Бизнес"
+    roleTitle="Плательщик"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -223,8 +223,13 @@ onMounted(() => {
             ℹ️
           </div>
           <div>
-            <h4 class="font-semibold text-lg mb-1">Напоминание</h4>
-            <p class="opacity-90">Срок подачи декларации за I квартал 2026 года — до 20 апреля 2026 г. Не забудьте своевременно подать отчётность.</p>
+            <h4 class="font-semibold text-lg mb-2">Напоминание о сроках подачи отчетности:</h4>
+            <ul class="opacity-90 list-none pl-1" style="margin: 0;">
+              <li style="margin-bottom: 4px;">— Расчет утилизационного сбора (для импортеров) — в течение 15 рабочих дней с момента ввоза.</li>
+              <li style="margin-bottom: 4px;">— Для производителей — ежеквартально, не позднее 15 числа месяца, следующего за отчетным кварталом.</li>
+              <li style="margin-bottom: 4px;">— Декларация и отчет о переработке — ежегодно, до 1 апреля.</li>
+            </ul>
+            <p class="opacity-90" style="margin-top: 12px; font-style: italic;">Просим своевременно подавать отчетность.</p>
           </div>
         </div>
       </div>

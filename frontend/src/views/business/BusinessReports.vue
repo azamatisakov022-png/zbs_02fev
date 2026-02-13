@@ -386,7 +386,7 @@ const handlePrint = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Бизнес"
+    roleTitle="Плательщик"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -432,7 +432,7 @@ const handlePrint = () => {
         </div>
         <div>
           <p class="font-medium text-[#1e293b]">Подсказка</p>
-          <p class="text-sm text-[#64748b]">Отчёт о переработке подаётся ежегодно до 1 апреля года, следующего за отчётным. Вы можете импортировать данные из ранее поданных деклараций для автоматического заполнения.</p>
+          <p class="text-sm text-[#64748b]">Отчетность представляется ежегодно до 1 апреля года, следующего за отчетным периодом.</p>
         </div>
       </div>
 

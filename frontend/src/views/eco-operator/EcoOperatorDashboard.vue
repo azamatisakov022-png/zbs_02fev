@@ -14,7 +14,6 @@ const menuItems = computed(() => [
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
   { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
-  { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
@@ -103,7 +102,7 @@ onMounted(() => {
   >
     <div class="content__header mb-8">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Главная</h1>
-      <p class="text-[#64748b]">Приём и обработка деклараций от бизнеса</p>
+      <p class="text-[#64748b]">Приём и обработка деклараций от плательщиков</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -248,20 +247,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- License Info Banner -->
-      <div class="bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] rounded-2xl p-6 text-white">
-        <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h4 class="font-semibold text-lg mb-1">Срок действия лицензии</h4>
-            <p class="opacity-90">Ваша лицензия действительна до 15 августа 2026 года. Рекомендуем начать процесс продления не позднее чем за 3 месяца до истечения срока.</p>
-          </div>
-        </div>
-      </div>
     </template>
   </DashboardLayout>
 </template>

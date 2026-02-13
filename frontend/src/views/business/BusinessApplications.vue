@@ -43,7 +43,7 @@ const getStatusClass = (status: string) => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Бизнес"
+    roleTitle="Плательщик"
     userName="Токтогулов Эрлан"
     :menuItems="menuItems"
   >

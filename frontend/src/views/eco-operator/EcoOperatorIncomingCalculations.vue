@@ -13,7 +13,6 @@ const menuItems = computed(() => [
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
   { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
-  { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
@@ -208,7 +207,7 @@ const resetPaymentFilters = () => {
   >
     <div class="mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие расчёты</h1>
-      <p class="text-[#64748b]">Расчёты утилизационного сбора от бизнеса</p>
+      <p class="text-[#64748b]">Расчёты утилизационного сбора от плательщиков</p>
     </div>
 
     <!-- Large Dashboard Stat Cards -->

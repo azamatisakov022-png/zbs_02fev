@@ -32,7 +32,7 @@ const pageTitle = computed(() => pageTitles[route.path] || 'Страница')
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Бизнес"
+    roleTitle="Плательщик"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >

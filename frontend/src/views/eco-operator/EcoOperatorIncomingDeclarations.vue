@@ -14,7 +14,6 @@ const menuItems = computed(() => [
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
   { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
-  { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
@@ -124,7 +123,7 @@ const openDetail = (id: number) => {
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие декларации</h1>
-        <p class="text-[#64748b]">Декларации о товарах и упаковке от бизнеса</p>
+        <p class="text-[#64748b]">Декларации о товарах и упаковке от плательщиков</p>
       </div>
       <div class="flex items-center gap-3">
         <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">

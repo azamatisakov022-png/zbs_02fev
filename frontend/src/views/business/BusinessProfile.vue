@@ -145,7 +145,7 @@ const toggleTwoFactor = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Бизнес"
+    roleTitle="Плательщик"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >

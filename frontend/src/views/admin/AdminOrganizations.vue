@@ -41,13 +41,13 @@ interface Organization {
 }
 
 const organizations = ref<Organization[]>([
-  { id: 1, inn: '01234567891234', name: 'ОсОО "ТехПром"', type: 'Бизнес', region: 'г. Бишкек', registeredAt: '15.03.2024', status: 'Активен', address: 'ул. Чуй, 100', contactPerson: 'Асанов Б.К.', phone: '+996 701 111 222', email: 'info@techprom.kg' },
+  { id: 1, inn: '01234567891234', name: 'ОсОО "ТехПром"', type: 'Плательщик', region: 'г. Бишкек', registeredAt: '15.03.2024', status: 'Активен', address: 'ул. Чуй, 100', contactPerson: 'Асанов Б.К.', phone: '+996 701 111 222', email: 'info@techprom.kg' },
   { id: 2, inn: '01234567891235', name: 'ОсОО "ЭкоПереработка"', type: 'Эко Оператор', region: 'г. Бишкек', registeredAt: '10.02.2024', status: 'Активен', address: 'ул. Манаса, 50', contactPerson: 'Токтогулова А.С.', phone: '+996 702 333 444', email: 'eco@recycle.kg' },
-  { id: 3, inn: '01234567891236', name: 'ОАО "СтройМаркет"', type: 'Бизнес', region: 'Чуйская обл.', registeredAt: '22.01.2024', status: 'Активен', address: 'с. Беловодское, ул. Ленина, 15', contactPerson: 'Жумабеков Э.К.', phone: '+996 555 123 456', email: 'stroymarket@mail.kg' },
-  { id: 4, inn: '01234567891237', name: 'ОсОО "ПищеПром"', type: 'Бизнес', region: 'г. Ош', registeredAt: '05.01.2024', status: 'Активен', address: 'ул. Курманжан Датки, 22', contactPerson: 'Мамытов Р.Н.', phone: '+996 770 555 666', email: 'food@pischeprom.kg' },
-  { id: 5, inn: '01234567891238', name: 'ИП Асанов Б.К.', type: 'Бизнес', region: 'г. Бишкек', registeredAt: '20.01.2025', status: 'На проверке', address: 'ул. Токтогула, 88', contactPerson: 'Асанов Б.К.', phone: '+996 700 777 888', email: 'asanov@mail.kg' },
+  { id: 3, inn: '01234567891236', name: 'ОАО "СтройМаркет"', type: 'Плательщик', region: 'Чуйская обл.', registeredAt: '22.01.2024', status: 'Активен', address: 'с. Беловодское, ул. Ленина, 15', contactPerson: 'Жумабеков Э.К.', phone: '+996 555 123 456', email: 'stroymarket@mail.kg' },
+  { id: 4, inn: '01234567891237', name: 'ОсОО "ПищеПром"', type: 'Плательщик', region: 'г. Ош', registeredAt: '05.01.2024', status: 'Активен', address: 'ул. Курманжан Датки, 22', contactPerson: 'Мамытов Р.Н.', phone: '+996 770 555 666', email: 'food@pischeprom.kg' },
+  { id: 5, inn: '01234567891238', name: 'ИП Асанов Б.К.', type: 'Плательщик', region: 'г. Бишкек', registeredAt: '20.01.2025', status: 'На проверке', address: 'ул. Токтогула, 88', contactPerson: 'Асанов Б.К.', phone: '+996 700 777 888', email: 'asanov@mail.kg' },
   { id: 6, inn: '01234567891239', name: 'ОсОО "ГринРесайкл"', type: 'Эко Оператор', region: 'Иссык-Кульская обл.', registeredAt: '18.12.2023', status: 'Активен', address: 'г. Каракол, ул. Гагарина, 5', contactPerson: 'Кыдыралиев С.М.', phone: '+996 705 111 333', email: 'green@recycle.kg' },
-  { id: 7, inn: '01234567891240', name: 'ОАО "МегаТорг"', type: 'Бизнес', region: 'г. Бишкек', registeredAt: '01.11.2023', status: 'Заблокирован', address: 'пр. Мира, 200', contactPerson: 'Сыдыкова Д.А.', phone: '+996 312 999 000', email: 'mega@torg.kg' },
+  { id: 7, inn: '01234567891240', name: 'ОАО "МегаТорг"', type: 'Плательщик', region: 'г. Бишкек', registeredAt: '01.11.2023', status: 'Заблокирован', address: 'пр. Мира, 200', contactPerson: 'Сыдыкова Д.А.', phone: '+996 312 999 000', email: 'mega@torg.kg' },
 ])
 
 // --- Filters ---
@@ -81,7 +81,7 @@ const getStatusClass = (status: string) => {
 
 const getTypeClass = (type: string) => {
   switch (type) {
-    case 'Бизнес': return 'bg-blue-100 text-blue-800'
+    case 'Плательщик': return 'bg-blue-100 text-blue-800'
     case 'Эко Оператор': return 'bg-teal-100 text-teal-800'
     default: return 'bg-gray-100 text-gray-800'
   }
@@ -227,8 +227,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         <p class="text-2xl font-bold text-[#1e293b]">{{ organizations.length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Бизнес</p>
-        <p class="text-2xl font-bold text-[#2563eb]">{{ organizations.filter(o => o.type === 'Бизнес').length }}</p>
+        <p class="text-sm text-[#64748b] mb-1">Плательщики</p>
+        <p class="text-2xl font-bold text-[#2563eb]">{{ organizations.filter(o => o.type === 'Плательщик').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
         <p class="text-sm text-[#64748b] mb-1">Эко Операторы</p>
@@ -251,7 +251,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         />
         <select v-model="filterType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">Все типы</option>
-          <option value="Бизнес">Бизнес</option>
+          <option value="Плательщик">Плательщик</option>
           <option value="Эко Оператор">Эко Оператор</option>
         </select>
         <select v-model="filterRegion" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
@@ -341,7 +341,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
                   <label class="block text-sm font-medium text-[#415861] mb-1.5">Тип организации <span class="text-red-500">*</span></label>
                   <select v-model="form.type" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.type ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]', !form.type ? 'text-[#9ca3af]' : '']">
                     <option value="" disabled>Выберите тип</option>
-                    <option value="Бизнес">Бизнес</option>
+                    <option value="Плательщик">Плательщик</option>
                     <option value="Эко Оператор">Эко Оператор</option>
                   </select>
                   <p v-if="errors.type" class="mt-1 text-xs text-red-500">{{ errors.type }}</p>

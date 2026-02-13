@@ -18,12 +18,6 @@ const roles: Role[] = [
     icon: 'gear'
   },
   {
-    id: 'business',
-    title: 'Бизнес',
-    description: 'Импортёры и производители',
-    icon: 'briefcase'
-  },
-  {
     id: 'employee',
     title: 'Сотрудник МПРЭТН КР',
     description: 'Министерство природных ресурсов, экологии и технического надзора',
@@ -34,6 +28,12 @@ const roles: Role[] = [
     title: 'ГП «Эко Оператор»',
     description: '',
     icon: 'recycle'
+  },
+  {
+    id: 'business',
+    title: 'Плательщик',
+    description: 'Импортёры, производители товаров и упаковки',
+    icon: 'briefcase'
   }
 ]
 
