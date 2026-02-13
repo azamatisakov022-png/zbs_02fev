@@ -178,7 +178,7 @@ const getStatusClass = (status: string) => {
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Бизнес" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">

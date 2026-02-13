@@ -10,7 +10,6 @@ const menuItems = computed(() => [
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
   { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
-  { id: 'enterprise', label: 'Моё предприятие', icon: icons.building, route: '/eco-operator/enterprise' },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
@@ -325,7 +324,7 @@ const exportToExcel = async (type: 'companies' | 'products' | 'periods') => {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Аналитика по компаниям</h1>
-          <p class="text-gray-600 mt-1">Статистика деклараций и отчётов от бизнес-партнёров</p>
+          <p class="text-gray-600 mt-1">Статистика деклараций и отчётов от плательщиков</p>
         </div>
         <div class="flex items-center gap-3">
           <div class="relative">

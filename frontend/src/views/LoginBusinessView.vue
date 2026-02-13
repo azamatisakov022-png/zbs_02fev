@@ -48,7 +48,7 @@ const goBack = () => {
           </svg>
         </button>
         <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase">
-          Вход для бизнеса
+          Вход для Плательщика
         </h1>
       </div>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] ml-14">

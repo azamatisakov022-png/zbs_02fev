@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
 
 export interface ProductItem {
   id: number
@@ -6,6 +7,7 @@ export interface ProductItem {
   subgroup: string
   tnvedCode: string
   mass: string
+  recycledMass?: string
   rate: number
   amount: number
 }
@@ -36,9 +38,13 @@ export interface Calculation {
   date: string
   company: string
   inn: string
+  address?: string
   period: string
   quarter: string
   year: string
+  payerType?: 'producer' | 'importer'
+  importDate?: string
+  dueDate?: string
   items: ProductItem[]
   totalAmount: number
   status: CalculationStatus
@@ -62,9 +68,12 @@ const state = reactive<{ calculations: Calculation[] }>({
       date: '18.01.2026',
       company: 'ОсОО «ТехПром»',
       inn: '01234567890123',
+      address: 'г. Бишкек, ул. Московская, 123',
       period: 'Q4 2025',
       quarter: 'Q4',
       year: '2025',
+      payerType: 'producer',
+      dueDate: '15.01.2026',
       items: [
         { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.5', rate: 9418, amount: 3296 },
         { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '2.1', rate: 4793, amount: 2013 },
@@ -89,9 +98,13 @@ const state = reactive<{ calculations: Calculation[] }>({
       date: '22.01.2026',
       company: 'ОАО «СтройМаркет»',
       inn: '09876543210987',
+      address: 'с. Беловодское, ул. Ленина, 15',
       period: 'Q4 2025',
       quarter: 'Q4',
       year: '2025',
+      payerType: 'importer',
+      importDate: '10.01.2026',
+      dueDate: '29.01.2026',
       items: [
         { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '5.0', rate: 9418, amount: 4709 },
         { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '3.5', rate: 4793, amount: 3355 },
@@ -123,9 +136,12 @@ const state = reactive<{ calculations: Calculation[] }>({
       date: '28.01.2026',
       company: 'ИП Асанов',
       inn: '11223344556677',
+      address: 'г. Бишкек, ул. Токтогула, 88',
       period: 'Q1 2026',
       quarter: 'Q1',
       year: '2026',
+      payerType: 'producer',
+      dueDate: '15.04.2026',
       items: [
         { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.2', rate: 9418, amount: 2260 },
         { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '0.8', rate: 4793, amount: 1150 },
@@ -141,9 +157,12 @@ const state = reactive<{ calculations: Calculation[] }>({
       date: '12.10.2025',
       company: 'ОсОО «ТехПром»',
       inn: '01234567890123',
+      address: 'г. Бишкек, ул. Московская, 123',
       period: 'Q3 2025',
       quarter: 'Q3',
       year: '2025',
+      payerType: 'producer',
+      dueDate: '15.10.2025',
       items: [
         { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.0', rate: 9418, amount: 2825 },
         { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.8', rate: 4793, amount: 1725 },
@@ -188,18 +207,33 @@ function addCalculation(data: {
   inn: string
   quarter: string
   year: string
+  payerType?: 'producer' | 'importer'
+  importDate?: string
+  address?: string
   items: ProductItem[]
   totalAmount: number
 }, status: CalculationStatus = 'Черновик'): Calculation {
+  const pt = data.payerType || 'producer'
+  const deadline = calculatePaymentDeadline(pt, {
+    quarter: data.quarter,
+    year: data.year,
+    importDate: data.importDate,
+  })
   const calc: Calculation = {
     id: nextId++,
     number: data.number,
     date: data.date,
     company: data.company,
     inn: data.inn,
-    period: `${data.quarter} ${data.year}`,
+    address: data.address,
+    period: pt === 'importer' && data.importDate
+      ? `Ввоз: ${new Date(data.importDate).toLocaleDateString('ru-RU')}`
+      : `${data.quarter} ${data.year}`,
     quarter: data.quarter,
     year: data.year,
+    payerType: pt,
+    importDate: data.importDate,
+    dueDate: deadline ? formatDateShort(deadline) : undefined,
     items: data.items,
     totalAmount: data.totalAmount,
     status,
@@ -272,6 +306,10 @@ function resubmitCalculation(id: number) {
   }
 }
 
+function getCalculationById(id: number): Calculation | undefined {
+  return state.calculations.find(c => c.id === id)
+}
+
 function getBusinessCalculations(company: string) {
   return state.calculations.filter(c => c.company === company)
 }
@@ -295,6 +333,7 @@ export const calculationStore = {
   rejectPayment,
   markAsPaid,
   resubmitCalculation,
+  getCalculationById,
   getBusinessCalculations,
   getPendingCount,
   getPaymentPendingCount,

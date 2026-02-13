@@ -83,10 +83,10 @@ const users = ref<User[]>([
   },
   {
     id: 3, name: 'Токтогулов Эрлан Кубанычбекович', organization: 'ОсОО "КыргызИмпорт"',
-    role: 'Бизнес', status: 'Активен', registeredAt: '05.01.2025',
+    role: 'Плательщик', status: 'Активен', registeredAt: '05.01.2025',
     email: 'toktogul@kyrgyzimport.kg', phone: '+996 700 345 678',
     roleHistory: [
-      { date: '05.01.2025', oldRole: '—', newRole: 'Бизнес', changedBy: 'Система (регистрация)' },
+      { date: '05.01.2025', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '05.01.2025', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -106,10 +106,10 @@ const users = ref<User[]>([
   },
   {
     id: 5, name: 'Жумабаева Динара Болотовна', organization: 'ИП Жумабаева',
-    role: 'Бизнес', status: 'Активен', registeredAt: '20.12.2024',
+    role: 'Плательщик', status: 'Активен', registeredAt: '20.12.2024',
     email: 'jumabaeva@mail.kg', phone: '+996 550 567 890',
     roleHistory: [
-      { date: '20.12.2024', oldRole: '—', newRole: 'Бизнес', changedBy: 'Система (регистрация)' },
+      { date: '20.12.2024', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '20.12.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -117,7 +117,7 @@ const users = ref<User[]>([
   },
   {
     id: 6, name: 'Кадыров Улан Маратович', organization: 'ОсОО "ТрансЛогистик"',
-    role: 'Бизнес', status: 'Ожидает подтверждения', registeredAt: '18.12.2024',
+    role: 'Плательщик', status: 'Ожидает подтверждения', registeredAt: '18.12.2024',
     email: 'kadyrov@translog.kg', phone: '+996 555 678 901',
     roleHistory: [],
     statusHistory: [
@@ -138,10 +138,10 @@ const users = ref<User[]>([
   },
   {
     id: 8, name: 'Бейшеналиева Гулнур Маратовна', organization: 'ОсОО "ЭкоСервис"',
-    role: 'Бизнес', status: 'Деактивирован', registeredAt: '15.03.2024',
+    role: 'Плательщик', status: 'Деактивирован', registeredAt: '15.03.2024',
     email: 'beishenalieva@ecoservice.kg', phone: '+996 550 890 123',
     roleHistory: [
-      { date: '15.03.2024', oldRole: '—', newRole: 'Бизнес', changedBy: 'Система (регистрация)' },
+      { date: '15.03.2024', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '15.03.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -209,7 +209,7 @@ function openViewUser(user: User) {
 
 // --- Change role ---
 const changeRoleForm = reactive({ newRole: '', reason: '' })
-const roleOptions = ['Бизнес', 'Сотрудник МПРЭТН КР', 'ГП «Эко Оператор»', 'Администратор']
+const roleOptions = ['Плательщик', 'Сотрудник МПРЭТН КР', 'ГП «Эко Оператор»', 'Администратор']
 
 function openChangeRole(user: User) {
   selectedUser.value = user
@@ -356,8 +356,8 @@ const rolePermissions: Record<string, { label: string; permissions: string[]; re
     permissions: ['Работа с отчётами и декларациями', 'Управление расчётами', 'Формирование сводных отчётов'],
     restrictions: ['Нет доступа к ГИС-карте', 'Нет доступа к реестру полигонов'],
   },
-  'Бизнес': {
-    label: 'Бизнес',
+  'Плательщик': {
+    label: 'Плательщик',
     permissions: ['Подача деклараций', 'Просмотр собственных отчётов', 'Управление профилем организации'],
     restrictions: ['Ограниченный функционал', 'Доступ только к собственным данным'],
   },
@@ -503,7 +503,7 @@ const resetUserFilters = () => {
           <option value="Администратор">Администратор</option>
           <option value="Сотрудник МПРЭТН КР">Сотрудник МПРЭТН КР</option>
           <option value="ГП «Эко Оператор»">ГП «Эко Оператор»</option>
-          <option value="Бизнес">Бизнес</option>
+          <option value="Плательщик">Плательщик</option>
         </select>
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]">
           <option value="">Все статусы</option>
@@ -1017,7 +1017,7 @@ const resetUserFilters = () => {
                     :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors appearance-none bg-white', addUserErrors.role ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]', !addUserForm.role ? 'text-[#9ca3af]' : 'text-[#415861]']"
                   >
                     <option value="" disabled>Выберите роль</option>
-                    <option value="Бизнес">Бизнес</option>
+                    <option value="Плательщик">Плательщик</option>
                     <option value="Сотрудник МПРЭТН КР">Сотрудник МПРЭТН КР</option>
                     <option value="ГП «Эко Оператор»">ГП «Эко Оператор»</option>
                     <option value="Администратор">Администратор</option>

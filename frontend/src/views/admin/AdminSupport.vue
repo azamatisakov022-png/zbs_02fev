@@ -263,7 +263,7 @@ const getRoleLabel = (role: string) => {
   const labels: Record<string, string> = {
     admin: 'Админ',
     employee: 'Сотрудник',
-    business: 'Бизнес',
+    business: 'Плательщик',
     'eco-operator': 'Эко-оператор',
   }
   return labels[role] || role

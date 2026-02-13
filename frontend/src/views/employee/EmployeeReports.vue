@@ -32,7 +32,7 @@ const productGroups = [
   { number: 7, name: 'Изделия пластмассовые прочие', rate: 11008, type: 'goods' },
   { number: 8, name: 'Стекло полое', rate: 4219, type: 'goods' },
   { number: 9, name: 'Компьютеры и периферийное оборудование', rate: 36356, type: 'goods' },
-  { number: 10, name: 'Мониторы, приемники телевизионные', rate: 36356, type: 'goods' },
+  { number: 10, name: 'Мониторы, приемники телевизионные', rate: 10659, type: 'goods' },
   { number: 11, name: 'Элементы первичные и батареи первичных элементов', rate: 135390, type: 'goods' },
   { number: 12, name: 'Аккумуляторы свинцовые', rate: 7471, type: 'goods' },
   { number: 13, name: 'Батареи аккумуляторные', rate: 147165, type: 'goods' },
@@ -128,7 +128,7 @@ const receiptsData = ref<ReceiptRecord[]>([
   { id: 12, company: 'ОсОО "ЧуйСтрой"', inn: '05678912345678', region: 'Чуйская область', groupNumber: 5, groupName: 'Изделия из резины (за исключением шин)', subgroup: 'Резиновые изделия', mass: 6.5, rate: 17919, amount: 116474, paymentDate: '2025-01-22', status: 'partial' },
   { id: 13, company: 'ОсОО "ДжАПласт"', inn: '13456789012345', region: 'Джалал-Абадская область', groupNumber: 20, groupName: 'Упаковка из полимерных материалов (с галогенами)', subgroup: 'ПВХ плёнка', mass: 7.8, rate: 12197, amount: 95137, paymentDate: '2025-01-29', status: 'paid' },
   { id: 14, company: 'ИП "Мамытова"', inn: '14567890123456', region: 'Баткенская область', groupNumber: 3, groupName: 'Масла', subgroup: 'Моторные масла', mass: 4.5, rate: 8406, amount: 37827, paymentDate: '2025-02-02', status: 'paid' },
-  { id: 15, company: 'ОсОО "ТехноМир"', inn: '15678901234567', region: 'Бишкек', groupNumber: 10, groupName: 'Мониторы, приемники телевизионные', subgroup: 'Мониторы LCD', mass: 2.8, rate: 36356, amount: 101797, paymentDate: '2025-01-27', status: 'paid' },
+  { id: 15, company: 'ОсОО "ТехноМир"', inn: '15678901234567', region: 'Бишкек', groupNumber: 10, groupName: 'Мониторы, приемники телевизионные', subgroup: 'Мониторы LCD', mass: 2.8, rate: 10659, amount: 29845, paymentDate: '2025-01-27', status: 'paid' },
 ])
 
 const filteredReceipts = computed(() => {

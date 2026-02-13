@@ -200,7 +200,7 @@ const resetDocFilters = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Бизнес" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Документы</h1>
       <p class="text-[#64748b]">Управление документами компании</p>

@@ -249,6 +249,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Расчёт утильсбора' },
   },
   {
+    path: '/business/calculations/:id',
+    name: 'calculation-detail',
+    component: () => import('../views/business/CalculationDetailView.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Просмотр расчёта' },
+  },
+  {
     path: '/business/reports/new',
     name: 'business-reports-new',
     redirect: '/business/reports',
@@ -283,12 +289,6 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-incoming-calculations',
     component: () => import('../views/eco-operator/EcoOperatorIncomingCalculations.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Входящие расчёты' },
-  },
-  {
-    path: '/eco-operator/enterprise',
-    name: 'eco-operator-enterprise',
-    component: () => import('../views/eco-operator/EcoOperatorEnterprise.vue'),
-    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Моё предприятие' },
   },
   {
     path: '/eco-operator/licenses',

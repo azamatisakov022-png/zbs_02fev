@@ -57,7 +57,7 @@ export const productGroups: ProductGroup[] = [
   { value: 'group_7', label: '7. Изделия пластмассовые прочие', code: '3922', baseRate: 11008, unit: 'сом/т' },
   { value: 'group_8', label: '8. Стекло полое', code: '7010', baseRate: 4219, unit: 'сом/т' },
   { value: 'group_9', label: '9. Компьютеры и периферийное оборудование, офисное оборудование', code: '8471', baseRate: 36356, unit: 'сом/т' },
-  { value: 'group_10', label: '10. Мониторы, приемники телевизионные', code: '8528', baseRate: 36356, unit: 'сом/т' },
+  { value: 'group_10', label: '10. Мониторы, приемники телевизионные', code: '8528', baseRate: 10659, unit: 'сом/т' },
   { value: 'group_11', label: '11. Элементы первичные и батареи первичных элементов', code: '8506', baseRate: 135390, unit: 'сом/т' },
   { value: 'group_12', label: '12. Аккумуляторы свинцовые', code: '8507', baseRate: 7471, unit: 'сом/т' },
   { value: 'group_13', label: '13. Батареи аккумуляторные', code: '8507', baseRate: 147165, unit: 'сом/т' },
