@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
-import { getNormativeForGroup } from '../../data/recycling-norms'
+// recyclingStandard now comes from product group, not year-based norms
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { calculationStore, type CalculationStatus, type PaymentData } from '../../stores/calculations'
 import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
@@ -18,6 +18,7 @@ const menuItems = [
   { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
   { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
+  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
@@ -120,34 +121,48 @@ const companyData = {
 // Form data - Step 2
 interface ProductItem {
   id: number
-  group: string
-  subgroup: string
-  tnvedCode: string
-  mass: string
-  recycledMass: string
+  group: string           // Гр.1
+  subgroup: string        // Гр.2
+  gskpCode: string        // Гр.3: Код ГСКП (производители)
+  tnvedCode: string       // Гр.4: Код ТН ВЭД (импортёры)
+  volume: string          // Гр.5: Объём (масса) товаров/упаковки (тонн)
+  recyclingStandard: number // Гр.6: Норматив переработки (%)
+  volumeToRecycle: number  // Гр.7 = Гр.5 × Гр.6 / 100
+  transferredToRecycling: string // Гр.8: Передано на переработку (тонн)
   recycledFile: { name: string } | null
-  rate: number
-  amount: number
+  exportedFromKR: string  // Гр.9: Вывезено из КР (тонн)
+  exportedFile: { name: string } | null
+  taxableVolume: number   // Гр.10 = max(0, Гр.7 - Гр.8 - Гр.9)
+  rate: number            // Гр.11: Ставка (сом/т)
+  amount: number          // Гр.12 = Гр.10 × Гр.11
 }
 
-const productItems = ref<ProductItem[]>([
-  { id: 1, group: '', subgroup: '', tnvedCode: '', mass: '', recycledMass: '', recycledFile: null, rate: 0, amount: 0 }
-])
+const emptyItem = (): ProductItem => ({
+  id: nextProductId++,
+  group: '',
+  subgroup: '',
+  gskpCode: '',
+  tnvedCode: '',
+  volume: '',
+  recyclingStandard: 0,
+  volumeToRecycle: 0,
+  transferredToRecycling: '',
+  recycledFile: null,
+  exportedFromKR: '',
+  exportedFile: null,
+  taxableVolume: 0,
+  rate: 0,
+  amount: 0,
+})
 
 let nextProductId = 2
 
+const productItems = ref<ProductItem[]>([
+  { id: 1, group: '', subgroup: '', gskpCode: '', tnvedCode: '', volume: '', recyclingStandard: 0, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 }
+])
+
 const addProductItem = () => {
-  productItems.value.push({
-    id: nextProductId++,
-    group: '',
-    subgroup: '',
-    tnvedCode: '',
-    mass: '',
-    recycledMass: '',
-    recycledFile: null,
-    rate: 0,
-    amount: 0
-  })
+  productItems.value.push(emptyItem())
 }
 
 const removeProductItem = (id: number) => {
@@ -160,6 +175,7 @@ const updateItemRate = (item: ProductItem) => {
   const group = productGroups.find(g => g.value === item.group)
   if (!group) {
     item.rate = 0
+    item.recyclingStandard = 0
     item.amount = 0
     item.tnvedCode = ''
     return
@@ -167,6 +183,7 @@ const updateItemRate = (item: ProductItem) => {
 
   let multiplier = 1
   item.tnvedCode = group.code
+  item.recyclingStandard = group.recyclingStandard
 
   if (item.subgroup) {
     const subgroups = productSubgroups[item.group]
@@ -182,25 +199,58 @@ const updateItemRate = (item: ProductItem) => {
 }
 
 const calculateAmount = (item: ProductItem) => {
-  const mass = parseFloat(item.mass) || 0
-  const recycled = parseFloat(item.recycledMass) || 0
-  const taxableMass = Math.max(0, mass - recycled)
-  const year = parseInt(calculationYear.value) || 2026
-  const normative = getNormativeForGroup(item.group, year)
-  item.amount = Math.round(taxableMass * item.rate * normative)
+  const vol = parseFloat(item.volume) || 0
+  // Гр.7: Объём к переработке = Гр.5 × Гр.6 / 100
+  item.volumeToRecycle = vol * item.recyclingStandard / 100
+  const transferred = parseFloat(item.transferredToRecycling) || 0
+  const exported = parseFloat(item.exportedFromKR) || 0
+  // Гр.10: Облагаемый объём = max(0, Гр.7 - Гр.8 - Гр.9)
+  item.taxableVolume = Math.max(0, item.volumeToRecycle - transferred - exported)
+  // Гр.12: Сумма = Гр.10 × Гр.11
+  item.amount = Math.round(item.taxableVolume * item.rate)
 }
 
-// Recycled mass validation
-const getRecycledError = (item: ProductItem): string => {
-  const mass = parseFloat(item.mass) || 0
-  const recycled = parseFloat(item.recycledMass) || 0
-  if (recycled > 0 && recycled > mass) {
-    return 'Не может превышать массу ввоза'
+// Гр.8 validation: transferred to recycling
+const getTransferredError = (item: ProductItem): string => {
+  const transferred = parseFloat(item.transferredToRecycling) || 0
+  const exported = parseFloat(item.exportedFromKR) || 0
+  if (transferred > 0 && transferred > item.volumeToRecycle) {
+    return 'Не может превышать объём к переработке (Гр.7)'
+  }
+  if (transferred > 0 && exported > 0 && transferred + exported > item.volumeToRecycle) {
+    return 'Сумма Гр.8 и Гр.9 не может превышать объём к переработке'
   }
   return ''
 }
 
-// Recycled file handling
+// Гр.9 validation: exported from KR
+const getExportedError = (item: ProductItem): string => {
+  const transferred = parseFloat(item.transferredToRecycling) || 0
+  const exported = parseFloat(item.exportedFromKR) || 0
+  if (exported > 0 && exported > item.volumeToRecycle) {
+    return 'Не может превышать объём к переработке (Гр.7)'
+  }
+  if (transferred > 0 && exported > 0 && transferred + exported > item.volumeToRecycle) {
+    return 'Сумма Гр.8 и Гр.9 не может превышать объём к переработке'
+  }
+  return ''
+}
+
+// Гр.9 exported file handling
+const handleExportedFileSelect = (item: ProductItem, event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file) {
+    item.exportedFile = { name: file.name }
+  }
+  input.value = ''
+}
+
+const removeExportedFile = (item: ProductItem) => {
+  item.exportedFile = null
+}
+
+// Гр.8 recycled file handling
 const handleRecycledFileSelect = (item: ProductItem, event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -221,9 +271,9 @@ const getSubgroupsForGroup = (group: string) => {
 // Import from declaration mock
 const importFromDeclaration = () => {
   const items: ProductItem[] = [
-    { id: nextProductId++, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '12.5', recycledMass: '', recycledFile: null, rate: 0, amount: 0 },
-    { id: nextProductId++, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '8.3', recycledMass: '', recycledFile: null, rate: 0, amount: 0 },
-    { id: nextProductId++, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '5.2', recycledMass: '', recycledFile: null, rate: 0, amount: 0 },
+    { id: nextProductId++, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '12.5', recyclingStandard: 20, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 },
+    { id: nextProductId++, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '', tnvedCode: '4819 10', volume: '8.3', recyclingStandard: 20, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 },
+    { id: nextProductId++, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '5.2', recyclingStandard: 10, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 },
   ]
   items.forEach(item => {
     updateItemRate(item)
@@ -240,23 +290,42 @@ const canProceedStep1 = computed(() => {
 })
 
 const canProceedStep2 = computed(() => {
-  return productItems.value.some(item => item.group && item.mass && parseFloat(item.mass) > 0)
+  return productItems.value.some(item => item.group && item.volume && parseFloat(item.volume) > 0)
 })
 
-const totalMass = computed(() => {
+// Гр.5 total
+const totalVolume = computed(() => {
   return productItems.value
-    .reduce((sum, item) => sum + (parseFloat(item.mass) || 0), 0)
+    .reduce((sum, item) => sum + (parseFloat(item.volume) || 0), 0)
     .toFixed(2)
 })
 
-const totalRecycledMass = computed(() => {
+// Гр.7 total
+const totalVolumeToRecycle = computed(() => {
   return productItems.value
-    .reduce((sum, item) => sum + (parseFloat(item.recycledMass) || 0), 0)
+    .reduce((sum, item) => sum + (item.volumeToRecycle || 0), 0)
     .toFixed(2)
 })
 
-const totalTaxableMass = computed(() => {
-  return (parseFloat(totalMass.value) - parseFloat(totalRecycledMass.value)).toFixed(2)
+// Гр.8 total
+const totalTransferred = computed(() => {
+  return productItems.value
+    .reduce((sum, item) => sum + (parseFloat(item.transferredToRecycling) || 0), 0)
+    .toFixed(2)
+})
+
+// Гр.9 total
+const totalExported = computed(() => {
+  return productItems.value
+    .reduce((sum, item) => sum + (parseFloat(item.exportedFromKR) || 0), 0)
+    .toFixed(2)
+})
+
+// Гр.10 total
+const totalTaxableVolume = computed(() => {
+  return productItems.value
+    .reduce((sum, item) => sum + (item.taxableVolume || 0), 0)
+    .toFixed(2)
 })
 
 const totalAmount = computed(() => {
@@ -324,7 +393,7 @@ const backToList = () => {
   currentStep.value = 1
   calculationQuarter.value = ''
   importDate.value = ''
-  productItems.value = [{ id: 1, group: '', subgroup: '', tnvedCode: '', mass: '', recycledMass: '', recycledFile: null, rate: 0, amount: 0 }]
+  productItems.value = [{ id: 1, group: '', subgroup: '', gskpCode: '', tnvedCode: '', volume: '', recyclingStandard: 0, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 }]
 }
 
 const createDeclaration = () => {
@@ -357,10 +426,10 @@ const validateStep2 = (): boolean => {
     if (!item.group) {
       errors[`product_${index}_group`] = 'Выберите группу товара'
     }
-    if (!item.mass || parseFloat(item.mass) <= 0) {
-      errors[`product_${index}_mass`] = 'Введите массу больше 0'
+    if (!item.volume || parseFloat(item.volume) <= 0) {
+      errors[`product_${index}_volume`] = 'Введите объём больше 0'
     }
-    if (item.group && item.mass && parseFloat(item.mass) > 0) {
+    if (item.group && item.volume && parseFloat(item.volume) > 0) {
       hasValidProduct = true
     }
   })
@@ -394,23 +463,14 @@ const handlePrint = () => {
   window.print()
 }
 
-// Watch for changes in mass to recalculate
+// Watch for changes in volume/deductions to recalculate
 watch(productItems, () => {
   productItems.value.forEach(item => {
-    if (item.group && item.mass) {
+    if (item.group && item.volume) {
       calculateAmount(item)
     }
   })
 }, { deep: true })
-
-// Recalculate amounts when year changes (normative depends on year)
-watch(calculationYear, () => {
-  productItems.value.forEach(item => {
-    if (item.group && item.mass) {
-      calculateAmount(item)
-    }
-  })
-})
 
 // Table data for history
 const columns = [
@@ -462,7 +522,7 @@ const saveDraft = () => {
     year: calculationYear.value,
     payerType: payerType.value,
     importDate: payerType.value === 'importer' ? importDate.value : undefined,
-    items: productItems.value.filter(i => i.group && i.mass).map(i => ({ ...i })),
+    items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
     totalAmount: totalAmount.value,
   }
   calculationStore.addCalculation(calcData, 'Черновик')
@@ -487,7 +547,7 @@ const submitForReview = () => {
     year: calculationYear.value,
     payerType: payerType.value,
     importDate: payerType.value === 'importer' ? importDate.value : undefined,
-    items: productItems.value.filter(i => i.group && i.mass).map(i => ({ ...i })),
+    items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
     totalAmount: totalAmount.value,
   }
   calculationStore.addCalculation(calcData, 'На проверке')
@@ -1182,76 +1242,128 @@ const downloadReceipt = () => {
                 <!-- Validation error for group -->
                 <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
 
-                <!-- Row 4: Mass + Recycled + Rate/Amount -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <!-- ГСКП code for producers -->
+                <div v-if="payerType === 'producer' && item.group" class="mt-3">
+                  <label class="block text-xs text-[#64748b] mb-1">Гр.3: Код ГСКП</label>
+                  <input
+                    type="text"
+                    v-model="item.gskpCode"
+                    placeholder="Введите код ГСКП"
+                    class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm"
+                  />
+                </div>
+
+                <!-- СТРОКА 2: Расчёт объёмов (Графы 5-10) -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">
+                  <!-- Гр.5: Объём (тонн) -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Масса (тонн) <span class="text-[#EF4444]">*</span></label>
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.5: Объём (тонн) <span class="text-[#EF4444]">*</span></label>
                     <input
                       type="number"
-                      v-model="item.mass"
-                      @input="calculateAmount(item); validationErrors[`product_${index}_mass`] && delete validationErrors[`product_${index}_mass`]"
+                      v-model="item.volume"
+                      @input="calculateAmount(item); validationErrors[`product_${index}_volume`] && delete validationErrors[`product_${index}_volume`]"
                       step="0.01"
                       min="0"
                       placeholder="0.00"
                       :class="[
                         'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
-                        validationErrors[`product_${index}_mass`]
+                        validationErrors[`product_${index}_volume`]
                           ? 'border-[#EF4444] focus:border-[#EF4444]'
                           : 'border-[#e2e8f0] focus:border-[#f59e0b]'
                       ]"
                     />
-                    <p v-if="validationErrors[`product_${index}_mass`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_mass`] }}</p>
+                    <p v-if="validationErrors[`product_${index}_volume`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_volume`] }}</p>
                   </div>
+                  <!-- Гр.6: Норматив переработки (%) -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Сдано на переработку (тонн)</label>
-                    <div class="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        v-model="item.recycledMass"
-                        @input="calculateAmount(item)"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        :class="[
-                          'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
-                          getRecycledError(item)
-                            ? 'border-[#EF4444] focus:border-[#EF4444]'
-                            : 'border-[#e2e8f0] focus:border-[#f59e0b]'
-                        ]"
-                      />
-                      <label
-                        :for="'recycled-file-' + item.id"
-                        class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-[#e2e8f0] hover:bg-[#f8fafc] cursor-pointer transition-colors"
-                        data-tooltip="Прикрепить акт приёма-передачи на переработку"
-                      >
-                        <span class="text-base">📎</span>
-                        <input
-                          :id="'recycled-file-' + item.id"
-                          type="file"
-                          class="hidden"
-                          @change="handleRecycledFileSelect(item, $event)"
-                        />
-                      </label>
-                    </div>
-                    <p v-if="getRecycledError(item)" class="mt-1 text-xs text-[#EF4444]">{{ getRecycledError(item) }}</p>
-                    <div v-if="item.recycledFile" class="mt-1.5 flex items-center gap-2 text-xs text-[#64748b] bg-[#f8fafc] rounded-lg px-2.5 py-1.5">
-                      <span class="text-[#10b981]">📄</span>
-                      <span class="truncate flex-1">{{ item.recycledFile.name }}</span>
-                      <button @click="removeRecycledFile(item)" class="text-red-400 hover:text-red-600 flex-shrink-0" title="Удалить файл">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    </div>
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.6: Норматив (%)</label>
+                    <input
+                      type="text"
+                      :value="item.recyclingStandard ? item.recyclingStandard + '%' : '—'"
+                      readonly
+                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] cursor-not-allowed"
+                    />
                   </div>
+                  <!-- Гр.7: Объём к переработке -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Ставка / Сумма</label>
-                    <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] flex items-center gap-3">
-                      <span class="text-[#64748b]">Ставка:</span>
-                      <span class="font-medium">{{ item.rate.toLocaleString() }} сом/т</span>
-                      <span class="text-[#e2e8f0]">|</span>
-                      <span class="text-[#64748b]">Сумма:</span>
-                      <span class="font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} сом</span>
-                    </div>
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.7: К переработке</label>
+                    <input
+                      type="text"
+                      :value="item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) : '0.00'"
+                      readonly
+                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] font-medium cursor-not-allowed"
+                    />
                   </div>
+                  <!-- Гр.8: Передано на переработку -->
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.8: Передано (тонн)</label>
+                    <input
+                      type="number"
+                      v-model="item.transferredToRecycling"
+                      @input="calculateAmount(item)"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      :class="[
+                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
+                        getTransferredError(item)
+                          ? 'border-[#EF4444] focus:border-[#EF4444]'
+                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
+                      ]"
+                    />
+                    <p v-if="getTransferredError(item)" class="mt-1 text-xs text-[#EF4444]">{{ getTransferredError(item) }}</p>
+                    <input :id="'recycled-file-' + item.id" type="file" class="hidden" @change="handleRecycledFileSelect(item, $event)" />
+                    <div v-if="item.recycledFile" class="attach-link attach-link--done mt-1">
+                      <span class="attach-link__file">{{ item.recycledFile.name }}</span>
+                      <button @click="removeRecycledFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                    </div>
+                    <label v-else :for="'recycled-file-' + item.id" :class="['attach-link mt-1', (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'attach-link--warn' : '']">
+                      {{ (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'Прикрепите акт' : 'Акт приёма-передачи' }}
+                    </label>
+                  </div>
+                  <!-- Гр.9: Вывезено из КР -->
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1" title="Вывезено из территории КР в третьи страны">Гр.9: Вывезено (тонн)</label>
+                    <input
+                      type="number"
+                      v-model="item.exportedFromKR"
+                      @input="calculateAmount(item)"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      :class="[
+                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
+                        getExportedError(item)
+                          ? 'border-[#EF4444] focus:border-[#EF4444]'
+                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
+                      ]"
+                    />
+                    <p v-if="getExportedError(item)" class="mt-1 text-xs text-[#EF4444]">{{ getExportedError(item) }}</p>
+                    <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect(item, $event)" />
+                    <div v-if="item.exportedFile" class="attach-link attach-link--done mt-1">
+                      <span class="attach-link__file">{{ item.exportedFile.name }}</span>
+                      <button @click="removeExportedFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                    </div>
+                    <label v-else :for="'exported-file-' + item.id" :class="['attach-link mt-1', (parseFloat(item.exportedFromKR) || 0) > 0 ? 'attach-link--warn' : '']">
+                      {{ (parseFloat(item.exportedFromKR) || 0) > 0 ? 'Прикрепите ГТД' : 'ГТД на вывоз' }}
+                    </label>
+                  </div>
+                  <!-- Гр.10: Облагаемый объём -->
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.10: Облагаемый</label>
+                    <input
+                      type="text"
+                      :value="item.taxableVolume ? item.taxableVolume.toFixed(2) : '0.00'"
+                      readonly
+                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] font-medium cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <!-- СТРОКА 3: Итог (Графы 11-12) -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mt-3 bg-[#f8fafc] border-t border-dashed border-[#e5e7eb] rounded-b-lg px-4 py-3">
+                  <span class="text-sm text-[#374151]">Гр.11 Ставка: <strong>{{ item.rate.toLocaleString('ru-RU') }}</strong> сом/т</span>
+                  <span class="text-lg font-bold text-[#f59e0b]">Гр.12 Сумма: {{ item.amount.toLocaleString('ru-RU') }} сом</span>
                 </div>
               </div>
             </div>
@@ -1265,22 +1377,32 @@ const downloadReceipt = () => {
 
             <div class="mt-8 pt-6 border-t border-[#e2e8f0]">
               <div class="bg-gradient-to-r from-[#f59e0b]/10 to-[#d97706]/10 rounded-xl p-5 border border-[#f59e0b]/20">
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <p class="text-sm text-[#64748b] mb-1">Общая масса</p>
-                    <p class="text-xl font-bold text-[#1e293b]">{{ totalMass }} тонн</p>
+                    <p class="text-xs text-[#64748b] mb-1">Гр.5: Общий объём</p>
+                    <p class="text-lg font-bold text-[#1e293b]">{{ totalVolume }} т</p>
                   </div>
                   <div>
-                    <p class="text-sm text-[#64748b] mb-1">Сдано на переработку</p>
-                    <p class="text-xl font-bold text-[#10b981]">{{ totalRecycledMass }} тонн</p>
+                    <p class="text-xs text-[#64748b] mb-1">Гр.7: К переработке</p>
+                    <p class="text-lg font-bold text-[#6366f1]">{{ totalVolumeToRecycle }} т</p>
                   </div>
                   <div>
-                    <p class="text-sm text-[#64748b] mb-1">Облагаемая масса</p>
-                    <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableMass }} тонн</p>
+                    <p class="text-xs text-[#64748b] mb-1">Гр.8: Передано</p>
+                    <p class="text-lg font-bold text-[#10b981]">{{ totalTransferred }} т</p>
                   </div>
-                  <div class="text-right">
-                    <p class="text-sm text-[#64748b] mb-1">Итого к оплате</p>
-                    <p class="text-2xl font-bold text-[#f59e0b]">{{ formattedTotalAmount }}</p>
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Гр.9: Вывезено из КР</p>
+                    <p class="text-lg font-bold text-[#2563eb]">{{ totalExported }} т</p>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-[#f59e0b]/20">
+                  <div>
+                    <p class="text-xs text-[#64748b] mb-1">Гр.10: Облагаемый объём</p>
+                    <p class="text-lg font-bold text-[#1e293b]">{{ totalTaxableVolume }} т</p>
+                  </div>
+                  <div class="sm:text-right">
+                    <p class="text-xs text-[#64748b] mb-1">Гр.12: Итого к оплате</p>
+                    <p class="text-2xl font-bold text-[#10b981]">{{ formattedTotalAmount }}</p>
                   </div>
                 </div>
               </div>
@@ -1336,34 +1458,44 @@ const downloadReceipt = () => {
                 <table class="w-full text-sm">
                   <thead class="bg-[#f8fafc]">
                     <tr class="text-left text-[#64748b]">
-                      <th class="px-5 py-3 font-medium">Категория</th>
-                      <th class="px-5 py-3 font-medium">Подкатегория</th>
-                      <th class="px-5 py-3 font-medium text-right">Масса (т)</th>
-                      <th class="px-5 py-3 font-medium text-right">Сдано на перераб. (т)</th>
-                      <th class="px-5 py-3 font-medium text-right">Облагаемая (т)</th>
-                      <th class="px-5 py-3 font-medium text-right">Ставка (сом/т)</th>
-                      <th class="px-5 py-3 font-medium text-right">Сумма (сом)</th>
+                      <th class="px-4 py-3 font-medium">Группа / подгруппа</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.5 Объём (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.6 Норм. (%)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.7 К перер. (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.8 Передано (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.9 Вывезено (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.10 Облаг. (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.11 Ставка</th>
+                      <th class="px-4 py-3 font-medium text-right">Гр.12 Сумма</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[#e2e8f0]">
-                    <tr v-for="item in productItems.filter(i => i.group && i.mass)" :key="item.id" class="hover:bg-[#f8fafc]">
-                      <td class="px-5 py-3 text-[#1e293b]">{{ getGroupLabel(item.group) }}</td>
-                      <td class="px-5 py-3 text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</td>
-                      <td class="px-5 py-3 text-right font-medium">{{ item.mass }}</td>
-                      <td class="px-5 py-3 text-right text-[#10b981]">{{ item.recycledMass || '0' }}</td>
-                      <td class="px-5 py-3 text-right font-medium">{{ (Math.max(0, (parseFloat(item.mass) || 0) - (parseFloat(item.recycledMass) || 0))).toFixed(2) }}</td>
-                      <td class="px-5 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
-                      <td class="px-5 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
+                    <tr v-for="item in productItems.filter(i => i.group && i.volume)" :key="item.id" class="hover:bg-[#f8fafc]">
+                      <td class="px-4 py-3">
+                        <span class="text-[#1e293b] block">{{ getGroupLabel(item.group) }}</span>
+                        <span class="text-xs text-[#94a3b8]">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
+                      </td>
+                      <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
+                      <td class="px-4 py-3 text-right">{{ item.recyclingStandard }}%</td>
+                      <td class="px-4 py-3 text-right text-[#6366f1]">{{ item.volumeToRecycle.toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-right text-[#10b981]">{{ item.transferredToRecycling || '0' }}</td>
+                      <td class="px-4 py-3 text-right text-[#2563eb]">{{ item.exportedFromKR || '0' }}</td>
+                      <td class="px-4 py-3 text-right font-medium">{{ item.taxableVolume.toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
+                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
                     </tr>
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">
                     <tr>
-                      <td colspan="2" class="px-5 py-3">Итого</td>
-                      <td class="px-5 py-3 text-right">{{ totalMass }}</td>
-                      <td class="px-5 py-3 text-right text-[#10b981]">{{ totalRecycledMass }}</td>
-                      <td class="px-5 py-3 text-right">{{ totalTaxableMass }}</td>
-                      <td class="px-5 py-3 text-right">—</td>
-                      <td class="px-5 py-3 text-right text-[#f59e0b]">{{ totalAmount.toLocaleString() }}</td>
+                      <td class="px-4 py-3">Итого</td>
+                      <td class="px-4 py-3 text-right">{{ totalVolume }}</td>
+                      <td class="px-4 py-3 text-right">—</td>
+                      <td class="px-4 py-3 text-right text-[#6366f1]">{{ totalVolumeToRecycle }}</td>
+                      <td class="px-4 py-3 text-right text-[#10b981]">{{ totalTransferred }}</td>
+                      <td class="px-4 py-3 text-right text-[#2563eb]">{{ totalExported }}</td>
+                      <td class="px-4 py-3 text-right">{{ totalTaxableVolume }}</td>
+                      <td class="px-4 py-3 text-right">—</td>
+                      <td class="px-4 py-3 text-right text-[#f59e0b]">{{ totalAmount.toLocaleString() }}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1678,6 +1810,64 @@ const downloadReceipt = () => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Attach link-buttons under recycled/exported fields */
+.attach-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+
+.attach-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline solid;
+}
+
+.attach-link--warn {
+  color: #d97706;
+  text-decoration: underline dashed #d97706;
+}
+
+.attach-link--warn:hover {
+  color: #b45309;
+  text-decoration: underline solid #b45309;
+}
+
+.attach-link--done {
+  color: #059669;
+  cursor: default;
+  text-decoration: none;
+  gap: 6px;
+}
+
+.attach-link__file {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-link__remove {
+  color: #ef4444;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  transition: color 0.15s;
+}
+
+.attach-link__remove:hover {
+  color: #dc2626;
 }
 
 @media print {

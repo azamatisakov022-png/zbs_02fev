@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore, type Calculation } from '../../stores/calculations'
+import { refundStore } from '../../stores/refunds'
 import { reportStore } from '../../stores/reports'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 
+const router = useRouter()
+
 const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
+  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
@@ -29,12 +34,13 @@ const activeTab = ref<'calculations' | 'payments'>('calculations')
 // ========================
 const columns = [
   { key: 'number', label: 'Номер', width: '9%' },
-  { key: 'date', label: 'Дата', width: '7%' },
-  { key: 'company', label: 'Организация', width: '15%' },
-  { key: 'inn', label: 'ИНН', width: '11%' },
-  { key: 'period', label: 'Период', width: '7%' },
-  { key: 'totalAmount', label: 'Сумма', width: '9%' },
-  { key: 'status', label: 'Статус', width: '12%' },
+  { key: 'company', label: 'Плательщик', width: '14%' },
+  { key: 'inn', label: 'ИНН', width: '10%' },
+  { key: 'payerTypeLabel', label: 'Тип', width: '8%' },
+  { key: 'date', label: 'Дата подачи', width: '8%' },
+  { key: 'itemCount', label: 'Позиций', width: '6%' },
+  { key: 'totalAmount', label: 'Сумма', width: '10%' },
+  { key: 'status', label: 'Статус', width: '10%' },
 ]
 
 // Filters
@@ -54,10 +60,19 @@ const filteredCalculations = computed(() => {
   if (periodFilter.value) {
     list = list.filter(c => c.year === periodFilter.value)
   }
-  return list.map(c => ({
-    ...c,
-    totalAmountFormatted: c.totalAmount.toLocaleString('ru-RU') + ' сом',
-  }))
+  return list
+    .sort((a, b) => {
+      // Sort by date descending (newer first)
+      const da = a.date.split('.').reverse().join('')
+      const db = b.date.split('.').reverse().join('')
+      return db.localeCompare(da)
+    })
+    .map(c => ({
+      ...c,
+      totalAmountFormatted: c.totalAmount.toLocaleString('ru-RU') + ' сом',
+      payerTypeLabel: c.payerType === 'importer' ? 'Импортёр' : 'Производитель',
+      itemCount: c.items.length,
+    }))
 })
 
 // Stats
@@ -86,6 +101,10 @@ const rejectionReason = ref('')
 const showRejectForm = ref(false)
 
 const openDetail = (row: any) => {
+  router.push(`/eco-operator/calculations/${row.id}`)
+}
+
+const openDetailModal = (row: any) => {
   const calc = calculationStore.state.calculations.find(c => c.id === row.id)
   if (calc) {
     selectedCalculation.value = calc
@@ -340,6 +359,12 @@ const resetPaymentFilters = () => {
         <template #cell-company="{ value }">
           <span class="font-medium text-[#1e293b]">{{ value }}</span>
         </template>
+        <template #cell-payerTypeLabel="{ value }">
+          <span class="text-xs text-[#64748b]">{{ value }}</span>
+        </template>
+        <template #cell-itemCount="{ value }">
+          <span class="text-[#1e293b]">{{ value }}</span>
+        </template>
         <template #cell-totalAmount="{ row }">
           <span class="font-semibold text-[#1e293b]">{{ row.totalAmountFormatted }}</span>
         </template>
@@ -358,17 +383,7 @@ const resetPaymentFilters = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Детали
-            </button>
-            <button
-              v-if="row.status === 'На проверке' || row.status === 'Оплата на проверке'"
-              @click="openDetail(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Проверить
+              Просмотреть
             </button>
           </div>
         </template>
@@ -425,7 +440,7 @@ const resetPaymentFilters = () => {
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
             <button
-              @click="openDetail(row)"
+              @click="openDetailModal(row)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -436,7 +451,7 @@ const resetPaymentFilters = () => {
             </button>
             <button
               v-if="row.status === 'Оплата на проверке'"
-              @click="openDetail(row)"
+              @click="openDetailModal(row)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -524,7 +539,7 @@ const resetPaymentFilters = () => {
                       <th class="px-4 py-3 font-medium">Код ГСКП / Материал</th>
                       <th class="px-4 py-3 font-medium">Код ТН ВЭД / ТР ТС</th>
                       <th class="px-4 py-3 font-medium">Наименование</th>
-                      <th class="px-4 py-3 font-medium text-right">Масса (т)</th>
+                      <th class="px-4 py-3 font-medium text-right">Объём (т)</th>
                       <th class="px-4 py-3 font-medium text-right">Ставка</th>
                       <th class="px-4 py-3 font-medium text-right">Сумма</th>
                     </tr>
@@ -543,7 +558,7 @@ const resetPaymentFilters = () => {
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
                       </template>
-                      <td class="px-4 py-3 text-right font-medium">{{ item.mass }}</td>
+                      <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
                       <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }} сом/т</td>
                       <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} сом</td>
                     </tr>

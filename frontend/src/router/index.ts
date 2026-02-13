@@ -264,6 +264,18 @@ const routes: RouteRecordRaw[] = [
     name: 'business-declarations-new',
     redirect: '/business/declarations',
   },
+  {
+    path: '/business/refunds',
+    name: 'business-refunds',
+    component: () => import('../views/business/BusinessRefunds.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Возврат утильсбора' },
+  },
+  {
+    path: '/business/refunds/new',
+    name: 'business-refunds-new',
+    component: () => import('../views/business/BusinessRefundNew.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Заявка на возврат' },
+  },
 
   // Eco Operator routes
   {
@@ -285,10 +297,20 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Входящие отчёты' },
   },
   {
-    path: '/eco-operator/incoming-calculations',
-    name: 'eco-operator-incoming-calculations',
+    path: '/eco-operator/calculations',
+    name: 'eco-operator-calculations',
     component: () => import('../views/eco-operator/EcoOperatorIncomingCalculations.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Входящие расчёты' },
+  },
+  {
+    path: '/eco-operator/calculations/:id',
+    name: 'eco-operator-calculation-detail',
+    component: () => import('../views/eco-operator/EcoOperatorCalculationDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Просмотр расчёта' },
+  },
+  {
+    path: '/eco-operator/incoming-calculations',
+    redirect: '/eco-operator/calculations',
   },
   {
     path: '/eco-operator/licenses',
@@ -325,6 +347,18 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-profile',
     component: () => import('../views/eco-operator/EcoOperatorProfile.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Профили компаний' },
+  },
+  {
+    path: '/eco-operator/refunds',
+    name: 'eco-operator-refunds',
+    component: () => import('../views/eco-operator/EcoOperatorRefunds.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Заявки на возврат' },
+  },
+  {
+    path: '/eco-operator/refunds/:id',
+    name: 'eco-operator-refund-detail',
+    component: () => import('../views/eco-operator/EcoOperatorRefundDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Просмотр заявки' },
   },
 ]
 

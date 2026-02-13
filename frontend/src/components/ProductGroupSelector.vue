@@ -72,7 +72,7 @@ watch(() => props.subgroup, () => {
     <div class="mb-4">
       <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Группа товара</label>
       <template v-if="readonly">
-        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="groupLabel">
           {{ groupLabel || '—' }}
         </div>
       </template>
@@ -94,7 +94,7 @@ watch(() => props.subgroup, () => {
     <div class="mb-4">
       <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Подгруппа</label>
       <template v-if="readonly">
-        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="subgroupLabel">
           {{ subgroupLabel || '—' }}
         </div>
       </template>
@@ -109,7 +109,7 @@ watch(() => props.subgroup, () => {
     </div>
 
     <!-- Row 3: Type-specific readonly fields -->
-    <div v-if="!isPackaging" class="grid grid-cols-5 gap-4">
+    <div v-if="!isPackaging" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
       <div>
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ГСКП</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
@@ -122,27 +122,27 @@ watch(() => props.subgroup, () => {
           {{ selectedSubgroupData?.tnvedCode || '—' }}
         </div>
       </div>
-      <div class="col-span-3">
+      <div class="sm:col-span-2 lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Наименование ТН ВЭД</label>
-        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]" :title="selectedSubgroupData?.tnvedName || ''">
           {{ selectedSubgroupData?.tnvedName || '—' }}
         </div>
       </div>
     </div>
-    <div v-else class="grid grid-cols-10 gap-4">
-      <div class="col-span-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3 lg:gap-4">
+      <div class="sm:col-span-2 lg:col-span-4">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Материал упаковки</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
           {{ selectedSubgroupData?.packagingMaterial || '—' }}
         </div>
       </div>
-      <div class="col-span-3">
+      <div class="lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Обозначение ТР ТС</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           {{ selectedSubgroupData?.packagingLetterCode || '—' }}
         </div>
       </div>
-      <div class="col-span-3">
+      <div class="lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ТР ТС</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           {{ selectedSubgroupData?.packagingDigitalCode || '—' }}
