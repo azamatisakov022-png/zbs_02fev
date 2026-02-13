@@ -107,7 +107,7 @@ watch(() => props.groupId, () => {
       :disabled="!groupId"
       @click="openModal"
     >
-      <span class="spm-trigger-text">
+      <span class="spm-trigger-text" :title="selectedSubgroupData ? selectedSubgroupData.label : ''">
         {{ selectedSubgroupData ? selectedSubgroupData.label : 'Нажмите для выбора подгруппы' }}
       </span>
       <svg class="spm-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -279,6 +279,8 @@ watch(() => props.groupId, () => {
   color: #6b7280;
   line-height: 1.4;
   word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 /* === Overlay === */

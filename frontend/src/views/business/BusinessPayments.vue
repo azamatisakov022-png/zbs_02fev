@@ -12,6 +12,7 @@ const menuItems = [
   { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
   { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
+  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },

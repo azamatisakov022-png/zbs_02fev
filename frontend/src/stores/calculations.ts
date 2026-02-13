@@ -3,13 +3,18 @@ import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
 
 export interface ProductItem {
   id: number
-  group: string
-  subgroup: string
-  tnvedCode: string
-  mass: string
-  recycledMass?: string
-  rate: number
-  amount: number
+  group: string           // Гр.1: Группа товаров/упаковки
+  subgroup: string        // Гр.2: Подгруппа
+  gskpCode: string        // Гр.3: Код ГСКП (для производителей)
+  tnvedCode: string       // Гр.4: Код ТН ВЭД (для импортёров, авто из подгруппы)
+  volume: string          // Гр.5: Объём (масса) товаров/упаковки (тонн)
+  recyclingStandard: number // Гр.6: Норматив переработки (%)
+  volumeToRecycle: number  // Гр.7: Объём к переработке = Гр.5 × Гр.6 / 100
+  transferredToRecycling: string // Гр.8: Передано на переработку (тонн)
+  exportedFromKR: string  // Гр.9: Вывезено из КР (тонн)
+  taxableVolume: number   // Гр.10: Облагаемый объём = max(0, Гр.7 - Гр.8 - Гр.9)
+  rate: number            // Гр.11: Ставка утильсбора (сом/т)
+  amount: number          // Гр.12: Сумма = Гр.10 × Гр.11
 }
 
 export type CalculationStatus =
@@ -52,9 +57,10 @@ export interface Calculation {
   paidAt?: string
   payment?: PaymentData
   paymentRejectionReason?: string
+  attachedFiles?: string[]
 }
 
-let nextId = 7
+let nextId = 11
 
 // Ставки (Сус) из постановления: group_1=4793, group_6=9418, group_8=4219
 // Нормативы (Нпер): 2025 — группы 1-4: 0.2, группы 5-24: 0.1
@@ -75,13 +81,14 @@ const state = reactive<{ calculations: Calculation[] }>({
       payerType: 'producer',
       dueDate: '15.01.2026',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.5', rate: 9418, amount: 3296 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '2.1', rate: 4793, amount: 2013 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.4', rate: 4219, amount: 1013 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '3.5', recyclingStandard: 20, volumeToRecycle: 0.70, transferredToRecycling: '0.5', exportedFromKR: '', taxableVolume: 0.20, rate: 9418, amount: 1884 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '2.1', recyclingStandard: 20, volumeToRecycle: 0.42, transferredToRecycling: '0.3', exportedFromKR: '', taxableVolume: 0.12, rate: 4793, amount: 575 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '23.13.1', tnvedCode: '7010', volume: '2.4', recyclingStandard: 10, volumeToRecycle: 0.24, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.24, rate: 4219, amount: 1013 },
       ],
-      totalAmount: 6322,
+      totalAmount: 3472,
       status: 'Оплачено',
       paidAt: '25.01.2026',
+      attachedFiles: ['акт_приёма_передачи_пластик.pdf'],
       payment: {
         paymentOrderNumber: 'ПП-00412',
         paymentDate: '2026-01-24',
@@ -106,12 +113,13 @@ const state = reactive<{ calculations: Calculation[] }>({
       importDate: '10.01.2026',
       dueDate: '29.01.2026',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '5.0', rate: 9418, amount: 4709 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '3.5', rate: 4793, amount: 3355 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '3.6', rate: 4219, amount: 1519 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '5.0', recyclingStandard: 20, volumeToRecycle: 1.00, transferredToRecycling: '0.5', exportedFromKR: '', taxableVolume: 0.50, rate: 9418, amount: 4709 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '', tnvedCode: '4819 10', volume: '3.5', recyclingStandard: 20, volumeToRecycle: 0.70, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.70, rate: 4793, amount: 3355 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '3.6', recyclingStandard: 10, volumeToRecycle: 0.36, transferredToRecycling: '', exportedFromKR: '0.2', taxableVolume: 0.16, rate: 4219, amount: 675 },
       ],
-      totalAmount: 9583,
+      totalAmount: 8739,
       status: 'На проверке',
+      attachedFiles: ['акт_переработка_пластик.pdf', 'ГТД_вывоз_стекло.pdf'],
     },
     {
       id: 3,
@@ -119,15 +127,18 @@ const state = reactive<{ calculations: Calculation[] }>({
       date: '25.01.2026',
       company: 'ОсОО «ПищеПром»',
       inn: '05432109876543',
+      address: 'г. Бишкек, ул. Жибек-Жолу, 45',
       period: 'Q4 2025',
       quarter: 'Q4',
       year: '2025',
+      payerType: 'producer',
+      dueDate: '15.01.2026',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.8', rate: 9418, amount: 1695 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.2', rate: 4793, amount: 1150 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '1.1', rate: 4219, amount: 464 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '1.8', recyclingStandard: 20, volumeToRecycle: 0.36, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.36, rate: 9418, amount: 3390 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '1.2', recyclingStandard: 20, volumeToRecycle: 0.24, transferredToRecycling: '0.2', exportedFromKR: '', taxableVolume: 0.04, rate: 4793, amount: 192 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '23.13.1', tnvedCode: '7010', volume: '1.1', recyclingStandard: 10, volumeToRecycle: 0.11, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.11, rate: 4219, amount: 464 },
       ],
-      totalAmount: 3309,
+      totalAmount: 4046,
       status: 'На проверке',
     },
     {
@@ -143,11 +154,11 @@ const state = reactive<{ calculations: Calculation[] }>({
       payerType: 'producer',
       dueDate: '15.04.2026',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '1.2', rate: 9418, amount: 2260 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '0.8', rate: 4793, amount: 1150 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '0.8', rate: 4219, amount: 675 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '1.2', recyclingStandard: 20, volumeToRecycle: 0.24, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.24, rate: 9418, amount: 2260 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '0.8', recyclingStandard: 20, volumeToRecycle: 0.16, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.16, rate: 4793, amount: 767 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '23.13.1', tnvedCode: '7010', volume: '0.8', recyclingStandard: 10, volumeToRecycle: 0.08, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.08, rate: 4219, amount: 338 },
       ],
-      totalAmount: 4085,
+      totalAmount: 3365,
       status: 'Отклонено',
       rejectionReason: 'Неверно указана масса товаров в группе 6',
     },
@@ -164,12 +175,13 @@ const state = reactive<{ calculations: Calculation[] }>({
       payerType: 'producer',
       dueDate: '15.10.2025',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '3.0', rate: 9418, amount: 2825 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.8', rate: 4793, amount: 1725 },
-        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', tnvedCode: '7010', mass: '2.0', rate: 4219, amount: 844 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '3.0', recyclingStandard: 20, volumeToRecycle: 0.60, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.60, rate: 9418, amount: 5651 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '1.8', recyclingStandard: 20, volumeToRecycle: 0.36, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.36, rate: 4793, amount: 1726 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '23.13.1', tnvedCode: '7010', volume: '2.0', recyclingStandard: 10, volumeToRecycle: 0.20, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.20, rate: 4219, amount: 844 },
       ],
-      totalAmount: 5394,
+      totalAmount: 8221,
       status: 'Принято',
+      attachedFiles: ['акт_переработка_Q3.pdf'],
     },
     {
       id: 6,
@@ -180,11 +192,12 @@ const state = reactive<{ calculations: Calculation[] }>({
       period: 'Q3 2025',
       quarter: 'Q3',
       year: '2025',
+      payerType: 'producer',
       items: [
-        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', tnvedCode: '3923', mass: '2.0', rate: 9418, amount: 1884 },
-        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', tnvedCode: '4819 10', mass: '1.5', rate: 4793, amount: 1438 },
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '2.0', recyclingStandard: 20, volumeToRecycle: 0.40, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.40, rate: 9418, amount: 3767 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '1.5', recyclingStandard: 20, volumeToRecycle: 0.30, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.30, rate: 4793, amount: 1438 },
       ],
-      totalAmount: 3322,
+      totalAmount: 5205,
       status: 'Оплата на проверке',
       payment: {
         paymentOrderNumber: 'ПП-00587',
@@ -196,6 +209,95 @@ const state = reactive<{ calculations: Calculation[] }>({
         fileDataUrl: '',
         comment: 'Оплата за Q3 2025',
       },
+    },
+    // New mock calculations per spec
+    {
+      id: 7,
+      number: 'РС-2026-379',
+      date: '05.02.2026',
+      company: 'ОсОО «ТехПром»',
+      inn: '01234567890123',
+      address: 'г. Бишкек, ул. Московская, 123',
+      period: 'Q1 2026',
+      quarter: 'Q1',
+      year: '2026',
+      payerType: 'importer',
+      importDate: '20.01.2026',
+      dueDate: '09.02.2026',
+      items: [
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '500.0', recyclingStandard: 20, volumeToRecycle: 100.0, transferredToRecycling: '5.0', exportedFromKR: '', taxableVolume: 95.0, rate: 9418, amount: 894710 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '', tnvedCode: '4819 10', volume: '200.0', recyclingStandard: 20, volumeToRecycle: 40.0, transferredToRecycling: '8.0', exportedFromKR: '2.0', taxableVolume: 30.0, rate: 4793, amount: 143790 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '150.0', recyclingStandard: 10, volumeToRecycle: 15.0, transferredToRecycling: '', exportedFromKR: '3.0', taxableVolume: 12.0, rate: 4219, amount: 50628 },
+      ],
+      totalAmount: 1089128,
+      status: 'На проверке',
+      attachedFiles: ['акт_приёма_передачи_пластик_Q1.pdf', 'акт_переработка_картон.pdf', 'ГТД_вывоз_картон_стекло.pdf'],
+    },
+    {
+      id: 8,
+      number: 'РС-2026-380',
+      date: '06.02.2026',
+      company: 'ОсОО «ЭкоТранс»',
+      inn: '07654321098765',
+      address: 'г. Ош, ул. Курманжан Датки, 56',
+      period: 'Q1 2026',
+      quarter: 'Q1',
+      year: '2026',
+      payerType: 'producer',
+      dueDate: '15.04.2026',
+      items: [
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '200.0', recyclingStandard: 20, volumeToRecycle: 40.0, transferredToRecycling: '3.0', exportedFromKR: '', taxableVolume: 37.0, rate: 9418, amount: 348466 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '80.0', recyclingStandard: 20, volumeToRecycle: 16.0, transferredToRecycling: '2.0', exportedFromKR: '', taxableVolume: 14.0, rate: 4793, amount: 67102 },
+      ],
+      totalAmount: 415568,
+      status: 'На проверке',
+      attachedFiles: ['акт_переработка_пластик_ЭкоТранс.pdf', 'акт_переработка_бумага_ЭкоТранс.pdf'],
+    },
+    {
+      id: 9,
+      number: 'РС-2026-375',
+      date: '01.02.2026',
+      company: 'ОсОО «КыргызИмпорт»',
+      inn: '03216549870321',
+      address: 'г. Бишкек, пр. Чуй, 200',
+      period: 'Q4 2025',
+      quarter: 'Q4',
+      year: '2025',
+      payerType: 'importer',
+      importDate: '15.01.2026',
+      dueDate: '02.02.2026',
+      items: [
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '800.0', recyclingStandard: 20, volumeToRecycle: 160.0, transferredToRecycling: '10.0', exportedFromKR: '', taxableVolume: 150.0, rate: 9418, amount: 1412700 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '', tnvedCode: '4819 10', volume: '400.0', recyclingStandard: 20, volumeToRecycle: 80.0, transferredToRecycling: '5.0', exportedFromKR: '5.0', taxableVolume: 70.0, rate: 4793, amount: 335510 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '500.0', recyclingStandard: 10, volumeToRecycle: 50.0, transferredToRecycling: '', exportedFromKR: '5.0', taxableVolume: 45.0, rate: 4219, amount: 189855 },
+        { id: 4, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '100.0', recyclingStandard: 20, volumeToRecycle: 20.0, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 20.0, rate: 9418, amount: 188360 },
+      ],
+      totalAmount: 2126425,
+      status: 'Принято',
+      attachedFiles: ['акт_переработка_пластик.pdf', 'акт_переработка_картон.pdf', 'ГТД_вывоз_КР.pdf', 'инвойс_вывоз.pdf'],
+    },
+    {
+      id: 10,
+      number: 'РС-2026-370',
+      date: '30.01.2026',
+      company: 'ОсОО «АзияТрейд»',
+      inn: '06543210987654',
+      address: 'г. Бишкек, ул. Абдрахманова, 170',
+      period: 'Q4 2025',
+      quarter: 'Q4',
+      year: '2025',
+      payerType: 'importer',
+      importDate: '12.01.2026',
+      dueDate: '30.01.2026',
+      items: [
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '250.0', recyclingStandard: 20, volumeToRecycle: 50.0, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 50.0, rate: 9418, amount: 470900 },
+        { id: 2, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '', tnvedCode: '4819 10', volume: '100.0', recyclingStandard: 20, volumeToRecycle: 20.0, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 20.0, rate: 4793, amount: 95860 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '80.0', recyclingStandard: 10, volumeToRecycle: 8.0, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 8.0, rate: 4219, amount: 33752 },
+      ],
+      totalAmount: 600512,
+      status: 'Отклонено',
+      rejectionReason: 'Неверно указан объём для группы 8 (стекло). Необходимо пересчитать.',
+      attachedFiles: ['декларация_импорт.pdf'],
     },
   ],
 })
@@ -322,6 +424,10 @@ function getPaymentPendingCount() {
   return state.calculations.filter(c => c.status === 'Оплата на проверке').length
 }
 
+function getCalcReviewCount() {
+  return state.calculations.filter(c => c.status === 'На проверке').length
+}
+
 export const calculationStore = {
   state,
   addCalculation,
@@ -337,4 +443,5 @@ export const calculationStore = {
   getBusinessCalculations,
   getPendingCount,
   getPaymentPendingCount,
+  getCalcReviewCount,
 }

@@ -3,13 +3,15 @@ import { ref, computed, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
+import { refundStore } from '../../stores/refunds'
 import { reportStore } from '../../stores/reports'
 
 const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/incoming-calculations', badge: calculationStore.getPendingCount() },
+  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
   { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
   { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
   { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },

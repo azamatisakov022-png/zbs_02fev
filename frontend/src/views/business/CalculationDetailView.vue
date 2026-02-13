@@ -16,6 +16,7 @@ const menuItems = [
   { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
   { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
+  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
@@ -45,18 +46,23 @@ const getStatusClass = (status: string) => {
   }
 }
 
-const totalMass = computed(() => {
+const totalVolume = computed(() => {
   if (!calc.value) return '0'
-  return calc.value.items.reduce((s, i) => s + (parseFloat(i.mass) || 0), 0).toFixed(2)
+  return calc.value.items.reduce((s, i) => s + (parseFloat(i.volume) || 0), 0).toFixed(2)
 })
 
-const totalRecycled = computed(() => {
+const totalTransferred = computed(() => {
   if (!calc.value) return '0'
-  return calc.value.items.reduce((s, i) => s + (parseFloat(i.recycledMass || '0') || 0), 0).toFixed(2)
+  return calc.value.items.reduce((s, i) => s + (parseFloat(i.transferredToRecycling || '0') || 0), 0).toFixed(2)
 })
 
-const totalTaxable = computed(() => {
-  return (parseFloat(totalMass.value) - parseFloat(totalRecycled.value)).toFixed(2)
+const totalExported = computed(() => {
+  if (!calc.value) return '0'
+  return calc.value.items.reduce((s, i) => s + (parseFloat(i.exportedFromKR || '0') || 0), 0).toFixed(2)
+})
+
+const totalTaxableVolume = computed(() => {
+  return Math.max(0, parseFloat(totalVolume.value) - parseFloat(totalTransferred.value) - parseFloat(totalExported.value)).toFixed(2)
 })
 
 const payerTypeLabel = computed(() => {
@@ -188,14 +194,15 @@ const mockAction = (action: string) => {
           <table class="w-full text-sm">
             <thead class="bg-[#f8fafc]">
               <tr class="text-left text-[11px] tracking-[0.05em] uppercase text-[#64748b]">
-                <th class="px-5 py-3 font-semibold w-10">#</th>
-                <th class="px-5 py-3 font-semibold">Группа товара</th>
-                <th class="px-5 py-3 font-semibold">Подгруппа</th>
-                <th class="px-5 py-3 font-semibold">Код ТН ВЭД</th>
-                <th class="px-5 py-3 font-semibold text-right">Масса (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Сдано на перераб. (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Ставка (сом/т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Сумма (сом)</th>
+                <th class="px-5 py-3 font-semibold">Группа/подгруппа</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.5 Объём (т)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.6 Норматив (%)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.7 К перераб. (т)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.8 Передано (т)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.9 Вывезено (т)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.10 Облагаемый (т)</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.11 Ставка</th>
+                <th class="px-5 py-3 font-semibold text-right">Гр.12 Сумма</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#e2e8f0]">
@@ -204,12 +211,17 @@ const mockAction = (action: string) => {
                 :key="item.id"
                 :class="index % 2 === 1 ? 'bg-[#FAFBFC]' : ''"
               >
-                <td class="px-5 py-3 text-[#94a3b8]">{{ index + 1 }}</td>
-                <td class="px-5 py-3 text-[#1e293b] font-medium">{{ getGroupLabel(item.group) }}</td>
-                <td class="px-5 py-3 text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</td>
-                <td class="px-5 py-3 text-[#64748b] font-mono text-xs">{{ item.tnvedCode }}</td>
-                <td class="px-5 py-3 text-right font-medium text-[#1e293b]">{{ item.mass }}</td>
-                <td class="px-5 py-3 text-right text-[#10b981]">{{ item.recycledMass || '0' }}</td>
+                <td class="px-5 py-3 text-[#1e293b] font-medium">
+                  {{ getGroupLabel(item.group) }}
+                  <span v-if="item.subgroup" class="block text-xs text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
+                  <span v-if="item.gskpCode" class="block text-xs text-[#94a3b8] font-mono">{{ item.gskpCode }}</span>
+                </td>
+                <td class="px-5 py-3 text-right font-medium text-[#1e293b]">{{ item.volume }}</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '—' }}%</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle ?? '—' }}</td>
+                <td class="px-5 py-3 text-right text-[#10b981]">{{ item.transferredToRecycling || '0' }}</td>
+                <td class="px-5 py-3 text-right text-[#2563eb]">{{ item.exportedFromKR || '0' }}</td>
+                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume ?? '—' }}</td>
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ item.rate.toLocaleString() }}</td>
                 <td class="px-5 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
               </tr>
@@ -221,21 +233,25 @@ const mockAction = (action: string) => {
       <!-- Totals -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-5">Итоги расчёта</h2>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-6">
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Общая масса</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalMass }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">Общий объём (Гр.5)</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume }} тонн</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Сдано на переработку</p>
-            <p class="text-xl font-bold text-[#10b981]">{{ totalRecycled }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">Передано на переработку (Гр.8)</p>
+            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferred }} тонн</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Облагаемая масса</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxable }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">Вывезено из КР (Гр.9)</p>
+            <p class="text-xl font-bold text-[#2563eb]">{{ totalExported }} тонн</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Итого к оплате</p>
+            <p class="text-sm text-[#64748b] mb-1">Облагаемый объём (Гр.10)</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume }} тонн</p>
+          </div>
+          <div>
+            <p class="text-sm text-[#64748b] mb-1">Итого к оплате (Гр.12)</p>
             <p class="text-2xl font-bold text-[#10b981]">{{ calc.totalAmount.toLocaleString('ru-RU') }} сом</p>
           </div>
         </div>
