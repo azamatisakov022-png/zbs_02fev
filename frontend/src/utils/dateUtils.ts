@@ -52,19 +52,34 @@ export function calculatePaymentDeadline(
 }
 
 /**
- * Returns remaining calendar days until deadline and whether it's overdue.
+ * Counts working days between two dates (skipping Saturday and Sunday).
+ */
+function countWorkingDaysBetween(from: Date, to: Date): number {
+  let count = 0
+  const current = new Date(from)
+  current.setHours(0, 0, 0, 0)
+  const end = new Date(to)
+  end.setHours(0, 0, 0, 0)
+  while (current < end) {
+    current.setDate(current.getDate() + 1)
+    const day = current.getDay()
+    if (day !== 0 && day !== 6) count++
+  }
+  return count
+}
+
+/**
+ * Returns remaining working days until deadline and whether it's overdue.
  */
 export function getRemainingDays(deadline: Date): { days: number; overdue: boolean } {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const target = new Date(deadline)
   target.setHours(0, 0, 0, 0)
-  const diffMs = target.getTime() - today.getTime()
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) {
-    return { days: Math.abs(diffDays), overdue: true }
+  if (target < today) {
+    return { days: countWorkingDaysBetween(target, today), overdue: true }
   }
-  return { days: diffDays, overdue: false }
+  return { days: countWorkingDaysBetween(today, target), overdue: false }
 }
 
 /**
