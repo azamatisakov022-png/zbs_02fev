@@ -84,7 +84,7 @@ interface CompanyData {
   director?: string
 }
 
-export function generateCalculationExcel(calc: Calculation, company: CompanyData) {
+export function generateCalculationExcel(calc: Calculation, company: CompanyData, reconciliation?: { charged: number; paid: number }) {
   const wb = XLSX.utils.book_new()
   const ws: XLSX.WorkSheet = {}
   ws['!merges'] = []
@@ -217,8 +217,10 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
     setCellValue(ws, `J${dataRow}`, item.taxableVolume, 'n', sDataNum)
     setCellValue(ws, `K${dataRow}`, item.rate, 'n', sDataNum)
     setCellValue(ws, `L${dataRow}`, item.amount, 'n', sDataNum)
-    setCellValue(ws, `M${dataRow}`, item.amount, 'n', sDataNum)
-    setCellValue(ws, `N${dataRow}`, 0, 'n', sDataNum)
+    const itemCharged = reconciliation ? Math.round(item.amount / calc.totalAmount * reconciliation.charged) : item.amount
+    const itemPaid = reconciliation ? Math.round(item.amount / calc.totalAmount * reconciliation.paid) : 0
+    setCellValue(ws, `M${dataRow}`, itemCharged, 'n', sDataNum)
+    setCellValue(ws, `N${dataRow}`, itemPaid, 'n', sDataNum)
 
     dataRow++
   })
@@ -233,8 +235,8 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   setCellValue(ws, `J${dataRow}`, totTaxable, 'n', sTotalNum)
   setCellValue(ws, `K${dataRow}`, '', 's', sTotalCell)
   setCellValue(ws, `L${dataRow}`, totAmount, 'n', sTotalNum)
-  setCellValue(ws, `M${dataRow}`, totAmount, 'n', sTotalNum)
-  setCellValue(ws, `N${dataRow}`, 0, 'n', sTotalNum)
+  setCellValue(ws, `M${dataRow}`, reconciliation ? reconciliation.charged : totAmount, 'n', sTotalNum)
+  setCellValue(ws, `N${dataRow}`, reconciliation ? reconciliation.paid : 0, 'n', sTotalNum)
   dataRow++
 
   // Footer

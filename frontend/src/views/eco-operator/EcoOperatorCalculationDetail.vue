@@ -9,6 +9,7 @@ import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
+import { accountStore } from '../../stores/account'
 
 const route = useRoute()
 const router = useRouter()
@@ -68,6 +69,11 @@ const totalTaxableVolume = computed(() => {
   return calc.value.items.reduce((s, i) => s + (parseFloat(String(i.taxableVolume ?? '0')) || 0), 0)
 })
 
+const reconciliation = computed(() => {
+  if (!calc.value) return { charged: 0, paid: 0, difference: 0 }
+  return accountStore.getReconciliationForCalculationGlobal(calc.value.id)
+})
+
 // Approve / Reject
 const showRejectModal = ref(false)
 const rejectionReason = ref('')
@@ -108,7 +114,7 @@ const downloadExcel = () => {
     name: calc.value.company,
     inn: calc.value.inn,
     address: calc.value.address || '',
-  })
+  }, reconciliation.value)
 }
 </script>
 
@@ -274,6 +280,39 @@ const downloadExcel = () => {
         </div>
       </div>
 
+      <!-- Графа 13: Сверка платежей -->
+      <div class="g13-container mb-6">
+        <div class="g13-header">
+          <h3 class="g13-title">Графа 13. Сверка платежей за отчётный период</h3>
+          <div class="g13-tooltip-wrap">
+            <svg class="w-4 h-4 text-[#94a3b8] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="g13-tooltip">Заполняется автоматически на основании данных лицевого счёта. Для производителей — по суммам ежеквартальных платежей, для импортёров — по суммам платежей при фактическом ввозе товаров.</div>
+          </div>
+        </div>
+        <div class="g13-cards">
+          <div class="g13-card">
+            <span class="g13-card__label">Начислено за период</span>
+            <span class="g13-card__value">{{ reconciliation.charged.toLocaleString('ru-RU') }} сом</span>
+            <span class="g13-card__sub">Из лицевого счёта</span>
+          </div>
+          <div class="g13-card">
+            <span class="g13-card__label">Уплачено за период</span>
+            <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString('ru-RU') }} сом</span>
+            <span class="g13-card__sub">Из лицевого счёта</span>
+          </div>
+          <div :class="['g13-card g13-card--diff', reconciliation.difference > 0 ? 'g13-card--debt' : reconciliation.difference < 0 ? 'g13-card--overpay' : 'g13-card--zero']">
+            <span class="g13-card__label">Разница (начислено − уплачено)</span>
+            <span class="g13-card__value" :class="{ 'g13-card__value--red': reconciliation.difference > 0, 'g13-card__value--green': reconciliation.difference < 0, 'g13-card__value--gray': reconciliation.difference === 0 }">
+              <template v-if="reconciliation.difference > 0">Недоимка: +{{ reconciliation.difference.toLocaleString('ru-RU') }} сом</template>
+              <template v-else-if="reconciliation.difference < 0">Переплата: {{ Math.abs(reconciliation.difference).toLocaleString('ru-RU') }} сом</template>
+              <template v-else>Задолженность отсутствует</template>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Sticky Action Bar -->
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-6 lg:-mx-8 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <button @click="goBack" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
@@ -347,4 +386,98 @@ const downloadExcel = () => {
 .toast-leave-active { transition: all 0.3s ease-in; }
 .toast-enter-from { opacity: 0; transform: translateY(-20px); }
 .toast-leave-to { opacity: 0; transform: translateY(-20px); }
+
+/* Графа 13 styles */
+.g13-container {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 20px;
+}
+.g13-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.g13-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+.g13-tooltip-wrap {
+  position: relative;
+}
+.g13-tooltip-wrap:hover .g13-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+.g13-tooltip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(100% + 8px);
+  width: 320px;
+  padding: 10px 14px;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.15s;
+  z-index: 50;
+  pointer-events: none;
+}
+.g13-cards {
+  display: flex;
+  gap: 16px;
+}
+@media (max-width: 768px) {
+  .g13-cards { flex-direction: column; }
+}
+.g13-card {
+  flex: 1;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.g13-card--diff {
+  border-left-width: 3px;
+}
+.g13-card--debt {
+  border-left-color: #EF4444;
+  background: #FEF2F2;
+}
+.g13-card--overpay {
+  border-left-color: #059669;
+  background: #F0FDF4;
+}
+.g13-card--zero {
+  border-left-color: #64748B;
+  background: #F8FAFC;
+}
+.g13-card__label {
+  font-size: 12px;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.g13-card__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E293B;
+}
+.g13-card__value--green { color: #059669; }
+.g13-card__value--red { color: #EF4444; }
+.g13-card__value--gray { color: #64748B; }
+.g13-card__sub {
+  font-size: 11px;
+  color: #94A3B8;
+}
 </style>

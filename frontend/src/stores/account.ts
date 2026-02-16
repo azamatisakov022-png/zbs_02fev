@@ -72,11 +72,14 @@ const state = reactive<{
       balance: 0,
       status: 'Активен',
       transactions: [
-        { id: 1, date: '10.02.2026', type: 'charge', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Начисление утилизационного сбора', chargeAmount: 252180, paymentAmount: 0, offsetAmount: 0, balance: -252180 },
-        { id: 2, date: '10.02.2026', type: 'payment', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 252180, offsetAmount: 0, balance: 0 },
-        { id: 3, date: '25.02.2026', type: 'correction', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Корректировка: переработка 10 т + вывоз 5 т', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: 126090 },
-        { id: 4, date: '15.03.2026', type: 'charge', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Начисление утилизационного сбора', chargeAmount: 126090, paymentAmount: 0, offsetAmount: 0, balance: 0 },
-        { id: 5, date: '15.03.2026', type: 'offset', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: 0 },
+        { id: 1, date: '18.01.2026', type: 'charge', calculationId: 1, calculationNumber: 'РС-2026-015', description: 'Начисление утилизационного сбора', chargeAmount: 3472, paymentAmount: 0, offsetAmount: 0, balance: -3472 },
+        { id: 2, date: '25.01.2026', type: 'payment', calculationId: 1, calculationNumber: 'РС-2026-015', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 3472, offsetAmount: 0, balance: 0 },
+        { id: 3, date: '12.10.2025', type: 'charge', calculationId: 5, calculationNumber: 'РС-2025-089', description: 'Начисление утилизационного сбора', chargeAmount: 8221, paymentAmount: 0, offsetAmount: 0, balance: -8221 },
+        { id: 4, date: '10.02.2026', type: 'charge', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Начисление утилизационного сбора', chargeAmount: 252180, paymentAmount: 0, offsetAmount: 0, balance: -260401 },
+        { id: 5, date: '10.02.2026', type: 'payment', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 252180, offsetAmount: 0, balance: -8221 },
+        { id: 6, date: '25.02.2026', type: 'correction', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Корректировка: переработка 10 т + вывоз 5 т', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: 117869 },
+        { id: 7, date: '15.03.2026', type: 'charge', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Начисление утилизационного сбора', chargeAmount: 126090, paymentAmount: 0, offsetAmount: 0, balance: -8221 },
+        { id: 8, date: '15.03.2026', type: 'offset', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: -8221 },
       ],
     },
     {
@@ -279,6 +282,31 @@ function getAccountsWithPositiveBalance(): CompanyAccount[] {
   return state.accounts.filter(a => a.balance > 0)
 }
 
+function getReconciliationForCalculation(calcId: number, company?: string): { charged: number; paid: number; difference: number } {
+  let transactions: AccountTransaction[] = []
+  if (company) {
+    const acc = state.accounts.find(a => a.company === company)
+    transactions = acc?.transactions.filter(t => t.calculationId === calcId) ?? []
+  } else {
+    transactions = getTransactions().filter(t => t.calculationId === calcId)
+  }
+  const charged = transactions.reduce((s, t) => s + t.chargeAmount, 0)
+  const paid = transactions.reduce((s, t) => s + t.paymentAmount, 0)
+  return { charged, paid, difference: charged - paid }
+}
+
+function getReconciliationForCalculationGlobal(calcId: number): { charged: number; paid: number; difference: number } {
+  for (const acc of state.accounts) {
+    const txs = acc.transactions.filter(t => t.calculationId === calcId)
+    if (txs.length > 0) {
+      const charged = txs.reduce((s, t) => s + t.chargeAmount, 0)
+      const paid = txs.reduce((s, t) => s + t.paymentAmount, 0)
+      return { charged, paid, difference: charged - paid }
+    }
+  }
+  return { charged: 0, paid: 0, difference: 0 }
+}
+
 function getTotalMonthlyIncome(): number {
   const now = new Date()
   const currentMonth = now.getMonth()
@@ -315,5 +343,7 @@ export const accountStore = {
   getAccountById,
   getAccountsWithDebt,
   getAccountsWithPositiveBalance,
+  getReconciliationForCalculation,
+  getReconciliationForCalculationGlobal,
   getTotalMonthlyIncome,
 }
