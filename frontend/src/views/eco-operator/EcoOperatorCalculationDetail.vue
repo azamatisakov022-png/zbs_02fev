@@ -7,6 +7,8 @@ import { calculationStore, type Calculation } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
+import TnvedCode from '../../components/TnvedCode.vue'
+import { generateCalculationExcel } from '../../utils/excelExport'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,6 +100,15 @@ const goBack = () => router.push('/eco-operator/calculations')
 
 const downloadFile = (name: string) => {
   alert(`Скачивание файла: ${name}`)
+}
+
+const downloadExcel = () => {
+  if (!calc.value) return
+  generateCalculationExcel(calc.value, {
+    name: calc.value.company,
+    inn: calc.value.inn,
+    address: calc.value.address || '',
+  })
 }
 </script>
 
@@ -198,6 +209,7 @@ const downloadFile = (name: string) => {
                   <div class="font-medium">{{ getGroupLabel(item.group) }}</div>
                   <div class="text-xs text-[#64748b] truncate max-w-[220px]" :title="getSubgroupLabel(item.group, item.subgroup)">{{ getSubgroupLabel(item.group, item.subgroup) }}</div>
                   <div v-if="item.gskpCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">ГСКП {{ item.gskpCode }}</div>
+                  <div v-if="item.tnvedCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></div>
                 </td>
                 <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.volume }}</td>
                 <td class="px-4 py-3 text-right text-[#64748b]">{{ item.recyclingStandard != null ? item.recyclingStandard + '%' : '—' }}</td>
@@ -267,6 +279,10 @@ const downloadFile = (name: string) => {
         <button @click="goBack" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
           Назад к списку
         </button>
+                <button @click="downloadExcel" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Скачать Excel
+                </button>
         <div v-if="calc.status === 'На проверке'" class="flex items-center gap-3">
           <button @click="openRejectModal" class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>

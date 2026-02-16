@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
@@ -9,7 +10,12 @@ import { productGroups, productSubgroups, type ProductSubgroup } from '../../dat
 import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { reportStore, type ProcessingItem } from '../../stores/reports'
+import InstructionDrawer from '../../components/InstructionDrawer.vue'
+import { instructionReportHtml } from '../../data/instructionReport'
 import { recyclerStore } from '../../stores/recyclers'
+import { generateRecyclingReportExcel } from '../../utils/excelExport'
+
+const router = useRouter()
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
@@ -26,6 +32,8 @@ const menuItems = [
 // Loading state
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+
+const showInstruction = ref(false)
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'success'
@@ -382,6 +390,16 @@ const handleDownloadPdf = () => {
 const handlePrint = () => {
   window.print()
 }
+
+const downloadReportExcel = (reportId: number) => {
+  const report = reportStore.state.reports.find(r => r.id === reportId)
+  if (!report) return
+  generateRecyclingReportExcel(report, {
+    name: report.company || 'ОсОО «ТехПром»',
+    inn: report.inn || '01234567890123',
+    address: 'г. Бишкек, ул. Московская, 123',
+  })
+}
 </script>
 
 <template>
@@ -495,6 +513,7 @@ const handlePrint = () => {
         <template #actions="{ row }">
           <div class="flex flex-wrap items-center justify-end gap-2">
             <button
+              @click="router.push('/business/reports/' + row.id)"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -532,6 +551,14 @@ const handlePrint = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
+            </button>
+            <button
+              v-if="row.status === 'Принят'"
+              @click="downloadReportExcel(row.id)"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#059669] text-white hover:bg-[#047857] transition-colors shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              Excel
             </button>
             <button
               v-if="row.status === 'Принят'"
@@ -573,7 +600,15 @@ const handlePrint = () => {
             </svg>
             Назад к списку
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Подача отчёта о переработке</h1>
+          <div class="flex items-center justify-between gap-4">
+            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Подача отчёта о переработке</h1>
+            <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Инструкция
+            </button>
+          </div>
         </div>
 
         <!-- Progress Steps -->
@@ -1182,6 +1217,8 @@ const handlePrint = () => {
         </div>
       </div>
     </template>
+
+    <InstructionDrawer v-model="showInstruction" title="Инструкция — Отчёт о переработке" :contentHtml="instructionReportHtml" />
   </DashboardLayout>
 </template>
 

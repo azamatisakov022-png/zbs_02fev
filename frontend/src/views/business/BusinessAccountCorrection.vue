@@ -6,6 +6,8 @@ import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import InstructionDrawer from '../../components/InstructionDrawer.vue'
+import { instructionCalculationHtml } from '../../data/instructionCalculation'
 
 const router = useRouter()
 
@@ -20,6 +22,8 @@ const menuItems = [
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
 ]
+
+const showInstruction = ref(false)
 
 // View mode
 type ViewMode = 'form' | 'success'
@@ -97,10 +101,25 @@ function getDifference(row: CorrectionRow): number {
   return Math.round((row.oldTaxableVolume - newTaxable) * row.rate * 100) / 100
 }
 
-// Validation per row
+// Validation per row: sum of recycling + export must not exceed Гр.5 (total volume)
 function isRowValid(row: CorrectionRow): boolean {
   const totalUsed = row.previousTransferred + row.additionalTransferred + row.previousExported + row.additionalExported
-  return totalUsed <= row.volumeToRecycle
+  return totalUsed <= row.volume
+}
+
+// Norm status for correction row
+type CorrNormStatus = { met: boolean; message: string }
+function getCorrNormStatus(row: CorrectionRow): CorrNormStatus | null {
+  const totalTransferred = row.previousTransferred + row.additionalTransferred
+  const totalExported = row.previousExported + row.additionalExported
+  if (totalTransferred + totalExported >= row.volumeToRecycle) {
+    return { met: true, message: 'Норматив переработки выполнен. Утильсбор по данной позиции: 0 сом' }
+  }
+  const newTaxable = getNewTaxableVolume(row)
+  if (newTaxable > 0) {
+    return { met: false, message: `Норматив переработки не выполнен. Облагаемый объём: ${newTaxable.toFixed(2)} тонн` }
+  }
+  return null
 }
 
 // Has any row with validation error
@@ -153,14 +172,9 @@ function clearDoc(key: string) {
 type CorrectionAction = 'balance' | 'refund'
 const correctionAction = ref<CorrectionAction>('balance')
 
-// Expandable correction rows
-const expandedCorrRows = ref<Set<number>>(new Set())
-function toggleCorrRow(index: number) {
-  if (expandedCorrRows.value.has(index)) {
-    expandedCorrRows.value.delete(index)
-  } else {
-    expandedCorrRows.value.add(index)
-  }
+// New amount per row after correction
+function getNewAmount(row: CorrectionRow): number {
+  return Math.round(getNewTaxableVolume(row) * row.rate * 100) / 100
 }
 
 // Format amount
@@ -226,7 +240,15 @@ const canSubmit = computed(() =>
           </svg>
           Назад к лицевому счёту
         </button>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Подача корректировки</h1>
+        <div class="flex items-center justify-between gap-4">
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Подача корректировки</h1>
+          <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Инструкция
+          </button>
+        </div>
       </div>
 
       <!-- Step 1: Select paid calculation -->
@@ -260,118 +282,117 @@ const canSubmit = computed(() =>
           <p class="text-sm text-[#64748b] mt-1">Укажите дополнительные объёмы переработки или вывоза для перерасчёта</p>
         </div>
 
-        <div class="p-5 lg:p-6 pt-0 lg:pt-0">
-          <p class="text-xs text-[#94a3b8] italic mb-3 mt-4">Нажмите на карточку для подробностей</p>
-
+        <div class="p-5 lg:p-6 pt-4 lg:pt-4">
+          <!-- Position cards -->
           <div
             v-for="(row, index) in correctionItems"
             :key="index"
-            :class="['corr-card', !isRowValid(row) ? 'corr-card--invalid' : '']"
+            :class="['cf-card', !isRowValid(row) ? 'cf-card--invalid' : '']"
           >
-            <!-- Always visible top part -->
-            <div class="corr-card__top" @click="toggleCorrRow(index)">
-              <div class="corr-card__left">
-                <span class="corr-card__group">{{ getGroupLabel(row.group) }}</span>
-                <span class="corr-card__subgroup">{{ row.subgroup ? getSubgroupLabel(row.group, row.subgroup) : '—' }}</span>
-              </div>
-              <div class="corr-card__mid" @click.stop>
-                <div class="corr-card__field">
-                  <span class="corr-card__field-label">Объём (гр.5)</span>
-                  <span class="corr-card__field-value">{{ row.volume }} т</span>
+            <!-- BLOCK 1: Info (readonly) -->
+            <div class="cf-info">
+              <div class="cf-info__title">{{ index + 1 }}. {{ getGroupLabel(row.group) }}</div>
+              <div class="cf-info__subtitle">{{ row.subgroup ? getSubgroupLabel(row.group, row.subgroup) : '—' }}</div>
+              <div class="cf-info__grid">
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.5 Объём</span>
+                  <span class="cf-info__value">{{ row.volume }} <span class="cf-info__unit">тонн</span></span>
                 </div>
-                <svg class="corr-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5" /></svg>
-                <div class="corr-card__field">
-                  <span class="corr-card__field-label">К перераб. (гр.7)</span>
-                  <span class="corr-card__field-value" style="color:#6366f1">{{ row.volumeToRecycle.toFixed(2) }} т</span>
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.6 Норматив</span>
+                  <span class="cf-info__value">{{ row.recyclingStandard }}<span class="cf-info__unit">%</span></span>
                 </div>
-                <div class="corr-card__inputs">
-                  <div class="corr-card__input-wrap">
-                    <span class="corr-card__input-label">Доп. переработка</span>
-                    <input
-                      type="number"
-                      v-model.number="row.additionalTransferred"
-                      min="0" step="0.1" placeholder="0"
-                      :class="['corr-card__input', !isRowValid(row) ? 'corr-card__input--error' : '']"
-                    />
-                  </div>
-                  <div class="corr-card__input-wrap">
-                    <span class="corr-card__input-label">Доп. вывоз</span>
-                    <input
-                      type="number"
-                      v-model.number="row.additionalExported"
-                      min="0" step="0.1" placeholder="0"
-                      :class="['corr-card__input', !isRowValid(row) ? 'corr-card__input--error' : '']"
-                    />
-                  </div>
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.7 К переработке</span>
+                  <span class="cf-info__value">{{ row.volumeToRecycle.toFixed(2) }} <span class="cf-info__unit">тонн</span></span>
+                </div>
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.8 Ранее передано</span>
+                  <span class="cf-info__value">{{ row.previousTransferred }} <span class="cf-info__unit">тонн</span></span>
+                </div>
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.9 Ранее вывезено</span>
+                  <span class="cf-info__value">{{ row.previousExported }} <span class="cf-info__unit">тонн</span></span>
+                </div>
+                <div class="cf-info__cell">
+                  <span class="cf-info__label">Гр.11 Ставка</span>
+                  <span class="cf-info__value">{{ row.rate.toLocaleString('ru-RU') }} <span class="cf-info__unit">сом/т</span></span>
                 </div>
               </div>
-              <div class="corr-card__right" @click.stop @click="toggleCorrRow(index)">
+            </div>
+
+            <!-- BLOCK 2: Correction inputs -->
+            <div class="cf-correction">
+              <div class="cf-correction__header">Укажите дополнительные объёмы</div>
+              <div class="cf-correction__inputs">
+                <div class="cf-correction__field">
+                  <label class="cf-correction__label">Дополнительная переработка (тонн)</label>
+                  <input
+                    type="number"
+                    v-model.number="row.additionalTransferred"
+                    min="0" step="0.01" placeholder="0.00"
+                    :class="['cf-correction__input', !isRowValid(row) ? 'cf-correction__input--error' : '']"
+                  />
+                  <span class="cf-correction__hint">Объём товаров, дополнительно переданных на переработку</span>
+                </div>
+                <div class="cf-correction__field">
+                  <label class="cf-correction__label">Дополнительный вывоз из КР (тонн)</label>
+                  <input
+                    type="number"
+                    v-model.number="row.additionalExported"
+                    min="0" step="0.01" placeholder="0.00"
+                    :class="['cf-correction__input', !isRowValid(row) ? 'cf-correction__input--error' : '']"
+                  />
+                  <span class="cf-correction__hint">Объём товаров, дополнительно вывезенных за пределы КР</span>
+                </div>
+              </div>
+
+              <!-- Validation error: sum exceeds Гр.5 -->
+              <div v-if="!isRowValid(row)" class="norm-msg norm-msg--error">
+                <svg class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5: {{ row.volume }} т)
+              </div>
+
+              <!-- Norm status info -->
+              <div v-else-if="getCorrNormStatus(row)" :class="['norm-msg', getCorrNormStatus(row)!.met ? 'norm-msg--success' : 'norm-msg--warning']">
+                <svg v-if="getCorrNormStatus(row)!.met" class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <svg v-else class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {{ getCorrNormStatus(row)!.message }}
+              </div>
+
+              <!-- Summary row -->
+              <div
+                class="cf-correction__summary"
+                :class="getDifference(row) > 0 ? 'cf-correction__summary--positive' : getDifference(row) < 0 ? 'cf-correction__summary--negative' : 'cf-correction__summary--neutral'"
+              >
+                <span class="cf-correction__summary-left">Новый облагаемый объём: <strong>{{ getNewTaxableVolume(row).toFixed(2) }} тонн</strong></span>
                 <span
-                  class="corr-card__diff"
-                  :style="{ color: getDifference(row) > 0 ? '#10b981' : getDifference(row) === 0 ? '#10b981' : '#1e293b' }"
-                >{{ getDifference(row) > 0 ? '+' : '' }}{{ formatAmount(getDifference(row)) }}</span>
-                <button
-                  class="corr-card__chevron"
-                  :class="{ 'corr-card__chevron--open': expandedCorrRows.has(index) }"
-                  type="button"
-                  @click.stop="toggleCorrRow(index)"
-                >
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
+                  class="cf-correction__summary-right"
+                  :style="{ color: getDifference(row) > 0 ? '#059669' : getDifference(row) < 0 ? '#EF4444' : '#64748B' }"
+                >Гр.12 Сумма: {{ getNewAmount(row).toLocaleString('ru-RU') }} сом</span>
               </div>
             </div>
+          </div>
 
-            <!-- Expandable details -->
-            <div class="corr-card__expand" :class="{ 'corr-card__expand--open': expandedCorrRows.has(index) }">
-              <div class="corr-card__expand-inner">
-                <div class="corr-card__detail-grid">
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">Норматив (гр.6)</span>
-                    <span class="corr-card__detail-value">{{ row.recyclingStandard }}%</span>
-                  </div>
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">К переработке (гр.7)</span>
-                    <span class="corr-card__detail-value">{{ row.volumeToRecycle.toFixed(2) }} т</span>
-                  </div>
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">Ранее передано (гр.8)</span>
-                    <span class="corr-card__detail-value">{{ row.previousTransferred }} т</span>
-                  </div>
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">Ранее вывезено (гр.9)</span>
-                    <span class="corr-card__detail-value">{{ row.previousExported }} т</span>
-                  </div>
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">Новый облагаемый</span>
-                    <span class="corr-card__detail-value" :style="{ color: getNewTaxableVolume(row) < row.oldTaxableVolume ? '#10b981' : '#1e293b' }">
-                      {{ getNewTaxableVolume(row).toFixed(2) }} т
-                    </span>
-                  </div>
-                  <div class="corr-card__detail">
-                    <span class="corr-card__detail-label">Разница (сом)</span>
-                    <span
-                      class="corr-card__detail-value"
-                      :style="{ color: getDifference(row) > 0 ? '#10b981' : getDifference(row) === 0 ? '#10b981' : '#ef4444' }"
-                    >{{ getDifference(row) > 0 ? '+' : '' }}{{ formatAmount(getDifference(row)) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Validation error inline -->
-            <div v-if="!isRowValid(row)" class="corr-card__error">
-              Сумма переработки и вывоза превышает объём к переработке ({{ row.volumeToRecycle.toFixed(2) }} т)
-            </div>
+          <!-- Total correction -->
+          <div v-if="correctionItems.length > 0" class="cf-total">
+            <span class="cf-total__label">Итого по корректировке</span>
+            <span
+              class="cf-total__value"
+              :style="{ color: totalCorrectionAmount > 0 ? '#059669' : totalCorrectionAmount < 0 ? '#EF4444' : '#64748B' }"
+            >Разница: {{ totalCorrectionAmount > 0 ? '+' : '' }}{{ formatAmount(totalCorrectionAmount) }}</span>
           </div>
         </div>
 
         <!-- Validation warning -->
-        <div v-if="hasValidationErrors" class="px-5 py-3 bg-red-50 border-t border-red-200">
+        <div v-if="hasValidationErrors" class="px-5 py-3 bg-red-50 border-t border-red-200 rounded-b-2xl">
           <p class="text-sm text-red-600 flex items-center gap-2">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-            Сумма (ранее передано + доп. переработка + ранее вывезено + доп. вывоз) не должна превышать объём к переработке.
+            Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5).
           </p>
         </div>
       </div>
@@ -570,14 +591,13 @@ const canSubmit = computed(() =>
         </div>
       </div>
 
-      <!-- Total correction amount -->
-      <div v-if="selectedCalculation && hasAdditionalData" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <div class="flex items-center justify-between">
-          <span class="text-lg font-semibold text-[#1e293b]">Сумма корректировки:</span>
-          <span class="text-2xl lg:text-3xl font-bold text-[#10b981]">
-            +{{ formatAmount(totalCorrectionAmount) }}
-          </span>
-        </div>
+      <!-- Total correction amount (visible only when data entered) -->
+      <div v-if="selectedCalculation && hasAdditionalData" class="cf-total-banner mb-6">
+        <span class="cf-total-banner__label">Сумма корректировки:</span>
+        <span
+          class="cf-total-banner__value"
+          :style="{ color: totalCorrectionAmount > 0 ? '#059669' : totalCorrectionAmount < 0 ? '#EF4444' : '#64748B' }"
+        >{{ totalCorrectionAmount > 0 ? '+' : '' }}{{ formatAmount(totalCorrectionAmount) }}</span>
       </div>
 
       <!-- Action selection -->
@@ -663,6 +683,8 @@ const canSubmit = computed(() =>
         </button>
       </div>
     </template>
+
+    <InstructionDrawer v-model="showInstruction" title="Инструкция — Расчёт утильсбора" :contentHtml="instructionCalculationHtml" />
   </DashboardLayout>
 </template>
 
@@ -787,232 +809,259 @@ const canSubmit = computed(() =>
   color: #dc2626;
 }
 
-/* ── Correction cards (expandable) ── */
-.corr-card {
+/* ── Card-form ── */
+.cf-card {
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  transition: box-shadow 0.2s ease;
-  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
 }
-.corr-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-.corr-card--invalid {
-  border-color: #fca5a5;
-  background: #fef2f2;
+.cf-card--invalid {
+  border-color: #FCA5A5;
 }
 
-.corr-card__top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  cursor: pointer;
-  flex-wrap: nowrap;
-}
-
-.corr-card__left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 0 0 30%;
-  min-width: 280px;
-}
-.corr-card__group {
-  font-weight: 600;
-  font-size: 14px;
-  color: #1e293b;
-  line-height: 1.3;
-  white-space: normal;
-  word-wrap: break-word;
-  word-break: break-word;
-}
-.corr-card__subgroup {
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.3;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.corr-card__mid {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 1 auto;
-  min-width: 0;
-}
-.corr-card__arrow {
-  flex-shrink: 0;
-}
-.corr-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex: 0 0 auto;
-}
-.corr-card__field-label {
-  font-size: 11px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.corr-card__field-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
-  white-space: nowrap;
-}
-
-.corr-card__inputs {
-  display: flex;
-  gap: 8px;
-  margin-left: 4px;
-  flex: 0 0 auto;
-}
-.corr-card__input-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 0 0 auto;
-}
-.corr-card__input-label {
-  font-size: 10px;
-  color: #10b981;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.corr-card__input {
-  width: 85px;
-  max-width: 100px;
-  padding: 6px 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
-  text-align: center;
-  color: #1e293b;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.corr-card__input:focus {
-  border-color: #8b5cf6;
-}
-.corr-card__input--error {
-  border-color: #fca5a5;
-  background: #fef2f2;
-}
-
-.corr-card__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-.corr-card__diff {
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.corr-card__chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: transform 0.3s ease, color 0.2s, background 0.2s;
-  flex-shrink: 0;
-}
-.corr-card__chevron:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-.corr-card__chevron--open {
-  transform: rotate(180deg);
-  color: #8b5cf6;
-}
-
-/* Expandable section */
-.corr-card__expand {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-.corr-card__expand--open {
-  max-height: 300px;
-}
-.corr-card__expand-inner {
+/* ── Info block (readonly) ── */
+.cf-info {
+  background: #F8FAFC;
+  border-radius: 10px;
   padding: 16px;
-  background: #f8fafc;
-  border-top: 1px dashed #e2e8f0;
+  margin-bottom: 16px;
 }
-.corr-card__detail-grid {
+.cf-info__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  line-height: 1.4;
+}
+.cf-info__subtitle {
+  font-size: 13px;
+  color: #64748B;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.cf-info__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px 24px;
+  gap: 12px 16px;
+  margin-top: 14px;
 }
-.corr-card__detail {
+.cf-info__cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
-.corr-card__detail-label {
+.cf-info__label {
   font-size: 11px;
-  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-}
-.corr-card__detail-value {
-  font-size: 15px;
+  color: #94A3B8;
   font-weight: 600;
-  color: #1e293b;
+  letter-spacing: 0.3px;
+}
+.cf-info__value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1E293B;
+}
+.cf-info__unit {
+  font-size: 13px;
+  color: #94A3B8;
+  font-weight: 400;
 }
 
-.corr-card__error {
-  padding: 8px 16px;
-  background: #fef2f2;
-  border-top: 1px solid #fecaca;
-  font-size: 12px;
-  color: #dc2626;
+/* ── Correction block ── */
+.cf-correction {
+  border-top: 2px solid #22C55E;
+  padding-top: 16px;
+}
+.cf-correction__header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #22C55E;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+}
+.cf-correction__inputs {
+  display: flex;
+  gap: 16px;
+}
+.cf-correction__field {
+  flex: 1;
+  min-width: 0;
+}
+.cf-correction__label {
+  display: block;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.cf-correction__input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1E293B;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -moz-appearance: textfield;
+}
+.cf-correction__input::-webkit-inner-spin-button,
+.cf-correction__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cf-correction__input:focus {
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+.cf-correction__input--error {
+  border-color: #FCA5A5;
+  background: #FEF2F2;
+}
+.cf-correction__input--error:focus {
+  border-color: #F87171;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+.cf-correction__hint {
+  display: block;
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 6px;
+  line-height: 1.4;
 }
 
-/* Mobile: stack card layout */
-@media (max-width: 767px) {
-  .corr-card__top {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .corr-card__left {
-    flex: 0 0 100%;
-    min-width: 0;
-  }
-  .corr-card__mid {
-    flex-wrap: wrap;
-    gap: 10px;
-    flex: 0 0 100%;
-  }
-  .corr-card__inputs {
-    margin-left: 0;
-    width: 100%;
-  }
-  .corr-card__right {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .corr-card__detail-grid {
+/* ── Norm status / validation messages ── */
+.norm-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.norm-msg__icon {
+  flex-shrink: 0;
+}
+.norm-msg--success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #15803D;
+}
+.norm-msg--warning {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+.norm-msg--error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+}
+
+/* ── Summary row ── */
+.cf-correction__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-top: 16px;
+}
+.cf-correction__summary--positive {
+  background: #F0FDF4;
+}
+.cf-correction__summary--negative {
+  background: #FEF2F2;
+}
+.cf-correction__summary--neutral {
+  background: #F8FAFC;
+}
+.cf-correction__summary-left {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1E293B;
+}
+.cf-correction__summary-right {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* ── Total block (inside card area) ── */
+.cf-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: white;
+  border: 2px solid #22C55E;
+  border-radius: 14px;
+  padding: 20px;
+  margin-top: 8px;
+}
+.cf-total__label {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1E293B;
+}
+.cf-total__value {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* ── Total banner (standalone) ── */
+.cf-total-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: white;
+  border-radius: 2xl;
+  padding: 20px 24px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border-radius: 16px;
+}
+.cf-total-banner__label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1E293B;
+}
+.cf-total-banner__value {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .cf-info__grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .cf-correction__inputs {
+    flex-direction: column;
+  }
+  .cf-correction__summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cf-total {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cf-total-banner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

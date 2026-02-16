@@ -5,7 +5,9 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import TnvedCode from '../../components/TnvedCode.vue'
 import { calculatePaymentDeadline, getRemainingDays, formatDateShort } from '../../utils/dateUtils'
+import { generateCalculationExcel } from '../../utils/excelExport'
 
 const router = useRouter()
 const route = useRoute()
@@ -101,6 +103,15 @@ const goBack = () => {
 
 const mockAction = (action: string) => {
   alert(action)
+}
+
+const downloadExcel = () => {
+  if (!calc.value) return
+  generateCalculationExcel(calc.value, {
+    name: calc.value.company,
+    inn: calc.value.inn,
+    address: calc.value.address || '',
+  })
 }
 </script>
 
@@ -211,6 +222,7 @@ const mockAction = (action: string) => {
                   {{ getGroupLabel(item.group) }}
                   <span v-if="item.subgroup" class="block text-xs text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                   <span v-if="item.gskpCode" class="block text-xs text-[#94a3b8] font-mono">{{ item.gskpCode }}</span>
+                  <span v-if="item.tnvedCode" class="block text-xs text-[#94a3b8] font-mono mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></span>
                 </td>
                 <td class="px-5 py-3 text-right font-medium text-[#1e293b]">{{ item.volume }}</td>
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '—' }}%</td>
@@ -311,6 +323,10 @@ const mockAction = (action: string) => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Скачать PDF
             </button>
+              <button @click="downloadExcel" class="btn-excel">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Скачать Excel
+              </button>
             <button @click="mockAction('Отзыв расчёта')" class="btn-action btn-action-warning text-sm">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
               Отозвать расчёт
@@ -323,6 +339,10 @@ const mockAction = (action: string) => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Скачать PDF
             </button>
+              <button @click="downloadExcel" class="btn-excel">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Скачать Excel
+              </button>
             <button @click="mockAction('Переход к оплате')" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
               Оплатить
@@ -347,6 +367,10 @@ const mockAction = (action: string) => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Скачать PDF
             </button>
+              <button @click="downloadExcel" class="btn-excel">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Скачать Excel
+              </button>
             <button @click="mockAction('Печать расчёта')" class="btn-print">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
               Печать
@@ -381,6 +405,25 @@ const mockAction = (action: string) => {
   background: #B91C1C;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-excel:hover {
+  background: #047857;
+  box-shadow: 0 3px 10px rgba(5,150,105,0.3);
 }
 
 .btn-print {

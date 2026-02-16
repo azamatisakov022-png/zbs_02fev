@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -10,6 +11,9 @@ import { refundStore } from '../../stores/refunds'
 import { reportStore, type Report } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
+import { generateRecyclingReportExcel } from '../../utils/excelExport'
+
+const router = useRouter()
 
 const menuItems = computed(() => [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
@@ -118,6 +122,15 @@ const rejectReport = () => {
     reportStore.rejectReport(selectedReport.value.id, rejectionReason.value.trim())
     closeDetail()
   }
+}
+
+const downloadReportExcel = () => {
+  if (!selectedReport.value) return
+  generateRecyclingReportExcel(selectedReport.value, {
+    name: selectedReport.value.company || '',
+    inn: selectedReport.value.inn || '',
+    address: '',
+  })
 }
 
 // Empty state helpers
@@ -260,7 +273,7 @@ const resetFilters = () => {
       <template #actions="{ row }">
         <div class="flex flex-wrap items-center justify-end gap-2">
           <button
-            @click="openDetail(row)"
+            @click="router.push('/eco-operator/reports/' + row.id)"
             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -441,6 +454,14 @@ const resetFilters = () => {
             <div v-else class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
               <h3 class="font-semibold text-[#1e293b] mb-2">Прикреплённые документы</h3>
               <p class="text-sm text-[#64748b]">Документы не прикреплены</p>
+            </div>
+
+            <!-- Excel Export Button -->
+            <div class="flex justify-end">
+              <button @click="downloadReportExcel" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#059669] text-white hover:bg-[#047857] transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Скачать отчёт (Excel)
+              </button>
             </div>
 
             <!-- Rejection reason if rejected -->

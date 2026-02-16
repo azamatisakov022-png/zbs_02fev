@@ -7,6 +7,7 @@ import {
   type ProductSubgroup,
 } from '../data/product-groups'
 import SubgroupPickerModal from './SubgroupPickerModal.vue'
+import TnvedCode from './TnvedCode.vue'
 
 const props = withDefaults(defineProps<{
   group: string
@@ -119,7 +120,8 @@ watch(() => props.subgroup, () => {
       <div>
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ТН ВЭД</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
-          {{ selectedSubgroupData?.tnvedCode || '—' }}
+          <TnvedCode v-if="selectedSubgroupData?.tnvedCode" :code="selectedSubgroupData.tnvedCode" />
+          <span v-else>—</span>
         </div>
       </div>
       <div class="sm:col-span-2 lg:col-span-3">
