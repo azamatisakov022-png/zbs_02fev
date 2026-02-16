@@ -2,21 +2,17 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const menuItems = [
+  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
+  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
+  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
+  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
+  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
+  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
+  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
+  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
+]
 
 // Filter
 const searchQuery = ref('')
@@ -50,169 +46,81 @@ interface WasteType {
 
 const wasteTypes = ref<WasteType[]>([
   {
-    id: 1,
-    code: 'ПЛ-01',
-    name: 'ПЭТ (полиэтилентерефталат)',
-    category: 'plastic',
-    categoryName: 'Пластик',
-    hazardClass: 5,
+    id: 1, code: 'ПЛ-01', name: 'ПЭТ (полиэтилентерефталат)',
+    category: 'plastic', categoryName: 'Пластик', hazardClass: 5,
     description: 'Пластиковые бутылки, контейнеры для пищевых продуктов',
-    acceptedVolume: 1250,
-    processedVolume: 1180,
-    pricePerTon: 15000,
-    isActive: true,
-    processingMethods: ['Дробление', 'Мойка', 'Грануляция'],
-    icon: '🧴',
+    acceptedVolume: 1250, processedVolume: 1180, pricePerTon: 15000, isActive: true,
+    processingMethods: ['Дробление', 'Мойка', 'Грануляция'], icon: '🧴',
   },
   {
-    id: 2,
-    code: 'ПЛ-02',
-    name: 'ПП (полипропилен)',
-    category: 'plastic',
-    categoryName: 'Пластик',
-    hazardClass: 5,
+    id: 2, code: 'ПЛ-02', name: 'ПП (полипропилен)',
+    category: 'plastic', categoryName: 'Пластик', hazardClass: 5,
     description: 'Крышки, контейнеры, упаковка',
-    acceptedVolume: 890,
-    processedVolume: 845,
-    pricePerTon: 12000,
-    isActive: true,
-    processingMethods: ['Дробление', 'Экструзия'],
-    icon: '🥤',
+    acceptedVolume: 890, processedVolume: 845, pricePerTon: 12000, isActive: true,
+    processingMethods: ['Дробление', 'Экструзия'], icon: '🥤',
   },
   {
-    id: 3,
-    code: 'ПЛ-03',
-    name: 'ПЭ (полиэтилен)',
-    category: 'plastic',
-    categoryName: 'Пластик',
-    hazardClass: 5,
+    id: 3, code: 'ПЛ-03', name: 'ПЭ (полиэтилен)',
+    category: 'plastic', categoryName: 'Пластик', hazardClass: 5,
     description: 'Плёнка, пакеты, мягкая упаковка',
-    acceptedVolume: 670,
-    processedVolume: 620,
-    pricePerTon: 10000,
-    isActive: true,
-    processingMethods: ['Агломерация', 'Грануляция'],
-    icon: '🛍️',
+    acceptedVolume: 670, processedVolume: 620, pricePerTon: 10000, isActive: true,
+    processingMethods: ['Агломерация', 'Грануляция'], icon: '🛍️',
   },
   {
-    id: 4,
-    code: 'БМ-01',
-    name: 'Гофрокартон',
-    category: 'paper',
-    categoryName: 'Бумага и картон',
-    hazardClass: 5,
+    id: 4, code: 'БМ-01', name: 'Гофрокартон',
+    category: 'paper', categoryName: 'Бумага и картон', hazardClass: 5,
     description: 'Гофрированный картон, коробки',
-    acceptedVolume: 2100,
-    processedVolume: 2050,
-    pricePerTon: 8000,
-    isActive: true,
-    processingMethods: ['Роспуск', 'Очистка', 'Формование'],
-    icon: '📦',
+    acceptedVolume: 2100, processedVolume: 2050, pricePerTon: 8000, isActive: true,
+    processingMethods: ['Роспуск', 'Очистка', 'Формование'], icon: '📦',
   },
   {
-    id: 5,
-    code: 'БМ-02',
-    name: 'Макулатура МС-1А',
-    category: 'paper',
-    categoryName: 'Бумага и картон',
-    hazardClass: 5,
+    id: 5, code: 'БМ-02', name: 'Макулатура МС-1А',
+    category: 'paper', categoryName: 'Бумага и картон', hazardClass: 5,
     description: 'Белая бумага, офисные документы',
-    acceptedVolume: 450,
-    processedVolume: 440,
-    pricePerTon: 12000,
-    isActive: true,
-    processingMethods: ['Роспуск', 'Деинкинг', 'Отбеливание'],
-    icon: '📄',
+    acceptedVolume: 450, processedVolume: 440, pricePerTon: 12000, isActive: true,
+    processingMethods: ['Роспуск', 'Деинкинг', 'Отбеливание'], icon: '📄',
   },
   {
-    id: 6,
-    code: 'БМ-03',
-    name: 'Макулатура МС-5Б',
-    category: 'paper',
-    categoryName: 'Бумага и картон',
-    hazardClass: 5,
+    id: 6, code: 'БМ-03', name: 'Макулатура МС-5Б',
+    category: 'paper', categoryName: 'Бумага и картон', hazardClass: 5,
     description: 'Смешанная макулатура, газеты, журналы',
-    acceptedVolume: 780,
-    processedVolume: 750,
-    pricePerTon: 6000,
-    isActive: true,
-    processingMethods: ['Роспуск', 'Очистка'],
-    icon: '📰',
+    acceptedVolume: 780, processedVolume: 750, pricePerTon: 6000, isActive: true,
+    processingMethods: ['Роспуск', 'Очистка'], icon: '📰',
   },
   {
-    id: 7,
-    code: 'СТ-01',
-    name: 'Стекло бесцветное',
-    category: 'glass',
-    categoryName: 'Стекло',
-    hazardClass: 5,
+    id: 7, code: 'СТ-01', name: 'Стекло бесцветное',
+    category: 'glass', categoryName: 'Стекло', hazardClass: 5,
     description: 'Прозрачные бутылки и банки',
-    acceptedVolume: 560,
-    processedVolume: 540,
-    pricePerTon: 5000,
-    isActive: true,
-    processingMethods: ['Дробление', 'Сортировка', 'Переплавка'],
-    icon: '🫙',
+    acceptedVolume: 560, processedVolume: 540, pricePerTon: 5000, isActive: true,
+    processingMethods: ['Дробление', 'Сортировка', 'Переплавка'], icon: '🫙',
   },
   {
-    id: 8,
-    code: 'СТ-02',
-    name: 'Стекло коричневое',
-    category: 'glass',
-    categoryName: 'Стекло',
-    hazardClass: 5,
+    id: 8, code: 'СТ-02', name: 'Стекло коричневое',
+    category: 'glass', categoryName: 'Стекло', hazardClass: 5,
     description: 'Коричневые бутылки (пивные и др.)',
-    acceptedVolume: 320,
-    processedVolume: 310,
-    pricePerTon: 4500,
-    isActive: true,
-    processingMethods: ['Дробление', 'Переплавка'],
-    icon: '🍾',
+    acceptedVolume: 320, processedVolume: 310, pricePerTon: 4500, isActive: true,
+    processingMethods: ['Дробление', 'Переплавка'], icon: '🍾',
   },
   {
-    id: 9,
-    code: 'МТ-01',
-    name: 'Алюминий',
-    category: 'metal',
-    categoryName: 'Металл',
-    hazardClass: 5,
+    id: 9, code: 'МТ-01', name: 'Алюминий',
+    category: 'metal', categoryName: 'Металл', hazardClass: 5,
     description: 'Алюминиевые банки, фольга',
-    acceptedVolume: 180,
-    processedVolume: 175,
-    pricePerTon: 85000,
-    isActive: true,
-    processingMethods: ['Прессование', 'Переплавка'],
-    icon: '🥫',
+    acceptedVolume: 180, processedVolume: 175, pricePerTon: 85000, isActive: true,
+    processingMethods: ['Прессование', 'Переплавка'], icon: '🥫',
   },
   {
-    id: 10,
-    code: 'МТ-02',
-    name: 'Жесть',
-    category: 'metal',
-    categoryName: 'Металл',
-    hazardClass: 5,
+    id: 10, code: 'МТ-02', name: 'Жесть',
+    category: 'metal', categoryName: 'Металл', hazardClass: 5,
     description: 'Консервные банки, жестяная тара',
-    acceptedVolume: 240,
-    processedVolume: 230,
-    pricePerTon: 25000,
-    isActive: true,
-    processingMethods: ['Прессование', 'Переплавка'],
-    icon: '🥫',
+    acceptedVolume: 240, processedVolume: 230, pricePerTon: 25000, isActive: true,
+    processingMethods: ['Прессование', 'Переплавка'], icon: '🥫',
   },
   {
-    id: 11,
-    code: 'ОР-01',
-    name: 'Пищевые отходы',
-    category: 'organic',
-    categoryName: 'Органика',
-    hazardClass: 5,
+    id: 11, code: 'ОР-01', name: 'Пищевые отходы',
+    category: 'organic', categoryName: 'Органика', hazardClass: 5,
     description: 'Остатки пищи, просроченные продукты',
-    acceptedVolume: 890,
-    processedVolume: 870,
-    pricePerTon: 3000,
-    isActive: false,
-    processingMethods: ['Компостирование', 'Анаэробное сбраживание'],
-    icon: '🥬',
+    acceptedVolume: 890, processedVolume: 870, pricePerTon: 3000, isActive: false,
+    processingMethods: ['Компостирование', 'Анаэробное сбраживание'], icon: '🥬',
   },
 ])
 
@@ -238,12 +146,8 @@ const stats = computed(() => ({
   ),
 }))
 
-// Format number
-const formatNumber = (num: number) => {
-  return num.toLocaleString('ru-RU')
-}
+const formatNumber = (num: number) => num.toLocaleString('ru-RU')
 
-// Hazard class color
 const getHazardClass = (hazardClass: number) => {
   switch (hazardClass) {
     case 1: return { color: 'bg-red-100 text-red-700', label: 'I класс (чрезв. опасные)' }
@@ -267,9 +171,9 @@ const openDetails = (wt: WasteType) => {
 
 <template>
   <DashboardLayout
-    role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
-    userName="ОсОО «ЭкоПереработка»"
+    role="employee"
+    roleTitle="Сотрудник МПРЭТН КР"
+    userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
@@ -414,7 +318,6 @@ const openDetails = (wt: WasteType) => {
             </button>
           </div>
           <div class="p-6 space-y-6">
-            <!-- Header -->
             <div class="flex items-start gap-4">
               <div class="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center text-3xl">
                 {{ selectedWasteType.icon }}
@@ -426,13 +329,11 @@ const openDetails = (wt: WasteType) => {
               </div>
             </div>
 
-            <!-- Description -->
             <div>
               <h5 class="text-sm font-medium text-gray-500 mb-1">Описание</h5>
               <p class="text-gray-900">{{ selectedWasteType.description }}</p>
             </div>
 
-            <!-- Stats grid -->
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-xl p-4">
                 <p class="text-sm text-gray-500">Класс опасности</p>
@@ -454,7 +355,6 @@ const openDetails = (wt: WasteType) => {
               </div>
             </div>
 
-            <!-- Processing progress -->
             <div>
               <div class="flex justify-between text-sm mb-2">
                 <span class="text-gray-500">Процент переработки</span>
@@ -469,7 +369,6 @@ const openDetails = (wt: WasteType) => {
               </div>
             </div>
 
-            <!-- Processing methods -->
             <div>
               <h5 class="text-sm font-medium text-gray-500 mb-3">Методы переработки</h5>
               <div class="flex flex-wrap gap-2">
@@ -483,7 +382,6 @@ const openDetails = (wt: WasteType) => {
               </div>
             </div>
 
-            <!-- Status -->
             <div class="p-4 rounded-xl" :class="selectedWasteType.isActive ? 'bg-teal-50 border border-teal-200' : 'bg-gray-50 border border-gray-200'">
               <div class="flex items-center gap-3">
                 <svg v-if="selectedWasteType.isActive" class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -498,7 +396,6 @@ const openDetails = (wt: WasteType) => {
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
               <button class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
                 Редактировать

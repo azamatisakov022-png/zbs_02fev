@@ -4,18 +4,22 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
 import { recyclerStore, type Recycler, type RecyclerStatus } from '../../stores/recyclers'
+import { calculationStore } from '../../stores/calculations'
+import { refundStore } from '../../stores/refunds'
+import { reportStore } from '../../stores/reports'
 import { productGroups } from '../../data/product-groups'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const menuItems = computed(() => [
+  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
+  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
+  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
+  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
+  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
+  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
+  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
+])
 
 // View state
 const showAddForm = ref(false)
@@ -66,7 +70,6 @@ const getGroupLabel = (value: string) => {
 
 const getGroupShortLabel = (value: string) => {
   const label = productGroups.find(g => g.value === value)?.label || value
-  // Return just the number and short name
   const match = label.match(/^(\d+)\.\s*(.+)$/)
   if (match) {
     const name = match[2]
@@ -125,7 +128,7 @@ const saveRecycler = () => {
   recyclerStore.addRecycler({
     ...newRecycler.value,
     addedDate: dateStr,
-    addedBy: 'Мамытова А.',
+    addedBy: 'Оператор ГП',
   })
   resetForm()
   showAddForm.value = false
@@ -148,9 +151,9 @@ const resetAllFilters = () => {
 
 <template>
   <DashboardLayout
-    role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
-    userName="Мамытова Айгуль"
+    role="eco-operator"
+    roleTitle="ГП «Эко Оператор»"
+    userName="Исманова Динара"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">

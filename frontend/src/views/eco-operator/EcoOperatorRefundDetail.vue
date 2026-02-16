@@ -7,7 +7,7 @@ import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { reportStore } from '../../stores/reports'
 import { refundStore, type Refund } from '../../stores/refunds'
-import { productGroups, productSubgroups } from '../../data/product-groups'
+import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,12 +18,10 @@ const menuItems = computed(() => [
   { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
   { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
   { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'licenses', label: 'Лицензии и документы', icon: icons.license, route: '/eco-operator/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/eco-operator/waste-types' },
-  { id: 'my-reports', label: 'Мои отчёты', icon: icons.registries, route: '/eco-operator/my-reports' },
-  { id: 'payments', label: 'Аналитика платежей', icon: icons.money, route: '/eco-operator/payments' },
-  { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/eco-operator/analytics' },
+  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
+  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
   { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
 ])
 
 // Loading state
@@ -51,7 +49,6 @@ const canTakeAction = computed(() => {
 
 // Group/subgroup label helpers
 const getGroupLabel = (value: string) => productGroups.find(g => g.value === value)?.label || value
-const getSubgroupLabel = (group: string, subgroup: string) => productSubgroups[group]?.find(s => s.value === subgroup)?.label || subgroup || '\u2014'
 
 // Approve
 const successMessage = ref('')

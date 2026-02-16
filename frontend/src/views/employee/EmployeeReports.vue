@@ -6,49 +6,18 @@ import { icons } from '../../utils/menuIcons'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
+  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
+  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
+  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
   { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
 ]
 
 // Loading state
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
-
-// Полный список 24 групп товаров (из калькулятора РОП)
-const productGroups = [
-  // Товары (группы 1-18)
-  { number: 1, name: 'Изделия из гофрированной бумаги/картона', rate: 4793, type: 'goods' },
-  { number: 2, name: 'Изделия из негофрированной бумаги/картона', rate: 5595, type: 'goods' },
-  { number: 3, name: 'Масла', rate: 8406, type: 'goods' },
-  { number: 4, name: 'Шины, покрышки и камеры резиновые', rate: 12345, type: 'goods' },
-  { number: 5, name: 'Изделия из резины (за исключением шин)', rate: 17919, type: 'goods' },
-  { number: 6, name: 'Изделия пластмассовые упаковочные', rate: 9418, type: 'goods' },
-  { number: 7, name: 'Изделия пластмассовые прочие', rate: 11008, type: 'goods' },
-  { number: 8, name: 'Стекло полое', rate: 4219, type: 'goods' },
-  { number: 9, name: 'Компьютеры и периферийное оборудование', rate: 36356, type: 'goods' },
-  { number: 10, name: 'Мониторы, приемники телевизионные', rate: 10659, type: 'goods' },
-  { number: 11, name: 'Элементы первичные и батареи первичных элементов', rate: 135390, type: 'goods' },
-  { number: 12, name: 'Аккумуляторы свинцовые', rate: 7471, type: 'goods' },
-  { number: 13, name: 'Батареи аккумуляторные', rate: 147165, type: 'goods' },
-  { number: 14, name: 'Оборудование электрическое осветительное', rate: 10859, type: 'goods' },
-  { number: 15, name: 'Техника бытовая крупная', rate: 36356, type: 'goods' },
-  { number: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: 36356, type: 'goods' },
-  { number: 17, name: 'Оборудование холодильное и вентиляционное', rate: 36356, type: 'goods' },
-  { number: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: 11030, type: 'goods' },
-  // Упаковка (группы 19-24)
-  { number: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: 9418, type: 'packaging' },
-  { number: 20, name: 'Упаковка из полимерных материалов (с галогенами)', rate: 12197, type: 'packaging' },
-  { number: 21, name: 'Упаковка из комбинированных материалов', rate: 44573, type: 'packaging' },
-  { number: 22, name: 'Упаковка из гофрированного картона', rate: 4973, type: 'packaging' },
-  { number: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: 5595, type: 'packaging' },
-  { number: 24, name: 'Упаковка стеклянная', rate: 4219, type: 'packaging' },
-]
 
 // Регионы Кыргызстана
 const regions = [
@@ -65,231 +34,323 @@ const regions = [
 ]
 
 // Активный тип отчёта
-const activeReport = ref<'receipts' | 'products' | 'debtors' | null>(null)
+const activeReport = ref<'summary' | 'landfills' | 'licenses' | 'normatives' | 'regions' | null>(null)
 
 // Флаг формирования отчёта
 const isGenerating = ref(false)
 const reportGenerated = ref(false)
 
-// ========== ОТЧЁТ 1: ПОСТУПЛЕНИЯ ==========
-const receiptsFilters = ref({
+// ========== ОТЧЁТ 1: СВОДНЫЙ ДЛЯ РУКОВОДСТВА ==========
+const summaryFilters = ref({
   dateFrom: '2025-01-01',
   dateTo: '2025-02-03',
-  groupNumber: 0,
-  subgroup: 'Все подгруппы',
-  region: 'Все регионы',
-  company: '',
 })
 
-// Подгруппы для выбранной группы товаров (динамический список)
-const availableSubgroups = computed(() => {
-  const subgroups = ['Все подгруппы']
-  if (receiptsFilters.value.groupNumber === 0) {
-    // Собираем уникальные подгруппы из всех записей
-    const uniqueSubgroups = new Set(receiptsData.value.map(r => r.subgroup))
-    return [...subgroups, ...Array.from(uniqueSubgroups)]
-  }
-  // Подгруппы для конкретной группы
-  const groupSubgroups = new Set(
-    receiptsData.value
-      .filter(r => r.groupNumber === receiptsFilters.value.groupNumber)
-      .map(r => r.subgroup)
-  )
-  return [...subgroups, ...Array.from(groupSubgroups)]
-})
-
-interface ReceiptRecord {
+interface SummaryRow {
   id: number
-  company: string
-  inn: string
-  region: string
-  groupNumber: number
-  groupName: string
-  subgroup: string
-  mass: number
-  rate: number
-  amount: number
-  paymentDate: string
-  status: 'paid' | 'partial' | 'overdue'
+  indicator: string
+  unit: string
+  value: string
+  change: string
+  changeType: 'positive' | 'negative' | 'neutral'
 }
 
-const receiptsData = ref<ReceiptRecord[]>([
-  { id: 1, company: 'ОсОО "БишкекПласт"', inn: '01234567891234', region: 'Бишкек', groupNumber: 6, groupName: 'Изделия пластмассовые упаковочные', subgroup: 'ПЭТ бутылки', mass: 12.5, rate: 9418, amount: 117725, paymentDate: '2025-01-15', status: 'paid' },
-  { id: 2, company: 'ОсОО "ЭкоРесайкл"', inn: '02345678912345', region: 'Бишкек', groupNumber: 1, groupName: 'Изделия из гофрированной бумаги/картона', subgroup: 'Коробки гофрированные', mass: 25.0, rate: 4793, amount: 119825, paymentDate: '2025-01-20', status: 'paid' },
-  { id: 3, company: 'ОАО "ОшМеталл"', inn: '03456789123456', region: 'Ош', groupNumber: 12, groupName: 'Аккумуляторы свинцовые', subgroup: 'Автомобильные АКБ', mass: 8.3, rate: 7471, amount: 62009, paymentDate: '2025-01-25', status: 'paid' },
-  { id: 4, company: 'ИП "Асанов"', inn: '12345678901234', region: 'Чуйская область', groupNumber: 8, groupName: 'Стекло полое', subgroup: 'Бутылки стеклянные', mass: 15.0, rate: 4219, amount: 63285, paymentDate: '2025-01-28', status: 'paid' },
-  { id: 5, company: 'ОсОО "GreenPack"', inn: '04567891234567', region: 'Бишкек', groupNumber: 19, groupName: 'Упаковка из полимерных материалов (без галогенов)', subgroup: 'Плёнка ПП', mass: 5.2, rate: 9418, amount: 48974, paymentDate: '2025-01-30', status: 'paid' },
-  { id: 6, company: 'ОсОО "АвтоШина"', inn: '09123456789012', region: 'Чуйская область', groupNumber: 4, groupName: 'Шины, покрышки и камеры резиновые', subgroup: 'Шины легковые', mass: 45.0, rate: 12345, amount: 555525, paymentDate: '2025-02-01', status: 'paid' },
-  { id: 7, company: 'ОсОО "ТаласПак"', inn: '08912345678901', region: 'Таласская область', groupNumber: 22, groupName: 'Упаковка из гофрированного картона', subgroup: 'Коробки упаковочные', mass: 18.5, rate: 4973, amount: 92001, paymentDate: '2025-02-01', status: 'partial' },
-  { id: 8, company: 'ОсОО "ЭлектроРесурс"', inn: '10234567890123', region: 'Бишкек', groupNumber: 9, groupName: 'Компьютеры и периферийное оборудование', subgroup: 'Системные блоки', mass: 3.2, rate: 36356, amount: 116339, paymentDate: '', status: 'overdue' },
-  { id: 9, company: 'ОсОО "ИссыкКульЭко"', inn: '06789123456789', region: 'Иссык-Кульская область', groupNumber: 2, groupName: 'Изделия из негофрированной бумаги/картона', subgroup: 'Упаковка картонная', mass: 22.0, rate: 5595, amount: 123090, paymentDate: '2025-01-18', status: 'paid' },
-  { id: 10, company: 'ОАО "НарынМеталл"', inn: '07891234567890', region: 'Нарынская область', groupNumber: 13, groupName: 'Батареи аккумуляторные', subgroup: 'Li-ion батареи', mass: 1.5, rate: 147165, amount: 220748, paymentDate: '', status: 'overdue' },
-  { id: 11, company: 'ОсОО "ОшПластик"', inn: '11345678901234', region: 'Ошская область', groupNumber: 7, groupName: 'Изделия пластмассовые прочие', subgroup: 'Тара пластиковая', mass: 9.8, rate: 11008, amount: 107878, paymentDate: '2025-02-02', status: 'paid' },
-  { id: 12, company: 'ОсОО "ЧуйСтрой"', inn: '05678912345678', region: 'Чуйская область', groupNumber: 5, groupName: 'Изделия из резины (за исключением шин)', subgroup: 'Резиновые изделия', mass: 6.5, rate: 17919, amount: 116474, paymentDate: '2025-01-22', status: 'partial' },
-  { id: 13, company: 'ОсОО "ДжАПласт"', inn: '13456789012345', region: 'Джалал-Абадская область', groupNumber: 20, groupName: 'Упаковка из полимерных материалов (с галогенами)', subgroup: 'ПВХ плёнка', mass: 7.8, rate: 12197, amount: 95137, paymentDate: '2025-01-29', status: 'paid' },
-  { id: 14, company: 'ИП "Мамытова"', inn: '14567890123456', region: 'Баткенская область', groupNumber: 3, groupName: 'Масла', subgroup: 'Моторные масла', mass: 4.5, rate: 8406, amount: 37827, paymentDate: '2025-02-02', status: 'paid' },
-  { id: 15, company: 'ОсОО "ТехноМир"', inn: '15678901234567', region: 'Бишкек', groupNumber: 10, groupName: 'Мониторы, приемники телевизионные', subgroup: 'Мониторы LCD', mass: 2.8, rate: 10659, amount: 29845, paymentDate: '2025-01-27', status: 'paid' },
+const summaryData = ref<SummaryRow[]>([
+  { id: 1, indicator: 'Зарегистрировано организаций', unit: 'шт', value: '342', change: '+15 за период', changeType: 'positive' },
+  { id: 2, indicator: 'Лицензированных субъектов', unit: 'шт', value: '48', change: '+3', changeType: 'positive' },
+  { id: 3, indicator: 'Действующих лицензий', unit: 'шт', value: '48', change: '-2', changeType: 'negative' },
+  { id: 4, indicator: 'Истекающих лицензий (30 дней)', unit: 'шт', value: '5', change: '+1', changeType: 'negative' },
+  { id: 5, indicator: 'Полигонов на контроле', unit: 'шт', value: '12', change: '0', changeType: 'neutral' },
+  { id: 6, indicator: 'Полигонов с превышением нагрузки', unit: 'шт', value: '1', change: '-1', changeType: 'positive' },
+  { id: 7, indicator: 'Средняя заполненность полигонов', unit: '%', value: '64.2', change: '+3.1', changeType: 'negative' },
+  { id: 8, indicator: 'Общий объём переработки', unit: 'тонн', value: '1 215.6', change: '+87.3', changeType: 'positive' },
+  { id: 9, indicator: 'Выполнение нормативов (среднее)', unit: '%', value: '72.4', change: '+2.1', changeType: 'positive' },
+  { id: 10, indicator: 'Видов отходов в реестре', unit: 'шт', value: '24', change: '+2', changeType: 'positive' },
+  { id: 11, indicator: 'Нарушений выявлено', unit: 'шт', value: '7', change: '-2', changeType: 'positive' },
+  { id: 12, indicator: 'Переработчиков зарегистрировано', unit: 'шт', value: '48', change: '+3', changeType: 'positive' },
 ])
 
-const filteredReceipts = computed(() => {
-  return receiptsData.value.filter(r => {
-    if (receiptsFilters.value.groupNumber > 0 && r.groupNumber !== receiptsFilters.value.groupNumber) return false
-    if (receiptsFilters.value.subgroup !== 'Все подгруппы' && r.subgroup !== receiptsFilters.value.subgroup) return false
-    if (receiptsFilters.value.region !== 'Все регионы' && r.region !== receiptsFilters.value.region) return false
-    if (receiptsFilters.value.company) {
-      const q = receiptsFilters.value.company.toLowerCase()
-      if (!r.company.toLowerCase().includes(q) && !r.inn.includes(q)) return false
+const getSummaryChangeColor = (changeType: string) => {
+  if (changeType === 'positive') return 'text-green-600'
+  if (changeType === 'negative') return 'text-red-600'
+  return 'text-gray-500'
+}
+
+// ========== ОТЧЁТ 2: СОСТОЯНИЕ ПОЛИГОНОВ ==========
+const landfillsFilters = ref({
+  dateFrom: '2025-01-01',
+  dateTo: '2025-02-03',
+  region: 'Все регионы',
+  status: 'all',
+})
+
+interface LandfillRow {
+  id: number
+  name: string
+  region: string
+  type: 'Полигон' | 'Свалка'
+  capacityTotal: number
+  capacityUsed: number
+  fillPercent: number
+  condition: 'good' | 'warning' | 'critical'
+  compliant: boolean
+  lastInspection: string
+}
+
+const landfillsData = ref<LandfillRow[]>([
+  { id: 1, name: 'Полигон «Бишкек-Север»', region: 'г. Бишкек', type: 'Полигон', capacityTotal: 500000, capacityUsed: 325000, fillPercent: 65, condition: 'good', compliant: true, lastInspection: '2025-12-15' },
+  { id: 2, name: 'Полигон «Бишкек-Юг»', region: 'г. Бишкек', type: 'Полигон', capacityTotal: 350000, capacityUsed: 301000, fillPercent: 86, condition: 'warning', compliant: true, lastInspection: '2025-11-20' },
+  { id: 3, name: 'Полигон «Ош»', region: 'г. Ош', type: 'Полигон', capacityTotal: 280000, capacityUsed: 196000, fillPercent: 70, condition: 'good', compliant: true, lastInspection: '2025-12-01' },
+  { id: 4, name: 'Свалка «Ош-2»', region: 'г. Ош', type: 'Свалка', capacityTotal: 120000, capacityUsed: 108000, fillPercent: 90, condition: 'critical', compliant: false, lastInspection: '2025-10-10' },
+  { id: 5, name: 'Полигон «Токмок»', region: 'Чуйская обл.', type: 'Полигон', capacityTotal: 200000, capacityUsed: 170000, fillPercent: 85, condition: 'warning', compliant: true, lastInspection: '2025-11-05' },
+  { id: 6, name: 'Свалка «Кара-Балта»', region: 'Чуйская обл.', type: 'Свалка', capacityTotal: 80000, capacityUsed: 72000, fillPercent: 90, condition: 'critical', compliant: false, lastInspection: '2025-09-15' },
+  { id: 7, name: 'Полигон «Джалал-Абад»', region: 'Джалал-Абадская обл.', type: 'Полигон', capacityTotal: 180000, capacityUsed: 99000, fillPercent: 55, condition: 'good', compliant: true, lastInspection: '2025-12-10' },
+  { id: 8, name: 'Полигон «Каракол»', region: 'Иссык-Кульская обл.', type: 'Полигон', capacityTotal: 150000, capacityUsed: 82500, fillPercent: 55, condition: 'good', compliant: true, lastInspection: '2025-11-28' },
+  { id: 9, name: 'Свалка «Нарын»', region: 'Нарынская обл.', type: 'Свалка', capacityTotal: 60000, capacityUsed: 51000, fillPercent: 85, condition: 'warning', compliant: false, lastInspection: '2025-08-20' },
+  { id: 10, name: 'Полигон «Талас»', region: 'Таласская обл.', type: 'Полигон', capacityTotal: 100000, capacityUsed: 45000, fillPercent: 45, condition: 'good', compliant: true, lastInspection: '2025-12-05' },
+  { id: 11, name: 'Полигон «Баткен»', region: 'Баткенская обл.', type: 'Полигон', capacityTotal: 90000, capacityUsed: 58500, fillPercent: 65, condition: 'good', compliant: true, lastInspection: '2025-11-10' },
+  { id: 12, name: 'Полигон «Ошская обл.»', region: 'Ошская обл.', type: 'Полигон', capacityTotal: 160000, capacityUsed: 136000, fillPercent: 85, condition: 'warning', compliant: true, lastInspection: '2025-10-25' },
+])
+
+const filteredLandfills = computed(() => {
+  return landfillsData.value.filter(l => {
+    if (landfillsFilters.value.region !== 'Все регионы') {
+      // Match region loosely
+      const filterRegion = landfillsFilters.value.region.toLowerCase()
+      const dataRegion = l.region.toLowerCase()
+      if (!dataRegion.includes(filterRegion) && !filterRegion.includes(dataRegion.replace('обл.', '').replace('г. ', '').trim())) {
+        // More specific matching
+        const regionMap: Record<string, string[]> = {
+          'бишкек': ['г. бишкек'],
+          'ош': ['г. ош'],
+          'чуйская область': ['чуйская обл.'],
+          'ошская область': ['ошская обл.'],
+          'джалал-абадская область': ['джалал-абадская обл.'],
+          'иссык-кульская область': ['иссык-кульская обл.'],
+          'нарынская область': ['нарынская обл.'],
+          'таласская область': ['таласская обл.'],
+          'баткенская область': ['баткенская обл.'],
+        }
+        const matches = regionMap[filterRegion] || []
+        if (!matches.some(m => dataRegion === m)) return false
+      }
     }
+    if (landfillsFilters.value.status === 'compliant' && !l.compliant) return false
+    if (landfillsFilters.value.status === 'non-compliant' && l.compliant) return false
     return true
   })
 })
 
-const receiptsTotals = computed(() => ({
-  count: filteredReceipts.value.length,
-  mass: filteredReceipts.value.reduce((s, r) => s + r.mass, 0),
-  amount: filteredReceipts.value.reduce((s, r) => s + r.amount, 0),
-  paid: filteredReceipts.value.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0),
+const landfillsSummary = computed(() => ({
+  total: filteredLandfills.value.length,
+  avgFill: filteredLandfills.value.length > 0
+    ? (filteredLandfills.value.reduce((s, l) => s + l.fillPercent, 0) / filteredLandfills.value.length).toFixed(1)
+    : '0',
+  violations: filteredLandfills.value.filter(l => !l.compliant).length,
+  critical: filteredLandfills.value.filter(l => l.condition === 'critical').length,
 }))
 
-// ========== ОТЧЁТ 2: ПО ВИДАМ ТОВАРОВ ==========
-const productsFilters = ref({
-  dateFrom: '2025-01-01',
-  dateTo: '2025-02-03',
-  groupNumber: 0,
-  region: 'Все регионы',
-})
-
-// Данные аналитики по всем 24 группам товаров
-const fullProductsData = ref<ProductAnalytics[]>([
-  // Товары (группы 1-18)
-  { groupNumber: 1, groupName: 'Изделия из гофрированной бумаги/картона', type: 'goods', payers: 15, mass: 125.5, amount: 601697, percent: 5.3 },
-  { groupNumber: 2, groupName: 'Изделия из негофрированной бумаги/картона', type: 'goods', payers: 12, mass: 98.0, amount: 548310, percent: 4.8 },
-  { groupNumber: 3, groupName: 'Масла', type: 'goods', payers: 8, mass: 45.0, amount: 378270, percent: 3.3 },
-  { groupNumber: 4, groupName: 'Шины, покрышки и камеры резиновые', type: 'goods', payers: 22, mass: 180.0, amount: 2222100, percent: 19.6 },
-  { groupNumber: 5, groupName: 'Изделия из резины (за исключением шин)', type: 'goods', payers: 6, mass: 28.5, amount: 510692, percent: 4.5 },
-  { groupNumber: 6, groupName: 'Изделия пластмассовые упаковочные', type: 'goods', payers: 18, mass: 75.0, amount: 706350, percent: 6.2 },
-  { groupNumber: 7, groupName: 'Изделия пластмассовые прочие', type: 'goods', payers: 14, mass: 52.0, amount: 572416, percent: 5.0 },
-  { groupNumber: 8, groupName: 'Стекло полое', type: 'goods', payers: 9, mass: 85.0, amount: 358615, percent: 3.2 },
-  { groupNumber: 9, groupName: 'Компьютеры и периферийное оборудование', type: 'goods', payers: 5, mass: 8.5, amount: 309026, percent: 2.7 },
-  { groupNumber: 10, groupName: 'Мониторы, приемники телевизионные', type: 'goods', payers: 4, mass: 6.2, amount: 225407, percent: 2.0 },
-  { groupNumber: 11, groupName: 'Элементы первичные и батареи первичных элементов', type: 'goods', payers: 3, mass: 2.1, amount: 284319, percent: 2.5 },
-  { groupNumber: 12, groupName: 'Аккумуляторы свинцовые', type: 'goods', payers: 7, mass: 35.0, amount: 261485, percent: 2.3 },
-  { groupNumber: 13, groupName: 'Батареи аккумуляторные', type: 'goods', payers: 4, mass: 3.8, amount: 559227, percent: 4.9 },
-  { groupNumber: 14, groupName: 'Оборудование электрическое осветительное', type: 'goods', payers: 6, mass: 12.5, amount: 135738, percent: 1.2 },
-  { groupNumber: 15, groupName: 'Техника бытовая крупная', type: 'goods', payers: 8, mass: 25.0, amount: 908900, percent: 8.0 },
-  { groupNumber: 16, groupName: 'Техника бытовая мелкая, инструмент ручной', type: 'goods', payers: 5, mass: 8.0, amount: 290848, percent: 2.6 },
-  { groupNumber: 17, groupName: 'Оборудование холодильное и вентиляционное', type: 'goods', payers: 6, mass: 18.0, amount: 654408, percent: 5.8 },
-  { groupNumber: 18, groupName: 'Фильтры для двигателей внутреннего сгорания', type: 'goods', payers: 9, mass: 15.0, amount: 165450, percent: 1.5 },
-  // Упаковка (группы 19-24)
-  { groupNumber: 19, groupName: 'Упаковка из полимерных материалов (без галогенов)', type: 'packaging', payers: 11, mass: 42.0, amount: 395556, percent: 3.5 },
-  { groupNumber: 20, groupName: 'Упаковка из полимерных материалов (с галогенами)', type: 'packaging', payers: 5, mass: 18.0, amount: 219546, percent: 1.9 },
-  { groupNumber: 21, groupName: 'Упаковка из комбинированных материалов', type: 'packaging', payers: 3, mass: 5.5, amount: 245152, percent: 2.2 },
-  { groupNumber: 22, groupName: 'Упаковка из гофрированного картона', type: 'packaging', payers: 8, mass: 65.0, amount: 323245, percent: 2.8 },
-  { groupNumber: 23, groupName: 'Упаковка из бумаги и негофрированного картона', type: 'packaging', payers: 6, mass: 38.0, amount: 212610, percent: 1.9 },
-  { groupNumber: 24, groupName: 'Упаковка стеклянная', type: 'packaging', payers: 4, mass: 38.0, amount: 160322, percent: 1.4 },
-])
-
-interface ProductAnalytics {
-  groupNumber: number
-  groupName: string
-  type: string
-  payers: number
-  mass: number
-  amount: number
-  percent: number
+const getConditionColor = (condition: string) => {
+  const colors: Record<string, string> = {
+    good: 'bg-green-100 text-green-700',
+    warning: 'bg-amber-100 text-amber-700',
+    critical: 'bg-red-100 text-red-700',
+  }
+  return colors[condition] || 'bg-gray-100 text-gray-700'
 }
 
-// productsData теперь определён в fullProductsData выше
-
-const filteredProducts = computed(() => {
-  let result = fullProductsData.value
-  if (productsFilters.value.groupNumber > 0) {
-    result = result.filter(p => p.groupNumber === productsFilters.value.groupNumber)
+const getConditionLabel = (condition: string) => {
+  const labels: Record<string, string> = {
+    good: 'Хорошее',
+    warning: 'Требует внимания',
+    critical: 'Критическое',
   }
-  // Фильтр по региону применяется к общей сумме (упрощённо - коэффициент для демо)
-  if (productsFilters.value.region !== 'Все регионы') {
-    const regionCoefficients: Record<string, number> = {
-      'Бишкек': 0.45,
-      'Ош': 0.15,
-      'Чуйская область': 0.12,
-      'Ошская область': 0.08,
-      'Джалал-Абадская область': 0.07,
-      'Иссык-Кульская область': 0.05,
-      'Нарынская область': 0.03,
-      'Таласская область': 0.03,
-      'Баткенская область': 0.02,
-    }
-    const coef = regionCoefficients[productsFilters.value.region] || 1
-    result = result.map(p => ({
-      ...p,
-      payers: Math.round(p.payers * coef),
-      mass: Math.round(p.mass * coef * 10) / 10,
-      amount: Math.round(p.amount * coef),
-    }))
-  }
-  return result.sort((a, b) => b.amount - a.amount)
-})
+  return labels[condition] || condition
+}
 
-const productsTotals = computed(() => ({
-  payers: filteredProducts.value.reduce((s, p) => s + p.payers, 0),
-  mass: filteredProducts.value.reduce((s, p) => s + p.mass, 0),
-  amount: filteredProducts.value.reduce((s, p) => s + p.amount, 0),
-}))
+const getFillColor = (percent: number) => {
+  if (percent > 85) return 'bg-red-500'
+  if (percent >= 70) return 'bg-amber-500'
+  return 'bg-green-500'
+}
 
-// ========== ОТЧЁТ 3: ДОЛЖНИКИ ==========
-const debtorsFilters = ref({
+// ========== ОТЧЁТ 3: ЛИЦЕНЗИИ ==========
+const licensesFilters = ref({
   dateFrom: '2025-01-01',
   dateTo: '2025-02-03',
-  minDebt: 0,
   region: 'Все регионы',
-  groupNumber: 0,
+  status: 'all',
 })
 
-interface DebtorRecord {
+interface LicenseReportRow {
   id: number
   company: string
   inn: string
-  contact: string
-  phone: string
+  licenseNumber: string
+  activity: string
   region: string
-  groupNumber: number
-  groupName: string
-  expectedAmount: number
-  paidAmount: number
-  debt: number
-  daysOverdue: number
-  status: 'unpaid' | 'partial' | 'overdue'
+  issueDate: string
+  expiryDate: string
+  status: 'active' | 'expiring' | 'expired' | 'revoked'
 }
 
-const debtorsData = ref<DebtorRecord[]>([
-  { id: 1, company: 'ОсОО "ЭлектроРесурс"', inn: '10234567890123', contact: 'Касымов Б.А.', phone: '+996 555 123 456', region: 'Бишкек', groupNumber: 9, groupName: 'Компьютеры и периферийное оборудование', expectedAmount: 116339, paidAmount: 0, debt: 116339, daysOverdue: 15, status: 'overdue' },
-  { id: 2, company: 'ОАО "НарынМеталл"', inn: '07891234567890', contact: 'Жумабеков К.Т.', phone: '+996 700 234 567', region: 'Нарынская область', groupNumber: 13, groupName: 'Батареи аккумуляторные', expectedAmount: 220748, paidAmount: 0, debt: 220748, daysOverdue: 12, status: 'overdue' },
-  { id: 3, company: 'ОсОО "ТаласПак"', inn: '08912345678901', contact: 'Алиева Г.С.', phone: '+996 772 345 678', region: 'Таласская область', groupNumber: 22, groupName: 'Упаковка из гофрированного картона', expectedAmount: 92001, paidAmount: 46000, debt: 46001, daysOverdue: 5, status: 'partial' },
-  { id: 4, company: 'ОсОО "ЧуйСтрой"', inn: '05678912345678', contact: 'Токтогулов М.Р.', phone: '+996 550 456 789', region: 'Чуйская область', groupNumber: 5, groupName: 'Изделия из резины (за исключением шин)', expectedAmount: 116474, paidAmount: 58000, debt: 58474, daysOverdue: 8, status: 'partial' },
-  { id: 5, company: 'ИП "Жумабеков"', inn: '23456789012345', contact: 'Жумабеков Н.К.', phone: '+996 559 567 890', region: 'Ош', groupNumber: 2, groupName: 'Изделия из негофрированной бумаги/картона', expectedAmount: 55950, paidAmount: 0, debt: 55950, daysOverdue: 20, status: 'overdue' },
-  { id: 6, company: 'ИП "Токтогулова"', inn: '34567890123456', contact: 'Токтогулова А.Б.', phone: '+996 705 678 901', region: 'Бишкек', groupNumber: 7, groupName: 'Изделия пластмассовые прочие', expectedAmount: 44032, paidAmount: 0, debt: 44032, daysOverdue: 3, status: 'unpaid' },
-  { id: 7, company: 'ОсОО "МегаТрейд"', inn: '45678901234567', contact: 'Бекмуратов Э.С.', phone: '+996 777 789 012', region: 'Чуйская область', groupNumber: 6, groupName: 'Изделия пластмассовые упаковочные', expectedAmount: 188360, paidAmount: 100000, debt: 88360, daysOverdue: 7, status: 'partial' },
-  { id: 8, company: 'ОсОО "ЭкоГласс"', inn: '56789012345678', contact: 'Саматова Д.Н.', phone: '+996 551 890 123', region: 'Иссык-Кульская область', groupNumber: 8, groupName: 'Стекло полое', expectedAmount: 84380, paidAmount: 0, debt: 84380, daysOverdue: 14, status: 'overdue' },
-  { id: 9, company: 'ОсОО "ОшПлюс"', inn: '67890123456789', contact: 'Абдыкадыров Т.Б.', phone: '+996 556 901 234', region: 'Ошская область', groupNumber: 4, groupName: 'Шины, покрышки и камеры резиновые', expectedAmount: 185175, paidAmount: 50000, debt: 135175, daysOverdue: 18, status: 'overdue' },
-  { id: 10, company: 'ИП "Сыдыкова"', inn: '78901234567890', contact: 'Сыдыкова А.К.', phone: '+996 708 012 345', region: 'Джалал-Абадская область', groupNumber: 19, groupName: 'Упаковка из полимерных материалов (без галогенов)', expectedAmount: 47090, paidAmount: 0, debt: 47090, daysOverdue: 10, status: 'overdue' },
-  { id: 11, company: 'ОсОО "БаткенТорг"', inn: '89012345678901', contact: 'Маматов Р.Э.', phone: '+996 779 123 456', region: 'Баткенская область', groupNumber: 1, groupName: 'Изделия из гофрированной бумаги/картона', expectedAmount: 71895, paidAmount: 30000, debt: 41895, daysOverdue: 6, status: 'partial' },
-  { id: 12, company: 'ОсОО "ТехноСервис"', inn: '90123456789012', contact: 'Калыков Б.Н.', phone: '+996 550 234 567', region: 'Бишкек', groupNumber: 15, groupName: 'Техника бытовая крупная', expectedAmount: 363560, paidAmount: 200000, debt: 163560, daysOverdue: 4, status: 'partial' },
+const licensesReportData = ref<LicenseReportRow[]>([
+  { id: 1, company: 'ОсОО «ЭкоРесайкл»', inn: '02345678912345', licenseNumber: 'Л-2024-001', activity: 'Переработка пластика', region: 'Бишкек', issueDate: '2024-03-15', expiryDate: '2027-03-15', status: 'active' },
+  { id: 2, company: 'ОАО «ГринТех»', inn: '09876543210987', licenseNumber: 'Л-2023-018', activity: 'Переработка бумаги и картона', region: 'Бишкек', issueDate: '2023-06-01', expiryDate: '2026-06-01', status: 'active' },
+  { id: 3, company: 'ОсОО «ТекстильРесайкл»', inn: '11234567890123', licenseNumber: 'Л-2022-042', activity: 'Переработка текстиля', region: 'Чуйская обл.', issueDate: '2022-09-10', expiryDate: '2025-09-10', status: 'expired' },
+  { id: 4, company: 'ОсОО «СтеклоПром»', inn: '03456789012345', licenseNumber: 'Л-2024-007', activity: 'Переработка стекла', region: 'Ош', issueDate: '2024-01-20', expiryDate: '2027-01-20', status: 'active' },
+  { id: 5, company: 'ИП Касымов Б.А.', inn: '10234567890123', licenseNumber: 'Л-2023-033', activity: 'Сбор и транспортировка отходов', region: 'Бишкек', issueDate: '2023-11-01', expiryDate: '2026-02-28', status: 'expiring' },
+  { id: 6, company: 'ОсОО «МеталлСервис»', inn: '04567891234567', licenseNumber: 'Л-2024-012', activity: 'Переработка металлов', region: 'Иссык-Кульская обл.', issueDate: '2024-05-15', expiryDate: '2027-05-15', status: 'active' },
+  { id: 7, company: 'ОсОО «АвтоУтиль»', inn: '05678912345678', licenseNumber: 'Л-2022-029', activity: 'Утилизация автотранспорта', region: 'Чуйская обл.', issueDate: '2022-04-01', expiryDate: '2025-04-01', status: 'expiring' },
+  { id: 8, company: 'ОсОО «ЭлектроУтиль»', inn: '06789012345678', licenseNumber: 'Л-2023-051', activity: 'Утилизация электроники', region: 'Бишкек', issueDate: '2023-08-20', expiryDate: '2026-08-20', status: 'active' },
+  { id: 9, company: 'ОсОО «БиоЭнерго»', inn: '07890123456789', licenseNumber: 'Л-2021-015', activity: 'Переработка органических отходов', region: 'Ошская обл.', issueDate: '2021-12-01', expiryDate: '2024-12-01', status: 'expired' },
+  { id: 10, company: 'ОсОО «ХимОтходы»', inn: '08901234567890', licenseNumber: 'Л-2022-038', activity: 'Обезвреживание опасных отходов', region: 'Джалал-Абадская обл.', issueDate: '2022-07-10', expiryDate: '2025-07-10', status: 'revoked' },
 ])
 
-const filteredDebtors = computed(() => {
-  return debtorsData.value.filter(d => {
-    if (debtorsFilters.value.minDebt > 0 && d.debt < debtorsFilters.value.minDebt) return false
-    if (debtorsFilters.value.groupNumber > 0 && d.groupNumber !== debtorsFilters.value.groupNumber) return false
-    if (debtorsFilters.value.region !== 'Все регионы' && d.region !== debtorsFilters.value.region) return false
+const filteredLicenses = computed(() => {
+  return licensesReportData.value.filter(l => {
+    if (licensesFilters.value.region !== 'Все регионы') {
+      const filterRegion = licensesFilters.value.region.toLowerCase()
+      const dataRegion = l.region.toLowerCase()
+      if (!dataRegion.includes(filterRegion) && !filterRegion.includes(dataRegion.replace('обл.', '').replace('г. ', '').trim())) {
+        const regionMap: Record<string, string[]> = {
+          'бишкек': ['бишкек'],
+          'ош': ['ош'],
+          'чуйская область': ['чуйская обл.'],
+          'ошская область': ['ошская обл.'],
+          'джалал-абадская область': ['джалал-абадская обл.'],
+          'иссык-кульская область': ['иссык-кульская обл.'],
+          'нарынская область': ['нарынская обл.'],
+          'таласская область': ['таласская обл.'],
+          'баткенская область': ['баткенская обл.'],
+        }
+        const matches = regionMap[filterRegion] || []
+        if (!matches.some(m => dataRegion === m)) return false
+      }
+    }
+    if (licensesFilters.value.status !== 'all' && l.status !== licensesFilters.value.status) return false
     return true
-  }).sort((a, b) => b.debt - a.debt)
+  })
 })
 
-const debtorsTotals = computed(() => ({
-  count: filteredDebtors.value.length,
-  expected: filteredDebtors.value.reduce((s, d) => s + d.expectedAmount, 0),
-  paid: filteredDebtors.value.reduce((s, d) => s + d.paidAmount, 0),
-  debt: filteredDebtors.value.reduce((s, d) => s + d.debt, 0),
+const licensesSummary = computed(() => ({
+  total: filteredLicenses.value.length,
+  active: filteredLicenses.value.filter(l => l.status === 'active').length,
+  expiring: filteredLicenses.value.filter(l => l.status === 'expiring').length,
+  expiredRevoked: filteredLicenses.value.filter(l => l.status === 'expired' || l.status === 'revoked').length,
+}))
+
+const getLicenseStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    active: 'bg-green-100 text-green-700',
+    expiring: 'bg-amber-100 text-amber-700',
+    expired: 'bg-red-100 text-red-700',
+    revoked: 'bg-gray-100 text-gray-700',
+  }
+  return colors[status] || 'bg-gray-100 text-gray-700'
+}
+
+const getLicenseStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    active: 'Действующая',
+    expiring: 'Истекает',
+    expired: 'Истекла',
+    revoked: 'Аннулирована',
+  }
+  return labels[status] || status
+}
+
+// ========== ОТЧЁТ 4: ВЫПОЛНЕНИЕ НОРМАТИВОВ ==========
+const normativesFilters = ref({
+  dateFrom: '2025-01-01',
+  dateTo: '2025-02-03',
+  region: 'Все регионы',
+})
+
+interface NormativeRow {
+  id: number
+  wasteType: string
+  targetPercent: number
+  actualPercent: number
+  volume: number
+  recycled: number
+  status: 'fulfilled' | 'partial' | 'failed'
+}
+
+const normativesData = ref<NormativeRow[]>([
+  { id: 1, wasteType: 'Пластик ПЭТ', targetPercent: 15, actualPercent: 18.2, volume: 245.0, recycled: 44.6, status: 'fulfilled' },
+  { id: 2, wasteType: 'Пластик ПП/ПЭ', targetPercent: 12, actualPercent: 9.8, volume: 189.0, recycled: 18.5, status: 'partial' },
+  { id: 3, wasteType: 'Бумага и картон', targetPercent: 20, actualPercent: 22.5, volume: 312.0, recycled: 70.2, status: 'fulfilled' },
+  { id: 4, wasteType: 'Стекло', targetPercent: 15, actualPercent: 14.1, volume: 156.0, recycled: 22.0, status: 'partial' },
+  { id: 5, wasteType: 'Металлы чёрные', targetPercent: 25, actualPercent: 31.0, volume: 98.0, recycled: 30.4, status: 'fulfilled' },
+  { id: 6, wasteType: 'Металлы цветные', targetPercent: 20, actualPercent: 24.5, volume: 45.0, recycled: 11.0, status: 'fulfilled' },
+  { id: 7, wasteType: 'Шины и резина', targetPercent: 10, actualPercent: 7.2, volume: 178.0, recycled: 12.8, status: 'partial' },
+  { id: 8, wasteType: 'Электроника (WEEE)', targetPercent: 8, actualPercent: 5.1, volume: 34.0, recycled: 1.7, status: 'failed' },
+  { id: 9, wasteType: 'Аккумуляторы и батареи', targetPercent: 15, actualPercent: 12.3, volume: 12.0, recycled: 1.5, status: 'partial' },
+  { id: 10, wasteType: 'Масла отработанные', targetPercent: 18, actualPercent: 19.7, volume: 67.0, recycled: 13.2, status: 'fulfilled' },
+])
+
+const normativesSummary = computed(() => ({
+  total: normativesData.value.length,
+  fulfilled: normativesData.value.filter(n => n.status === 'fulfilled').length,
+  partial: normativesData.value.filter(n => n.status === 'partial').length,
+  failed: normativesData.value.filter(n => n.status === 'failed').length,
+}))
+
+const getNormStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    fulfilled: 'bg-green-100 text-green-700',
+    partial: 'bg-amber-100 text-amber-700',
+    failed: 'bg-red-100 text-red-700',
+  }
+  return colors[status] || 'bg-gray-100 text-gray-700'
+}
+
+const getNormStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    fulfilled: 'Выполнен',
+    partial: 'Частично',
+    failed: 'Не выполнен',
+  }
+  return labels[status] || status
+}
+
+// ========== ОТЧЁТ 5: ПО РЕГИОНАМ ==========
+const regionsFilters = ref({
+  dateFrom: '2025-01-01',
+  dateTo: '2025-02-03',
+})
+
+interface RegionRow {
+  id: number
+  region: string
+  organizations: number
+  recyclers: number
+  landfills: number
+  licenses: number
+  volume: number
+  normPercent: number
+  share: number
+}
+
+const regionsData = ref<RegionRow[]>([
+  { id: 1, region: 'г. Бишкек', organizations: 154, recyclers: 22, landfills: 2, licenses: 18, volume: 547.0, normPercent: 78.5, share: 45 },
+  { id: 2, region: 'г. Ош', organizations: 51, recyclers: 8, landfills: 2, licenses: 8, volume: 182.3, normPercent: 71.2, share: 15 },
+  { id: 3, region: 'Чуйская обл.', organizations: 41, recyclers: 6, landfills: 2, licenses: 6, volume: 145.9, normPercent: 69.8, share: 12 },
+  { id: 4, region: 'Ошская обл.', organizations: 27, recyclers: 4, landfills: 1, licenses: 4, volume: 97.2, normPercent: 65.3, share: 8 },
+  { id: 5, region: 'Джалал-Абадская обл.', organizations: 24, recyclers: 3, landfills: 1, licenses: 3, volume: 85.1, normPercent: 62.7, share: 7 },
+  { id: 6, region: 'Иссык-Кульская обл.', organizations: 17, recyclers: 2, landfills: 1, licenses: 3, volume: 60.8, normPercent: 58.4, share: 5 },
+  { id: 7, region: 'Нарынская обл.', organizations: 10, recyclers: 1, landfills: 1, licenses: 2, volume: 36.5, normPercent: 55.1, share: 3 },
+  { id: 8, region: 'Таласская обл.', organizations: 10, recyclers: 1, landfills: 1, licenses: 2, volume: 36.5, normPercent: 53.8, share: 3 },
+  { id: 9, region: 'Баткенская обл.', organizations: 8, recyclers: 1, landfills: 1, licenses: 2, volume: 24.3, normPercent: 48.6, share: 2 },
+])
+
+const regionsTotals = computed(() => ({
+  organizations: regionsData.value.reduce((s, r) => s + r.organizations, 0),
+  recyclers: regionsData.value.reduce((s, r) => s + r.recyclers, 0),
+  landfills: regionsData.value.reduce((s, r) => s + r.landfills, 0),
+  licenses: regionsData.value.reduce((s, r) => s + r.licenses, 0),
+  volume: regionsData.value.reduce((s, r) => s + r.volume, 0),
 }))
 
 // Функции
@@ -304,23 +365,35 @@ const exportToExcel = () => {
   let csvContent = ''
   let filename = ''
 
-  if (activeReport.value === 'receipts') {
-    filename = 'report_receipts.csv'
-    csvContent = 'Компания,ИНН,Регион,Группа товара,Подгруппа,Масса (т),Ставка,Сумма,Дата оплаты,Статус\n'
-    filteredReceipts.value.forEach(r => {
-      csvContent += `"${r.company}",${r.inn},"${r.region}","${r.groupName}","${r.subgroup}",${r.mass},${r.rate},${r.amount},"${r.paymentDate || '-'}","${getStatusLabel(r.status)}"\n`
+  if (activeReport.value === 'summary') {
+    filename = 'report_summary.csv'
+    csvContent = 'Показатель,Единица,Значение,Изменение\n'
+    summaryData.value.forEach(r => {
+      csvContent += `"${r.indicator}","${r.unit}","${r.value}","${r.change}"\n`
     })
-  } else if (activeReport.value === 'products') {
-    filename = 'report_products.csv'
-    csvContent = 'Группа,Наименование,Плательщиков,Масса (т),Сумма,Доля %\n'
-    filteredProducts.value.forEach(p => {
-      csvContent += `${p.groupNumber},"${p.groupName}",${p.payers},${p.mass},${p.amount},${p.percent}\n`
+  } else if (activeReport.value === 'landfills') {
+    filename = 'report_landfills.csv'
+    csvContent = 'Название,Регион,Тип,Ёмкость (т),Заполнено (т),Заполненность (%),Состояние,Соответствие,Последняя проверка\n'
+    filteredLandfills.value.forEach(l => {
+      csvContent += `"${l.name}","${l.region}","${l.type}",${l.capacityTotal},${l.capacityUsed},${l.fillPercent},"${getConditionLabel(l.condition)}","${l.compliant ? 'Да' : 'Нет'}","${l.lastInspection}"\n`
     })
-  } else if (activeReport.value === 'debtors') {
-    filename = 'report_debtors.csv'
-    csvContent = 'Компания,ИНН,Контакт,Телефон,Регион,Группа товара,Ожидаемая сумма,Оплачено,Задолженность,Дней просрочки,Статус\n'
-    filteredDebtors.value.forEach(d => {
-      csvContent += `"${d.company}",${d.inn},"${d.contact}","${d.phone}","${d.region}","${d.groupName}",${d.expectedAmount},${d.paidAmount},${d.debt},${d.daysOverdue},"${getDebtorStatusLabel(d.status)}"\n`
+  } else if (activeReport.value === 'licenses') {
+    filename = 'report_licenses.csv'
+    csvContent = 'Организация,ИНН,Номер лицензии,Вид деятельности,Регион,Выдана,Действует до,Статус\n'
+    filteredLicenses.value.forEach(l => {
+      csvContent += `"${l.company}","${l.inn}","${l.licenseNumber}","${l.activity}","${l.region}","${l.issueDate}","${l.expiryDate}","${getLicenseStatusLabel(l.status)}"\n`
+    })
+  } else if (activeReport.value === 'normatives') {
+    filename = 'report_normatives.csv'
+    csvContent = 'Вид отхода,Норматив (%),Факт (%),Объём образования (т),Переработано (т),Статус\n'
+    normativesData.value.forEach(n => {
+      csvContent += `"${n.wasteType}",${n.targetPercent},${n.actualPercent},${n.volume},${n.recycled},"${getNormStatusLabel(n.status)}"\n`
+    })
+  } else if (activeReport.value === 'regions') {
+    filename = 'report_regions.csv'
+    csvContent = 'Регион,Организаций,Переработчиков,Полигонов,Лицензий,Объём переработки (т),Выполнение норм (%),Доля %\n'
+    regionsData.value.forEach(r => {
+      csvContent += `"${r.region}",${r.organizations},${r.recyclers},${r.landfills},${r.licenses},${r.volume},${r.normPercent},${r.share}\n`
     })
   }
 
@@ -337,49 +410,9 @@ const exportToPdf = () => {
   alert('Экспорт в PDF: функция будет реализована с серверной генерацией')
 }
 
-const sendNotifications = () => {
-  alert(`Уведомления будут отправлены ${filteredDebtors.value.length} должникам`)
-}
-
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    paid: 'bg-green-100 text-green-700',
-    partial: 'bg-amber-100 text-amber-700',
-    overdue: 'bg-red-100 text-red-700',
-  }
-  return colors[status] || 'bg-gray-100 text-gray-700'
-}
-
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    paid: 'Оплачено',
-    partial: 'Частично',
-    overdue: 'Просрочено',
-  }
-  return labels[status] || status
-}
-
-const getDebtorStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    unpaid: 'bg-orange-100 text-orange-700',
-    partial: 'bg-amber-100 text-amber-700',
-    overdue: 'bg-red-100 text-red-700',
-  }
-  return colors[status] || 'bg-gray-100 text-gray-700'
-}
-
-const getDebtorStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    unpaid: 'Не оплачено',
-    partial: 'Частично оплачено',
-    overdue: 'Просрочено',
-  }
-  return labels[status] || status
-}
-
 const formatNumber = (num: number) => num.toLocaleString('ru-RU')
 
-const selectReport = (type: 'receipts' | 'products' | 'debtors') => {
+const selectReport = (type: 'summary' | 'landfills' | 'licenses' | 'normatives' | 'regions') => {
   activeReport.value = type
   reportGenerated.value = false
 }
@@ -412,12 +445,14 @@ const goBack = () => {
           </button>
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
-              {{ activeReport === 'receipts' ? 'Поступления утилизационного сбора' :
-                 activeReport === 'products' ? 'Аналитика по группам товаров' :
-                 activeReport === 'debtors' ? 'Компании с задолженностью' : 'Отчётность' }}
+              {{ activeReport === 'summary' ? 'Сводный отчёт для руководства' :
+                 activeReport === 'landfills' ? 'Отчёт о состоянии полигонов' :
+                 activeReport === 'licenses' ? 'Отчёт по лицензиям' :
+                 activeReport === 'normatives' ? 'Отчёт о выполнении нормативов' :
+                 activeReport === 'regions' ? 'Отчёт по регионам' : 'Отчётность' }}
             </h1>
             <p class="text-gray-600 mt-1">
-              {{ activeReport ? 'Формирование и выгрузка отчётов для контролирующих органов' : 'Выберите тип отчёта для формирования' }}
+              {{ activeReport ? 'Формирование и выгрузка отчётов для МПРЭТН' : 'Выберите тип отчёта для формирования' }}
             </p>
           </div>
         </div>
@@ -430,20 +465,20 @@ const goBack = () => {
 
       <template v-if="!isLoading">
       <!-- Report Type Cards -->
-      <div v-if="!activeReport" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Card 1: Receipts -->
+      <div v-if="!activeReport" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Card 1: Summary for Management -->
         <div
-          @click="selectReport('receipts')"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-sky-300 transition-all cursor-pointer group"
+          @click="selectReport('summary')"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-purple-300 transition-all cursor-pointer group"
         >
-          <div class="w-14 h-14 bg-sky-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-sky-200 transition-colors">
-            <svg class="w-7 h-7 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div class="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-200 transition-colors">
+            <svg class="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по поступлениям</h3>
-          <p class="text-gray-500 text-sm mb-4">Детальная информация о поступлениях утилизационного сбора с фильтрацией по периоду, группам товаров и компаниям</p>
-          <div class="flex items-center text-sky-600 font-medium text-sm">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Сводный отчёт для руководства</h3>
+          <p class="text-gray-500 text-sm mb-4">Сводная информация о состоянии системы управления отходами: количество лицензированных субъектов, состояние полигонов, выполнение нормативов переработки</p>
+          <div class="flex items-center text-purple-600 font-medium text-sm">
             <span>Сформировать отчёт</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -451,9 +486,49 @@ const goBack = () => {
           </div>
         </div>
 
-        <!-- Card 2: Products -->
+        <!-- Card 2: Landfills -->
         <div
-          @click="selectReport('products')"
+          @click="selectReport('landfills')"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-violet-300 transition-all cursor-pointer group"
+        >
+          <div class="w-14 h-14 bg-violet-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-violet-200 transition-colors">
+            <svg class="w-7 h-7 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт о состоянии полигонов</h3>
+          <p class="text-gray-500 text-sm mb-4">Сводка по полигонам и свалкам: заполненность, техническое состояние, соответствие нормам</p>
+          <div class="flex items-center text-violet-600 font-medium text-sm">
+            <span>Сформировать отчёт</span>
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Card 3: Licenses -->
+        <div
+          @click="selectReport('licenses')"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer group"
+        >
+          <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-200 transition-colors">
+            <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по лицензиям</h3>
+          <p class="text-gray-500 text-sm mb-4">Реестр выданных лицензий: действующие, истекающие, аннулированные, динамика за период</p>
+          <div class="flex items-center text-blue-600 font-medium text-sm">
+            <span>Сформировать отчёт</span>
+            <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Card 4: Normatives -->
+        <div
+          @click="selectReport('normatives')"
           class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-emerald-300 transition-all cursor-pointer group"
         >
           <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-200 transition-colors">
@@ -461,8 +536,8 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по видам товаров</h3>
-          <p class="text-gray-500 text-sm mb-4">Сводная аналитика по 24 группам товаров: плательщики, объёмы, суммы поступлений с визуализацией</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт о выполнении нормативов</h3>
+          <p class="text-gray-500 text-sm mb-4">Процент выполнения нормативов переработки по группам товаров и регионам</p>
           <div class="flex items-center text-emerald-600 font-medium text-sm">
             <span>Сформировать отчёт</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,19 +546,19 @@ const goBack = () => {
           </div>
         </div>
 
-        <!-- Card 3: Debtors -->
+        <!-- Card 5: Regional Distribution -->
         <div
-          @click="selectReport('debtors')"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-rose-300 transition-all cursor-pointer group"
+          @click="selectReport('regions')"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group"
         >
-          <div class="w-14 h-14 bg-rose-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-rose-200 transition-colors">
-            <svg class="w-7 h-7 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
+            <svg class="w-7 h-7 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по должникам</h3>
-          <p class="text-gray-500 text-sm mb-4">Список компаний с задолженностью по утилизационному сбору с возможностью отправки уведомлений</p>
-          <div class="flex items-center text-rose-600 font-medium text-sm">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по регионам</h3>
+          <p class="text-gray-500 text-sm mb-4">Распределение полигонов, лицензированных организаций и объёмов переработки по регионам Кыргызстана</p>
+          <div class="flex items-center text-indigo-600 font-medium text-sm">
             <span>Сформировать отчёт</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -492,63 +567,25 @@ const goBack = () => {
         </div>
       </div>
 
-      <!-- ========== ОТЧЁТ 1: ПОСТУПЛЕНИЯ ========== -->
-      <template v-if="activeReport === 'receipts'">
+      <!-- ========== ОТЧЁТ 1: СВОДНЫЙ ДЛЯ РУКОВОДСТВА ========== -->
+      <template v-if="activeReport === 'summary'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
-              <input v-model="receiptsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+              <input v-model="summaryFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
-              <input v-model="receiptsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Группа товаров</label>
-              <select v-model="receiptsFilters.groupNumber" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                <option :value="0">Все группы (1-24)</option>
-                <optgroup label="ТОВАРЫ (Группы 1-18)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'goods')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-                <optgroup label="УПАКОВКА (Группы 19-24)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'packaging')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Подгруппа</label>
-              <select
-                :value="receiptsFilters.subgroup"
-                @change="receiptsFilters.subgroup = ($event.target as HTMLSelectElement).value"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-[#0e888d]"
-              >
-                <option v-for="s in availableSubgroups" :key="s" :value="s">{{ s }}</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
-              <select v-model="receiptsFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Компания / ИНН</label>
-              <input v-model="receiptsFilters.company" type="text" placeholder="Поиск..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+              <input v-model="summaryFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div class="flex items-end">
               <button
                 @click="generateReport"
                 :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -565,7 +602,7 @@ const goBack = () => {
           <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
-              Найдено записей: <span class="font-semibold">{{ filteredReceipts.length }}</span>
+              Сводный отчёт за период: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
@@ -584,81 +621,305 @@ const goBack = () => {
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Компания</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Группа товара</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Подгруппа</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Масса (т)</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ставка</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Сумма</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Дата оплаты</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-8">№</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Показатель</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Единица</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Значение</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Изменение</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
-                <tr v-for="r in filteredReceipts" :key="r.id" class="hover:bg-gray-50">
-                  <td class="px-4 py-3 font-medium text-gray-900">{{ r.company }}</td>
-                  <td class="px-4 py-3 text-gray-600 font-mono text-sm">{{ r.inn }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">№{{ r.groupNumber }}: {{ r.groupName }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ r.subgroup }}</td>
-                  <td class="px-4 py-3 text-right font-medium">{{ r.mass.toFixed(1) }}</td>
-                  <td class="px-4 py-3 text-right text-gray-600">{{ formatNumber(r.rate) }}</td>
-                  <td class="px-4 py-3 text-right font-bold text-gray-900">{{ formatNumber(r.amount) }} сом</td>
-                  <td class="px-4 py-3 text-center text-gray-600">{{ r.paymentDate || '—' }}</td>
-                  <td class="px-4 py-3 text-center">
-                    <span :class="['text-xs px-2 py-1 rounded-full font-medium', getStatusColor(r.status)]">
-                      {{ getStatusLabel(r.status) }}
+                <tr v-for="r in summaryData" :key="r.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-gray-500 font-mono text-sm">{{ r.id }}</td>
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ r.indicator }}</td>
+                  <td class="px-4 py-3 text-center text-gray-500">{{ r.unit }}</td>
+                  <td class="px-4 py-3 text-right font-bold text-gray-900">{{ r.value }}</td>
+                  <td class="px-4 py-3 text-right">
+                    <span :class="['font-semibold', getSummaryChangeColor(r.changeType)]">
+                      {{ r.change }}
                     </span>
                   </td>
                 </tr>
               </tbody>
-              <tfoot class="bg-sky-50 border-t-2 border-sky-200">
-                <tr>
-                  <td colspan="4" class="px-4 py-3 font-bold text-gray-900">ИТОГО за период:</td>
-                  <td class="px-4 py-3 text-right font-bold text-gray-900">{{ receiptsTotals.mass.toFixed(1) }} т</td>
-                  <td class="px-4 py-3"></td>
-                  <td class="px-4 py-3 text-right font-bold text-sky-700 text-lg">{{ formatNumber(receiptsTotals.amount) }} сом</td>
-                  <td colspan="2" class="px-4 py-3 text-center text-sm text-gray-600">Оплачено: {{ formatNumber(receiptsTotals.paid) }} сом</td>
-                </tr>
-              </tfoot>
             </table>
           </div>
         </div>
       </template>
 
-      <!-- ========== ОТЧЁТ 2: ПО ВИДАМ ТОВАРОВ ========== -->
-      <template v-if="activeReport === 'products'">
+      <!-- ========== ОТЧЁТ 2: СОСТОЯНИЕ ПОЛИГОНОВ ========== -->
+      <template v-if="activeReport === 'landfills'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
-              <input v-model="productsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+              <input v-model="landfillsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
-              <input v-model="productsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Группа товаров</label>
-              <select v-model="productsFilters.groupNumber" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                <option :value="0">Все группы (1-24)</option>
-                <optgroup label="ТОВАРЫ (Группы 1-18)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'goods')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-                <optgroup label="УПАКОВКА (Группы 19-24)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'packaging')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-              </select>
+              <input v-model="landfillsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
-              <select v-model="productsFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+              <select v-model="landfillsFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+              <select v-model="landfillsFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
+                <option value="all">Все</option>
+                <option value="compliant">Соответствует</option>
+                <option value="non-compliant">Нарушения</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button
+                @click="generateReport"
+                :disabled="isGenerating"
+                class="w-full px-4 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div v-if="reportGenerated" class="space-y-6">
+          <!-- Summary cards -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Всего объектов</p>
+              <p class="text-2xl font-bold text-violet-600">{{ landfillsSummary.total }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Средняя заполненность</p>
+              <p class="text-2xl font-bold text-gray-900">{{ landfillsSummary.avgFill }}%</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">С нарушениями</p>
+              <p class="text-2xl font-bold text-amber-600">{{ landfillsSummary.violations }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Критическое состояние</p>
+              <p class="text-2xl font-bold text-red-600">{{ landfillsSummary.critical }}</p>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <div class="text-sm text-gray-600">
+                Найдено объектов: <span class="font-semibold">{{ filteredLandfills.length }}</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Excel
+                </button>
+                <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  PDF
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Тип</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ёмкость (т)</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Заполнено (т)</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Заполненность</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Состояние</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Соответствие</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Проверка</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="l in filteredLandfills" :key="l.id" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ l.name }}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm">{{ l.region }}</td>
+                    <td class="px-4 py-3 text-center">
+                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', l.type === 'Полигон' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700']">
+                        {{ l.type }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ formatNumber(l.capacityTotal) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ formatNumber(l.capacityUsed) }}</td>
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div :class="['h-full rounded-full', getFillColor(l.fillPercent)]" :style="{ width: `${l.fillPercent}%` }"></div>
+                        </div>
+                        <span class="text-sm font-medium text-gray-700 w-10 text-right">{{ l.fillPercent }}%</span>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getConditionColor(l.condition)]">
+                        {{ getConditionLabel(l.condition) }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', l.compliant ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
+                        {{ l.compliant ? 'Да' : 'Нет' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.lastInspection }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ========== ОТЧЁТ 3: ЛИЦЕНЗИИ ========== -->
+      <template v-if="activeReport === 'licenses'">
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <input v-model="licensesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <input v-model="licensesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <select v-model="licensesFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Статус лицензии</label>
+              <select v-model="licensesFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="all">Все</option>
+                <option value="active">Действующая</option>
+                <option value="expiring">Истекает</option>
+                <option value="expired">Истекла</option>
+                <option value="revoked">Аннулирована</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button
+                @click="generateReport"
+                :disabled="isGenerating"
+                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div v-if="reportGenerated" class="space-y-6">
+          <!-- Summary cards -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Всего лицензий</p>
+              <p class="text-2xl font-bold text-blue-600">{{ licensesSummary.total }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Действующих</p>
+              <p class="text-2xl font-bold text-green-600">{{ licensesSummary.active }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Истекает (30 дн)</p>
+              <p class="text-2xl font-bold text-amber-600">{{ licensesSummary.expiring }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Истекших / Аннулированных</p>
+              <p class="text-2xl font-bold text-red-600">{{ licensesSummary.expiredRevoked }}</p>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+              <div class="text-sm text-gray-600">
+                Найдено лицензий: <span class="font-semibold">{{ filteredLicenses.length }}</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Excel
+                </button>
+                <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  PDF
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Организация</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Номер лицензии</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид деятельности</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Выдана</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действует до</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="l in filteredLicenses" :key="l.id" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ l.company }}</td>
+                    <td class="px-4 py-3 text-gray-600 font-mono text-sm">{{ l.inn }}</td>
+                    <td class="px-4 py-3 text-blue-600 font-medium">{{ l.licenseNumber }}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm">{{ l.activity }}</td>
+                    <td class="px-4 py-3 text-gray-600 text-sm">{{ l.region }}</td>
+                    <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.issueDate }}</td>
+                    <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.expiryDate }}</td>
+                    <td class="px-4 py-3 text-center">
+                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getLicenseStatusColor(l.status)]">
+                        {{ getLicenseStatusLabel(l.status) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ========== ОТЧЁТ 4: ВЫПОЛНЕНИЕ НОРМАТИВОВ ========== -->
+      <template v-if="activeReport === 'normatives'">
+        <!-- Filters -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <input v-model="normativesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <input v-model="normativesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <select v-model="normativesFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                 <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
               </select>
             </div>
@@ -680,63 +941,32 @@ const goBack = () => {
 
         <!-- Results -->
         <div v-if="reportGenerated" class="space-y-6">
-          <!-- Charts -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Pie Chart placeholder -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 class="font-semibold text-gray-900 mb-4">Доля групп товаров в поступлениях</h3>
-              <div class="flex items-center justify-center h-64">
-                <div class="relative w-48 h-48">
-                  <svg viewBox="0 0 36 36" class="w-full h-full">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" stroke-width="3"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="30.4 69.6" stroke-dashoffset="25"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="9.7 90.3" stroke-dashoffset="-5.4"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8.2 91.8" stroke-dashoffset="-15.1"/>
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#8b5cf6" stroke-width="3" stroke-dasharray="7.8 92.2" stroke-dashoffset="-23.3"/>
-                  </svg>
-                  <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="text-center">
-                      <div class="text-2xl font-bold text-gray-900">{{ formatNumber(productsTotals.amount) }}</div>
-                      <div class="text-xs text-gray-500">сом</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-4 grid grid-cols-2 gap-2">
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-sky-500"></span><span class="text-xs text-gray-600">Шины (30.4%)</span></div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span class="text-xs text-gray-600">Пластик упак. (9.7%)</span></div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span class="text-xs text-gray-600">Гофрокартон (8.2%)</span></div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-violet-500"></span><span class="text-xs text-gray-600">Пластик прочие (7.8%)</span></div>
-              </div>
+          <!-- Summary cards -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Видов отходов</p>
+              <p class="text-2xl font-bold text-emerald-600">{{ normativesSummary.total }}</p>
             </div>
-
-            <!-- Bar Chart placeholder -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 class="font-semibold text-gray-900 mb-4">Топ-5 групп по сумме поступлений</h3>
-              <div class="space-y-4">
-                <div v-for="(p, i) in filteredProducts.slice(0, 5)" :key="p.groupNumber" class="flex items-center gap-4">
-                  <div class="w-8 text-sm font-bold text-gray-500">{{ i + 1 }}</div>
-                  <div class="flex-1">
-                    <div class="flex justify-between mb-1">
-                      <span class="text-sm font-medium text-gray-900">№{{ p.groupNumber }}: {{ p.groupName.substring(0, 30) }}...</span>
-                      <span class="text-sm font-bold text-emerald-600">{{ formatNumber(p.amount) }}</span>
-                    </div>
-                    <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full"
-                        :style="{ width: `${filteredProducts[0] ? (p.amount / filteredProducts[0].amount) * 100 : 0}%` }"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Выполняют норматив</p>
+              <p class="text-2xl font-bold text-green-600">{{ normativesSummary.fulfilled }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Частично выполняют</p>
+              <p class="text-2xl font-bold text-amber-600">{{ normativesSummary.partial }}</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">Не выполняют</p>
+              <p class="text-2xl font-bold text-red-600">{{ normativesSummary.failed }}</p>
             </div>
           </div>
 
           <!-- Table -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <div class="text-sm text-gray-600">Сводная таблица по группам товаров</div>
+              <div class="text-sm text-gray-600">
+                Видов отходов: <span class="font-semibold">{{ normativesData.length }}</span>
+              </div>
               <div class="flex flex-wrap gap-2">
                 <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -752,97 +982,67 @@ const goBack = () => {
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">№</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Группа товара</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Плательщиков</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Масса (т)</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Сумма поступлений</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Доля</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид отхода</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Норматив (%)</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Факт (%)</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-48">Выполнение</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Объём образования (т)</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Переработано (т)</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                  <tr v-for="p in filteredProducts" :key="p.groupNumber" class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-mono text-emerald-600">{{ p.groupNumber }}</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">{{ p.groupName }}</td>
-                    <td class="px-4 py-3 text-center">
-                      <span :class="['text-xs px-2 py-1 rounded-full', p.type === 'goods' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700']">
-                        {{ p.type === 'goods' ? 'Товар' : 'Упаковка' }}
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-center text-gray-600">{{ p.payers }}</td>
-                    <td class="px-4 py-3 text-right font-medium">{{ p.mass.toFixed(1) }}</td>
-                    <td class="px-4 py-3 text-right font-bold text-gray-900">{{ formatNumber(p.amount) }} сом</td>
-                    <td class="px-4 py-3 text-center">
+                  <tr v-for="n in normativesData" :key="n.id" class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ n.wasteType }}</td>
+                    <td class="px-4 py-3 text-center text-gray-600">{{ n.targetPercent }}%</td>
+                    <td class="px-4 py-3 text-center font-bold" :class="n.actualPercent >= n.targetPercent ? 'text-green-600' : 'text-amber-600'">{{ n.actualPercent }}%</td>
+                    <td class="px-4 py-3">
                       <div class="flex items-center gap-2">
-                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div class="h-full bg-emerald-500 rounded-full" :style="{ width: `${p.percent}%` }"></div>
+                        <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden relative">
+                          <!-- Target marker -->
+                          <div class="absolute top-0 bottom-0 w-0.5 bg-gray-400 z-10" :style="{ left: `${Math.min(n.targetPercent * 2, 100)}%` }"></div>
+                          <!-- Actual bar -->
+                          <div
+                            :class="['h-full rounded-full', n.actualPercent >= n.targetPercent ? 'bg-green-500' : n.status === 'failed' ? 'bg-red-400' : 'bg-amber-400']"
+                            :style="{ width: `${Math.min(n.actualPercent * 2, 100)}%` }"
+                          ></div>
                         </div>
-                        <span class="text-sm text-gray-600 w-12">{{ p.percent }}%</span>
                       </div>
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ n.volume.toFixed(1) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">{{ n.recycled.toFixed(1) }}</td>
+                    <td class="px-4 py-3 text-center">
+                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getNormStatusColor(n.status)]">
+                        {{ getNormStatusLabel(n.status) }}
+                      </span>
                     </td>
                   </tr>
                 </tbody>
-                <tfoot class="bg-emerald-50 border-t-2 border-emerald-200">
-                  <tr>
-                    <td colspan="3" class="px-4 py-3 font-bold text-gray-900">ИТОГО:</td>
-                    <td class="px-4 py-3 text-center font-bold">{{ productsTotals.payers }}</td>
-                    <td class="px-4 py-3 text-right font-bold">{{ productsTotals.mass.toFixed(1) }} т</td>
-                    <td class="px-4 py-3 text-right font-bold text-emerald-700 text-lg">{{ formatNumber(productsTotals.amount) }} сом</td>
-                    <td class="px-4 py-3 text-center font-bold">100%</td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </div>
         </div>
       </template>
 
-      <!-- ========== ОТЧЁТ 3: ДОЛЖНИКИ ========== -->
-      <template v-if="activeReport === 'debtors'">
+      <!-- ========== ОТЧЁТ 5: ПО РЕГИОНАМ ========== -->
+      <template v-if="activeReport === 'regions'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
-              <input v-model="debtorsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+              <input v-model="regionsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
-              <input v-model="debtorsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Мин. задолженность (сом)</label>
-              <input v-model.number="debtorsFilters.minDebt" type="number" placeholder="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
-              <select v-model="debtorsFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Группа товаров</label>
-              <select v-model="debtorsFilters.groupNumber" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500">
-                <option :value="0">Все группы (1-24)</option>
-                <optgroup label="ТОВАРЫ (Группы 1-18)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'goods')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-                <optgroup label="УПАКОВКА (Группы 19-24)">
-                  <option v-for="g in productGroups.filter(p => p.type === 'packaging')" :key="g.number" :value="g.number">
-                    №{{ g.number }}: {{ g.name }}
-                  </option>
-                </optgroup>
-              </select>
+              <input v-model="regionsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div class="flex items-end">
               <button
                 @click="generateReport"
                 :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -856,38 +1056,12 @@ const goBack = () => {
 
         <!-- Results -->
         <div v-if="reportGenerated" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- Summary cards -->
-          <div class="p-4 border-b border-gray-200 bg-rose-50">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="bg-white rounded-lg p-4 border border-rose-200">
-                <p class="text-sm text-gray-500">Должников</p>
-                <p class="text-2xl font-bold text-rose-600">{{ debtorsTotals.count }}</p>
-              </div>
-              <div class="bg-white rounded-lg p-4 border border-rose-200">
-                <p class="text-sm text-gray-500">Ожидаемая сумма</p>
-                <p class="text-2xl font-bold text-gray-900">{{ formatNumber(debtorsTotals.expected) }}</p>
-              </div>
-              <div class="bg-white rounded-lg p-4 border border-rose-200">
-                <p class="text-sm text-gray-500">Оплачено</p>
-                <p class="text-2xl font-bold text-green-600">{{ formatNumber(debtorsTotals.paid) }}</p>
-              </div>
-              <div class="bg-white rounded-lg p-4 border border-rose-200">
-                <p class="text-sm text-gray-500">Общая задолженность</p>
-                <p class="text-2xl font-bold text-rose-700">{{ formatNumber(debtorsTotals.debt) }} сом</p>
-              </div>
-            </div>
-          </div>
-
           <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
-              Найдено должников: <span class="font-semibold text-rose-600">{{ filteredDebtors.length }}</span>
+              Распределение по <span class="font-semibold">{{ regionsData.length }}</span> регионам
             </div>
             <div class="flex flex-wrap gap-2">
-              <button @click="sendNotifications" class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                Уведомить должников
-              </button>
               <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Excel
@@ -904,47 +1078,49 @@ const goBack = () => {
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Компания</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Контактное лицо</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Телефон</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Группа товара</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ожидается</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Оплачено</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Задолженность</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Просрочка</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Организаций</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Переработчиков</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Полигонов</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Лицензий</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Объём переработки (т)</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Выполнение норм (%)</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Доля</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
-                <tr v-for="d in filteredDebtors" :key="d.id" class="hover:bg-gray-50">
-                  <td class="px-4 py-3 font-medium text-gray-900">{{ d.company }}</td>
-                  <td class="px-4 py-3 text-gray-600 font-mono text-sm">{{ d.inn }}</td>
-                  <td class="px-4 py-3 text-gray-600">{{ d.contact }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">{{ d.phone }}</td>
-                  <td class="px-4 py-3 text-gray-600 text-sm">№{{ d.groupNumber }}: {{ d.groupName.substring(0, 25) }}...</td>
-                  <td class="px-4 py-3 text-right text-gray-600">{{ formatNumber(d.expectedAmount) }}</td>
-                  <td class="px-4 py-3 text-right text-green-600">{{ formatNumber(d.paidAmount) }}</td>
-                  <td class="px-4 py-3 text-right font-bold text-rose-600">{{ formatNumber(d.debt) }}</td>
+                <tr v-for="r in regionsData" :key="r.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ r.region }}</td>
+                  <td class="px-4 py-3 text-center text-gray-600">{{ r.organizations }}</td>
+                  <td class="px-4 py-3 text-center text-gray-600">{{ r.recyclers }}</td>
+                  <td class="px-4 py-3 text-center text-gray-600">{{ r.landfills }}</td>
+                  <td class="px-4 py-3 text-center text-gray-600">{{ r.licenses }}</td>
+                  <td class="px-4 py-3 text-right font-medium">{{ r.volume.toFixed(1) }}</td>
                   <td class="px-4 py-3 text-center">
-                    <span :class="['font-bold', d.daysOverdue > 10 ? 'text-rose-600' : d.daysOverdue > 5 ? 'text-amber-600' : 'text-gray-600']">
-                      {{ d.daysOverdue }} дн.
+                    <span :class="['font-medium', r.normPercent >= 70 ? 'text-green-600' : r.normPercent >= 55 ? 'text-amber-600' : 'text-red-600']">
+                      {{ r.normPercent }}%
                     </span>
                   </td>
                   <td class="px-4 py-3 text-center">
-                    <span :class="['text-xs px-2 py-1 rounded-full font-medium', getDebtorStatusColor(d.status)]">
-                      {{ getDebtorStatusLabel(d.status) }}
-                    </span>
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-500 rounded-full" :style="{ width: `${r.share}%` }"></div>
+                      </div>
+                      <span class="text-sm text-gray-600 w-10">{{ r.share }}%</span>
+                    </div>
                   </td>
                 </tr>
               </tbody>
-              <tfoot class="bg-rose-50 border-t-2 border-rose-200">
+              <tfoot class="bg-indigo-50 border-t-2 border-indigo-200">
                 <tr>
-                  <td colspan="5" class="px-4 py-3 font-bold text-gray-900">ИТОГО должников: {{ debtorsTotals.count }}</td>
-                  <td class="px-4 py-3 text-right font-bold">{{ formatNumber(debtorsTotals.expected) }}</td>
-                  <td class="px-4 py-3 text-right font-bold text-green-600">{{ formatNumber(debtorsTotals.paid) }}</td>
-                  <td class="px-4 py-3 text-right font-bold text-rose-700 text-lg">{{ formatNumber(debtorsTotals.debt) }} сом</td>
-                  <td colspan="2"></td>
+                  <td class="px-4 py-3 font-bold text-gray-900">ИТОГО:</td>
+                  <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.organizations }}</td>
+                  <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.recyclers }}</td>
+                  <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.landfills }}</td>
+                  <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.licenses }}</td>
+                  <td class="px-4 py-3 text-right font-bold text-indigo-700">{{ regionsTotals.volume.toFixed(1) }} т</td>
+                  <td class="px-4 py-3 text-center font-bold">—</td>
+                  <td class="px-4 py-3 text-center font-bold">100%</td>
                 </tr>
               </tfoot>
             </table>
