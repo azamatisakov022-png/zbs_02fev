@@ -9,8 +9,13 @@ import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, getSubgroupLabel, type ProductSubgroup } from '../../data/product-groups'
 // recyclingStandard now comes from product group, not year-based norms
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
+import TnvedCode from '../../components/TnvedCode.vue'
+import { generateCalculationExcel } from '../../utils/excelExport'
+import { tnvedNotes, tnvedNotesSource } from '../../data/tnved-notes'
 import { calculationStore, type CalculationStatus, type PaymentData } from '../../stores/calculations'
 import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
+import InstructionDrawer from '../../components/InstructionDrawer.vue'
+import { instructionCalculationHtml } from '../../data/instructionCalculation'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
@@ -52,6 +57,7 @@ const steps = [
 // Draft saved notification
 const showDraftNotification = ref(false)
 const showRates = ref(false)
+const showInstruction = ref(false)
 
 // Form data - Step 1
 type PayerType = 'producer' | 'importer'
@@ -107,6 +113,12 @@ const companyData = {
   director: 'Иванов Иван Иванович',
   phone: '+996 555 123 456',
   email: 'info@techprom.kg'
+}
+
+const downloadExcel = (calcId: number) => {
+  const calc = calculationStore.getCalculationById(calcId)
+  if (!calc) return
+  generateCalculationExcel(calc, companyData)
 }
 
 // Form data - Step 2
@@ -201,30 +213,32 @@ const calculateAmount = (item: ProductItem) => {
   item.amount = Math.round(item.taxableVolume * item.rate)
 }
 
-// Гр.8 validation: transferred to recycling
-const getTransferredError = (item: ProductItem): string => {
+// Гр.8 + Гр.9 validation: sum must not exceed Гр.5 (total volume)
+const getVolumeError = (item: ProductItem): string => {
+  const vol = parseFloat(item.volume) || 0
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
-  if (transferred > 0 && transferred > item.volumeToRecycle) {
-    return 'Не может превышать объём к переработке (Гр.7)'
-  }
-  if (transferred > 0 && exported > 0 && transferred + exported > item.volumeToRecycle) {
-    return 'Сумма Гр.8 и Гр.9 не может превышать объём к переработке'
+  if (vol > 0 && (transferred + exported) > vol) {
+    return 'Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5)'
   }
   return ''
 }
 
-// Гр.9 validation: exported from KR
-const getExportedError = (item: ProductItem): string => {
+// Norm status info (not an error)
+type NormStatus = { met: boolean; message: string }
+const getNormStatus = (item: ProductItem): NormStatus | null => {
+  const vol = parseFloat(item.volume) || 0
+  if (!item.group || vol <= 0) return null
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
-  if (exported > 0 && exported > item.volumeToRecycle) {
-    return 'Не может превышать объём к переработке (Гр.7)'
+  if (transferred + exported >= item.volumeToRecycle) {
+    return { met: true, message: 'Норматив переработки выполнен. Утильсбор по данной позиции: 0 сом' }
   }
-  if (transferred > 0 && exported > 0 && transferred + exported > item.volumeToRecycle) {
-    return 'Сумма Гр.8 и Гр.9 не может превышать объём к переработке'
+  const taxable = item.taxableVolume
+  if (taxable > 0) {
+    return { met: false, message: `Норматив переработки не выполнен. Облагаемый объём: ${taxable.toFixed(2)} тонн` }
   }
-  return ''
+  return null
 }
 
 // Гр.9 exported file handling
@@ -327,16 +341,7 @@ const formattedTotalAmount = computed(() => {
   return totalAmount.value.toLocaleString('ru-RU') + ' сом'
 })
 
-// Expandable positions (Step 2)
-const expandedPositions = ref<Set<number>>(new Set())
-const togglePosition = (id: number) => {
-  if (expandedPositions.value.has(id)) {
-    expandedPositions.value.delete(id)
-  } else {
-    expandedPositions.value.add(id)
-  }
-}
-const isPositionExpanded = (id: number) => expandedPositions.value.has(id)
+const tnvedNotesOpen = ref(false)
 const getRemaining = (item: ProductItem) => {
   const toRecycle = item.volumeToRecycle || 0
   const transferred = parseFloat(item.transferredToRecycling) || 0
@@ -735,7 +740,7 @@ const downloadReceipt = () => {
           </div>
           <div class="flex-1">
             <h2 class="text-xl lg:text-2xl font-bold mb-2">Рассчитать утилизационный сбор</h2>
-            <p class="text-white/80 text-sm lg:text-base">Узнайте сумму утилизационного сбора на основе массы товаров и упаковки. Ставки применяются автоматически согласно категории товара.</p>
+            <p class="text-white/80 text-sm lg:text-base">Узнайте сумму утилизационного сбора на основе массы товаров и упаковки. Ставки и нормативы переработки применяются автоматически согласно группы товара.</p>
           </div>
           <button
             @click="startWizard"
@@ -758,7 +763,12 @@ const downloadReceipt = () => {
         </div>
         <div>
           <p class="font-medium text-[#1e293b]">Информация о расчёте</p>
-          <p class="text-sm text-[#64748b]">Утилизационный сбор рассчитывается на основе массы товаров и упаковки товаров согласно ставкам и нормативам, установленным Кабинетом Министров Кыргызской Республики.</p>
+          <p class="text-sm text-[#64748b]">Утилизационный сбор рассчитывается на основе массы товаров и упаковки товаров согласно ставкам утверждённым постановлением Кабинета Министров Кыргызской Республики №730 от 3 декабря 2024 г. Приложение 2, и нормативам переработки утверждённым постановлением Кабинета Министров Кыргызской Республики №322 от 19 июня 2024 г. Приложение 3.
+            <button @click="showInstruction = true" class="text-[#2D8B4E] hover:underline font-medium inline-flex items-center gap-1 mt-1">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Инструкция по заполнению
+            </button>
+          </p>
         </div>
       </div>
 
@@ -816,86 +826,117 @@ const downloadReceipt = () => {
           >{{ value }}</span>
         </template>
         <template #actions="{ row }">
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <div class="act-wrap">
             <!-- Черновик -->
             <template v-if="row.status === 'Черновик'">
-              <button
-                @click="calculationStore.submitForReview(row.id)"
-                class="calc-action-btn"
-                style="background:#F59E0B;color:white"
-              >Отправить на проверку</button>
-              <div style="display:flex;gap:12px">
-                <button @click="mockAction('Редактирование расчёта ' + row.number)" class="calc-action-link">Редактировать</button>
-                <button @click="mockAction('Удаление расчёта ' + row.number)" class="calc-action-link" style="color:#EF4444">Удалить</button>
-              </div>
+              <button @click="calculationStore.submitForReview(row.id)" class="act-pill act-pill--amber">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                Отправить на проверку
+              </button>
+              <button @click="mockAction('Редактирование расчёта ' + row.number)" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Редактировать
+              </button>
+              <button @click="mockAction('Удаление расчёта ' + row.number)" class="act-pill act-pill--red">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Удалить
+              </button>
             </template>
             <!-- На проверке -->
             <template v-else-if="row.status === 'На проверке'">
-              <span style="background:#FEF3C7;color:#92400E;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">⏳ На проверке ГП Эко Оператора</span>
-              <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+              <span class="act-pill act-pill--amber act-pill--badge">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                На проверке ГП Эко Оператора
+              </span>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
             </template>
             <!-- Принято -->
             <template v-else-if="row.status === 'Принято'">
-              <div class="calc-accepted-actions">
-                <router-link :to="'/business/calculations/' + row.id" class="calc-trio-btn calc-trio-btn--blue">
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                  Просмотреть
-                </router-link>
-                <button
-                  @click="mockAction('Переход к оплате расчёта ' + row.number + ' на сумму ' + row.totalAmount.toLocaleString('ru-RU') + ' сом')"
-                  class="calc-trio-btn calc-trio-btn--green"
-                >
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                  Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
-                </button>
-                <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="calc-trio-btn calc-trio-btn--purple">
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  Скачать PDF
-                </button>
-              </div>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-pill act-pill--green">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
+              </button>
+              <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="act-pill act-pill--purple">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Скачать PDF
+              </button>
+              <button @click="downloadExcel(row.id)" class="act-pill act-pill--teal">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Excel
+              </button>
             </template>
             <!-- Оплачено -->
             <template v-else-if="row.status === 'Оплачено'">
-              <span style="background:#D1FAE5;color:#065F46;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">✅ Оплачено</span>
-              <div style="display:flex;gap:12px">
-                <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
-                <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="calc-action-link">Скачать PDF</button>
-                <button @click="mockAction('Создание декларации по расчёту ' + row.number)" class="calc-action-link">Создать декларацию</button>
-              </div>
+              <span class="act-pill act-pill--teal act-pill--badge">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                Оплачено
+              </span>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="act-pill act-pill--purple">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Скачать PDF
+              </button>
+              <button @click="downloadExcel(row.id)" class="act-pill act-pill--teal">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                Excel
+              </button>
+              <button @click="mockAction('Создание декларации по расчёту ' + row.number)" class="act-pill act-pill--amber">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Создать декларацию
+              </button>
             </template>
             <!-- Отклонено -->
             <template v-else-if="row.status === 'Отклонено'">
-              <button
-                @click="mockAction('Создание копии расчёта для исправления')"
-                class="calc-action-btn"
-                style="background:#EF4444;color:white"
-              >Исправить и отправить</button>
+              <button @click="mockAction('Создание копии расчёта для исправления')" class="act-pill act-pill--red">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Исправить и отправить
+              </button>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
               <div
                 v-if="row.rejectionReason"
-                style="font-size:11px;color:#DC2626;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                class="act-reason"
                 :title="row.rejectionReason"
-              >❌ Причина: {{ row.rejectionReason }}</div>
+              >Причина: {{ row.rejectionReason }}</div>
             </template>
             <!-- Оплата на проверке -->
             <template v-else-if="row.status === 'Оплата на проверке'">
-              <span style="background:#EDE9FE;color:#6D28D9;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">⏳ Оплата на проверке</span>
-              <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+              <span class="act-pill act-pill--amber act-pill--badge">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Оплата на проверке
+              </span>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
             </template>
             <!-- Оплата отклонена -->
             <template v-else-if="row.status === 'Оплата отклонена'">
-              <button
-                @click="openPaymentForm(row.id, row.totalAmount, row.number)"
-                class="calc-action-btn"
-                style="background:#F59E0B;color:white"
-              >Подтвердить оплату</button>
-              <div style="display:flex;gap:12px">
-                <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
-              </div>
+              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-pill act-pill--amber">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                Подтвердить оплату
+              </button>
+              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
               <div
                 v-if="row.paymentRejectionReason"
-                style="font-size:11px;color:#DC2626;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                class="act-reason"
                 :title="row.paymentRejectionReason"
-              >❌ Причина: {{ row.paymentRejectionReason }}</div>
+              >Причина: {{ row.paymentRejectionReason }}</div>
             </template>
           </div>
         </template>
@@ -955,7 +996,15 @@ const downloadReceipt = () => {
             </svg>
             Назад к списку
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Расчёт утилизационного сбора</h1>
+          <div class="flex items-center justify-between gap-4">
+            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Расчёт утилизационного сбора</h1>
+            <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Инструкция
+            </button>
+          </div>
         </div>
 
         <!-- Progress Steps -->
@@ -1197,171 +1246,185 @@ const downloadReceipt = () => {
               </button>
             </div>
 
-            <!-- Table header hint -->
-            <div class="pos-table-header">
-              <div class="pos-table-header__cols">
-                <span class="pos-table-header__col pos-table-header__col--group">Группа / Подгруппа</span>
-                <span class="pos-table-header__col">Объём (гр.5)</span>
-                <span class="pos-table-header__col">К переработке (гр.7)</span>
-                <span class="pos-table-header__col">Доп. переработка / вывоз</span>
-                <span class="pos-table-header__col pos-table-header__col--chevron"></span>
-              </div>
-              <span class="pos-table-header__hint">Нажмите на строку для подробностей</span>
-            </div>
-
             <div class="space-y-4">
-              <div v-for="(item, index) in productItems" :key="item.id" class="rounded-lg p-6 border border-[#e2e8f0] mb-5">
+              <div v-for="(item, index) in productItems" :key="item.id" class="cf-card">
+                <!-- Card header -->
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-sm font-medium text-[#64748b]">Позиция {{ index + 1 }}</span>
-                  <button v-if="productItems.length > 1" @click="removeProductItem(item.id)" class="text-red-500 hover:bg-red-50 p-1 rounded transition-colors">
+                  <span class="text-sm font-semibold text-[#64748b]">Позиция {{ index + 1 }}</span>
+                  <button v-if="productItems.length > 1" @click="removeProductItem(item.id)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Удалить позицию">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </div>
 
-                <ProductGroupSelector
-                  :group="item.group"
-                  :subgroup="item.subgroup"
-                  @update:group="(v: string) => { item.group = v; item.subgroup = ''; item.tnvedCode = ''; updateItemRate(item) }"
-                  @update:subgroup="(v: string) => { item.subgroup = v; updateItemRate(item) }"
-                  @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.tnvedCode = data.code }"
-                  accent-color="#f59e0b"
-                />
-
-                <!-- Validation error for group -->
-                <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
-
-                <!-- ГСКП code for producers -->
-                <div v-if="payerType === 'producer' && item.group" class="mt-3">
-                  <label class="block text-xs text-[#64748b] mb-1">Гр.3: Код ГСКП</label>
-                  <input
-                    type="text"
-                    v-model="item.gskpCode"
-                    placeholder="Введите код ГСКП"
-                    class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm"
+                <!-- BLOCK 1: Product group selection -->
+                <div class="cf-info">
+                  <ProductGroupSelector
+                    :group="item.group"
+                    :subgroup="item.subgroup"
+                    @update:group="(v: string) => { item.group = v; item.subgroup = ''; item.tnvedCode = ''; updateItemRate(item) }"
+                    @update:subgroup="(v: string) => { item.subgroup = v; updateItemRate(item) }"
+                    @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.tnvedCode = data.code }"
+                    accent-color="#f59e0b"
                   />
-                </div>
+                  <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
 
-                <!-- Compact row: 4 columns + chevron -->
-                <div class="pos-row mt-4" @click="togglePosition(item.id)">
-                  <div class="pos-row__cell pos-row__cell--group">
-                    <span class="pos-row__group-name">{{ getGroupLabel(item.group) || 'Не выбрана' }}</span>
-                    <span class="pos-row__subgroup-name">{{ getSubgroupLabel(item.group, item.subgroup) || '—' }}</span>
-                  </div>
-                  <div class="pos-row__cell pos-row__cell--input" @click.stop>
-                    <span class="pos-row__label">Гр.5: Объём (т)</span>
+                  <!-- ГСКП code for producers -->
+                  <div v-if="payerType === 'producer' && item.group" class="mt-3">
+                    <label class="block text-xs text-[#64748b] mb-1">Гр.3: Код ГСКП</label>
                     <input
-                      type="number"
-                      v-model="item.volume"
-                      @input="calculateAmount(item); validationErrors[`product_${index}_volume`] && delete validationErrors[`product_${index}_volume`]"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      :class="[
-                        'pos-row__input',
-                        validationErrors[`product_${index}_volume`] ? 'pos-row__input--error' : ''
-                      ]"
+                      type="text"
+                      v-model="item.gskpCode"
+                      placeholder="Введите код ГСКП"
+                      class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm"
                     />
-                    <p v-if="validationErrors[`product_${index}_volume`]" class="mt-0.5 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_volume`] }}</p>
-                  </div>
-                  <div class="pos-row__cell pos-row__cell--computed">
-                    <span class="pos-row__label">Гр.7: К переработке (т)</span>
-                    <span class="pos-row__value text-[#6366f1]">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) : '0.00' }}</span>
-                  </div>
-                  <div class="pos-row__cell pos-row__cell--input" @click.stop>
-                    <span class="pos-row__label">Доп. переработка / вывоз</span>
-                    <div class="pos-row__dual-inputs">
-                      <div class="pos-row__mini-field">
-                        <span class="pos-row__mini-label">Гр.8 Переработка</span>
-                        <input
-                          type="number"
-                          v-model="item.transferredToRecycling"
-                          @input="calculateAmount(item)"
-                          step="0.01" min="0" placeholder="0.00"
-                          :class="['pos-row__input pos-row__input--mini', getTransferredError(item) ? 'pos-row__input--error' : '']"
-                        />
-                      </div>
-                      <div class="pos-row__mini-field">
-                        <span class="pos-row__mini-label">Гр.9 Вывоз</span>
-                        <input
-                          type="number"
-                          v-model="item.exportedFromKR"
-                          @input="calculateAmount(item)"
-                          step="0.01" min="0" placeholder="0.00"
-                          :class="['pos-row__input pos-row__input--mini', getExportedError(item) ? 'pos-row__input--error' : '']"
-                        />
-                      </div>
-                    </div>
-                    <p v-if="getTransferredError(item)" class="mt-0.5 text-xs text-[#EF4444]">{{ getTransferredError(item) }}</p>
-                    <p v-if="getExportedError(item)" class="mt-0.5 text-xs text-[#EF4444]">{{ getExportedError(item) }}</p>
-                  </div>
-                  <button class="pos-row__chevron" :class="{ 'pos-row__chevron--open': isPositionExpanded(item.id) }" @click.stop="togglePosition(item.id)" type="button" title="Подробности">
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                  </button>
-                </div>
-
-                <!-- Expandable details -->
-                <div class="pos-expand" :class="{ 'pos-expand--open': isPositionExpanded(item.id) }">
-                  <div class="pos-expand__inner">
-                    <div class="pos-expand__grid">
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">Норматив (гр.6)</span>
-                        <span class="pos-expand__value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '—' }}</span>
-                      </div>
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">К переработке (гр.7)</span>
-                        <span class="pos-expand__value">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' т' : '0.00 т' }}</span>
-                      </div>
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">Ранее передано (гр.8)</span>
-                        <span class="pos-expand__value">{{ item.transferredToRecycling || '0' }} т</span>
-                      </div>
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">Ранее вывезено (гр.9)</span>
-                        <span class="pos-expand__value">{{ item.exportedFromKR || '0' }} т</span>
-                      </div>
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">Облагаемый объём (гр.10)</span>
-                        <span class="pos-expand__value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' т' : '0.00 т' }}</span>
-                      </div>
-                      <div class="pos-expand__item">
-                        <span class="pos-expand__label">Остаток к переработке</span>
-                        <span class="pos-expand__value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b', fontWeight: 700 }">
-                          {{ getRemaining(item).toFixed(2) }} т
-                        </span>
-                      </div>
-                    </div>
-                    <!-- File attachments -->
-                    <div class="pos-expand__files">
-                      <div class="pos-expand__file-item" @click.stop>
-                        <input :id="'recycled-file-' + item.id" type="file" class="hidden" @change="handleRecycledFileSelect(item, $event)" />
-                        <div v-if="item.recycledFile" class="attach-link attach-link--done">
-                          <span class="attach-link__file">{{ item.recycledFile.name }}</span>
-                          <button @click="removeRecycledFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
-                        </div>
-                        <label v-else :for="'recycled-file-' + item.id" :class="['attach-link', (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'attach-link--warn' : '']">
-                          {{ (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'Прикрепите договор на переработку' : 'Прикрепить договор на переработку' }}
-                        </label>
-                      </div>
-                      <div class="pos-expand__file-item" @click.stop>
-                        <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect(item, $event)" />
-                        <div v-if="item.exportedFile" class="attach-link attach-link--done">
-                          <span class="attach-link__file">{{ item.exportedFile.name }}</span>
-                          <button @click="removeExportedFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
-                        </div>
-                        <label v-else :for="'exported-file-' + item.id" :class="['attach-link', (parseFloat(item.exportedFromKR) || 0) > 0 ? 'attach-link--warn' : '']">
-                          {{ (parseFloat(item.exportedFromKR) || 0) > 0 ? 'Прикрепите ГТД на вывоз' : 'Прикрепить ГТД на вывоз' }}
-                        </label>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
-                <!-- СТРОКА 3: Итог (Графы 11-12) -->
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mt-3 bg-[#f8fafc] border-t border-dashed border-[#e5e7eb] rounded-b-lg px-4 py-3">
-                  <span class="text-sm text-[#374151]">Гр.11 Ставка: <strong>{{ item.rate.toLocaleString('ru-RU') }}</strong> сом/т</span>
-                  <span class="text-lg font-bold text-[#f59e0b]">Гр.12 Сумма: {{ item.amount.toLocaleString('ru-RU') }} сом</span>
+                <!-- BLOCK 2: Data entry (amber top border) -->
+                <div class="cf-data" v-if="item.group">
+                  <div class="cf-data__header">Данные расчёта</div>
+
+                  <!-- Volume input (Гр.5) -->
+                  <div class="cf-data__fields">
+                    <div class="cf-data__field">
+                      <label class="cf-data__label">Гр.5: Объём (масса), тонн</label>
+                      <input
+                        type="number"
+                        v-model="item.volume"
+                        @input="calculateAmount(item); validationErrors[`product_${index}_volume`] && delete validationErrors[`product_${index}_volume`]"
+                        step="0.01" min="0" placeholder="0.00"
+                        :class="['cf-data__input', validationErrors[`product_${index}_volume`] ? 'cf-data__input--error' : '']"
+                      />
+                      <span class="cf-data__hint">Масса товаров или упаковки в тоннах</span>
+                      <p v-if="validationErrors[`product_${index}_volume`]" class="text-xs text-[#EF4444] mt-1">{{ validationErrors[`product_${index}_volume`] }}</p>
+                    </div>
+                    <div class="cf-data__field">
+                      <label class="cf-data__label">Гр.8: Передано на переработку, тонн</label>
+                      <input
+                        type="number"
+                        v-model="item.transferredToRecycling"
+                        @input="calculateAmount(item)"
+                        step="0.01" min="0" placeholder="0.00"
+                        :class="['cf-data__input', getVolumeError(item) ? 'cf-data__input--error' : '']"
+                      />
+                      <span class="cf-data__hint">Объём переданный на переработку лицензированному переработчику</span>
+                    </div>
+                    <div class="cf-data__field">
+                      <label class="cf-data__label">Гр.9: Вывезено из КР, тонн</label>
+                      <input
+                        type="number"
+                        v-model="item.exportedFromKR"
+                        @input="calculateAmount(item)"
+                        step="0.01" min="0" placeholder="0.00"
+                        :class="['cf-data__input', getVolumeError(item) ? 'cf-data__input--error' : '']"
+                      />
+                      <span class="cf-data__hint">Объём вывезенный за пределы Кыргызской Республики</span>
+                    </div>
+                  </div>
+
+                  <!-- File attachments -->
+                  <div class="fc-row">
+                    <!-- Договор на переработку -->
+                    <input :id="'recycled-file-' + item.id" type="file" class="hidden" @change="handleRecycledFileSelect(item, $event)" />
+                    <label v-if="!item.recycledFile" :for="'recycled-file-' + item.id" :class="['fc-card', (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'fc-card--warn' : '']">
+                      <div class="fc-card__icon fc-card__icon--blue">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      </div>
+                      <div class="fc-card__text">
+                        <span class="fc-card__title">Договор на переработку</span>
+                        <span class="fc-card__desc">PDF, DOC до 10 МБ</span>
+                      </div>
+                      <span class="fc-card__btn">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Загрузить
+                      </span>
+                    </label>
+                    <div v-else class="fc-card fc-card--done">
+                      <div class="fc-card__icon fc-card__icon--green">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                      <div class="fc-card__text">
+                        <span class="fc-card__title">{{ item.recycledFile.name }}</span>
+                        <span class="fc-card__desc fc-card__desc--green">Загружен</span>
+                      </div>
+                      <button @click="removeRecycledFile(item)" class="fc-card__remove" title="Удалить файл">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+
+                    <!-- ГТД на вывоз -->
+                    <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect(item, $event)" />
+                    <label v-if="!item.exportedFile" :for="'exported-file-' + item.id" :class="['fc-card', (parseFloat(item.exportedFromKR) || 0) > 0 ? 'fc-card--warn' : '']">
+                      <div class="fc-card__icon fc-card__icon--purple">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                      </div>
+                      <div class="fc-card__text">
+                        <span class="fc-card__title">ГТД на вывоз</span>
+                        <span class="fc-card__desc">PDF, DOC до 10 МБ</span>
+                      </div>
+                      <span class="fc-card__btn">
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Загрузить
+                      </span>
+                    </label>
+                    <div v-else class="fc-card fc-card--done">
+                      <div class="fc-card__icon fc-card__icon--green">
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                      </div>
+                      <div class="fc-card__text">
+                        <span class="fc-card__title">{{ item.exportedFile.name }}</span>
+                        <span class="fc-card__desc fc-card__desc--green">Загружен</span>
+                      </div>
+                      <button @click="removeExportedFile(item)" class="fc-card__remove" title="Удалить файл">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Validation error: Гр.8 + Гр.9 > Гр.5 -->
+                  <div v-if="getVolumeError(item)" class="norm-msg norm-msg--error">
+                    <svg class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                    {{ getVolumeError(item) }}
+                  </div>
+
+                  <!-- Norm status info -->
+                  <div v-else-if="getNormStatus(item)" :class="['norm-msg', getNormStatus(item)!.met ? 'norm-msg--success' : 'norm-msg--warning']">
+                    <svg v-if="getNormStatus(item)!.met" class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <svg v-else class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {{ getNormStatus(item)!.message }}
+                  </div>
+
+                  <!-- Computed values grid -->
+                  <div class="cf-data__computed">
+                    <div class="cf-data__computed-cell">
+                      <span class="cf-data__computed-label">Гр.6 Норматив</span>
+                      <span class="cf-data__computed-value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '—' }}</span>
+                    </div>
+                    <div class="cf-data__computed-cell">
+                      <span class="cf-data__computed-label">Гр.7 К переработке</span>
+                      <span class="cf-data__computed-value" style="color:#6366f1">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' т' : '0.00 т' }}</span>
+                    </div>
+                    <div class="cf-data__computed-cell">
+                      <span class="cf-data__computed-label">Гр.10 Облагаемый объём</span>
+                      <span class="cf-data__computed-value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' т' : '0.00 т' }}</span>
+                    </div>
+                    <div class="cf-data__computed-cell">
+                      <span class="cf-data__computed-label">Остаток к переработке</span>
+                      <span class="cf-data__computed-value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b' }">{{ getRemaining(item).toFixed(2) }} т</span>
+                    </div>
+                    <div class="cf-data__computed-cell">
+                      <span class="cf-data__computed-label">Гр.11 Ставка</span>
+                      <span class="cf-data__computed-value">{{ item.rate.toLocaleString('ru-RU') }} сом/т</span>
+                    </div>
+                  </div>
+
+                  <!-- Summary: Amount -->
+                  <div class="cf-data__summary">
+                    <span class="cf-data__summary-label">Гр.12 Сумма утилизационного сбора</span>
+                    <span class="cf-data__summary-value">{{ item.amount.toLocaleString('ru-RU') }} сом</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1373,36 +1436,33 @@ const downloadReceipt = () => {
               Добавить позицию
             </button>
 
-            <div class="mt-8 pt-6 border-t border-[#e2e8f0]">
-              <div class="bg-gradient-to-r from-[#f59e0b]/10 to-[#d97706]/10 rounded-xl p-5 border border-[#f59e0b]/20">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <p class="text-xs text-[#64748b] mb-1">Гр.5: Общий объём</p>
-                    <p class="text-lg font-bold text-[#1e293b]">{{ totalVolume }} т</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-[#64748b] mb-1">Гр.7: К переработке</p>
-                    <p class="text-lg font-bold text-[#6366f1]">{{ totalVolumeToRecycle }} т</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-[#64748b] mb-1">Гр.8: Передано</p>
-                    <p class="text-lg font-bold text-[#10b981]">{{ totalTransferred }} т</p>
-                  </div>
-                  <div>
-                    <p class="text-xs text-[#64748b] mb-1">Гр.9: Вывезено из КР</p>
-                    <p class="text-lg font-bold text-[#2563eb]">{{ totalExported }} т</p>
-                  </div>
+            <!-- Total banner -->
+            <div class="cf-total-banner mt-8">
+              <div class="cf-total-banner__grid">
+                <div class="cf-total-banner__cell">
+                  <span class="cf-total-banner__cell-label">Гр.5: Общий объём</span>
+                  <span class="cf-total-banner__cell-value">{{ totalVolume }} т</span>
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-[#f59e0b]/20">
-                  <div>
-                    <p class="text-xs text-[#64748b] mb-1">Гр.10: Облагаемый объём</p>
-                    <p class="text-lg font-bold text-[#1e293b]">{{ totalTaxableVolume }} т</p>
-                  </div>
-                  <div class="sm:text-right">
-                    <p class="text-xs text-[#64748b] mb-1">Гр.12: Итого к оплате</p>
-                    <p class="text-2xl font-bold text-[#10b981]">{{ formattedTotalAmount }}</p>
-                  </div>
+                <div class="cf-total-banner__cell">
+                  <span class="cf-total-banner__cell-label">Гр.7: К переработке</span>
+                  <span class="cf-total-banner__cell-value" style="color:#6366f1">{{ totalVolumeToRecycle }} т</span>
                 </div>
+                <div class="cf-total-banner__cell">
+                  <span class="cf-total-banner__cell-label">Гр.8: Передано</span>
+                  <span class="cf-total-banner__cell-value" style="color:#10b981">{{ totalTransferred }} т</span>
+                </div>
+                <div class="cf-total-banner__cell">
+                  <span class="cf-total-banner__cell-label">Гр.9: Вывезено</span>
+                  <span class="cf-total-banner__cell-value" style="color:#2563eb">{{ totalExported }} т</span>
+                </div>
+                <div class="cf-total-banner__cell">
+                  <span class="cf-total-banner__cell-label">Гр.10: Облагаемый объём</span>
+                  <span class="cf-total-banner__cell-value">{{ totalTaxableVolume }} т</span>
+                </div>
+              </div>
+              <div class="cf-total-banner__bottom">
+                <span class="cf-total-banner__label">Итого к оплате</span>
+                <span class="cf-total-banner__value" style="color:#f59e0b">{{ formattedTotalAmount }}</span>
               </div>
             </div>
           </div>
@@ -1472,6 +1532,7 @@ const downloadReceipt = () => {
                       <td class="px-4 py-3">
                         <span class="text-[#1e293b] block">{{ getGroupLabel(item.group) }}</span>
                         <span class="text-xs text-[#94a3b8]">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
+                        <span v-if="item.tnvedCode" class="block text-xs text-[#94a3b8] font-mono mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></span>
                       </td>
                       <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
                       <td class="px-4 py-3 text-right">{{ item.recyclingStandard }}%</td>
@@ -1498,6 +1559,39 @@ const downloadReceipt = () => {
                   </tfoot>
                 </table>
               </div>
+            </div>
+
+            <!-- Примечания к кодам ТН ВЭД -->
+            <div class="border border-[#e2e8f0] rounded-xl overflow-hidden">
+              <button
+                @click="tnvedNotesOpen = !tnvedNotesOpen"
+                class="w-full flex items-center justify-between px-5 py-3.5 bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors text-left"
+              >
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="text-sm font-medium text-[#1e293b]">Примечания к кодам ТН ВЭД</span>
+                </div>
+                <svg
+                  class="w-4 h-4 text-[#94a3b8] transition-transform duration-200"
+                  :class="{ 'rotate-180': tnvedNotesOpen }"
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <Transition name="slide">
+                <div v-if="tnvedNotesOpen" class="px-5 py-4 border-t border-[#e2e8f0] bg-white">
+                  <ul class="space-y-2">
+                    <li v-for="(text, key) in tnvedNotes" :key="key" class="flex gap-2 text-sm text-[#475569]">
+                      <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#EFF6FF] text-[#3B82F6] text-xs font-bold flex-shrink-0 mt-0.5">{{ key }}</span>
+                      <span>{{ text }}</span>
+                    </li>
+                  </ul>
+                  <p class="mt-3 text-xs text-[#94a3b8] italic">{{ tnvedNotesSource }}</p>
+                </div>
+              </Transition>
             </div>
 
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
@@ -1799,6 +1893,7 @@ const downloadReceipt = () => {
         </div>
       </div>
     </template>
+    <InstructionDrawer v-model="showInstruction" title="Инструкция — Расчёт утильсбора" :contentHtml="instructionCalculationHtml" />
   </DashboardLayout>
 </template>
 
@@ -1809,378 +1904,448 @@ const downloadReceipt = () => {
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
+.slide-enter-active { transition: max-height 0.25s ease, opacity 0.2s ease; overflow: hidden; }
+.slide-leave-active { transition: max-height 0.2s ease, opacity 0.15s ease; overflow: hidden; }
+.slide-enter-from, .slide-leave-to { max-height: 0; opacity: 0; }
+.slide-enter-to, .slide-leave-from { max-height: 500px; opacity: 1; }
 
-/* Attach link-buttons under recycled/exported fields */
-.attach-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #2563eb;
-  cursor: pointer;
-  text-decoration: underline dashed;
-  text-underline-offset: 3px;
-  transition: color 0.15s;
-}
-
-.attach-link:hover {
-  color: #1d4ed8;
-  text-decoration: underline solid;
-}
-
-.attach-link--warn {
-  color: #d97706;
-  text-decoration: underline dashed #d97706;
-}
-
-.attach-link--warn:hover {
-  color: #b45309;
-  text-decoration: underline solid #b45309;
-}
-
-.attach-link--done {
-  color: #059669;
-  cursor: default;
-  text-decoration: none;
-  gap: 6px;
-}
-
-.attach-link__file {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.attach-link__remove {
-  color: #ef4444;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 2px;
-  border: none;
-  background: none;
-  transition: color 0.15s;
-}
-
-.attach-link__remove:hover {
-  color: #dc2626;
-}
-
-/* Contextual action buttons in history table */
-.calc-action-btn {
-  border: none;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-.calc-action-btn:hover {
-  filter: brightness(0.9);
-}
-.calc-action-link {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #6B7280;
-  cursor: pointer;
-  padding: 0;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.calc-action-link:hover {
-  text-decoration: underline;
-  opacity: 0.8;
-}
-
-/* Accepted status actions — compact pill buttons, right-aligned */
-.calc-accepted-actions {
+/* ── File-card attachments ── */
+.fc-row {
   display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  margin-left: auto;
-}
-.calc-trio-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  border: none;
-  border-radius: 16px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  white-space: nowrap;
-  width: auto;
-}
-.calc-trio-btn--blue {
-  background: #3B82F6;
-}
-.calc-trio-btn--blue:hover {
-  background: #2563EB;
-  box-shadow: 0 3px 10px rgba(59,130,246,0.3);
-}
-.calc-trio-btn--green {
-  background: #22C55E;
-}
-.calc-trio-btn--green:hover {
-  background: #16A34A;
-  box-shadow: 0 3px 10px rgba(34,197,94,0.3);
-}
-.calc-trio-btn--purple {
-  background: #8B5CF6;
-}
-.calc-trio-btn--purple:hover {
-  background: #7C3AED;
-  box-shadow: 0 3px 10px rgba(139,92,246,0.3);
-}
-
-/* ── Expandable positions table (Step 2) ── */
-.pos-table-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  padding: 0 4px;
-}
-.pos-table-header__cols {
-  display: none;
-}
-.pos-table-header__hint {
-  font-size: 12px;
-  color: #94a3b8;
-  font-style: italic;
-  margin-left: auto;
-}
-@media (min-width: 1024px) {
-  .pos-table-header__cols {
-    display: flex;
-    flex: 1;
-    gap: 12px;
-    align-items: center;
-  }
-  .pos-table-header__col {
-    font-size: 11px;
-    font-weight: 600;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .pos-table-header__col--group {
-    flex: 2;
-  }
-  .pos-table-header__col:not(.pos-table-header__col--group):not(.pos-table-header__col--chevron) {
-    flex: 1;
-    text-align: center;
-  }
-  .pos-table-header__col--chevron {
-    width: 40px;
-    flex-shrink: 0;
-  }
-}
-
-/* Compact row */
-.pos-row {
-  display: flex;
+  gap: 16px;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 14px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
-}
-.pos-row:hover {
-  background: #f1f5f9;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-}
-.pos-row__cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.pos-row__cell--group {
-  flex: 2;
-  min-width: 140px;
-}
-.pos-row__cell--input,
-.pos-row__cell--computed {
-  flex: 1;
-  min-width: 120px;
-}
-.pos-row__group-name {
-  font-weight: 600;
-  font-size: 14px;
-  color: #1e293b;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pos-row__subgroup-name {
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pos-row__label {
-  font-size: 11px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  font-weight: 500;
-}
-.pos-row__value {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
-}
-.pos-row__input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #1e293b;
-  background: white;
-  transition: border-color 0.15s;
-  outline: none;
-}
-.pos-row__input:focus {
-  border-color: #f59e0b;
-}
-.pos-row__input--error {
-  border-color: #ef4444 !important;
-}
-.pos-row__input--mini {
-  padding: 6px 8px;
-  font-size: 13px;
-}
-.pos-row__dual-inputs {
-  display: flex;
-  gap: 8px;
-}
-.pos-row__mini-field {
-  flex: 1;
-  min-width: 0;
-}
-.pos-row__mini-label {
-  display: block;
-  font-size: 10px;
-  color: #94a3b8;
-  margin-bottom: 2px;
-  white-space: nowrap;
-}
-
-/* Chevron */
-.pos-row__chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: transform 0.3s ease, color 0.2s, background 0.2s;
-  flex-shrink: 0;
-  align-self: center;
-  margin-top: 8px;
-}
-.pos-row__chevron:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-.pos-row__chevron--open {
-  transform: rotate(180deg);
-  color: #f59e0b;
-}
-
-/* Expandable details */
-.pos-expand {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-.pos-expand--open {
-  max-height: 500px;
-}
-.pos-expand__inner {
-  padding: 16px;
-  background: #f8fafc;
-  border-top: 1px dashed #e2e8f0;
-}
-.pos-expand__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px 24px;
-}
-.pos-expand__item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.pos-expand__label {
-  font-size: 11px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-}
-.pos-expand__value {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1e293b;
-}
-.pos-expand__files {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid #e2e8f0;
 }
-.pos-expand__file-item {
+.fc-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 12px;
+  padding: 16px 20px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
   flex: 1;
-  min-width: 200px;
+  min-width: 280px;
+}
+.fc-card:hover {
+  border-color: #3B82F6;
+  background: #F8FAFC;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.08);
+}
+.fc-card--warn {
+  border-color: #FBBF24;
+  background: #FFFBEB;
+}
+.fc-card--warn:hover {
+  border-color: #F59E0B;
+  background: #FEF3C7;
+}
+.fc-card--done {
+  border: 1.5px solid #D1FAE5;
+  background: #F0FDF4;
+  cursor: default;
+}
+.fc-card--done:hover {
+  border-color: #D1FAE5;
+  background: #F0FDF4;
+  box-shadow: none;
+}
+.fc-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fc-card__icon--blue {
+  background: #F1F5F9;
+  color: #3B82F6;
+}
+.fc-card__icon--purple {
+  background: #F1F5F9;
+  color: #8B5CF6;
+}
+.fc-card__icon--green {
+  background: #D1FAE5;
+  color: #059669;
+}
+.fc-card__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.fc-card__title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1E293B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fc-card__desc {
+  font-size: 12px;
+  color: #94A3B8;
+  margin-top: 2px;
+}
+.fc-card__desc--green {
+  color: #059669;
+  font-weight: 500;
+}
+.fc-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #EFF6FF;
+  color: #3B82F6;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.fc-card:hover .fc-card__btn {
+  background: #3B82F6;
+  color: white;
+}
+.fc-card--warn .fc-card__btn {
+  background: #FEF3C7;
+  color: #D97706;
+}
+.fc-card--warn:hover .fc-card__btn {
+  background: #F59E0B;
+  color: white;
+}
+.fc-card__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #FEE2E2;
+  color: #EF4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.fc-card__remove:hover {
+  background: #EF4444;
+  color: white;
 }
 
-/* Mobile: stack columns */
-@media (max-width: 767px) {
-  .pos-row {
+/* ── Unified action pill buttons ── */
+.act-wrap {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.act-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.act-pill--badge {
+  cursor: default;
+}
+.act-pill--blue { background: #3B82F6; }
+.act-pill--blue:hover { background: #2563EB; box-shadow: 0 3px 10px rgba(59,130,246,0.3); }
+.act-pill--green { background: #22C55E; }
+.act-pill--green:hover { background: #16A34A; box-shadow: 0 3px 10px rgba(34,197,94,0.3); }
+.act-pill--purple { background: #8B5CF6; }
+.act-pill--purple:hover { background: #7C3AED; box-shadow: 0 3px 10px rgba(139,92,246,0.3); }
+.act-pill--amber { background: #F59E0B; }
+.act-pill--amber:hover { background: #D97706; box-shadow: 0 3px 10px rgba(245,158,11,0.3); }
+.act-pill--teal { background: #059669; }
+.act-pill--teal:hover { background: #047857; box-shadow: 0 3px 10px rgba(5,150,105,0.3); }
+.act-pill--red { background: #EF4444; }
+.act-pill--red:hover { background: #DC2626; box-shadow: 0 3px 10px rgba(239,68,68,0.3); }
+.act-pill--badge:hover { filter: none; box-shadow: none; }
+.act-reason {
+  font-size: 11px;
+  color: #DC2626;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Card-form ── */
+.cf-card {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+/* ── Info block (product group selection) ── */
+.cf-info {
+  background: #F8FAFC;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── Data entry block (amber themed) ── */
+.cf-data {
+  border-top: 2px solid #f59e0b;
+  padding-top: 16px;
+}
+.cf-data__header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+}
+.cf-data__fields {
+  display: flex;
+  gap: 16px;
+}
+.cf-data__field {
+  flex: 1;
+  min-width: 0;
+}
+.cf-data__label {
+  display: block;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.cf-data__input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1E293B;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -moz-appearance: textfield;
+}
+.cf-data__input::-webkit-inner-spin-button,
+.cf-data__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cf-data__input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+.cf-data__input--error {
+  border-color: #FCA5A5;
+  background: #FEF2F2;
+}
+.cf-data__input--error:focus {
+  border-color: #F87171;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+.cf-data__hint {
+  display: block;
+  font-size: 11px;
+  color: #94A3B8;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+
+/* ── Norm status / validation messages ── */
+.norm-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.norm-msg__icon {
+  flex-shrink: 0;
+}
+.norm-msg--success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #15803D;
+}
+.norm-msg--warning {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+.norm-msg--error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+}
+
+/* ── Computed values grid ── */
+.cf-data__computed {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #e2e8f0;
+}
+.cf-data__computed-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.cf-data__computed-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94A3B8;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.cf-data__computed-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E293B;
+}
+
+/* ── Summary (amount) ── */
+.cf-data__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.08));
+  border-radius: 10px;
+  border: 1px solid rgba(245,158,11,0.15);
+}
+.cf-data__summary-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1E293B;
+}
+.cf-data__summary-value {
+  font-weight: 800;
+  font-size: 18px;
+  color: #f59e0b;
+}
+
+/* ── Total banner ── */
+.cf-total-banner {
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.cf-total-banner__grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cf-total-banner__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cf-total-banner__cell-label {
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.cf-total-banner__cell-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E293B;
+}
+.cf-total-banner__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.cf-total-banner__label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1E293B;
+}
+.cf-total-banner__value {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .cf-data__fields {
     flex-direction: column;
+  }
+  .cf-data__computed {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cf-data__summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cf-total-banner__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cf-total-banner__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .fc-card {
+    min-width: 0;
+    padding: 12px 14px;
     gap: 10px;
   }
-  .pos-row__cell--group,
-  .pos-row__cell--input,
-  .pos-row__cell--computed {
-    flex: none;
-    width: 100%;
-    min-width: 0;
+  .fc-card__icon {
+    width: 36px;
+    height: 36px;
   }
-  .pos-row__chevron {
-    align-self: flex-end;
-    margin-top: -32px;
+  .fc-card__icon svg {
+    width: 16px;
+    height: 16px;
   }
-  .pos-expand__grid {
-    grid-template-columns: repeat(2, 1fr);
+  .fc-card__btn {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 

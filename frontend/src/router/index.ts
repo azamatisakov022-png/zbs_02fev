@@ -262,6 +262,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Просмотр расчёта' },
   },
   {
+    path: '/business/reports/:id',
+    name: 'business-report-detail',
+    component: () => import('../views/business/BusinessReportDetailView.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Просмотр отчёта' },
+  },
+  {
     path: '/business/reports/new',
     name: 'business-reports-new',
     redirect: '/business/reports',
@@ -382,6 +388,12 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-account-detail',
     component: () => import('../views/eco-operator/EcoOperatorAccountDetail.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Детализация счёта' },
+  },
+  {
+    path: '/eco-operator/reports/:id',
+    name: 'eco-operator-report-detail',
+    component: () => import('../views/eco-operator/EcoOperatorReportDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Просмотр отчёта' },
   },
   {
     path: '/eco-operator/refunds',
