@@ -6,7 +6,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { icons } from '../../utils/menuIcons'
-import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupLabel, type ProductSubgroup } from '../../data/product-groups'
 // recyclingStandard now comes from product group, not year-based norms
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { calculationStore, type CalculationStatus, type PaymentData } from '../../stores/calculations'
@@ -14,11 +14,11 @@ import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateR
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
+  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
   { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
   { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
@@ -26,19 +26,10 @@ const menuItems = [
 
 const router = useRouter()
 
-// Dropdown menu state
-const openDropdownId = ref<number | null>(null)
-const toggleDropdown = (id: number) => {
-  openDropdownId.value = openDropdownId.value === id ? null : id
-}
-const closeDropdown = () => {
-  openDropdownId.value = null
-}
 const viewCalculation = (id: number) => {
   router.push(`/business/calculations/${id}`)
 }
 const mockAction = (action: string) => {
-  closeDropdown()
   alert(action)
 }
 
@@ -336,12 +327,25 @@ const formattedTotalAmount = computed(() => {
   return totalAmount.value.toLocaleString('ru-RU') + ' сом'
 })
 
-const getGroupLabel = (value: string) => {
-  return productGroups.find(g => g.value === value)?.label || value
+// Expandable positions (Step 2)
+const expandedPositions = ref<Set<number>>(new Set())
+const togglePosition = (id: number) => {
+  if (expandedPositions.value.has(id)) {
+    expandedPositions.value.delete(id)
+  } else {
+    expandedPositions.value.add(id)
+  }
+}
+const isPositionExpanded = (id: number) => expandedPositions.value.has(id)
+const getRemaining = (item: ProductItem) => {
+  const toRecycle = item.volumeToRecycle || 0
+  const transferred = parseFloat(item.transferredToRecycling) || 0
+  const exported = parseFloat(item.exportedFromKR) || 0
+  return +(toRecycle - transferred - exported).toFixed(4)
 }
 
-const getSubgroupLabel = (group: string, subgroup: string) => {
-  return productSubgroups[group]?.find(s => s.value === subgroup)?.label || subgroup
+const getGroupLabel = (value: string) => {
+  return productGroups.find(g => g.value === value)?.label || value
 }
 
 // Navigation
@@ -495,18 +499,16 @@ const calculations = computed(() => {
   }))
 })
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Черновик': return 'badge badge-neutral'
-    case 'На проверке': return 'badge badge-warning'
-    case 'Принято': return 'badge badge-success'
-    case 'Отклонено': return 'badge badge-danger'
-    case 'Оплата на проверке': return 'badge badge-purple'
-    case 'Оплачено': return 'badge badge-info'
-    case 'Оплата отклонена': return 'badge badge-danger'
-    default: return 'badge badge-neutral'
-  }
+const statusStyles: Record<string, string> = {
+  'Черновик': 'background:#F3F4F6;color:#6B7280',
+  'На проверке': 'background:#FEF3C7;color:#92400E',
+  'Принято': 'background:#D1FAE5;color:#065F46',
+  'Оплачено': 'background:#DBEAFE;color:#1D4ED8',
+  'Отклонено': 'background:#FEE2E2;color:#991B1B',
+  'Оплата на проверке': 'background:#EDE9FE;color:#6D28D9',
+  'Оплата отклонена': 'background:#FEE2E2;color:#991B1B',
 }
+const getStatusStyle = (status: string) => statusStyles[status] || 'background:#F3F4F6;color:#6B7280'
 
 // Save as draft
 const saveDraft = () => {
@@ -807,118 +809,94 @@ const downloadReceipt = () => {
         <template #cell-amount="{ value }">
           <span class="font-semibold text-[#1e293b]">{{ value }}</span>
         </template>
-        <template #cell-status="{ value, row }">
-          <div>
-            <span :class="getStatusClass(value)">
-              {{ value }}
-            </span>
-            <div v-if="value === 'Отклонено' && row.rejectionReason" class="mt-1 text-xs text-red-600">
-              Причина: {{ row.rejectionReason }}
-            </div>
-            <div v-if="value === 'Оплата отклонена' && row.paymentRejectionReason" class="mt-1 text-xs text-red-600">
-              Причина: {{ row.paymentRejectionReason }}
-            </div>
-          </div>
+        <template #cell-status="{ value }">
+          <span
+            :style="getStatusStyle(value)"
+            style="display:inline-block;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
+          >{{ value }}</span>
         </template>
         <template #actions="{ row }">
-          <div class="flex items-center justify-end gap-2">
-            <button
-              @click="viewCalculation(row.id)"
-              class="btn-action btn-action-secondary text-xs px-3 py-1.5"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Просмотреть
-            </button>
-            <!-- Dropdown menu -->
-            <div class="relative">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <!-- Черновик -->
+            <template v-if="row.status === 'Черновик'">
               <button
-                @click.stop="toggleDropdown(row.id)"
-                class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f1f5f9] text-[#64748b] transition-colors"
-              >
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-              </button>
-              <Transition
-                enter-active-class="transition ease-out duration-100"
-                enter-from-class="transform opacity-0 scale-95"
-                enter-to-class="transform opacity-100 scale-100"
-                leave-active-class="transition ease-in duration-75"
-                leave-from-class="transform opacity-100 scale-100"
-                leave-to-class="transform opacity-0 scale-95"
-              >
-                <div v-if="openDropdownId === row.id" class="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-lg border border-[#e2e8f0] py-1 z-50">
-                  <!-- Черновик -->
-                  <template v-if="row.status === 'Черновик'">
-                    <button @click="mockAction('Редактирование расчёта')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                      Редактировать
-                    </button>
-                    <button @click="mockAction('Удаление расчёта')" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                      Удалить
-                    </button>
-                    <div class="border-t border-[#e2e8f0] my-1"></div>
-                    <button @click="closeDropdown(); calculationStore.submitForReview(row.id)" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                      Отправить на проверку
-                    </button>
-                  </template>
-                  <!-- На проверке -->
-                  <template v-if="row.status === 'На проверке'">
-                    <button @click="mockAction('Скачивание PDF')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                      Скачать PDF
-                    </button>
-                    <button @click="mockAction('Отзыв расчёта')" class="w-full text-left px-4 py-2.5 text-sm text-[#f59e0b] hover:bg-amber-50 flex items-center gap-3">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                      Отозвать
-                    </button>
-                  </template>
-                  <!-- Принято -->
-                  <template v-if="row.status === 'Принято'">
-                    <button @click="mockAction('Скачивание PDF')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                      Скачать PDF
-                    </button>
-                    <button @click="closeDropdown(); openPaymentForm(row.id, row.totalAmount, row.number)" class="w-full text-left px-4 py-2.5 text-sm text-[#10b981] hover:bg-emerald-50 flex items-center gap-3">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                      Оплатить
-                    </button>
-                    <button @click="mockAction('Создание декларации')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                      Создать декларацию
-                    </button>
-                  </template>
-                  <!-- Отклонено -->
-                  <template v-if="row.status === 'Отклонено'">
-                    <button @click="mockAction('Создание копии для исправления')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                      Создать копию и исправить
-                    </button>
-                  </template>
-                  <!-- Оплата отклонена -->
-                  <template v-if="row.status === 'Оплата отклонена'">
-                    <button @click="closeDropdown(); openPaymentForm(row.id, row.totalAmount, row.number)" class="w-full text-left px-4 py-2.5 text-sm text-[#10b981] hover:bg-emerald-50 flex items-center gap-3">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                      Подтвердить оплату
-                    </button>
-                  </template>
-                  <!-- Оплачено -->
-                  <template v-if="row.status === 'Оплачено' || row.status === 'Оплата на проверке'">
-                    <button @click="mockAction('Скачивание PDF')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                      Скачать PDF
-                    </button>
-                    <button @click="mockAction('Печать расчёта')" class="w-full text-left px-4 py-2.5 text-sm text-[#1e293b] hover:bg-[#f8fafc] flex items-center gap-3">
-                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                      Печать
-                    </button>
-                  </template>
-                </div>
-              </Transition>
-            </div>
+                @click="calculationStore.submitForReview(row.id)"
+                class="calc-action-btn"
+                style="background:#F59E0B;color:white"
+              >Отправить на проверку</button>
+              <div style="display:flex;gap:12px">
+                <button @click="mockAction('Редактирование расчёта ' + row.number)" class="calc-action-link">Редактировать</button>
+                <button @click="mockAction('Удаление расчёта ' + row.number)" class="calc-action-link" style="color:#EF4444">Удалить</button>
+              </div>
+            </template>
+            <!-- На проверке -->
+            <template v-else-if="row.status === 'На проверке'">
+              <span style="background:#FEF3C7;color:#92400E;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">⏳ На проверке ГП Эко Оператора</span>
+              <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+            </template>
+            <!-- Принято -->
+            <template v-else-if="row.status === 'Принято'">
+              <div class="calc-accepted-actions">
+                <router-link :to="'/business/calculations/' + row.id" class="calc-trio-btn calc-trio-btn--blue">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                  Просмотреть
+                </router-link>
+                <button
+                  @click="mockAction('Переход к оплате расчёта ' + row.number + ' на сумму ' + row.totalAmount.toLocaleString('ru-RU') + ' сом')"
+                  class="calc-trio-btn calc-trio-btn--green"
+                >
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                  Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
+                </button>
+                <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="calc-trio-btn calc-trio-btn--purple">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Скачать PDF
+                </button>
+              </div>
+            </template>
+            <!-- Оплачено -->
+            <template v-else-if="row.status === 'Оплачено'">
+              <span style="background:#D1FAE5;color:#065F46;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">✅ Оплачено</span>
+              <div style="display:flex;gap:12px">
+                <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+                <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="calc-action-link">Скачать PDF</button>
+                <button @click="mockAction('Создание декларации по расчёту ' + row.number)" class="calc-action-link">Создать декларацию</button>
+              </div>
+            </template>
+            <!-- Отклонено -->
+            <template v-else-if="row.status === 'Отклонено'">
+              <button
+                @click="mockAction('Создание копии расчёта для исправления')"
+                class="calc-action-btn"
+                style="background:#EF4444;color:white"
+              >Исправить и отправить</button>
+              <div
+                v-if="row.rejectionReason"
+                style="font-size:11px;color:#DC2626;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                :title="row.rejectionReason"
+              >❌ Причина: {{ row.rejectionReason }}</div>
+            </template>
+            <!-- Оплата на проверке -->
+            <template v-else-if="row.status === 'Оплата на проверке'">
+              <span style="background:#EDE9FE;color:#6D28D9;border-radius:12px;padding:4px 12px;font-size:12px;white-space:nowrap">⏳ Оплата на проверке</span>
+              <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+            </template>
+            <!-- Оплата отклонена -->
+            <template v-else-if="row.status === 'Оплата отклонена'">
+              <button
+                @click="openPaymentForm(row.id, row.totalAmount, row.number)"
+                class="calc-action-btn"
+                style="background:#F59E0B;color:white"
+              >Подтвердить оплату</button>
+              <div style="display:flex;gap:12px">
+                <router-link :to="'/business/calculations/' + row.id" class="calc-action-link" style="color:#2563EB">Просмотреть</router-link>
+              </div>
+              <div
+                v-if="row.paymentRejectionReason"
+                style="font-size:11px;color:#DC2626;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                :title="row.paymentRejectionReason"
+              >❌ Причина: {{ row.paymentRejectionReason }}</div>
+            </template>
           </div>
         </template>
       </DataTable>
@@ -1219,6 +1197,18 @@ const downloadReceipt = () => {
               </button>
             </div>
 
+            <!-- Table header hint -->
+            <div class="pos-table-header">
+              <div class="pos-table-header__cols">
+                <span class="pos-table-header__col pos-table-header__col--group">Группа / Подгруппа</span>
+                <span class="pos-table-header__col">Объём (гр.5)</span>
+                <span class="pos-table-header__col">К переработке (гр.7)</span>
+                <span class="pos-table-header__col">Доп. переработка / вывоз</span>
+                <span class="pos-table-header__col pos-table-header__col--chevron"></span>
+              </div>
+              <span class="pos-table-header__hint">Нажмите на строку для подробностей</span>
+            </div>
+
             <div class="space-y-4">
               <div v-for="(item, index) in productItems" :key="item.id" class="rounded-lg p-6 border border-[#e2e8f0] mb-5">
                 <div class="flex items-center justify-between mb-4">
@@ -1253,11 +1243,14 @@ const downloadReceipt = () => {
                   />
                 </div>
 
-                <!-- СТРОКА 2: Расчёт объёмов (Графы 5-10) -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mt-4">
-                  <!-- Гр.5: Объём (тонн) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.5: Объём (тонн) <span class="text-[#EF4444]">*</span></label>
+                <!-- Compact row: 4 columns + chevron -->
+                <div class="pos-row mt-4" @click="togglePosition(item.id)">
+                  <div class="pos-row__cell pos-row__cell--group">
+                    <span class="pos-row__group-name">{{ getGroupLabel(item.group) || 'Не выбрана' }}</span>
+                    <span class="pos-row__subgroup-name">{{ getSubgroupLabel(item.group, item.subgroup) || '—' }}</span>
+                  </div>
+                  <div class="pos-row__cell pos-row__cell--input" @click.stop>
+                    <span class="pos-row__label">Гр.5: Объём (т)</span>
                     <input
                       type="number"
                       v-model="item.volume"
@@ -1266,97 +1259,102 @@ const downloadReceipt = () => {
                       min="0"
                       placeholder="0.00"
                       :class="[
-                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
-                        validationErrors[`product_${index}_volume`]
-                          ? 'border-[#EF4444] focus:border-[#EF4444]'
-                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
+                        'pos-row__input',
+                        validationErrors[`product_${index}_volume`] ? 'pos-row__input--error' : ''
                       ]"
                     />
-                    <p v-if="validationErrors[`product_${index}_volume`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_volume`] }}</p>
+                    <p v-if="validationErrors[`product_${index}_volume`]" class="mt-0.5 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_volume`] }}</p>
                   </div>
-                  <!-- Гр.6: Норматив переработки (%) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.6: Норматив (%)</label>
-                    <input
-                      type="text"
-                      :value="item.recyclingStandard ? item.recyclingStandard + '%' : '—'"
-                      readonly
-                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] cursor-not-allowed"
-                    />
+                  <div class="pos-row__cell pos-row__cell--computed">
+                    <span class="pos-row__label">Гр.7: К переработке (т)</span>
+                    <span class="pos-row__value text-[#6366f1]">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) : '0.00' }}</span>
                   </div>
-                  <!-- Гр.7: Объём к переработке -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.7: К переработке</label>
-                    <input
-                      type="text"
-                      :value="item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) : '0.00'"
-                      readonly
-                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] font-medium cursor-not-allowed"
-                    />
-                  </div>
-                  <!-- Гр.8: Передано на переработку -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.8: Передано (тонн)</label>
-                    <input
-                      type="number"
-                      v-model="item.transferredToRecycling"
-                      @input="calculateAmount(item)"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      :class="[
-                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
-                        getTransferredError(item)
-                          ? 'border-[#EF4444] focus:border-[#EF4444]'
-                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
-                      ]"
-                    />
-                    <p v-if="getTransferredError(item)" class="mt-1 text-xs text-[#EF4444]">{{ getTransferredError(item) }}</p>
-                    <input :id="'recycled-file-' + item.id" type="file" class="hidden" @change="handleRecycledFileSelect(item, $event)" />
-                    <div v-if="item.recycledFile" class="attach-link attach-link--done mt-1">
-                      <span class="attach-link__file">{{ item.recycledFile.name }}</span>
-                      <button @click="removeRecycledFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                  <div class="pos-row__cell pos-row__cell--input" @click.stop>
+                    <span class="pos-row__label">Доп. переработка / вывоз</span>
+                    <div class="pos-row__dual-inputs">
+                      <div class="pos-row__mini-field">
+                        <span class="pos-row__mini-label">Гр.8 Переработка</span>
+                        <input
+                          type="number"
+                          v-model="item.transferredToRecycling"
+                          @input="calculateAmount(item)"
+                          step="0.01" min="0" placeholder="0.00"
+                          :class="['pos-row__input pos-row__input--mini', getTransferredError(item) ? 'pos-row__input--error' : '']"
+                        />
+                      </div>
+                      <div class="pos-row__mini-field">
+                        <span class="pos-row__mini-label">Гр.9 Вывоз</span>
+                        <input
+                          type="number"
+                          v-model="item.exportedFromKR"
+                          @input="calculateAmount(item)"
+                          step="0.01" min="0" placeholder="0.00"
+                          :class="['pos-row__input pos-row__input--mini', getExportedError(item) ? 'pos-row__input--error' : '']"
+                        />
+                      </div>
                     </div>
-                    <label v-else :for="'recycled-file-' + item.id" :class="['attach-link mt-1', (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'attach-link--warn' : '']">
-                      {{ (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'Прикрепите акт' : 'Акт приёма-передачи' }}
-                    </label>
+                    <p v-if="getTransferredError(item)" class="mt-0.5 text-xs text-[#EF4444]">{{ getTransferredError(item) }}</p>
+                    <p v-if="getExportedError(item)" class="mt-0.5 text-xs text-[#EF4444]">{{ getExportedError(item) }}</p>
                   </div>
-                  <!-- Гр.9: Вывезено из КР -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1" title="Вывезено из территории КР в третьи страны">Гр.9: Вывезено (тонн)</label>
-                    <input
-                      type="number"
-                      v-model="item.exportedFromKR"
-                      @input="calculateAmount(item)"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      :class="[
-                        'w-full px-3 py-2 border rounded-lg focus:outline-none text-sm',
-                        getExportedError(item)
-                          ? 'border-[#EF4444] focus:border-[#EF4444]'
-                          : 'border-[#e2e8f0] focus:border-[#f59e0b]'
-                      ]"
-                    />
-                    <p v-if="getExportedError(item)" class="mt-1 text-xs text-[#EF4444]">{{ getExportedError(item) }}</p>
-                    <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect(item, $event)" />
-                    <div v-if="item.exportedFile" class="attach-link attach-link--done mt-1">
-                      <span class="attach-link__file">{{ item.exportedFile.name }}</span>
-                      <button @click="removeExportedFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                  <button class="pos-row__chevron" :class="{ 'pos-row__chevron--open': isPositionExpanded(item.id) }" @click.stop="togglePosition(item.id)" type="button" title="Подробности">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                </div>
+
+                <!-- Expandable details -->
+                <div class="pos-expand" :class="{ 'pos-expand--open': isPositionExpanded(item.id) }">
+                  <div class="pos-expand__inner">
+                    <div class="pos-expand__grid">
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">Норматив (гр.6)</span>
+                        <span class="pos-expand__value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '—' }}</span>
+                      </div>
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">К переработке (гр.7)</span>
+                        <span class="pos-expand__value">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' т' : '0.00 т' }}</span>
+                      </div>
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">Ранее передано (гр.8)</span>
+                        <span class="pos-expand__value">{{ item.transferredToRecycling || '0' }} т</span>
+                      </div>
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">Ранее вывезено (гр.9)</span>
+                        <span class="pos-expand__value">{{ item.exportedFromKR || '0' }} т</span>
+                      </div>
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">Облагаемый объём (гр.10)</span>
+                        <span class="pos-expand__value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' т' : '0.00 т' }}</span>
+                      </div>
+                      <div class="pos-expand__item">
+                        <span class="pos-expand__label">Остаток к переработке</span>
+                        <span class="pos-expand__value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b', fontWeight: 700 }">
+                          {{ getRemaining(item).toFixed(2) }} т
+                        </span>
+                      </div>
                     </div>
-                    <label v-else :for="'exported-file-' + item.id" :class="['attach-link mt-1', (parseFloat(item.exportedFromKR) || 0) > 0 ? 'attach-link--warn' : '']">
-                      {{ (parseFloat(item.exportedFromKR) || 0) > 0 ? 'Прикрепите ГТД' : 'ГТД на вывоз' }}
-                    </label>
-                  </div>
-                  <!-- Гр.10: Облагаемый объём -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.10: Облагаемый</label>
-                    <input
-                      type="text"
-                      :value="item.taxableVolume ? item.taxableVolume.toFixed(2) : '0.00'"
-                      readonly
-                      class="w-full px-3 py-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg text-sm text-[#374151] font-medium cursor-not-allowed"
-                    />
+                    <!-- File attachments -->
+                    <div class="pos-expand__files">
+                      <div class="pos-expand__file-item" @click.stop>
+                        <input :id="'recycled-file-' + item.id" type="file" class="hidden" @change="handleRecycledFileSelect(item, $event)" />
+                        <div v-if="item.recycledFile" class="attach-link attach-link--done">
+                          <span class="attach-link__file">{{ item.recycledFile.name }}</span>
+                          <button @click="removeRecycledFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                        </div>
+                        <label v-else :for="'recycled-file-' + item.id" :class="['attach-link', (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'attach-link--warn' : '']">
+                          {{ (parseFloat(item.transferredToRecycling) || 0) > 0 ? 'Прикрепите договор на переработку' : 'Прикрепить договор на переработку' }}
+                        </label>
+                      </div>
+                      <div class="pos-expand__file-item" @click.stop>
+                        <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect(item, $event)" />
+                        <div v-if="item.exportedFile" class="attach-link attach-link--done">
+                          <span class="attach-link__file">{{ item.exportedFile.name }}</span>
+                          <button @click="removeExportedFile(item)" class="attach-link__remove" title="Удалить файл">&times;</button>
+                        </div>
+                        <label v-else :for="'exported-file-' + item.id" :class="['attach-link', (parseFloat(item.exportedFromKR) || 0) > 0 ? 'attach-link--warn' : '']">
+                          {{ (parseFloat(item.exportedFromKR) || 0) > 0 ? 'Прикрепите ГТД на вывоз' : 'Прикрепить ГТД на вывоз' }}
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1868,6 +1866,322 @@ const downloadReceipt = () => {
 
 .attach-link__remove:hover {
   color: #dc2626;
+}
+
+/* Contextual action buttons in history table */
+.calc-action-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.calc-action-btn:hover {
+  filter: brightness(0.9);
+}
+.calc-action-link {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #6B7280;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.calc-action-link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* Accepted status actions — compact pill buttons, right-aligned */
+.calc-accepted-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+.calc-trio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  width: auto;
+}
+.calc-trio-btn--blue {
+  background: #3B82F6;
+}
+.calc-trio-btn--blue:hover {
+  background: #2563EB;
+  box-shadow: 0 3px 10px rgba(59,130,246,0.3);
+}
+.calc-trio-btn--green {
+  background: #22C55E;
+}
+.calc-trio-btn--green:hover {
+  background: #16A34A;
+  box-shadow: 0 3px 10px rgba(34,197,94,0.3);
+}
+.calc-trio-btn--purple {
+  background: #8B5CF6;
+}
+.calc-trio-btn--purple:hover {
+  background: #7C3AED;
+  box-shadow: 0 3px 10px rgba(139,92,246,0.3);
+}
+
+/* ── Expandable positions table (Step 2) ── */
+.pos-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.pos-table-header__cols {
+  display: none;
+}
+.pos-table-header__hint {
+  font-size: 12px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-left: auto;
+}
+@media (min-width: 1024px) {
+  .pos-table-header__cols {
+    display: flex;
+    flex: 1;
+    gap: 12px;
+    align-items: center;
+  }
+  .pos-table-header__col {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pos-table-header__col--group {
+    flex: 2;
+  }
+  .pos-table-header__col:not(.pos-table-header__col--group):not(.pos-table-header__col--chevron) {
+    flex: 1;
+    text-align: center;
+  }
+  .pos-table-header__col--chevron {
+    width: 40px;
+    flex-shrink: 0;
+  }
+}
+
+/* Compact row */
+.pos-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.pos-row:hover {
+  background: #f1f5f9;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.pos-row__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pos-row__cell--group {
+  flex: 2;
+  min-width: 140px;
+}
+.pos-row__cell--input,
+.pos-row__cell--computed {
+  flex: 1;
+  min-width: 120px;
+}
+.pos-row__group-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pos-row__subgroup-name {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pos-row__label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+.pos-row__value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+.pos-row__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  transition: border-color 0.15s;
+  outline: none;
+}
+.pos-row__input:focus {
+  border-color: #f59e0b;
+}
+.pos-row__input--error {
+  border-color: #ef4444 !important;
+}
+.pos-row__input--mini {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.pos-row__dual-inputs {
+  display: flex;
+  gap: 8px;
+}
+.pos-row__mini-field {
+  flex: 1;
+  min-width: 0;
+}
+.pos-row__mini-label {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+/* Chevron */
+.pos-row__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: transform 0.3s ease, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+  align-self: center;
+  margin-top: 8px;
+}
+.pos-row__chevron:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+.pos-row__chevron--open {
+  transform: rotate(180deg);
+  color: #f59e0b;
+}
+
+/* Expandable details */
+.pos-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.pos-expand--open {
+  max-height: 500px;
+}
+.pos-expand__inner {
+  padding: 16px;
+  background: #f8fafc;
+  border-top: 1px dashed #e2e8f0;
+}
+.pos-expand__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px 24px;
+}
+.pos-expand__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pos-expand__label {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+.pos-expand__value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.pos-expand__files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+.pos-expand__file-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Mobile: stack columns */
+@media (max-width: 767px) {
+  .pos-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pos-row__cell--group,
+  .pos-row__cell--input,
+  .pos-row__cell--computed {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+  .pos-row__chevron {
+    align-self: flex-end;
+    margin-top: -32px;
+  }
+  .pos-expand__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media print {

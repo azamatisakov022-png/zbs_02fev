@@ -8,14 +8,15 @@ import PieChart from '../../components/charts/PieChart.vue'
 import ProgressBar from '../../components/charts/ProgressBar.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
+import { accountStore } from '../../stores/account'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
+  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
   { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
   { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
   { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
   { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
   { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
   { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
   { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
@@ -144,6 +145,54 @@ onMounted(() => {
           :color="stat.color"
         />
       </div>
+
+      <!-- Account Balance Card -->
+      <router-link to="/business/account" class="block mb-8 group">
+        <div :class="[
+          'rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md',
+          accountStore.getCurrentBalance() > 0 ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-200' :
+          accountStore.getCurrentBalance() < 0 ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-200' :
+          'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
+        ]">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div :class="[
+                'w-12 h-12 rounded-xl flex items-center justify-center',
+                accountStore.getCurrentBalance() > 0 ? 'bg-green-500' :
+                accountStore.getCurrentBalance() < 0 ? 'bg-red-500' : 'bg-slate-400'
+              ]">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div>
+                <p :class="[
+                  'text-sm font-medium',
+                  accountStore.getCurrentBalance() > 0 ? 'text-green-800' :
+                  accountStore.getCurrentBalance() < 0 ? 'text-red-800' : 'text-slate-600'
+                ]">Лицевой счёт</p>
+                <p :class="[
+                  'text-2xl font-bold',
+                  accountStore.getCurrentBalance() > 0 ? 'text-green-900' :
+                  accountStore.getCurrentBalance() < 0 ? 'text-red-900' : 'text-slate-800'
+                ]">
+                  {{ accountStore.getCurrentBalance() > 0 ? '+' : '' }}{{ accountStore.getCurrentBalance().toLocaleString('ru-RU') }} сом
+                </p>
+                <p :class="[
+                  'text-xs mt-0.5',
+                  accountStore.getCurrentBalance() > 0 ? 'text-green-600' :
+                  accountStore.getCurrentBalance() < 0 ? 'text-red-600' : 'text-slate-500'
+                ]">
+                  {{ accountStore.getCurrentBalance() > 0 ? 'Переплата — доступно для зачёта' :
+                     accountStore.getCurrentBalance() < 0 ? 'Задолженность — необходимо оплатить' :
+                     'Задолженности нет' }}
+                </p>
+              </div>
+            </div>
+            <div class="text-[#64748b] group-hover:text-[#2563eb] transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </div>
+          </div>
+        </div>
+      </router-link>
 
       <!-- Action Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { icons } from '../../utils/menuIcons'
+import { calculationStore } from '../../stores/calculations'
+import { refundStore } from '../../stores/refunds'
+import { reportStore } from '../../stores/reports'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const menuItems = computed(() => [
+  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
+  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
+  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
+  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
+  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
+  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
+  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
+  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
+  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
+])
 
 // Organization interface
 interface Organization {
@@ -381,9 +384,9 @@ const copyLegalToActual = () => {
 
 <template>
   <DashboardLayout
-    role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
-    userName="Мамытова Айгуль"
+    role="eco-operator"
+    roleTitle="Экологический оператор"
+    userName="Нуркулов Алмаз"
     :menuItems="menuItems"
   >
     <div class="space-y-6">

@@ -7,13 +7,10 @@ import { icons } from '../../utils/menuIcons'
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
   { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/admin/organizations' },
-  { id: 'declarations', label: 'Все декларации', icon: icons.document, route: '/admin/declarations' },
-  { id: 'reports', label: 'Все отчёты', icon: icons.report, route: '/admin/reports' },
-  { id: 'registries', label: 'Реестры и справочники', icon: icons.registries, route: '/admin/registries' },
-  { id: 'calculations', label: 'Настройки расчётов', icon: icons.calculator, route: '/admin/calculations' },
-  { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/admin/analytics' },
-  { id: 'audit', label: 'Журнал действий', icon: icons.audit, route: '/admin/audit' },
+  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
+  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
+  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
+  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
   { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
 ]
 

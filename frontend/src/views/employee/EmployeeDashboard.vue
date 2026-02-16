@@ -8,21 +8,34 @@ import { icons, statsIcons } from '../../utils/menuIcons'
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
+  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
+  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
+  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
   { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
 ]
 
 const stats = [
-  { title: 'Всего организаций', value: '342', icon: statsIcons.users, color: 'blue' as const },
-  { title: 'Активных переработчиков', value: '48', icon: statsIcons.approved, color: 'green' as const },
-  { title: 'Лицензий истекает', value: '5', icon: statsIcons.pending, color: 'orange' as const },
-  { title: 'Общий объём переработки', value: '387 т', icon: statsIcons.capacity, color: 'purple' as const },
+  { title: 'Зарегистрировано организаций', value: '342', icon: statsIcons.users, color: 'blue' as const },
+  { title: 'Действующих лицензий', value: '48', icon: statsIcons.approved, color: 'green' as const },
+  { title: 'Полигонов на контроле', value: '12', icon: statsIcons.capacity, color: 'purple' as const },
+  { title: 'Видов отходов в реестре', value: '24', icon: statsIcons.waste, color: 'orange' as const },
+]
+
+const alerts = [
+  { text: '2 лицензии истекают в ближайшие 30 дней', severity: 'red', route: '/employee/licenses', count: 2 },
+  { text: '1 полигон превышает допустимую нагрузку', severity: 'red', route: '/employee/landfills', count: 1 },
+  { text: '3 полигона заполнены более чем на 80%', severity: 'red', route: '/employee/landfills', count: 3 },
+  { text: '4 лицензии требуют продления в этом квартале', severity: 'orange', route: '/employee/licenses', count: 4 },
+  { text: '2 вида отходов без установленных нормативов', severity: 'blue', route: '/employee/waste-types', count: 2 },
+]
+
+const quickActions = [
+  { label: 'Контроль исполнения', subtitle: 'Нормативы и лицензии', icon: icons.compliance, color: '#0e888d', route: '/employee/compliance' },
+  { label: 'Лицензии', subtitle: '5 истекают', icon: icons.license, color: '#f59e0b', route: '/employee/licenses' },
+  { label: 'Полигоны и свалки', subtitle: '12 объектов', icon: icons.landfill, color: '#7c3aed', route: '/employee/landfills' },
 ]
 
 const wasteTypePie = [
@@ -33,20 +46,43 @@ const wasteTypePie = [
   { label: 'Прочее', value: 14, color: '#94a3b8' },
 ]
 
-const recentApplications = [
-  { number: '2025-0124', company: 'ОсОО «НовоТрейд»', type: 'Регистрация плательщика РОП', time: '15 мин назад', status: 'Новая' },
-  { number: '2025-0123', company: 'ОАО «ГринТех»', type: 'Продление лицензии на переработку', time: '1 час назад', status: 'На рассмотрении' },
-  { number: '2025-0122', company: 'ИП Асанов Б.К.', type: 'Регистрация плательщика РОП', time: '2 часа назад', status: 'На рассмотрении' },
-  { number: '2025-0121', company: 'ОсОО «ЭкоСервис»', type: 'Лицензия на переработку отходов', time: '3 часа назад', status: 'Одобрено' },
+const landfillMonitoring = [
+  { name: 'Полигон «Бишкек-Север»', region: 'Бишкек', fillPercent: 65, status: 'Норма' },
+  { name: 'Полигон «Бишкек-Юг»', region: 'Бишкек', fillPercent: 86, status: 'Внимание' },
+  { name: 'Полигон «Ош»', region: 'Ош', fillPercent: 70, status: 'Норма' },
+  { name: 'Свалка «Ош-2»', region: 'Ош', fillPercent: 90, status: 'Критично' },
 ]
 
-const getStatusClass = (status: string) => {
+const getLandfillStatusClass = (status: string) => {
   switch (status) {
-    case 'Новая': return 'badge badge-info'
-    case 'На рассмотрении': return 'badge badge-warning'
-    case 'Одобрено': return 'badge badge-success'
-    case 'Отклонено': return 'badge badge-danger'
-    default: return 'badge badge-neutral'
+    case 'Норма': return 'bg-green-100 text-green-700'
+    case 'Внимание': return 'bg-amber-100 text-amber-700'
+    case 'Критично': return 'bg-red-100 text-red-700'
+    default: return 'bg-gray-100 text-gray-700'
+  }
+}
+
+const getLandfillBarColor = (percent: number) => {
+  if (percent >= 85) return 'bg-red-500'
+  if (percent >= 70) return 'bg-amber-500'
+  return 'bg-green-500'
+}
+
+const alertDotColor = (severity: string) => {
+  switch (severity) {
+    case 'red': return 'bg-red-500'
+    case 'orange': return 'bg-orange-400'
+    case 'blue': return 'bg-blue-500'
+    default: return 'bg-gray-400'
+  }
+}
+
+const alertBadgeClass = (severity: string) => {
+  switch (severity) {
+    case 'red': return 'bg-red-100 text-red-700'
+    case 'orange': return 'bg-orange-100 text-orange-700'
+    case 'blue': return 'bg-blue-100 text-blue-700'
+    default: return 'bg-gray-100 text-gray-700'
   }
 }
 
@@ -65,7 +101,7 @@ onMounted(() => {
   >
     <div class="content__header mb-8">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Главная</h1>
-      <p class="text-[#64748b]">Обработка заявок и управление реестрами</p>
+      <p class="text-[#64748b]">Обзор состояния системы управления отходами</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -92,8 +128,59 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Pie Chart -->
-      <div class="mb-8">
+      <!-- Alerts Block -->
+      <div class="bg-white rounded-xl border border-[#e2e8f0] border-l-4 border-l-orange-400 shadow-sm mb-8">
+        <div class="px-6 py-4 border-b border-[#f1f5f9]">
+          <h2 class="text-lg font-semibold text-[#1e293b]">Требуют внимания</h2>
+        </div>
+        <div class="divide-y divide-[#f1f5f9]">
+          <router-link
+            v-for="(alert, idx) in alerts"
+            :key="idx"
+            :to="alert.route"
+            class="flex items-center gap-3 px-6 py-3.5 hover:bg-[#f8fafc] transition-colors group"
+          >
+            <span :class="['w-2.5 h-2.5 rounded-full flex-shrink-0', alertDotColor(alert.severity)]"></span>
+            <span class="text-sm text-[#1e293b] flex-1 group-hover:text-[#0e888d] transition-colors">{{ alert.text }}</span>
+            <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0', alertBadgeClass(alert.severity)]">
+              {{ alert.count }}
+            </span>
+            <svg class="w-4 h-4 text-[#94a3b8] group-hover:text-[#0e888d] transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </router-link>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Pie Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">Быстрые действия</h3>
+          <div class="space-y-3">
+            <router-link
+              v-for="action in quickActions"
+              :key="action.route"
+              :to="action.route"
+              class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors group"
+            >
+              <div
+                class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+                :style="{ backgroundColor: action.color }"
+                v-html="action.icon"
+              ></div>
+              <div class="min-w-0">
+                <span class="font-medium text-[#1e293b] block group-hover:text-[#0e888d] transition-colors">{{ action.label }}</span>
+                <span class="text-sm text-[#64748b]">{{ action.subtitle }}</span>
+              </div>
+              <svg class="w-4 h-4 text-[#94a3b8] ml-auto flex-shrink-0 group-hover:text-[#0e888d] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </router-link>
+          </div>
+        </div>
+
+        <!-- Pie Chart -->
         <PieChart
           :data="wasteTypePie"
           :size="200"
@@ -101,84 +188,37 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Quick Actions & Pending Tasks -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">Быстрые действия</h3>
-          <div class="space-y-3">
-            <router-link to="/employee/applications" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-blue-50 transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#2563eb] flex items-center justify-center text-white" v-html="icons.inbox"></div>
-              <div>
-                <span class="font-medium text-[#1e293b] block">Входящие заявки</span>
-                <span class="text-sm text-[#64748b]">23 новых</span>
-              </div>
-            </router-link>
-            <router-link to="/employee/organizations" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-blue-50 transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#10b981] flex items-center justify-center text-white" v-html="icons.building"></div>
-              <div>
-                <span class="font-medium text-[#1e293b] block">Реестр организаций</span>
-                <span class="text-sm text-[#64748b]">342 организации</span>
-              </div>
-            </router-link>
-            <router-link to="/employee/licenses" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-blue-50 transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#f59e0b] flex items-center justify-center text-white" v-html="icons.license"></div>
-              <div>
-                <span class="font-medium text-[#1e293b] block">Лицензии</span>
-                <span class="text-sm text-[#64748b]">5 истекают в этом месяце</span>
-              </div>
-            </router-link>
-          </div>
-        </div>
-
-        <!-- Pending Tasks -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">Требует внимания</h3>
-          <div class="space-y-3">
-            <router-link to="/employee/applications" class="flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] hover:bg-orange-50 transition-colors">
-              <span class="font-medium text-[#1e293b]">Новые заявки на регистрацию</span>
-              <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">15</span>
-            </router-link>
-            <router-link to="/employee/applications" class="flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] hover:bg-orange-50 transition-colors">
-              <span class="font-medium text-[#1e293b]">Заявки на лицензии</span>
-              <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">8</span>
-            </router-link>
-            <router-link to="/employee/licenses" class="flex items-center justify-between p-4 rounded-xl bg-[#f8fafc] hover:bg-orange-50 transition-colors">
-              <span class="font-medium text-[#1e293b]">Лицензии с истекающим сроком</span>
-              <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">5</span>
-            </router-link>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Applications -->
+      <!-- Мониторинг полигонов -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Последние заявки</h2>
-          <router-link to="/employee/applications" class="text-[#2563eb] text-sm font-medium hover:underline">
-            Все заявки →
+          <h2 class="text-lg font-semibold text-[#1e293b]">Мониторинг полигонов</h2>
+          <router-link to="/employee/landfills" class="text-[#0e888d] text-sm font-medium hover:underline">
+            Все полигоны &rarr;
           </router-link>
         </div>
         <div class="divide-y divide-[#f1f5f9]">
           <div
-            v-for="app in recentApplications"
-            :key="app.number"
-            class="px-6 py-4 flex items-center justify-between hover:bg-[#f8fafc] transition-colors"
+            v-for="landfill in landfillMonitoring"
+            :key="landfill.name"
+            class="px-6 py-4 hover:bg-[#f8fafc] transition-colors"
           >
-            <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-lg bg-[#f1f5f9] flex items-center justify-center">
-                <span>📋</span>
-              </div>
+            <div class="flex items-center justify-between mb-2">
               <div>
-                <p class="font-medium text-[#1e293b]">Заявка №{{ app.number }}</p>
-                <p class="text-sm text-[#64748b]">{{ app.company }} — {{ app.type }}</p>
+                <p class="font-medium text-[#1e293b]">{{ landfill.name }}</p>
+                <p class="text-sm text-[#64748b]">{{ landfill.region }}</p>
               </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="text-sm text-[#64748b] hidden sm:block">{{ app.time }}</span>
-              <span :class="getStatusClass(app.status)">
-                {{ app.status }}
+              <span :class="['text-xs px-2.5 py-1 rounded-full font-medium', getLandfillStatusClass(landfill.status)]">
+                {{ landfill.status }}
               </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  :class="['h-full rounded-full transition-all', getLandfillBarColor(landfill.fillPercent)]"
+                  :style="{ width: landfill.fillPercent + '%' }"
+                ></div>
+              </div>
+              <span class="text-sm font-medium text-[#64748b] w-10 text-right">{{ landfill.fillPercent }}%</span>
             </div>
           </div>
         </div>

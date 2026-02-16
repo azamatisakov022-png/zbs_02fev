@@ -9,13 +9,12 @@ const route = useRoute()
 
 const menuItems = [
   { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'applications', label: 'Входящие заявки', icon: icons.inbox, route: '/employee/applications' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
+  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
   { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/employee/recyclers-registry' },
+  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
+  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
   { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
   { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'analytics', label: 'Аналитика', icon: icons.analytics, route: '/employee/analytics' },
   { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
 ]
 
