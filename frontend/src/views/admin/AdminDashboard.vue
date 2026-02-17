@@ -2,16 +2,9 @@
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 const stats = [
   { title: 'Пользователей', value: '342', icon: statsIcons.users, color: 'blue' as const },
@@ -98,14 +91,14 @@ const alertConfig = {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Панель управления</h1>
-      <p class="text-[#64748b]">Администрирование системы «Цифровой реестр отходов»</p>
+      <p class="text-[#64748b]">Администрирование системы «ГП Эко Оператор»</p>
     </div>
 
     <!-- KPI Stats Cards -->

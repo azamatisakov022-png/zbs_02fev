@@ -18,7 +18,15 @@ export interface UploadedFile {
   type: string
 }
 
-export type ReportStatus = 'Черновик' | 'На проверке' | 'Принят' | 'Отклонён'
+export type ReportStatus = 'Черновик' | 'На проверке' | 'Принят' | 'Отклонён' | 'На доработке'
+
+export interface ReportHistoryEntry {
+  id: number
+  action: string
+  date: string
+  user: string
+  comment?: string
+}
 
 export interface Report {
   id: number
@@ -34,6 +42,9 @@ export interface Report {
   processingPercent: number
   status: ReportStatus
   rejectionReason?: string
+  reviewDate?: string
+  reviewer?: string
+  history: ReportHistoryEntry[]
 }
 
 let nextId = 6
@@ -60,6 +71,7 @@ const state = reactive<{ reports: Report[] }>({
       totalProcessed: 25.1,
       processingPercent: 96.5,
       status: 'На проверке',
+      history: [{ id: 1, action: 'Отчёт подан', date: '18.01.2026 10:15', user: 'Абдыкеримов К.Б.' }],
     },
     {
       id: 2,
@@ -79,6 +91,12 @@ const state = reactive<{ reports: Report[] }>({
       totalProcessed: 15.5,
       processingPercent: 96.9,
       status: 'Принят',
+      reviewDate: '20.07.2025',
+      reviewer: 'Асанов Б.Т.',
+      history: [
+        { id: 2, action: 'Отчёт подан', date: '15.07.2025 09:30', user: 'Абдыкеримов К.Б.' },
+        { id: 3, action: 'Отчёт принят', date: '20.07.2025 14:00', user: 'Асанов Б.Т.' },
+      ],
     },
     {
       id: 3,
@@ -95,6 +113,12 @@ const state = reactive<{ reports: Report[] }>({
       totalProcessed: 7.2,
       processingPercent: 90.0,
       status: 'Принят',
+      reviewDate: '18.01.2025',
+      reviewer: 'Касымова Н.Р.',
+      history: [
+        { id: 4, action: 'Отчёт подан', date: '12.01.2025 11:00', user: 'Абдыкеримов К.Б.' },
+        { id: 5, action: 'Отчёт принят', date: '18.01.2025 16:20', user: 'Касымова Н.Р.' },
+      ],
     },
     {
       id: 4,
@@ -117,6 +141,7 @@ const state = reactive<{ reports: Report[] }>({
       totalProcessed: 28.0,
       processingPercent: 95.6,
       status: 'На проверке',
+      history: [{ id: 6, action: 'Отчёт подан', date: '22.01.2026 14:45', user: 'Сыдыков А.Т.' }],
     },
     {
       id: 5,
@@ -137,6 +162,12 @@ const state = reactive<{ reports: Report[] }>({
       processingPercent: 68.4,
       status: 'Отклонён',
       rejectionReason: 'Процент переработки ниже установленного норматива (68.4% < 100%). Необходимо предоставить дополнительные акты переработки или скорректировать данные.',
+      reviewDate: '28.01.2026',
+      reviewer: 'Асанов Б.Т.',
+      history: [
+        { id: 7, action: 'Отчёт подан', date: '24.01.2026 16:00', user: 'Турсунова Г.М.' },
+        { id: 8, action: 'Отчёт отклонён', date: '28.01.2026 10:30', user: 'Асанов Б.Т.', comment: 'Процент переработки ниже установленного норматива (68.4% < 100%).' },
+      ],
     },
   ],
 })
@@ -166,6 +197,7 @@ function addReport(data: {
     totalProcessed: data.totalProcessed,
     processingPercent: data.processingPercent,
     status,
+    history: [{ id: Date.now(), action: 'Отчёт создан', date: now.toLocaleDateString('ru-RU'), user: data.company }],
   }
   state.reports.unshift(report)
   return report
@@ -179,18 +211,56 @@ function submitForReview(id: number) {
   }
 }
 
-function approveReport(id: number) {
+function approveReport(id: number, comment?: string) {
   const report = state.reports.find(r => r.id === id)
   if (report && report.status === 'На проверке') {
+    const now = new Date()
     report.status = 'Принят'
+    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.reviewer = 'Асанов Б.Т.'
+    report.history.push({
+      id: Date.now(),
+      action: 'Отчёт принят',
+      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      user: 'Асанов Б.Т.',
+      comment,
+    })
   }
 }
 
 function rejectReport(id: number, reason: string) {
   const report = state.reports.find(r => r.id === id)
   if (report && report.status === 'На проверке') {
+    const now = new Date()
     report.status = 'Отклонён'
     report.rejectionReason = reason
+    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.reviewer = 'Асанов Б.Т.'
+    report.history.push({
+      id: Date.now(),
+      action: 'Отчёт отклонён',
+      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      user: 'Асанов Б.Т.',
+      comment: reason,
+    })
+  }
+}
+
+function returnReportForRevision(id: number, comment: string) {
+  const report = state.reports.find(r => r.id === id)
+  if (report && report.status === 'На проверке') {
+    const now = new Date()
+    report.status = 'На доработке'
+    report.rejectionReason = comment
+    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.reviewer = 'Асанов Б.Т.'
+    report.history.push({
+      id: Date.now(),
+      action: 'Возвращён на доработку',
+      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      user: 'Асанов Б.Т.',
+      comment,
+    })
   }
 }
 
@@ -208,6 +278,7 @@ export const reportStore = {
   submitForReview,
   approveReport,
   rejectReport,
+  returnReportForRevision,
   getBusinessReports,
   getPendingCount,
 }

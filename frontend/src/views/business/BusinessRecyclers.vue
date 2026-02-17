@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { recyclerStore, type Recycler } from '../../stores/recyclers'
+import { toastStore } from '../../stores/toast'
+import { productGroups } from '../../data/product-groups'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // View mode
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -22,8 +15,6 @@ const viewMode = ref<'grid' | 'list'>('grid')
 const searchQuery = ref('')
 const selectedRegion = ref('all')
 const selectedWasteType = ref('all')
-const selectedCertification = ref('all')
-const showOnlyPartners = ref(false)
 
 const regions = [
   { id: 'all', name: 'Все регионы' },
@@ -38,309 +29,46 @@ const regions = [
   { id: 'batken', name: 'Баткенская область' },
 ]
 
-const wasteTypes = [
-  { id: 'all', name: 'Все виды отходов' },
-  { id: 'plastic', name: 'Пластик' },
-  { id: 'paper', name: 'Бумага и картон' },
-  { id: 'glass', name: 'Стекло' },
-  { id: 'metal', name: 'Металл' },
-  { id: 'electronics', name: 'Электроника' },
-  { id: 'batteries', name: 'Батареи и аккумуляторы' },
-  { id: 'tires', name: 'Шины' },
-  { id: 'oils', name: 'Отработанные масла' },
-  { id: 'organic', name: 'Органические отходы' },
-]
-
-const certifications = [
-  { id: 'all', name: 'Любая сертификация' },
-  { id: 'iso14001', name: 'ISO 14001' },
-  { id: 'iso9001', name: 'ISO 9001' },
-  { id: 'gost', name: 'ГОСТ Р' },
-]
-
-// Recyclers data
-interface Recycler {
-  id: number
-  name: string
-  logo: string
-  description: string
-  region: string
-  regionName: string
-  address: string
-  phone: string
-  email: string
-  website: string
-  wasteTypes: string[]
-  wasteTypeNames: string[]
-  certifications: string[]
-  capacity: string
-  rating: number
-  reviewsCount: number
-  isPartner: boolean
-  isVerified: boolean
-  foundedYear: number
-  employeesCount: string
-  processingMethods: string[]
+// Helper: get short label for a waste type group value
+const getGroupShortLabel = (value: string) => {
+  const label = productGroups.find(g => g.value === value)?.label || value
+  const match = label.match(/^(\d+)\.\s*(.+)$/)
+  if (match) {
+    const name = match[2]
+    return name.length > 20 ? name.substring(0, 20) + '...' : name
+  }
+  return label
 }
 
-const recyclers = ref<Recycler[]>([
-  {
-    id: 1,
-    name: 'ЭкоПереработка КР',
-    logo: '♻️',
-    description: 'Крупнейший оператор по переработке пластиковых отходов в Кыргызстане. Современное оборудование европейского производства.',
-    region: 'bishkek',
-    regionName: 'г. Бишкек',
-    address: 'ул. Жибек Жолу, 555',
-    phone: '+996 312 90-00-01',
-    email: 'info@ecorecycle.kg',
-    website: 'www.ecorecycle.kg',
-    wasteTypes: ['plastic', 'paper'],
-    wasteTypeNames: ['Пластик', 'Бумага и картон'],
-    certifications: ['ISO 14001', 'ISO 9001'],
-    capacity: '5 000 тонн/год',
-    rating: 4.8,
-    reviewsCount: 124,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2015,
-    employeesCount: '50-100',
-    processingMethods: ['Механическая переработка', 'Грануляция'],
-  },
-  {
-    id: 2,
-    name: 'СтеклоРесурс',
-    logo: '🔷',
-    description: 'Специализируемся на сборе и переработке стеклянной тары. Производим вторичное сырьё для стекольной промышленности.',
-    region: 'chui',
-    regionName: 'Чуйская область',
-    address: 'г. Токмок, ул. Промышленная, 12',
-    phone: '+996 312 91-11-11',
-    email: 'glass@stekloresurs.kg',
-    website: 'www.stekloresurs.kg',
-    wasteTypes: ['glass'],
-    wasteTypeNames: ['Стекло'],
-    certifications: ['ISO 14001'],
-    capacity: '3 000 тонн/год',
-    rating: 4.5,
-    reviewsCount: 67,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2018,
-    employeesCount: '20-50',
-    processingMethods: ['Дробление', 'Сортировка по цвету'],
-  },
-  {
-    id: 3,
-    name: 'МеталлСервис',
-    logo: '⚙️',
-    description: 'Приём и переработка чёрных и цветных металлов. Работаем с предприятиями и населением.',
-    region: 'bishkek',
-    regionName: 'г. Бишкек',
-    address: 'ул. Алма-Атинская, 123',
-    phone: '+996 312 92-22-22',
-    email: 'metal@metalservice.kg',
-    website: 'www.metalservice.kg',
-    wasteTypes: ['metal'],
-    wasteTypeNames: ['Металл'],
-    certifications: ['ГОСТ Р', 'ISO 9001'],
-    capacity: '10 000 тонн/год',
-    rating: 4.6,
-    reviewsCount: 89,
-    isPartner: false,
-    isVerified: true,
-    foundedYear: 2010,
-    employeesCount: '100-200',
-    processingMethods: ['Прессование', 'Переплавка'],
-  },
-  {
-    id: 4,
-    name: 'ЭлектроУтиль',
-    logo: '💻',
-    description: 'Утилизация электронного оборудования и бытовой техники. Извлечение ценных компонентов и безопасное обезвреживание.',
-    region: 'bishkek',
-    regionName: 'г. Бишкек',
-    address: 'ул. Ахунбаева, 67А',
-    phone: '+996 312 93-33-33',
-    email: 'info@electroutil.kg',
-    website: 'www.electroutil.kg',
-    wasteTypes: ['electronics', 'batteries'],
-    wasteTypeNames: ['Электроника', 'Батареи и аккумуляторы'],
-    certifications: ['ISO 14001', 'ISO 9001'],
-    capacity: '1 500 тонн/год',
-    rating: 4.9,
-    reviewsCount: 156,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2017,
-    employeesCount: '20-50',
-    processingMethods: ['Разборка', 'Извлечение компонентов', 'Безопасная утилизация'],
-  },
-  {
-    id: 5,
-    name: 'ШинПром',
-    logo: '⚫',
-    description: 'Переработка изношенных автомобильных шин. Производство резиновой крошки и покрытий.',
-    region: 'osh',
-    regionName: 'г. Ош',
-    address: 'ул. Навои, 45',
-    phone: '+996 3222 5-55-55',
-    email: 'tires@shinprom.kg',
-    website: 'www.shinprom.kg',
-    wasteTypes: ['tires'],
-    wasteTypeNames: ['Шины'],
-    certifications: ['ISO 14001'],
-    capacity: '2 000 тонн/год',
-    rating: 4.3,
-    reviewsCount: 42,
-    isPartner: false,
-    isVerified: true,
-    foundedYear: 2019,
-    employeesCount: '20-50',
-    processingMethods: ['Измельчение', 'Пиролиз'],
-  },
-  {
-    id: 6,
-    name: 'БиоЭнерго',
-    logo: '🌱',
-    description: 'Переработка органических отходов в биогаз и органические удобрения. Экологичные технологии.',
-    region: 'chui',
-    regionName: 'Чуйская область',
-    address: 'с. Новопавловка, ул. Центральная, 1',
-    phone: '+996 312 94-44-44',
-    email: 'bio@bioenergo.kg',
-    website: 'www.bioenergo.kg',
-    wasteTypes: ['organic'],
-    wasteTypeNames: ['Органические отходы'],
-    certifications: ['ISO 14001', 'ISO 9001'],
-    capacity: '8 000 тонн/год',
-    rating: 4.7,
-    reviewsCount: 78,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2016,
-    employeesCount: '50-100',
-    processingMethods: ['Анаэробное сбраживание', 'Компостирование'],
-  },
-  {
-    id: 7,
-    name: 'МаслоТех',
-    logo: '🛢️',
-    description: 'Сбор и регенерация отработанных моторных и индустриальных масел. Производство базовых масел.',
-    region: 'jalal-abad',
-    regionName: 'Джалал-Абадская область',
-    address: 'г. Джалал-Абад, ул. Ленина, 89',
-    phone: '+996 3722 2-22-22',
-    email: 'oil@maslotech.kg',
-    website: 'www.maslotech.kg',
-    wasteTypes: ['oils'],
-    wasteTypeNames: ['Отработанные масла'],
-    certifications: ['ГОСТ Р'],
-    capacity: '1 000 тонн/год',
-    rating: 4.4,
-    reviewsCount: 35,
-    isPartner: false,
-    isVerified: true,
-    foundedYear: 2020,
-    employeesCount: '10-20',
-    processingMethods: ['Регенерация', 'Очистка'],
-  },
-  {
-    id: 8,
-    name: 'КартонПак',
-    logo: '📦',
-    description: 'Переработка макулатуры и картона. Производство упаковочных материалов из вторсырья.',
-    region: 'bishkek',
-    regionName: 'г. Бишкек',
-    address: 'ул. Фрунзе, 234',
-    phone: '+996 312 95-55-55',
-    email: 'paper@kartonpak.kg',
-    website: 'www.kartonpak.kg',
-    wasteTypes: ['paper'],
-    wasteTypeNames: ['Бумага и картон'],
-    certifications: ['ISO 9001'],
-    capacity: '6 000 тонн/год',
-    rating: 4.5,
-    reviewsCount: 91,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2014,
-    employeesCount: '50-100',
-    processingMethods: ['Роспуск', 'Очистка', 'Формование'],
-  },
-  {
-    id: 9,
-    name: 'АккумТрейд',
-    logo: '🔋',
-    description: 'Утилизация аккумуляторов всех типов. Безопасное извлечение и переработка свинца и лития.',
-    region: 'bishkek',
-    regionName: 'г. Бишкек',
-    address: 'ул. Московская, 178',
-    phone: '+996 312 96-66-66',
-    email: 'battery@akkumtrade.kg',
-    website: 'www.akkumtrade.kg',
-    wasteTypes: ['batteries'],
-    wasteTypeNames: ['Батареи и аккумуляторы'],
-    certifications: ['ISO 14001', 'ISO 9001', 'ГОСТ Р'],
-    capacity: '500 тонн/год',
-    rating: 4.8,
-    reviewsCount: 63,
-    isPartner: true,
-    isVerified: true,
-    foundedYear: 2018,
-    employeesCount: '20-50',
-    processingMethods: ['Дробление', 'Гидрометаллургия', 'Пирометаллургия'],
-  },
-  {
-    id: 10,
-    name: 'ПластГрупп',
-    logo: '🧴',
-    description: 'Переработка всех видов пластика. Производство вторичных гранул для промышленности.',
-    region: 'issyk-kul',
-    regionName: 'Иссык-Кульская область',
-    address: 'г. Каракол, ул. Гагарина, 56',
-    phone: '+996 3922 5-00-00',
-    email: 'plastic@plastgroup.kg',
-    website: 'www.plastgroup.kg',
-    wasteTypes: ['plastic'],
-    wasteTypeNames: ['Пластик'],
-    certifications: ['ISO 14001'],
-    capacity: '2 500 тонн/год',
-    rating: 4.2,
-    reviewsCount: 28,
-    isPartner: false,
-    isVerified: true,
-    foundedYear: 2021,
-    employeesCount: '10-20',
-    processingMethods: ['Сортировка', 'Мойка', 'Грануляция'],
-  },
-])
-
-// Filtered recyclers
+// Filtered recyclers — only active from store
 const filteredRecyclers = computed(() => {
-  return recyclers.value.filter(r => {
-    const matchesSearch = !searchQuery.value ||
-      r.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      r.description.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesRegion = selectedRegion.value === 'all' || r.region === selectedRegion.value
-    const matchesWasteType = selectedWasteType.value === 'all' || r.wasteTypes.includes(selectedWasteType.value)
-    const matchesCertification = selectedCertification.value === 'all' ||
-      r.certifications.some(c => c.toLowerCase().includes(selectedCertification.value.toLowerCase()))
-    const matchesPartner = !showOnlyPartners.value || r.isPartner
+  let result = recyclerStore.state.recyclers.filter(r => r.status === 'active')
 
-    return matchesSearch && matchesRegion && matchesWasteType && matchesCertification && matchesPartner
-  })
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter(r =>
+      r.name.toLowerCase().includes(q) ||
+      r.fullName.toLowerCase().includes(q) ||
+      r.inn.includes(q)
+    )
+  }
+  if (selectedRegion.value !== 'all') {
+    result = result.filter(r => r.region.toLowerCase().includes(selectedRegion.value.toLowerCase()))
+  }
+  if (selectedWasteType.value !== 'all') {
+    result = result.filter(r => r.wasteTypes.includes(selectedWasteType.value))
+  }
+  return result
 })
 
 // Statistics
 const stats = computed(() => ({
-  total: recyclers.value.length,
-  partners: recyclers.value.filter(r => r.isPartner).length,
-  totalCapacity: recyclers.value.reduce((sum, r) => {
-    const num = parseInt(r.capacity.replace(/\D/g, ''))
-    return sum + (isNaN(num) ? 0 : num)
-  }, 0),
-  regions: new Set(recyclers.value.map(r => r.region)).size,
+  total: recyclerStore.state.recyclers.filter(r => r.status === 'active').length,
+  partners: 3,
+  totalCapacity: recyclerStore.state.recyclers
+    .filter(r => r.status === 'active')
+    .reduce((sum, r) => sum + recyclerStore.getTotalCapacity(r), 0),
+  regions: new Set(recyclerStore.state.recyclers.filter(r => r.status === 'active').map(r => r.region)).size,
 }))
 
 // Modal state
@@ -376,8 +104,7 @@ const requestForm = ref({
 })
 
 const submitRequest = () => {
-  // Simulate API call
-  alert(`Заявка отправлена в компанию "${selectedRecycler.value?.name}"`)
+  toastStore.show({ type: 'success', title: 'Заявка отправлена', message: `Заявка отправлена в компанию «${selectedRecycler.value?.name}»` })
   closeRequestModal()
   requestForm.value = { wasteType: '', volume: '', frequency: 'once', message: '' }
 }
@@ -393,7 +120,7 @@ const getStars = (rating: number) => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -456,7 +183,7 @@ const getStars = (rating: number) => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по названию или описанию..."
+                placeholder="Поиск по названию, полному наименованию или ИНН..."
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
@@ -475,29 +202,13 @@ const getStars = (rating: number) => {
             v-model="selectedWasteType"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           >
-            <option v-for="type in wasteTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
-          </select>
-
-          <!-- Certification filter -->
-          <select
-            v-model="selectedCertification"
-            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          >
-            <option v-for="cert in certifications" :key="cert.id" :value="cert.id">{{ cert.name }}</option>
+            <option value="all">Все виды отходов</option>
+            <option v-for="group in productGroups" :key="group.value" :value="group.value">{{ group.label }}</option>
           </select>
         </div>
 
-        <!-- Additional filters row -->
-        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              v-model="showOnlyPartners"
-              class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
-            />
-            <span class="text-sm text-gray-700">Только мои партнёры</span>
-          </label>
-
+        <!-- View mode toggle -->
+        <div class="flex items-center justify-end mt-4 pt-4 border-t border-gray-200">
           <div class="flex items-center gap-2">
             <span class="text-sm text-gray-500">Вид:</span>
             <button
@@ -543,40 +254,32 @@ const getStars = (rating: number) => {
           <!-- Header -->
           <div class="p-4 border-b border-gray-100">
             <div class="flex items-start gap-3">
-              <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-                {{ recycler.logo }}
+              <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
               </div>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <h3 class="font-semibold text-gray-900 truncate">{{ recycler.name }}</h3>
-                  <svg v-if="recycler.isVerified" class="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <p class="text-sm text-gray-500">{{ recycler.regionName }}</p>
+                <h3 class="font-semibold text-gray-900 truncate">{{ recycler.name }}</h3>
+                <p class="text-sm text-gray-500">{{ recycler.region }}</p>
               </div>
-              <span
-                v-if="recycler.isPartner"
-                class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full flex-shrink-0"
-              >
-                Партнёр
-              </span>
             </div>
           </div>
 
           <!-- Content -->
           <div class="p-4">
-            <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ recycler.description }}</p>
+            <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ recycler.address }}</p>
 
             <!-- Waste types -->
             <div class="flex flex-wrap gap-1 mb-3">
               <span
-                v-for="type in recycler.wasteTypeNames"
-                :key="type"
+                v-for="wt in recycler.wasteTypes.slice(0, 3)"
+                :key="wt"
                 class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full"
               >
-                {{ type }}
+                {{ getGroupShortLabel(wt) }}
               </span>
+              <span v-if="recycler.wasteTypes.length > 3" class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">+{{ recycler.wasteTypes.length - 3 }}</span>
             </div>
 
             <!-- Rating -->
@@ -605,7 +308,6 @@ const getStars = (rating: number) => {
                 </template>
               </div>
               <span class="text-sm font-medium text-gray-700">{{ recycler.rating }}</span>
-              <span class="text-sm text-gray-500">({{ recycler.reviewsCount }})</span>
             </div>
 
             <!-- Capacity -->
@@ -613,7 +315,7 @@ const getStars = (rating: number) => {
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span>Мощность: {{ recycler.capacity }}</span>
+              <span>Мощность: {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} т/год</span>
             </div>
           </div>
 
@@ -643,39 +345,35 @@ const getStars = (rating: number) => {
           class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
         >
           <div class="flex items-start gap-4">
-            <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
-              {{ recycler.logo }}
+            <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg class="w-7 h-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-4">
                 <div>
-                  <div class="flex items-center gap-2">
-                    <h3 class="font-semibold text-gray-900">{{ recycler.name }}</h3>
-                    <svg v-if="recycler.isVerified" class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span v-if="recycler.isPartner" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Партнёр</span>
-                  </div>
-                  <p class="text-sm text-gray-500 mt-0.5">{{ recycler.regionName }} · {{ recycler.address }}</p>
-                  <p class="text-sm text-gray-600 mt-2">{{ recycler.description }}</p>
+                  <h3 class="font-semibold text-gray-900">{{ recycler.name }}</h3>
+                  <p class="text-sm text-gray-500 mt-0.5">{{ recycler.region }} · {{ recycler.address }}</p>
+                  <p class="text-sm text-gray-600 mt-2">{{ recycler.fullName }}</p>
                   <div class="flex flex-wrap items-center gap-4 mt-3">
                     <div class="flex flex-wrap gap-1">
                       <span
-                        v-for="type in recycler.wasteTypeNames"
-                        :key="type"
+                        v-for="wt in recycler.wasteTypes.slice(0, 3)"
+                        :key="wt"
                         class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full"
                       >
-                        {{ type }}
+                        {{ getGroupShortLabel(wt) }}
                       </span>
+                      <span v-if="recycler.wasteTypes.length > 3" class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">+{{ recycler.wasteTypes.length - 3 }}</span>
                     </div>
                     <div class="flex items-center gap-1">
                       <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       <span class="text-sm font-medium">{{ recycler.rating }}</span>
-                      <span class="text-sm text-gray-500">({{ recycler.reviewsCount }})</span>
                     </div>
-                    <span class="text-sm text-gray-500">Мощность: {{ recycler.capacity }}</span>
+                    <span class="text-sm text-gray-500">Мощность: {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} т/год</span>
                   </div>
                 </div>
                 <div class="flex gap-2 flex-shrink-0">
@@ -723,25 +421,20 @@ const getStars = (rating: number) => {
           <div class="p-6 space-y-6">
             <!-- Header -->
             <div class="flex items-start gap-4">
-              <div class="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center text-3xl flex-shrink-0">
-                {{ selectedRecycler.logo }}
+              <div class="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg class="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
               </div>
               <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <h4 class="text-xl font-bold text-gray-900">{{ selectedRecycler.name }}</h4>
-                  <svg v-if="selectedRecycler.isVerified" class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                  <span v-if="selectedRecycler.isPartner" class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Ваш партнёр</span>
-                </div>
-                <p class="text-gray-500 mt-1">{{ selectedRecycler.description }}</p>
+                <h4 class="text-xl font-bold text-gray-900">{{ selectedRecycler.name }}</h4>
+                <p class="text-gray-500 mt-1">{{ selectedRecycler.fullName }}</p>
                 <div class="flex items-center gap-3 mt-2">
                   <div class="flex items-center gap-1">
                     <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                     <span class="font-medium">{{ selectedRecycler.rating }}</span>
-                    <span class="text-gray-500">({{ selectedRecycler.reviewsCount }} отзывов)</span>
                   </div>
                 </div>
               </div>
@@ -763,13 +456,13 @@ const getStars = (rating: number) => {
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span class="text-sm text-gray-700">{{ selectedRecycler.phone }}</span>
+                    <span class="text-sm text-gray-700">{{ selectedRecycler.contactPhone }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span class="text-sm text-gray-700">{{ selectedRecycler.email }}</span>
+                    <span class="text-sm text-gray-700">{{ selectedRecycler.contactEmail }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -784,20 +477,20 @@ const getStars = (rating: number) => {
                 <h5 class="text-sm font-medium text-gray-500 mb-3">О компании</h5>
                 <div class="space-y-2">
                   <div class="flex justify-between">
-                    <span class="text-sm text-gray-500">Год основания:</span>
-                    <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.foundedYear }}</span>
-                  </div>
-                  <div class="flex justify-between">
                     <span class="text-sm text-gray-500">Сотрудников:</span>
                     <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.employeesCount }}</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-sm text-gray-500">Мощность:</span>
-                    <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.capacity }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ recyclerStore.getTotalCapacity(selectedRecycler).toLocaleString() }} т/год</span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-sm text-gray-500">Регион:</span>
-                    <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.regionName }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.region }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-sm text-gray-500">ИНН:</span>
+                    <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.inn }}</span>
                   </div>
                 </div>
               </div>
@@ -808,11 +501,11 @@ const getStars = (rating: number) => {
               <h5 class="text-sm font-medium text-gray-500 mb-3">Виды принимаемых отходов</h5>
               <div class="flex flex-wrap gap-2">
                 <span
-                  v-for="type in selectedRecycler.wasteTypeNames"
-                  :key="type"
+                  v-for="wt in selectedRecycler.wasteTypes"
+                  :key="wt"
                   class="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-lg"
                 >
-                  {{ type }}
+                  {{ getGroupShortLabel(wt) }}
                 </span>
               </div>
             </div>
@@ -832,7 +525,7 @@ const getStars = (rating: number) => {
             </div>
 
             <!-- Certifications -->
-            <div>
+            <div v-if="selectedRecycler.certifications.length > 0">
               <h5 class="text-sm font-medium text-gray-500 mb-3">Сертификаты</h5>
               <div class="flex flex-wrap gap-2">
                 <span
@@ -891,7 +584,7 @@ const getStars = (rating: number) => {
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               >
                 <option value="">Выберите вид отходов</option>
-                <option v-for="type in selectedRecycler.wasteTypeNames" :key="type" :value="type">{{ type }}</option>
+                <option v-for="wt in selectedRecycler.wasteTypes" :key="wt" :value="wt">{{ getGroupShortLabel(wt) }}</option>
               </select>
             </div>
 

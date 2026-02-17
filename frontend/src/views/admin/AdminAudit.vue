@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import { AppButton } from '../../components/ui'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 interface AuditEntry {
   id: number
@@ -272,7 +266,7 @@ const exportAuditLog = () => {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >
@@ -284,12 +278,12 @@ const exportAuditLog = () => {
           <p class="text-gray-600 mt-1">Аудит всех операций в системе</p>
         </div>
         <div class="flex items-center gap-3">
-          <button @click="exportAuditLog" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <AppButton variant="secondary" @click="exportAuditLog">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Экспорт журнала
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -448,7 +442,19 @@ const exportAuditLog = () => {
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody v-if="filteredLog.length === 0">
+              <tr>
+                <td colspan="7">
+                  <EmptyState
+                    title="По запросу ничего не найдено"
+                    description="Попробуйте изменить параметры фильтрации или поисковый запрос"
+                    actionLabel="Сбросить фильтры"
+                    @action="selectedAction = ''; selectedEntity = ''; selectedStatus = ''; searchQuery = ''"
+                  />
+                </td>
+              </tr>
+            </tbody>
+            <tbody v-else class="divide-y divide-gray-200">
               <tr v-for="entry in paginatedLog" :key="entry.id" class="hover:bg-gray-50">
                 <td class="px-4 py-3">
                   <div class="text-sm text-gray-900 font-medium">{{ entry.timestamp.split(' ')[1] }}</div>
@@ -487,16 +493,13 @@ const exportAuditLog = () => {
                   </span>
                 </td>
                 <td class="px-4 py-3 text-center">
-                  <button
-                    @click="openDetail(entry)"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-                  >
+                  <AppButton variant="ghost" size="sm" @click="openDetail(entry)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                     Подробнее
-                  </button>
+                  </AppButton>
                 </td>
               </tr>
             </tbody>
@@ -624,12 +627,9 @@ const exportAuditLog = () => {
           </div>
 
           <div class="p-6 border-t border-gray-200 flex justify-end">
-            <button
-              @click="showDetailModal = false"
-              class="px-4 py-2 bg-[#0e888d] text-white rounded-lg font-medium hover:bg-[#0a6d71] transition-colors"
-            >
+            <AppButton variant="primary" @click="showDetailModal = false">
               Закрыть
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

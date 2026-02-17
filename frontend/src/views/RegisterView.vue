@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { productGroups } from '../data/product-groups'
+import { toastStore } from '../stores/toast'
 
 const router = useRouter()
 
@@ -22,6 +24,7 @@ const esiData = {
 const esiForm = reactive({
   activityType: '',
   wasteCategories: [] as string[],
+  recyclerCapacities: [] as { wasteType: string, capacityTons: number }[],
   confirmData: false,
 })
 
@@ -151,7 +154,7 @@ const esiRegistrationNumber = ref('')
 
 const submitEsiRegistration = async () => {
   if (!esiForm.confirmData) {
-    alert('Подтвердите согласие с условиями')
+    toastStore.show({ type: 'warning', title: 'Подтвердите согласие', message: 'Подтвердите согласие с условиями' })
     return
   }
   if (!validateEsiForm()) return
@@ -183,17 +186,66 @@ const steps = [
   { number: 5, title: 'Проверка и отправка' },
 ]
 
-const orgTypes = [
-  { value: 'osoo', label: 'ОсОО (Общество с ограниченной ответственностью)' },
-  { value: 'oao', label: 'ОАО (Открытое акционерное общество)' },
-  { value: 'ip', label: 'ИП (Индивидуальный предприниматель)' },
-  { value: 'kh', label: 'Крестьянское (фермерское) хозяйство' },
+const orgTypeGroups = [
+  {
+    label: 'Хозяйственные общества',
+    options: [
+      { value: 'osoo', label: 'ОсОО (Общество с ограниченной ответственностью)' },
+      { value: 'oao', label: 'ОАО (Открытое акционерное общество)' },
+      { value: 'zao', label: 'ЗАО (Закрытое акционерное общество)' },
+      { value: 'odo', label: 'ОДО (Общество с дополнительной ответственностью)' },
+    ],
+  },
+  {
+    label: 'Государственные и муниципальные',
+    options: [
+      { value: 'gp', label: 'ГП (Государственное предприятие)' },
+      { value: 'mp', label: 'МП (Муниципальное предприятие)' },
+    ],
+  },
+  {
+    label: 'Кооперативы и товарищества',
+    options: [
+      { value: 'pk', label: 'ПК (Производственный кооператив)' },
+      { value: 'pt', label: 'Полное товарищество' },
+      { value: 'kt', label: 'Коммандитное товарищество' },
+    ],
+  },
+  {
+    label: 'Некоммерческие',
+    options: [
+      { value: 'oo', label: 'ОО (Общественное объединение)' },
+      { value: 'of', label: 'ОФ (Общественный фонд)' },
+      { value: 'uchrezhdenie', label: 'Учреждение' },
+    ],
+  },
+  {
+    label: 'Индивидуальные',
+    options: [
+      { value: 'ip', label: 'ИП (Индивидуальный предприниматель)' },
+      { value: 'kfh', label: 'КФХ (Крестьянское (фермерское) хозяйство)' },
+    ],
+  },
+  {
+    label: 'Иностранные',
+    options: [
+      { value: 'filial', label: 'Филиал иностранного юридического лица' },
+      { value: 'predstavitelstvo', label: 'Представительство иностранного юридического лица' },
+    ],
+  },
 ]
+
+const orgTypes = orgTypeGroups.flatMap(g => g.options)
+
+const individualOrgTypes = ['ip', 'kfh']
+
+const isIndividual = computed(() => individualOrgTypes.includes(formData.orgType))
 
 const activityTypes = [
   { value: 'importer', label: 'Импортёр' },
   { value: 'producer', label: 'Производитель' },
   { value: 'both', label: 'Импортёр и Производитель' },
+  { value: 'recycler', label: 'Переработчик отходов' },
 ]
 
 const formData = reactive({
@@ -203,6 +255,17 @@ const formData = reactive({
   fullName: '',
   inn: '',
   okpo: '',
+  // Individual (ИП/КФХ) fields
+  lastName: '',
+  firstName: '',
+  middleName: '',
+  passportSeries: '',
+  passportNumber: '',
+  passportIssuedBy: '',
+  passportDate: '',
+  selectedProductGroups: [] as string[],
+  recyclerCapacities: [] as { wasteType: string, capacityTons: number }[],
+  productNote: '',
   legalRegion: '',
   legalCity: '',
   legalStreet: '',
@@ -267,9 +330,21 @@ const validateStep2 = (): boolean => {
   errors.legalCity = ''
   errors.phone = ''
   errors.email = ''
+  errors.lastName = ''
+  errors.firstName = ''
+  errors.passportSeries = ''
+  errors.passportNumber = ''
+  errors.selectedProductGroups = ''
 
-  if (!formData.shortName.trim()) errors.shortName = 'Введите краткое наименование'
-  if (!formData.fullName.trim()) errors.fullName = 'Введите полное наименование'
+  if (isIndividual.value) {
+    if (!formData.lastName.trim()) errors.lastName = 'Введите фамилию'
+    if (!formData.firstName.trim()) errors.firstName = 'Введите имя'
+    if (!formData.passportSeries.trim()) errors.passportSeries = 'Введите серию паспорта'
+    if (!formData.passportNumber.trim()) errors.passportNumber = 'Введите номер паспорта'
+  } else {
+    if (!formData.shortName.trim()) errors.shortName = 'Введите краткое наименование'
+    if (!formData.fullName.trim()) errors.fullName = 'Введите полное наименование'
+  }
   if (!formData.inn.trim()) {
     errors.inn = 'Введите ИНН'
   } else if (!validateINN(formData.inn)) {
@@ -286,6 +361,9 @@ const validateStep2 = (): boolean => {
     errors.email = 'Введите email'
   } else if (!validateEmail(formData.email)) {
     errors.email = 'Неверный формат email'
+  }
+  if (formData.selectedProductGroups.length === 0) {
+    errors.selectedProductGroups = 'Выберите хотя бы одну группу товаров'
   }
   return Object.keys(errors).filter(k => errors[k]).length === 0
 }
@@ -353,11 +431,11 @@ const addFiles = (files: FileList) => {
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     if (!allowedTypes.includes(file.type)) {
-      alert(`Файл "${file.name}" имеет недопустимый формат. Разрешены: PDF, JPG, PNG`)
+      toastStore.show({ type: 'warning', title: 'Недопустимый формат', message: `Файл \u00AB${file.name}\u00BB имеет недопустимый формат. Разрешены: PDF, JPG, PNG` })
       continue
     }
     if (file.size > maxSize) {
-      alert(`Файл "${file.name}" превышает максимальный размер 10 МБ`)
+      toastStore.show({ type: 'warning', title: 'Файл слишком большой', message: `Файл \u00AB${file.name}\u00BB превышает максимальный размер 10 МБ` })
       continue
     }
     const category = fileCategories.find(c => c.value === activeUploadCategory.value)
@@ -419,11 +497,11 @@ const registrationNumber = ref('')
 
 const submitRegistration = async () => {
   if (!formData.confirmData) {
-    alert('Подтвердите достоверность данных')
+    toastStore.show({ type: 'warning', title: 'Подтвердите данные', message: 'Подтвердите достоверность введённых данных' })
     return
   }
   if (!hasRequiredDocuments.value) {
-    alert('Загрузите обязательный документ: Свидетельство о регистрации')
+    toastStore.show({ type: 'warning', title: 'Отсутствует документ', message: 'Загрузите обязательный документ: Свидетельство о регистрации' })
     return
   }
   isSubmitting.value = true
@@ -440,6 +518,71 @@ const getOrgTypeLabel = (value: string) => {
 
 const getActivityTypeLabel = (value: string) => {
   return activityTypes.find(t => t.value === value)?.label || value
+}
+
+const toggleProductGroup = (value: string) => {
+  const idx = formData.selectedProductGroups.indexOf(value)
+  if (idx === -1) {
+    formData.selectedProductGroups.push(value)
+  } else {
+    formData.selectedProductGroups.splice(idx, 1)
+  }
+}
+
+const allProductGroupsSelected = computed(() => formData.selectedProductGroups.length === productGroups.length)
+
+const toggleAllProductGroups = () => {
+  if (allProductGroupsSelected.value) {
+    formData.selectedProductGroups = []
+  } else {
+    formData.selectedProductGroups = productGroups.map(g => g.value)
+  }
+}
+
+const getProductGroupLabel = (value: string) => {
+  return productGroups.find(g => g.value === value)?.label || value
+}
+
+// Recycler capacity helpers
+const getEsiCapacityValue = (wasteType: string): number => {
+  const cap = esiForm.recyclerCapacities.find(c => c.wasteType === wasteType)
+  return cap ? cap.capacityTons : 0
+}
+
+const setEsiCapacityValue = (wasteType: string, value: string) => {
+  const numVal = parseFloat(value) || 0
+  const idx = esiForm.recyclerCapacities.findIndex(c => c.wasteType === wasteType)
+  if (idx >= 0) {
+    esiForm.recyclerCapacities[idx].capacityTons = numVal
+  } else {
+    esiForm.recyclerCapacities.push({ wasteType, capacityTons: numVal })
+  }
+}
+
+const getManualCapacityValue = (groupValue: string): number => {
+  const cap = formData.recyclerCapacities.find(c => c.wasteType === groupValue)
+  return cap ? cap.capacityTons : 0
+}
+
+const setManualCapacityValue = (groupValue: string, value: string) => {
+  const numVal = parseFloat(value) || 0
+  const idx = formData.recyclerCapacities.findIndex(c => c.wasteType === groupValue)
+  if (idx >= 0) {
+    formData.recyclerCapacities[idx].capacityTons = numVal
+  } else {
+    formData.recyclerCapacities.push({ wasteType: groupValue, capacityTons: numVal })
+  }
+}
+
+const getWasteCategoryLabel = (value: string): string => {
+  for (const group of wasteGroups) {
+    const item = group.items.find(i => i.value === value)
+    if (item) {
+      const match = item.label.match(/^\d+\.\s*(.+)$/)
+      return match ? match[1] : item.label
+    }
+  }
+  return value
 }
 
 const copyLegalToActual = () => {
@@ -607,7 +750,7 @@ const goHome = () => {
             <!-- Activity Type -->
             <div>
               <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
                   v-for="type in activityTypes"
                   :key="type.value"
@@ -681,6 +824,28 @@ const goHome = () => {
               </div>
 
               <p v-if="esiFormErrors.wasteCategories" class="mt-2 text-sm text-red-600">{{ esiFormErrors.wasteCategories }}</p>
+
+              <!-- Recycler Capacities (ESI) -->
+              <div v-if="esiForm.activityType === 'recycler' && esiForm.wasteCategories.length > 0" class="mt-6">
+                <h3 class="text-base font-semibold text-[#1e293b] mb-1">Мощности переработки (т/год)</h3>
+                <p class="text-sm text-[#64748b] mb-4">Укажите максимальную мощность переработки по каждому виду отходов</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div v-for="cat in esiForm.wasteCategories" :key="'esi-cap-' + cat" class="bg-[#f8fafc] rounded-lg p-3 border border-[#e2e8f0]">
+                    <label class="block text-xs font-medium text-[#1e293b] mb-1.5">{{ getWasteCategoryLabel(cat) }}</label>
+                    <div class="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        :value="getEsiCapacityValue(cat)"
+                        @input="setEsiCapacityValue(cat, ($event.target as HTMLInputElement).value)"
+                        placeholder="0"
+                        class="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
+                      />
+                      <span class="text-xs text-[#94a3b8] whitespace-nowrap">т/год</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- Confirm -->
@@ -860,32 +1025,28 @@ const goHome = () => {
               <div class="space-y-6">
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">Организационно-правовая форма *</label>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label
-                      v-for="type in orgTypes"
-                      :key="type.value"
+                  <div class="relative">
+                    <select
+                      v-model="formData.orgType"
                       :class="[
-                        'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
-                        formData.orgType === type.value
-                          ? 'border-[#0e888d] bg-[#f0fdfa]'
-                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                        'reg-select',
+                        errors.orgType ? 'reg-select--error' : '',
+                        !formData.orgType ? 'text-[#94a3b8]' : 'text-[#1e293b]'
                       ]"
                     >
-                      <input
-                        type="radio"
-                        v-model="formData.orgType"
-                        :value="type.value"
-                        class="w-5 h-5 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
-                      />
-                      <span class="text-sm text-[#1e293b]">{{ type.label }}</span>
-                    </label>
+                      <option value="" disabled>Выберите организационно-правовую форму</option>
+                      <optgroup v-for="group in orgTypeGroups" :key="group.label" :label="group.label">
+                        <option v-for="opt in group.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                      </optgroup>
+                    </select>
+                    <svg class="reg-select__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
                   </div>
                   <p v-if="errors.orgType" class="mt-2 text-sm text-red-600">{{ errors.orgType }}</p>
                 </div>
 
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label
                       v-for="type in activityTypes"
                       :key="type.value"
@@ -912,37 +1073,128 @@ const goHome = () => {
 
             <!-- Step 2: Organization Data -->
             <div v-if="currentStep === 2" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Данные организации</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ isIndividual ? 'Данные предпринимателя' : 'Данные организации' }}</h2>
 
               <div class="space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">Краткое наименование *</label>
-                    <input
-                      v-model="formData.shortName"
-                      type="text"
-                      placeholder="ОсОО «Название»"
-                      :class="[
-                        'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
-                        errors.shortName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
-                      ]"
-                    />
-                    <p v-if="errors.shortName" class="mt-1 text-sm text-red-600">{{ errors.shortName }}</p>
+                <!-- Individual (ИП/КФХ) fields -->
+                <template v-if="isIndividual">
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Фамилия *</label>
+                      <input
+                        v-model="formData.lastName"
+                        type="text"
+                        placeholder="Асанов"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
+                          errors.lastName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Имя *</label>
+                      <input
+                        v-model="formData.firstName"
+                        type="text"
+                        placeholder="Азамат"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
+                          errors.firstName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Отчество</label>
+                      <input
+                        v-model="formData.middleName"
+                        type="text"
+                        placeholder="Бакытович"
+                        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">Полное наименование *</label>
-                    <input
-                      v-model="formData.fullName"
-                      type="text"
-                      placeholder="Общество с ограниченной ответственностью «Название»"
-                      :class="[
-                        'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
-                        errors.fullName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
-                      ]"
-                    />
-                    <p v-if="errors.fullName" class="mt-1 text-sm text-red-600">{{ errors.fullName }}</p>
+                  <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Серия паспорта *</label>
+                      <input
+                        v-model="formData.passportSeries"
+                        type="text"
+                        placeholder="AN"
+                        maxlength="2"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20 font-mono uppercase',
+                          errors.passportSeries ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.passportSeries" class="mt-1 text-sm text-red-600">{{ errors.passportSeries }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Номер паспорта *</label>
+                      <input
+                        v-model="formData.passportNumber"
+                        type="text"
+                        placeholder="1234567"
+                        maxlength="7"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20 font-mono',
+                          errors.passportNumber ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.passportNumber" class="mt-1 text-sm text-red-600">{{ errors.passportNumber }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Кем выдан</label>
+                      <input
+                        v-model="formData.passportIssuedBy"
+                        type="text"
+                        placeholder="МКК-50-11"
+                        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Дата выдачи</label>
+                      <input
+                        v-model="formData.passportDate"
+                        type="date"
+                        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                      />
+                    </div>
                   </div>
-                </div>
+                </template>
+
+                <!-- Legal entity fields -->
+                <template v-else>
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Краткое наименование *</label>
+                      <input
+                        v-model="formData.shortName"
+                        type="text"
+                        placeholder="ОсОО «Название»"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
+                          errors.shortName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.shortName" class="mt-1 text-sm text-red-600">{{ errors.shortName }}</p>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Полное наименование *</label>
+                      <input
+                        v-model="formData.fullName"
+                        type="text"
+                        placeholder="Общество с ограниченной ответственностью «Название»"
+                        :class="[
+                          'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
+                          errors.fullName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
+                        ]"
+                      />
+                      <p v-if="errors.fullName" class="mt-1 text-sm text-red-600">{{ errors.fullName }}</p>
+                    </div>
+                  </div>
+                </template>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
@@ -959,7 +1211,7 @@ const goHome = () => {
                     />
                     <p v-if="errors.inn" class="mt-1 text-sm text-red-600">{{ errors.inn }}</p>
                   </div>
-                  <div>
+                  <div v-if="!isIndividual">
                     <label class="block text-sm font-medium text-[#1e293b] mb-2">ОКПО</label>
                     <input
                       v-model="formData.okpo"
@@ -967,6 +1219,81 @@ const goHome = () => {
                       placeholder="12345678"
                       class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 font-mono"
                     />
+                  </div>
+                </div>
+
+                <!-- Виды продукции -->
+                <div style="margin-top: 24px;">
+                  <h3 class="pg-section-title">ВИДЫ ПРОДУКЦИИ</h3>
+                  <p class="pg-subtitle">Укажите группы товаров, которые ваша организация ввозит или производит *</p>
+
+                  <div
+                    :class="['pg-grid-container', errors.selectedProductGroups ? 'pg-grid-container--error' : '']"
+                  >
+                    <label
+                      v-for="group in productGroups"
+                      :key="group.value"
+                      :class="[
+                        'pg-card',
+                        formData.selectedProductGroups.includes(group.value) ? 'pg-card--checked' : ''
+                      ]"
+                    >
+                      <input
+                        type="checkbox"
+                        :checked="formData.selectedProductGroups.includes(group.value)"
+                        @change="toggleProductGroup(group.value)"
+                        class="pg-checkbox"
+                      />
+                      <span class="pg-card-label">{{ group.label }}</span>
+                    </label>
+                  </div>
+
+                  <div class="flex items-center justify-between mt-3">
+                    <span class="pg-counter">
+                      Выбрано: {{ formData.selectedProductGroups.length }} из {{ productGroups.length }} групп
+                    </span>
+                    <button
+                      type="button"
+                      @click="toggleAllProductGroups"
+                      class="pg-toggle-btn"
+                    >
+                      {{ allProductGroupsSelected ? 'Снять все' : 'Выбрать все' }}
+                    </button>
+                  </div>
+
+                  <p v-if="errors.selectedProductGroups" class="mt-2 text-sm text-red-600">{{ errors.selectedProductGroups }}</p>
+
+                  <!-- Recycler Capacities (Manual) -->
+                  <div v-if="formData.activityType === 'recycler' && formData.selectedProductGroups.length > 0" class="mt-6">
+                    <h3 class="text-base font-semibold text-[#1e293b] mb-1">Мощности переработки (т/год)</h3>
+                    <p class="text-sm text-[#64748b] mb-4">Укажите максимальную мощность переработки по каждой группе товаров</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div v-for="gv in formData.selectedProductGroups" :key="'manual-cap-' + gv" class="bg-[#f8fafc] rounded-lg p-3 border border-[#e2e8f0]">
+                        <label class="block text-xs font-medium text-[#1e293b] mb-1.5">{{ productGroups.find(g => g.value === gv)?.label || gv }}</label>
+                        <div class="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            :value="getManualCapacityValue(gv)"
+                            @input="setManualCapacityValue(gv, ($event.target as HTMLInputElement).value)"
+                            placeholder="0"
+                            class="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
+                          />
+                          <span class="text-xs text-[#94a3b8] whitespace-nowrap">т/год</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <label class="block text-sm font-medium text-[#1e293b] mb-1">Уточнение видов продукции (необязательно)</label>
+                    <input
+                      v-model="formData.productNote"
+                      type="text"
+                      placeholder="Например: ПЭТ-бутылки, полиэтиленовые пакеты, картонные коробки..."
+                      class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 text-sm"
+                    />
+                    <p class="mt-1 text-xs text-[#94a3b8]">Укажите конкретные виды товаров для более точного учёта</p>
                   </div>
                 </div>
 
@@ -1327,10 +1654,18 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Данные организации
+                    {{ isIndividual ? 'Данные предпринимателя' : 'Данные организации' }}
                   </h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div>
+                    <div v-if="isIndividual">
+                      <span class="text-[#64748b]">ФИО:</span>
+                      <p class="font-medium text-[#1e293b]">{{ formData.lastName }} {{ formData.firstName }} {{ formData.middleName }}</p>
+                    </div>
+                    <div v-if="isIndividual">
+                      <span class="text-[#64748b]">Паспорт:</span>
+                      <p class="font-medium text-[#1e293b] font-mono">{{ formData.passportSeries }} {{ formData.passportNumber }}</p>
+                    </div>
+                    <div v-if="!isIndividual">
                       <span class="text-[#64748b]">Наименование:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.shortName }}</p>
                     </div>
@@ -1374,6 +1709,38 @@ const goHome = () => {
                       <span class="text-[#64748b]">Контактное лицо:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.contactFullName }}</p>
                       <p class="text-[#64748b]">{{ formData.contactPhone }}, {{ formData.contactEmail }}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+                  <h3 class="font-medium text-[#1e293b] mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Виды продукции ({{ formData.selectedProductGroups.length }})
+                  </h3>
+                  <div class="flex flex-wrap gap-2">
+                    <span
+                      v-for="gv in formData.selectedProductGroups"
+                      :key="gv"
+                      class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0]"
+                    >
+                      {{ getProductGroupLabel(gv) }}
+                    </span>
+                  </div>
+                  <p v-if="formData.productNote" class="mt-3 text-sm text-[#64748b]">
+                    <span class="font-medium text-[#1e293b]">Примечание:</span> {{ formData.productNote }}
+                  </p>
+
+                  <!-- Recycler capacities in review -->
+                  <div v-if="formData.activityType === 'recycler' && formData.recyclerCapacities.length > 0">
+                    <h4 class="font-medium text-[#1e293b] mb-2">Мощности переработки</h4>
+                    <div class="space-y-1">
+                      <div v-for="cap in formData.recyclerCapacities" :key="'review-cap-' + cap.wasteType" class="flex items-center justify-between text-sm">
+                        <span class="text-[#64748b]">{{ productGroups.find(g => g.value === cap.wasteType)?.label || cap.wasteType }}</span>
+                        <span class="font-medium text-[#1e293b]">{{ cap.capacityTons }} т/год</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1468,3 +1835,116 @@ const goHome = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.reg-select {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 14px;
+  background: white;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.reg-select:focus {
+  outline: none;
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+.reg-select--error {
+  border-color: #fca5a5;
+}
+.reg-select--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+.reg-select__chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.pg-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.pg-subtitle {
+  font-size: 13px;
+  color: #64748B;
+  margin-bottom: 12px;
+}
+.pg-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.pg-grid-container--error {
+  border-color: #fca5a5;
+}
+.pg-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pg-card:hover {
+  border-color: #22C55E;
+  background: #F0FDF4;
+}
+.pg-card--checked {
+  border-color: #22C55E;
+  background: #F0FDF4;
+  font-weight: 600;
+}
+.pg-checkbox {
+  accent-color: #22C55E;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.pg-card-label {
+  font-size: 13px;
+  color: #1E293B;
+  line-height: 1.3;
+}
+.pg-counter {
+  font-size: 12px;
+  color: #64748B;
+}
+.pg-toggle-btn {
+  font-size: 12px;
+  color: #3B82F6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.pg-toggle-btn:hover {
+  text-decoration: underline;
+}
+@media (max-width: 640px) {
+  .pg-grid-container {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

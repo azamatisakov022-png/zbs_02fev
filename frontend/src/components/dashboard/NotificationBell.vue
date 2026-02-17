@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { notificationStore, type NotificationRole } from '../../stores/notifications'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   role: NotificationRole
@@ -9,7 +12,15 @@ const props = defineProps<{
 const isOpen = ref(false)
 const bellRef = ref<HTMLElement | null>(null)
 
-const notifications = computed(() => notificationStore.getByRole(props.role))
+const notificationsPagePaths: Record<string, string> = {
+  business: '/business/notifications',
+  'eco-operator': '/eco-operator/notifications',
+  employee: '/employee/notifications',
+  admin: '/admin/notifications',
+}
+const notificationsPagePath = computed(() => notificationsPagePaths[props.role] || '/admin/notifications')
+
+const notifications = computed(() => notificationStore.getByRole(props.role).slice(0, 5))
 const unreadCount = computed(() => notificationStore.getUnreadCount(props.role))
 
 function toggle() {
@@ -81,18 +92,18 @@ const typeConfig = {
       >
         <!-- Header -->
         <div class="px-4 py-3 border-b border-[#e2e8f0] flex items-center justify-between flex-shrink-0">
-          <h4 class="font-semibold text-[#1e293b]">Уведомления</h4>
+          <h4 class="font-semibold text-[#1e293b]">{{ t('notifications.title') }}</h4>
           <button
             v-if="unreadCount > 0"
             @click="handleMarkAllRead"
             class="text-xs text-[#0e888d] hover:text-[#0a6d71] font-medium transition-colors"
-          >Прочитать все</button>
+          >{{ t('notifications.readAll') }}</button>
         </div>
 
         <!-- Notifications List -->
         <div class="overflow-y-auto flex-1">
           <div v-if="notifications.length === 0" class="px-4 py-8 text-center text-[#94a3b8] text-sm">
-            Нет уведомлений
+            {{ t('notifications.empty') }}
           </div>
           <div
             v-for="n in notifications"
@@ -121,9 +132,18 @@ const typeConfig = {
                 <span v-if="!n.read" class="w-2 h-2 rounded-full bg-[#0e888d] flex-shrink-0 mt-1"></span>
               </div>
               <p class="text-xs text-[#64748b] mt-1 line-clamp-2">{{ n.message }}</p>
-              <p class="text-[11px] text-[#94a3b8] mt-1">{{ n.time }}</p>
+              <p class="text-[11px] text-[#94a3b8] mt-1">{{ notificationStore.formatRelativeTime(n.createdAt) }}</p>
             </div>
           </div>
+        </div>
+
+        <!-- Footer link -->
+        <div class="px-4 py-2.5 border-t border-[#e2e8f0] flex-shrink-0 text-center">
+          <router-link
+            :to="notificationsPagePath"
+            class="text-sm text-[#0e888d] hover:text-[#0a6d71] font-medium transition-colors"
+            @click="isOpen = false"
+          >{{ t('notifications.viewAll') }}</router-link>
         </div>
       </div>
     </Transition>

@@ -2,18 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -407,7 +402,7 @@ const exportToExcel = () => {
 }
 
 const exportToPdf = () => {
-  alert('Экспорт в PDF: функция будет реализована с серверной генерацией')
+  toastStore.show({ type: 'info', title: 'Экспорт в PDF', message: 'Функция будет реализована с серверной генерацией' })
 }
 
 const formatNumber = (num: number) => num.toLocaleString('ru-RU')
@@ -426,7 +421,7 @@ const goBack = () => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Алиева Динара"
     :menuItems="menuItems"
   >
@@ -449,7 +444,7 @@ const goBack = () => {
                  activeReport === 'landfills' ? 'Отчёт о состоянии полигонов' :
                  activeReport === 'licenses' ? 'Отчёт по лицензиям' :
                  activeReport === 'normatives' ? 'Отчёт о выполнении нормативов' :
-                 activeReport === 'regions' ? 'Отчёт по регионам' : 'Отчётность' }}
+                 activeReport === 'regions' ? 'Отчёт по регионам' : $t('pages.employee.reportsTitle') }}
             </h1>
             <p class="text-gray-600 mt-1">
               {{ activeReport ? 'Формирование и выгрузка отчётов для МПРЭТН' : 'Выберите тип отчёта для формирования' }}
@@ -574,11 +569,11 @@ const goBack = () => {
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="summaryFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="summaryFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div class="flex items-end">
@@ -591,7 +586,7 @@ const goBack = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+                {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
               </button>
             </div>
           </div>
@@ -605,14 +600,14 @@ const goBack = () => {
               Сводный отчёт за период: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+              <AppButton variant="primary" size="sm" @click="exportToExcel">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Excel
-              </button>
-              <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                {{ $t('common.excel') }}
+              </AppButton>
+              <AppButton variant="danger" size="sm" @click="exportToPdf">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                PDF
-              </button>
+                {{ $t('common.pdf') }}
+              </AppButton>
             </div>
           </div>
 
@@ -653,11 +648,11 @@ const goBack = () => {
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="landfillsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="landfillsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
@@ -667,7 +662,7 @@ const goBack = () => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label>
               <select v-model="landfillsFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
                 <option value="all">Все</option>
                 <option value="compliant">Соответствует</option>
@@ -684,7 +679,7 @@ const goBack = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+                {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
               </button>
             </div>
           </div>
@@ -719,14 +714,14 @@ const goBack = () => {
                 Найдено объектов: <span class="font-semibold">{{ filteredLandfills.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                <AppButton variant="primary" size="sm" @click="exportToExcel">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  Excel
-                </button>
-                <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                  {{ $t('common.excel') }}
+                </AppButton>
+                <AppButton variant="danger" size="sm" @click="exportToPdf">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                  PDF
-                </button>
+                  {{ $t('common.pdf') }}
+                </AppButton>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -744,7 +739,19 @@ const goBack = () => {
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Проверка</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody v-if="filteredLandfills.length === 0">
+                  <tr>
+                    <td colspan="9">
+                      <EmptyState
+                        title="По запросу ничего не найдено"
+                        description="Нет полигонов, соответствующих выбранным фильтрам"
+                        :actionLabel="$t('common.reset')"
+                        @action="landfillsFilters.region = 'Все регионы'; landfillsFilters.status = 'all'"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody v-else class="divide-y divide-gray-200">
                   <tr v-for="l in filteredLandfills" :key="l.id" class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium text-gray-900">{{ l.name }}</td>
                     <td class="px-4 py-3 text-gray-600 text-sm">{{ l.region }}</td>
@@ -764,9 +771,9 @@ const goBack = () => {
                       </div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getConditionColor(l.condition)]">
+                      <AppBadge :variant="getStatusBadgeVariant(getConditionLabel(l.condition))">
                         {{ getConditionLabel(l.condition) }}
-                      </span>
+                      </AppBadge>
                     </td>
                     <td class="px-4 py-3 text-center">
                       <span :class="['text-xs px-2 py-1 rounded-full font-medium', l.compliant ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
@@ -789,11 +796,11 @@ const goBack = () => {
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="licensesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="licensesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
@@ -803,7 +810,7 @@ const goBack = () => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Статус лицензии</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label>
               <select v-model="licensesFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option value="all">Все</option>
                 <option value="active">Действующая</option>
@@ -822,7 +829,7 @@ const goBack = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+                {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
               </button>
             </div>
           </div>
@@ -857,14 +864,14 @@ const goBack = () => {
                 Найдено лицензий: <span class="font-semibold">{{ filteredLicenses.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                <AppButton variant="primary" size="sm" @click="exportToExcel">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  Excel
-                </button>
-                <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                  {{ $t('common.excel') }}
+                </AppButton>
+                <AppButton variant="danger" size="sm" @click="exportToPdf">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                  PDF
-                </button>
+                  {{ $t('common.pdf') }}
+                </AppButton>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -878,10 +885,22 @@ const goBack = () => {
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Выдана</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действует до</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody v-if="filteredLicenses.length === 0">
+                  <tr>
+                    <td colspan="8">
+                      <EmptyState
+                        title="По запросу ничего не найдено"
+                        description="Нет лицензий, соответствующих выбранным фильтрам"
+                        :actionLabel="$t('common.reset')"
+                        @action="licensesFilters.region = 'Все регионы'; licensesFilters.status = 'all'"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+                <tbody v-else class="divide-y divide-gray-200">
                   <tr v-for="l in filteredLicenses" :key="l.id" class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium text-gray-900">{{ l.company }}</td>
                     <td class="px-4 py-3 text-gray-600 font-mono text-sm">{{ l.inn }}</td>
@@ -891,9 +910,9 @@ const goBack = () => {
                     <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.issueDate }}</td>
                     <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.expiryDate }}</td>
                     <td class="px-4 py-3 text-center">
-                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getLicenseStatusColor(l.status)]">
+                      <AppBadge :variant="getStatusBadgeVariant(getLicenseStatusLabel(l.status))">
                         {{ getLicenseStatusLabel(l.status) }}
-                      </span>
+                      </AppBadge>
                     </td>
                   </tr>
                 </tbody>
@@ -910,11 +929,11 @@ const goBack = () => {
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="normativesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="normativesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
             </div>
             <div>
@@ -933,7 +952,7 @@ const goBack = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+                {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
               </button>
             </div>
           </div>
@@ -968,14 +987,14 @@ const goBack = () => {
                 Видов отходов: <span class="font-semibold">{{ normativesData.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+                <AppButton variant="primary" size="sm" @click="exportToExcel">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  Excel
-                </button>
-                <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                  {{ $t('common.excel') }}
+                </AppButton>
+                <AppButton variant="danger" size="sm" @click="exportToPdf">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                  PDF
-                </button>
+                  {{ $t('common.pdf') }}
+                </AppButton>
               </div>
             </div>
             <div class="overflow-x-auto">
@@ -988,7 +1007,7 @@ const goBack = () => {
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-48">Выполнение</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Объём образования (т)</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Переработано (т)</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -1012,9 +1031,9 @@ const goBack = () => {
                     <td class="px-4 py-3 text-right text-gray-600">{{ n.volume.toFixed(1) }}</td>
                     <td class="px-4 py-3 text-right text-gray-600">{{ n.recycled.toFixed(1) }}</td>
                     <td class="px-4 py-3 text-center">
-                      <span :class="['text-xs px-2 py-1 rounded-full font-medium', getNormStatusColor(n.status)]">
+                      <AppBadge :variant="getStatusBadgeVariant(getNormStatusLabel(n.status))">
                         {{ getNormStatusLabel(n.status) }}
-                      </span>
+                      </AppBadge>
                     </td>
                   </tr>
                 </tbody>
@@ -1031,11 +1050,11 @@ const goBack = () => {
           <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период с</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="regionsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Период по</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
               <input v-model="regionsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div class="flex items-end">
@@ -1048,7 +1067,7 @@ const goBack = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ isGenerating ? 'Формирование...' : 'Сформировать' }}
+                {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
               </button>
             </div>
           </div>
@@ -1062,14 +1081,14 @@ const goBack = () => {
               Распределение по <span class="font-semibold">{{ regionsData.length }}</span> регионам
             </div>
             <div class="flex flex-wrap gap-2">
-              <button @click="exportToExcel" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2">
+              <AppButton variant="primary" size="sm" @click="exportToExcel">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Excel
-              </button>
-              <button @click="exportToPdf" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-2">
+                {{ $t('common.excel') }}
+              </AppButton>
+              <AppButton variant="danger" size="sm" @click="exportToPdf">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                PDF
-              </button>
+                {{ $t('common.pdf') }}
+              </AppButton>
             </div>
           </div>
 

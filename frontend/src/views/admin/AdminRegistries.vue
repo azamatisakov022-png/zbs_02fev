@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton } from '../../components/ui'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 const registryCategories = ref([
   { id: 'waste', name: 'Классификатор отходов', icon: '🗑️', count: 847, description: 'Коды и классы отходов' },
@@ -166,7 +159,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
 </script>
 
 <template>
-  <DashboardLayout role="admin" roleTitle="Администратор" userName="Иван Петров" :menuItems="menuItems">
+  <DashboardLayout role="admin" :roleTitle="roleTitle" userName="Иван Петров" :menuItems="menuItems">
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
@@ -174,14 +167,14 @@ function handleOverlay(e: MouseEvent, close: () => void) {
           <p class="text-gray-600 mt-1">Управление справочными данными системы</p>
         </div>
         <div class="flex items-center gap-3">
-          <button @click="showImportModal = true" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <AppButton variant="secondary" @click="showImportModal = true">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             Импорт
-          </button>
-          <button @click="openAddModal" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors flex items-center gap-2">
+          </AppButton>
+          <AppButton variant="primary" @click="openAddModal">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
             Добавить запись
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -262,14 +255,14 @@ function handleOverlay(e: MouseEvent, close: () => void) {
                 <td class="px-6 py-4 text-center"><span :class="item.active ? 'text-green-600' : 'text-gray-400'">{{ item.active ? 'Активен' : 'Неактивен' }}</span></td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
-                    <button @click="openEditModal(item)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+                    <AppButton variant="secondary" size="sm" @click="openEditModal(item)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       Изменить
-                    </button>
-                    <button @click="confirmDelete(item)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                    </AppButton>
+                    <AppButton variant="danger" size="sm" @click="confirmDelete(item)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       Удалить
-                    </button>
+                    </AppButton>
                   </div>
                 </td>
               </tr>
@@ -318,8 +311,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </label>
             </div>
             <div class="flex gap-3 p-6 border-t border-gray-200">
-              <button @click="showFormModal = false" class="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">Отмена</button>
-              <button @click="saveRecord" class="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-xl font-medium hover:bg-rose-700 transition-colors">{{ isEditing ? 'Сохранить' : 'Добавить' }}</button>
+              <AppButton variant="secondary" class="flex-1" @click="showFormModal = false">Отмена</AppButton>
+              <AppButton variant="primary" class="flex-1" @click="saveRecord">{{ isEditing ? 'Сохранить' : 'Добавить' }}</AppButton>
             </div>
           </div>
         </div>
@@ -337,8 +330,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <h3 class="text-lg font-bold text-gray-900 mb-2">Удалить запись?</h3>
             <p class="text-gray-500 text-sm mb-6">{{ deletingItem.code }} — {{ deletingItem.name }}</p>
             <div class="flex gap-3">
-              <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-xl font-medium hover:bg-gray-50">Отмена</button>
-              <button @click="deleteRecord" class="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600">Удалить</button>
+              <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">Отмена</AppButton>
+              <AppButton variant="danger" class="flex-1" @click="deleteRecord">Удалить</AppButton>
             </div>
           </div>
         </div>
@@ -365,7 +358,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </div>
             </div>
             <div class="flex gap-3 p-6 border-t border-gray-200">
-              <button @click="showImportModal = false" class="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200">Отмена</button>
+              <AppButton variant="secondary" class="flex-1" @click="showImportModal = false">Отмена</AppButton>
               <button @click="importData" :disabled="!importFile" :class="['flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors', importFile ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed']">Импортировать</button>
             </div>
           </div>

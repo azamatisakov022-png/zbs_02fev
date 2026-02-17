@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useAdminMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 // Settings tabs
 const activeTab = ref('general')
@@ -134,11 +127,11 @@ const saveSettings = () => {
 }
 
 const testEmailConnection = () => {
-  alert('Тестовое письмо успешно отправлено!')
+  toastStore.show({ type: 'success', title: 'Тестовое письмо отправлено' })
 }
 
 const createBackup = () => {
-  alert('Резервная копия создаётся...')
+  toastStore.show({ type: 'info', title: 'Резервное копирование', message: 'Создание резервной копии...' })
 }
 
 const getIntegrationStatusColor = (status: string) => {
@@ -289,7 +282,7 @@ const executeRestore = () => {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >

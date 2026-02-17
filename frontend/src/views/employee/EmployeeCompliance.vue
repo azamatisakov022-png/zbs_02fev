@@ -1,18 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import { AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ========== TYPES ==========
 interface RecyclingNorm {
@@ -152,15 +146,15 @@ const summaryStats = computed(() => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
       <!-- Page Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Контроль исполнения</h1>
-        <p class="text-gray-600 mt-1">Мониторинг выполнения нормативов переработки и контроль лицензий</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.complianceTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('pages.employee.complianceSubtitle') }}</p>
       </div>
 
       <!-- Summary Stat Cards -->
@@ -232,10 +226,20 @@ const summaryStats = computed(() => {
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Факт (%)</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-48">Прогресс</th>
                 <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Объём (т)</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Статус</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('common.status') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody v-if="normsData.length === 0">
+              <tr>
+                <td colspan="6">
+                  <EmptyState
+                    :title="$t('common.noData')"
+                    description="Данные о нормативах переработки за текущий период пока отсутствуют"
+                  />
+                </td>
+              </tr>
+            </tbody>
+            <tbody v-else class="divide-y divide-gray-200">
               <tr v-for="norm in normsData" :key="norm.id" class="hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ norm.wasteType }}</td>
                 <td class="px-6 py-4 text-center text-gray-700 font-semibold">{{ norm.normPercent }}%</td>
@@ -257,9 +261,9 @@ const summaryStats = computed(() => {
                 </td>
                 <td class="px-6 py-4 text-right text-gray-700 font-medium">{{ norm.volumeTons.toFixed(1) }}</td>
                 <td class="px-6 py-4 text-center">
-                  <span :class="['text-xs px-3 py-1 rounded-full font-medium', getNormStatusColor(norm.status)]">
+                  <AppBadge :variant="getStatusBadgeVariant(getNormStatusLabel(norm.status))">
                     {{ getNormStatusLabel(norm.status) }}
-                  </span>
+                  </AppBadge>
                 </td>
               </tr>
             </tbody>
@@ -303,10 +307,20 @@ const summaryStats = computed(() => {
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Дата выдачи</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Срок действия</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Дни до истечения</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Статус</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('common.status') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody v-if="licensesData.length === 0">
+              <tr>
+                <td colspan="7">
+                  <EmptyState
+                    :title="$t('common.noData')"
+                    description="Данные о лицензиях и разрешениях пока отсутствуют"
+                  />
+                </td>
+              </tr>
+            </tbody>
+            <tbody v-else class="divide-y divide-gray-200">
               <tr v-for="license in licensesData" :key="license.id" class="hover:bg-gray-50 transition-colors">
                 <td class="px-6 py-4 font-medium text-gray-900">{{ license.organization }}</td>
                 <td class="px-6 py-4 text-gray-600 font-mono text-sm">{{ license.licenseNumber }}</td>
@@ -325,9 +339,9 @@ const summaryStats = computed(() => {
                   </span>
                 </td>
                 <td class="px-6 py-4 text-center">
-                  <span :class="['text-xs px-3 py-1 rounded-full font-medium', getLicenseStatusColor(license.status)]">
+                  <AppBadge :variant="getStatusBadgeVariant(getLicenseStatusLabel(license.status))">
                     {{ getLicenseStatusLabel(license.status) }}
-                  </span>
+                  </AppBadge>
                 </td>
               </tr>
             </tbody>

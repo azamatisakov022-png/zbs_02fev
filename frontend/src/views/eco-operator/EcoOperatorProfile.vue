@@ -1,22 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { recyclerStore } from '../../stores/recyclers'
+import { productGroups } from '../../data/product-groups'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // View state
 const currentView = ref<'list' | 'detail'>('list')
@@ -597,12 +586,27 @@ const isLicenseExpiring = (expiryDate: string) => {
 const isLicenseExpired = (expiryDate: string) => {
   return new Date(expiryDate) < new Date()
 }
+
+const getRecyclerForCompany = (company: Company | null) => {
+  if (!company || company.type !== 'recycler') return null
+  // Try to match by similar name
+  return recyclerStore.state.recyclers.find(r =>
+    company.shortName.includes(r.name.replace(/ОсОО\s*«|»/g, '').trim()) ||
+    r.name.includes(company.shortName.replace(/ОсОО\s*"|"/g, '').trim())
+  ) || null
+}
+
+const matchedRecycler = computed(() => getRecyclerForCompany(selectedCompany.value))
+
+const getCapacityGroupLabel = (value: string) => {
+  return productGroups.find(g => g.value === value)?.label || value
+}
 </script>
 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -610,8 +614,8 @@ const isLicenseExpired = (expiryDate: string) => {
     <div v-if="currentView === 'list'" class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Профили компаний</h1>
-        <p class="text-gray-600 mt-1">Реестр плательщиков и переработчиков в системе РОП</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.profileTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.profileSubtitle') }}</p>
       </div>
 
       <!-- Stats Cards -->
@@ -722,7 +726,7 @@ const isLicenseExpired = (expiryDate: string) => {
                     @click.stop="openCompanyDetail(company)"
                     class="text-lime-600 hover:text-lime-700 font-medium text-sm"
                   >
-                    Подробнее
+                    {{ $t('common.more') }}
                   </button>
                 </td>
               </tr>
@@ -772,7 +776,7 @@ const isLicenseExpired = (expiryDate: string) => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Назад к списку
+            {{ $t('common.back') }}
           </button>
 
           <button
@@ -783,7 +787,7 @@ const isLicenseExpired = (expiryDate: string) => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
 
@@ -793,7 +797,7 @@ const isLicenseExpired = (expiryDate: string) => {
             @click="cancelEditing"
             class="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-400 rounded-xl font-semibold text-base hover:bg-gray-50 hover:border-gray-500 hover:shadow-md transition-all"
           >
-            Отмена
+            {{ $t('common.cancel') }}
           </button>
           <button
             @click="saveChanges"
@@ -807,7 +811,7 @@ const isLicenseExpired = (expiryDate: string) => {
             <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            {{ saving ? 'Сохранение...' : 'Сохранить' }}
+            {{ saving ? $t('common.loading') : $t('common.save') }}
           </button>
         </div>
       </div>
@@ -1040,6 +1044,66 @@ const isLicenseExpired = (expiryDate: string) => {
                 {{ getStatusText(selectedCompany.status) }}
               </span>
             </div>
+          </div>
+        </div>
+
+        <!-- Recycler Capacities (only for recycler type) -->
+        <div v-if="selectedCompany.type === 'recycler' && matchedRecycler" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden col-span-1 lg:col-span-2">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900">Мощности переработки</h3>
+            </div>
+          </div>
+          <div class="p-6">
+            <!-- KPI row -->
+            <div class="grid grid-cols-3 gap-4 mb-6">
+              <div class="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
+                <p class="text-xs text-[#059669] font-medium mb-1">Общая мощность</p>
+                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalCapacity(matchedRecycler) }} т/год</p>
+              </div>
+              <div class="bg-[#eff6ff] rounded-xl p-4 border border-[#bfdbfe]">
+                <p class="text-xs text-[#2563eb] font-medium mb-1">Текущая загрузка</p>
+                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalLoad(matchedRecycler) }} т/год</p>
+              </div>
+              <div class="rounded-xl p-4 border" :class="recyclerStore.getLoadPercent(matchedRecycler) >= 90 ? 'bg-red-50 border-red-200' : recyclerStore.getLoadPercent(matchedRecycler) >= 70 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'">
+                <p class="text-xs font-medium mb-1" :class="recyclerStore.getLoadPercent(matchedRecycler) >= 90 ? 'text-red-600' : recyclerStore.getLoadPercent(matchedRecycler) >= 70 ? 'text-amber-600' : 'text-green-600'">Загрузка</p>
+                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getLoadPercent(matchedRecycler) }}%</p>
+              </div>
+            </div>
+
+            <!-- Capacity table -->
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-gray-500 border-b border-gray-200">
+                  <th class="pb-2 font-medium">Вид отходов</th>
+                  <th class="pb-2 font-medium text-right">Мощность (т/год)</th>
+                  <th class="pb-2 font-medium text-right">Загрузка (т/год)</th>
+                  <th class="pb-2 font-medium text-right">Свободно</th>
+                  <th class="pb-2 font-medium" style="width: 140px">Загрузка</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="cap in matchedRecycler.capacities" :key="cap.wasteType" class="border-t border-gray-100">
+                  <td class="py-2.5 text-gray-900">{{ getCapacityGroupLabel(cap.wasteType) }}</td>
+                  <td class="py-2.5 text-right font-mono text-gray-900">{{ cap.capacityTons }}</td>
+                  <td class="py-2.5 text-right font-mono text-gray-900">{{ cap.currentLoadTons }}</td>
+                  <td class="py-2.5 text-right font-mono" :class="cap.capacityTons - cap.currentLoadTons <= 0 ? 'text-red-600' : 'text-green-600'">{{ Math.max(0, cap.capacityTons - cap.currentLoadTons) }}</td>
+                  <td class="py-2.5">
+                    <div class="flex items-center gap-2">
+                      <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all" :style="{ width: Math.min(Math.round((cap.currentLoadTons / cap.capacityTons) * 100), 100) + '%', backgroundColor: Math.round((cap.currentLoadTons / cap.capacityTons) * 100) >= 90 ? '#EF4444' : Math.round((cap.currentLoadTons / cap.capacityTons) * 100) >= 70 ? '#F59E0B' : '#10B981' }"></div>
+                      </div>
+                      <span class="text-xs font-medium min-w-[32px] text-right" :style="{ color: Math.round((cap.currentLoadTons / cap.capacityTons) * 100) >= 90 ? '#EF4444' : Math.round((cap.currentLoadTons / cap.capacityTons) * 100) >= 70 ? '#F59E0B' : '#10B981' }">{{ Math.round((cap.currentLoadTons / cap.capacityTons) * 100) }}%</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

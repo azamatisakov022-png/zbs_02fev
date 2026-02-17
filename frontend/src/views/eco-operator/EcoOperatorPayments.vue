@@ -1,22 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Полный список 24 групп товаров
 const productGroups = [
@@ -557,7 +544,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -565,8 +552,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
       <!-- Header with Export Buttons -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Аналитика платежей</h1>
-          <p class="text-gray-600 mt-1">Поступления утилизационного сбора и задолженности</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.paymentsTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.paymentsSubtitle') }}</p>
         </div>
         <div class="flex gap-2">
           <button
@@ -576,7 +563,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Скачать отчёт Excel
+            {{ $t('common.downloadReportExcel') }}
           </button>
           <button
             @click="exportFullAnalytics('pdf')"
@@ -585,7 +572,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            Скачать отчёт PDF
+            {{ $t('common.downloadReportPdf') }}
           </button>
         </div>
       </div>
@@ -761,7 +748,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Excel
+                {{ $t('common.excel') }}
               </button>
               <button
                 @click="exportPaymentsReport('pdf')"
@@ -770,7 +757,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                PDF
+                {{ $t('common.pdf') }}
               </button>
             </div>
           </div>
@@ -870,7 +857,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                Excel
+                {{ $t('common.excel') }}
               </button>
               <button
                 @click="exportDebtsReport('pdf')"
@@ -879,7 +866,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                PDF
+                {{ $t('common.pdf') }}
               </button>
             </div>
           </div>

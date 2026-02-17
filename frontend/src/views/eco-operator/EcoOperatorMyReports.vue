@@ -1,22 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Current view
 const currentView = ref<'list' | 'detail'>('list')
@@ -579,20 +567,20 @@ const prevStep = () => {
 }
 
 const submitReport = () => {
-  alert('Отчёт успешно отправлен!')
+  toastStore.show({ type: 'success', title: 'Отчёт успешно отправлен' })
   showWizard.value = false
   wizardStep.value = 1
 }
 
 const saveDraft = () => {
-  alert('Черновик сохранён')
+  toastStore.show({ type: 'success', title: 'Черновик сохранён' })
 }
 </script>
 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -624,7 +612,7 @@ const saveDraft = () => {
             @click="goBackToList"
             class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            Назад к списку
+            {{ $t('common.backToList') }}
           </button>
           <button
             @click="downloadExcel"
@@ -633,7 +621,7 @@ const saveDraft = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Excel
+            {{ $t('common.excel') }}
           </button>
           <button
             @click="downloadPDF"
@@ -642,7 +630,7 @@ const saveDraft = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            PDF
+            {{ $t('common.pdf') }}
           </button>
           <button
             @click="printReport"
@@ -651,7 +639,7 @@ const saveDraft = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
-            Печать
+            {{ $t('common.print') }}
           </button>
         </div>
       </div>
@@ -749,8 +737,8 @@ const saveDraft = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Мои отчёты</h1>
-          <p class="text-gray-600 mt-1">Отчётность о переработке отходов</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.myReportsTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.myReportsSubtitle') }}</p>
         </div>
         <button
           @click="showWizard = true"
@@ -759,7 +747,7 @@ const saveDraft = () => {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Создать отчёт
+          {{ $t('common.createReport') }}
         </button>
       </div>
 
@@ -876,17 +864,17 @@ const saveDraft = () => {
                 @click="viewReport(report)"
                 class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                Просмотр
+                {{ $t('common.preview') }}
               </button>
               <button v-if="report.status === 'draft'" class="px-3 py-1.5 text-sm text-lime-600 hover:text-lime-700 hover:bg-lime-50 rounded-lg transition-colors font-medium">
-                Редактировать
+                {{ $t('common.edit') }}
               </button>
               <button
                 v-if="report.status === 'approved'"
                 @click="selectedReport = report; downloadPDF()"
                 class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
               >
-                Скачать PDF
+                {{ $t('common.downloadPdf') }}
               </button>
             </div>
           </div>
@@ -904,7 +892,7 @@ const saveDraft = () => {
           @click="showWizard = true"
           class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
         >
-          Создать отчёт
+          {{ $t('common.createReport') }}
         </button>
       </div>
     </div>
@@ -1026,7 +1014,7 @@ const saveDraft = () => {
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
-                  Добавить строку
+                  {{ $t('common.addRow') }}
                 </button>
               </div>
 
@@ -1172,7 +1160,7 @@ const saveDraft = () => {
               @click="prevStep"
               class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
             >
-              Назад
+              {{ $t('common.back') }}
             </button>
             <div v-else></div>
             <div class="flex gap-3">
@@ -1180,21 +1168,21 @@ const saveDraft = () => {
                 @click="saveDraft"
                 class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
-                Сохранить черновик
+                {{ $t('common.saveDraft') }}
               </button>
               <button
                 v-if="wizardStep < 4"
                 @click="nextStep"
                 class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
               >
-                Далее
+                {{ $t('common.next') }}
               </button>
               <button
                 v-else
                 @click="submitReport"
                 class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
               >
-                Отправить отчёт
+                {{ $t('common.sendReport') }}
               </button>
             </div>
           </div>

@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { name: 'licenses', path: '/licenses', label: 'Лицензии' },
   { name: 'publications', path: '/publications', label: 'Публикации' },
   { name: 'gis-map', path: '/registries', label: 'ГИС-Карта' },
-  { name: 'calculator', path: '/calculator', label: 'Калькулятор' },
+  { name: 'calculator', path: '/calculator', label: 'Калькулятор РОП' },
   { name: 'contests', path: '/contests', label: 'Конкурсы' },
 ]
 

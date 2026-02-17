@@ -46,34 +46,34 @@ export const wasteGroups = wasteGroupsData as Array<{
 }>
 
 // 24 группы: 18 групп товаров + 6 групп упаковки, с базовыми ставками утилизационного сбора (сом/тонна)
-// Ставки (Сус) из первоисточника — HTML-калькулятор / rop-data.json
+// Ставки (Сус) из ПКМ КР №730
 export const productGroups: ProductGroup[] = [
   // Группы товаров (1-18)
-  { value: 'group_1', label: '1. Изделия из гофрированной бумаги/картона', code: '4808', baseRate: 4793, unit: 'сом/т', recyclingStandard: 30 },
-  { value: 'group_2', label: '2. Изделия из негофрированной бумаги/картона', code: '4819', baseRate: 5595, unit: 'сом/т', recyclingStandard: 30 },
-  { value: 'group_3', label: '3. Масла', code: '2710', baseRate: 8406, unit: 'сом/т', recyclingStandard: 30 },
-  { value: 'group_4', label: '4. Шины, покрышки и камеры резиновые', code: '4011', baseRate: 12345, unit: 'сом/т', recyclingStandard: 30 },
-  { value: 'group_5', label: '5. Изделия из резины (за исключением шин)', code: '4009', baseRate: 17919, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_6', label: '6. Изделия пластмассовые упаковочные', code: '3923', baseRate: 9418, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_7', label: '7. Изделия пластмассовые прочие', code: '3922', baseRate: 11008, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_8', label: '8. Стекло полое', code: '7010', baseRate: 4219, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_9', label: '9. Компьютеры и периферийное оборудование, офисное оборудование', code: '8471', baseRate: 36356, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_10', label: '10. Мониторы, приемники телевизионные', code: '8528', baseRate: 10659, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_11', label: '11. Элементы первичные и батареи первичных элементов', code: '8506', baseRate: 135390, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_12', label: '12. Аккумуляторы свинцовые', code: '8507', baseRate: 7471, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_13', label: '13. Батареи аккумуляторные', code: '8507', baseRate: 147165, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_14', label: '14. Оборудование электрическое осветительное', code: '8539', baseRate: 10859, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_15', label: '15. Техника бытовая крупная', code: '8418', baseRate: 36356, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_16', label: '16. Техника бытовая мелкая, инструмент ручной', code: '8516', baseRate: 36356, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_17', label: '17. Оборудование холодильное и вентиляционное', code: '8418', baseRate: 36356, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_18', label: '18. Фильтры для двигателей внутреннего сгорания', code: '8421', baseRate: 11030, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_1', label: '1. Изделия из гофрированной бумаги/картона', code: '4808', baseRate: 15000, unit: 'сом/т', recyclingStandard: 30 },
+  { value: 'group_2', label: '2. Изделия из негофрированной бумаги/картона', code: '4819', baseRate: 18000, unit: 'сом/т', recyclingStandard: 30 },
+  { value: 'group_3', label: '3. Масла', code: '2710', baseRate: 12000, unit: 'сом/т', recyclingStandard: 30 },
+  { value: 'group_4', label: '4. Шины, покрышки и камеры резиновые', code: '4011', baseRate: 14000, unit: 'сом/т', recyclingStandard: 30 },
+  { value: 'group_5', label: '5. Изделия из резины (за исключением шин)', code: '4009', baseRate: 20000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_6', label: '6. Изделия пластмассовые упаковочные', code: '3923', baseRate: 25000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_7', label: '7. Изделия пластмассовые прочие', code: '3922', baseRate: 16000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_8', label: '8. Стекло полое', code: '7010', baseRate: 18000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_9', label: '9. Компьютеры и периферийное оборудование, офисное оборудование', code: '8471', baseRate: 30000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_10', label: '10. Мониторы, приемники телевизионные', code: '8528', baseRate: 8000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_11', label: '11. Элементы первичные и батареи первичных элементов', code: '8506', baseRate: 10000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_12', label: '12. Аккумуляторы свинцовые', code: '8507', baseRate: 22000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_13', label: '13. Батареи аккумуляторные', code: '8507', baseRate: 28000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_14', label: '14. Оборудование электрическое осветительное', code: '8539', baseRate: 9000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_15', label: '15. Техника бытовая крупная', code: '8418', baseRate: 7000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_16', label: '16. Техника бытовая мелкая, инструмент ручной', code: '8516', baseRate: 6000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_17', label: '17. Оборудование холодильное и вентиляционное', code: '8418', baseRate: 5000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_18', label: '18. Фильтры для двигателей внутреннего сгорания', code: '8421', baseRate: 4500, unit: 'сом/т', recyclingStandard: 20 },
   // Группы упаковки (19-24)
-  { value: 'group_19', label: '19. Упаковка из полимерных материалов, не содержащих галогены', code: '3923', baseRate: 9418, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_20', label: '20. Упаковка из полимерных материалов, содержащих галоген', code: '3904', baseRate: 12197, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_21', label: '21. Упаковка из комбинированных материалов', code: '4811', baseRate: 44573, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_22', label: '22. Упаковка из гофрированного картона', code: '4819', baseRate: 4973, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_23', label: '23. Упаковка из бумаги и негофрированного картона', code: '4819', baseRate: 5595, unit: 'сом/т', recyclingStandard: 20 },
-  { value: 'group_24', label: '24. Упаковка стеклянная', code: '7010', baseRate: 4219, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_19', label: '19. Упаковка из полимерных материалов, не содержащих галогены', code: '3923', baseRate: 12000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_20', label: '20. Упаковка из полимерных материалов, содержащих галоген', code: '3904', baseRate: 3000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_21', label: '21. Упаковка из комбинированных материалов', code: '4811', baseRate: 8000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_22', label: '22. Упаковка из гофрированного картона', code: '4819', baseRate: 2500, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_23', label: '23. Упаковка из бумаги и негофрированного картона', code: '4819', baseRate: 10000, unit: 'сом/т', recyclingStandard: 20 },
+  { value: 'group_24', label: '24. Упаковка стеклянная', code: '7010', baseRate: 1500, unit: 'сом/т', recyclingStandard: 20 },
 ]
 
 // Подгруппы для каждой из 24 групп — импортированы из CSV (336 позиций)

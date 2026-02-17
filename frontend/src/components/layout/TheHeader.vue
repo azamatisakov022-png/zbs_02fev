@@ -23,18 +23,14 @@ const toggleMobileMenu = () => {
       <!-- Top bar -->
       <div class="flex items-center justify-between py-4 lg:py-5 h-[100px] lg:h-[144px]">
         <!-- Logo -->
-        <div class="flex items-center gap-2 lg:gap-3">
-          <div class="flex items-center relative w-[60px] h-[50px] lg:w-[76px] lg:h-[64px]">
-            <img src="/images/logo-circle1.svg" alt="" class="absolute" style="top: 48px; left: 5px; width: 48px; height: 36px;" />
-            <img src="/images/logo-circle2.svg" alt="" class="absolute" style="top: 5px; left: 0; width: 37px; height: 47px;" />
-            <img src="/images/logo-circle3.svg" alt="" class="absolute" style="top: 0; left: 33px; width: 49px; height: 36px;" />
+        <router-link to="/" class="flex items-center gap-2">
+          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 36px; width: 36px; object-fit: cover; object-position: left;" class="lg:hidden" />
+          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 72px; width: 72px; object-fit: cover; object-position: left;" class="hidden lg:block" />
+          <div class="flex flex-col whitespace-nowrap">
+            <span class="text-[13px] lg:text-[16px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">ГП Эко Оператор</span>
+            <span class="text-[10px] lg:text-[12px] font-normal text-[#6b7280]">Государственное предприятие</span>
           </div>
-          <div class="flex flex-col ml-2">
-            <span class="text-[#0e888d] font-bold text-xs md:text-sm lg:text-base uppercase leading-[16px]">
-              ГП Эко Оператор
-            </span>
-          </div>
-        </div>
+        </router-link>
 
         <!-- Contact info - hidden on mobile -->
         <div class="hidden lg:flex items-center gap-[50px]">

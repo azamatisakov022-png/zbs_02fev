@@ -4,20 +4,12 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'refunds', label: 'Возврат утильсбора', icon: icons.refund, route: '/business/refunds' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -169,18 +161,10 @@ const paymentHistory = ref([
   { id: 4, number: 'ПЛ-2025-0234', type: 'Утилизационный сбор', period: 'Q1 2025', amount: '35 800 сом', paidAt: '15.04.2025', status: 'Оплачен' },
 ])
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Оплачен': return 'bg-green-100 text-green-800'
-    case 'В обработке': return 'bg-yellow-100 text-yellow-800'
-    case 'Отклонён': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
@@ -294,17 +278,17 @@ const getStatusClass = (status: string) => {
         </template>
         <template #cell-number="{ value }"><span class="font-mono font-medium text-[#8b5cf6]">{{ value }}</span></template>
         <template #cell-amount="{ value }"><span class="font-semibold text-[#1e293b]">{{ value }}</span></template>
-        <template #cell-status="{ value }"><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">{{ value }}</span></template>
-        <template #actions>
+        <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge></template>
+        <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Детали платежа', message: row.number })">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               Просмотреть
-            </button>
-            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+            </AppButton>
+            <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               Скачать PDF
-            </button>
+            </AppButton>
           </div>
         </template>
       </DataTable>
@@ -450,7 +434,7 @@ const getStatusClass = (status: string) => {
                   <div class="pt-2 border-t border-[#e2e8f0]"><span class="text-[#64748b]">Назначение:</span><p class="font-medium text-[#1e293b] mt-1">{{ bankRequisites.purpose }}</p></div>
                 </div>
               </div>
-              <button class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#8b5cf6] text-[#8b5cf6] rounded-xl hover:bg-purple-50 transition-colors">
+              <button @click="toastStore.show({ type: 'info', title: 'Скачивание квитанции', message: 'Функция будет доступна в следующей версии' })" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#8b5cf6] text-[#8b5cf6] rounded-xl hover:bg-purple-50 transition-colors">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Скачать квитанцию
               </button>
@@ -478,19 +462,19 @@ const getStatusClass = (status: string) => {
 
           <!-- Navigation -->
           <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
-            <button v-if="currentStep > 1" @click="prevStep" class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors">
+            <AppButton v-if="currentStep > 1" variant="secondary" @click="prevStep">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Назад
-            </button>
+            </AppButton>
             <div v-else></div>
             <div class="flex flex-col sm:flex-row gap-3">
               <button v-if="currentStep < 3" @click="nextStep" :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg font-medium hover:bg-[#7c3aed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Далее<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button v-if="currentStep === 3 && paymentMethod === 'card'" @click="processPayment" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors">
+              <AppButton v-if="currentStep === 3 && paymentMethod === 'card'" variant="primary" @click="processPayment">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Оплатить {{ formatAmount(totalSelectedAmount) }}
-              </button>
+              </AppButton>
               <button v-if="currentStep === 3 && paymentMethod === 'bank'" @click="backToList" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg font-medium hover:bg-[#7c3aed] transition-colors">Готово</button>
-              <button v-if="currentStep === 3 && paymentMethod === 'qr'" @click="processPayment" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors">Я оплатил</button>
+              <AppButton v-if="currentStep === 3 && paymentMethod === 'qr'" variant="primary" @click="processPayment">Я оплатил</AppButton>
             </div>
           </div>
         </div>
@@ -524,7 +508,7 @@ const getStatusClass = (status: string) => {
         </div>
         <p class="text-[#64748b] mb-8">Квитанция отправлена на email</p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
+          <button @click="toastStore.show({ type: 'info', title: 'Скачивание квитанции', message: 'Функция будет доступна в следующей версии' })" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Скачать квитанцию
           </button>
           <button @click="backToList" class="flex items-center justify-center gap-2 px-6 py-3 bg-[#8b5cf6] text-white rounded-xl font-medium hover:bg-[#7c3aed] transition-colors">

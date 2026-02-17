@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { validators, scrollToFirstError } from '../../utils/validators'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
 import { productGroups, productSubgroups, getSubgroupLabel, type ProductSubgroup } from '../../data/product-groups'
 // recyclingStandard now comes from product group, not year-based norms
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
@@ -17,18 +17,11 @@ import { accountStore } from '../../stores/account'
 import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
+import { notificationStore } from '../../stores/notifications'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 const router = useRouter()
 
@@ -36,7 +29,7 @@ const viewCalculation = (id: number) => {
   router.push(`/business/calculations/${id}`)
 }
 const mockAction = (action: string) => {
-  alert(action)
+  toastStore.show({ type: 'info', title: action })
 }
 
 // Loading state
@@ -397,22 +390,99 @@ const performCalculation = () => {
 const startWizard = () => {
   currentStep.value = 1
   viewMode.value = 'wizard'
+  formSubmitted.value = false
 }
 
 const backToList = () => {
   viewMode.value = 'list'
   currentStep.value = 1
+  formSubmitted.value = false
   calculationQuarter.value = ''
   importDate.value = ''
   productItems.value = [{ id: 1, group: '', subgroup: '', gskpCode: '', tnvedCode: '', volume: '', recyclingStandard: 0, volumeToRecycle: 0, transferredToRecycling: '', recycledFile: null, exportedFromKR: '', exportedFile: null, taxableVolume: 0, rate: 0, amount: 0 }]
 }
 
 const createDeclaration = () => {
-  alert('Создание декларации на основе расчёта')
+  toastStore.show({ type: 'info', title: 'Создание декларации на основе расчёта', message: 'Функция в разработке' })
 }
 
 // Form validation
+const formSubmitted = ref(false)
 const validationErrors = ref<Record<string, string>>({})
+
+const formErrors = computed(() => {
+  const errors: Record<string, string> = {}
+
+  // Period validation
+  if (payerType.value === 'producer') {
+    const quarterErr = validators.required(calculationQuarter.value, 'Расчётный период')
+    if (quarterErr) errors.quarter = 'Выберите отчётный период'
+  } else {
+    const dateErr = validators.required(importDate.value, 'Дата ввоза')
+    if (dateErr) errors.importDate = 'Выберите дату ввоза'
+  }
+
+  // Items array must have at least 1 item with group and volume
+  const validItems = productItems.value.filter(i => i.group && i.volume && parseFloat(i.volume) > 0)
+  if (validItems.length === 0) {
+    errors.products = 'Добавьте хотя бы одну позицию'
+  }
+
+  // Per-item field validations
+  productItems.value.forEach((item, index) => {
+    // Group required
+    const groupErr = validators.required(item.group, 'Группа товара')
+    if (groupErr) errors[`product_${index}_group`] = 'Выберите группу товара'
+
+    // Volume (Гр.5): required + positiveNumber
+    const volRequired = validators.required(item.volume, 'Объём (Гр.5)')
+    if (volRequired) {
+      errors[`product_${index}_volume`] = 'Введите объём (Гр.5)'
+    } else {
+      const volPositive = validators.positiveNumber(item.volume, 'Объём (Гр.5)')
+      if (volPositive) {
+        errors[`product_${index}_volume`] = volPositive
+      } else if (parseFloat(item.volume) <= 0) {
+        errors[`product_${index}_volume`] = 'Объём должен быть больше 0'
+      }
+    }
+
+    const vol = parseFloat(item.volume) || 0
+
+    // Transferred to recycling (Гр.8): positiveNumber, maxValue(volume)
+    if (item.transferredToRecycling !== '') {
+      const trPositive = validators.positiveNumber(item.transferredToRecycling, 'Гр.8')
+      if (trPositive) {
+        errors[`product_${index}_transferred`] = trPositive
+      } else if (vol > 0) {
+        const trMax = validators.maxValue(item.transferredToRecycling, vol, 'Гр.8')
+        if (trMax) errors[`product_${index}_transferred`] = trMax
+      }
+    }
+
+    // Exported from KR (Гр.9): positiveNumber, maxValue(volume)
+    if (item.exportedFromKR !== '') {
+      const exPositive = validators.positiveNumber(item.exportedFromKR, 'Гр.9')
+      if (exPositive) {
+        errors[`product_${index}_exported`] = exPositive
+      } else if (vol > 0) {
+        const exMax = validators.maxValue(item.exportedFromKR, vol, 'Гр.9')
+        if (exMax) errors[`product_${index}_exported`] = exMax
+      }
+    }
+
+    // Custom: transferred + exported <= volume
+    const transferred = parseFloat(item.transferredToRecycling) || 0
+    const exported = parseFloat(item.exportedFromKR) || 0
+    if (vol > 0 && (transferred + exported) > vol) {
+      errors[`product_${index}_sum`] = 'Гр.8 + Гр.9 не может превышать Гр.5'
+    }
+  })
+
+  return errors
+})
+
+const hasErrors = computed(() => Object.keys(formErrors.value).length > 0)
 
 const validateStep1 = (): boolean => {
   const errors: Record<string, string> = {}
@@ -454,12 +524,32 @@ const validateStep2 = (): boolean => {
 }
 
 const handleStep1Next = () => {
+  formSubmitted.value = true
+  // Check period-related errors from formErrors
+  const step1HasErrors = payerType.value === 'producer'
+    ? !!formErrors.value.quarter
+    : !!formErrors.value.importDate
+  if (step1HasErrors) {
+    scrollToFirstError()
+    return
+  }
+  formSubmitted.value = false
   if (validateStep1()) {
     nextStep()
   }
 }
 
 const handleStep2Calculate = () => {
+  formSubmitted.value = true
+  // Check step 2 relevant errors (products, per-item fields)
+  const step2ErrorKeys = Object.keys(formErrors.value).filter(
+    k => k === 'products' || k.startsWith('product_')
+  )
+  if (step2ErrorKeys.length > 0) {
+    scrollToFirstError()
+    return
+  }
+  formSubmitted.value = false
   if (validateStep2()) {
     performCalculation()
   }
@@ -467,7 +557,7 @@ const handleStep2Calculate = () => {
 
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  alert('Функция скачивания PDF в разработке')
+  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
 }
 
 const handlePrint = () => {
@@ -543,6 +633,11 @@ const saveDraft = () => {
 
 // Submit for review
 const submitForReview = () => {
+  formSubmitted.value = true
+  if (hasErrors.value) {
+    scrollToFirstError()
+    return
+  }
   if (!confirm('Отправить расчёт на проверку Эко Оператору? После отправки редактирование будет недоступно.')) return
   const now = new Date()
   const num = String(Math.floor(Math.random() * 900) + 100)
@@ -560,6 +655,19 @@ const submitForReview = () => {
     totalAmount: totalAmount.value,
   }
   calculationStore.addCalculation(calcData, 'На проверке')
+  notificationStore.add({
+    type: 'info',
+    title: 'Новый расчёт создан',
+    message: 'Расчёт утилизационного сбора отправлен на проверку.',
+    role: 'eco-operator'
+  })
+  notificationStore.add({
+    type: 'success',
+    title: 'Расчёт отправлен',
+    message: 'Ваш расчёт утилизационного сбора отправлен на проверку.',
+    role: 'business',
+    link: '/business/calculator'
+  })
   viewMode.value = 'result'
 }
 
@@ -631,11 +739,11 @@ const handlePaymentFileSelect = (e: Event) => {
 const processPaymentFile = (file: File) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
   if (!allowedTypes.includes(file.type)) {
-    alert('Допустимые форматы: PDF, JPG, PNG')
+    toastStore.show({ type: 'warning', title: 'Недопустимый формат', message: 'Допустимые форматы: PDF, JPG, PNG' })
     return
   }
   if (file.size > 10 * 1024 * 1024) {
-    alert('Максимальный размер файла: 10 МБ')
+    toastStore.show({ type: 'warning', title: 'Файл слишком большой', message: 'Максимальный размер файла: 10 МБ' })
     return
   }
   const reader = new FileReader()
@@ -707,7 +815,7 @@ const downloadReceipt = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -1097,8 +1205,8 @@ const downloadReceipt = () => {
                     v-model="calculationQuarter"
                     :class="[
                       'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
-                      validationErrors.quarter
-                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20'
+                      (validationErrors.quarter || (formSubmitted && formErrors.quarter))
+                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
                         : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
                     ]"
                     @change="validationErrors.quarter && delete validationErrors.quarter"
@@ -1110,6 +1218,9 @@ const downloadReceipt = () => {
                     <option value="Q4">IV квартал</option>
                   </select>
                   <p v-if="validationErrors.quarter" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors.quarter }}</p>
+                  <p v-else-if="formSubmitted && formErrors.quarter" class="vld-error" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors.quarter }}
+                  </p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">Год *</label>
@@ -1149,13 +1260,16 @@ const downloadReceipt = () => {
                     v-model="importDate"
                     :class="[
                       'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
-                      validationErrors.importDate
-                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20'
+                      (validationErrors.importDate || (formSubmitted && formErrors.importDate))
+                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
                         : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
                     ]"
                     @change="validationErrors.importDate && delete validationErrors.importDate"
                   />
                   <p v-if="validationErrors.importDate" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors.importDate }}</p>
+                  <p v-else-if="formSubmitted && formErrors.importDate" class="vld-error" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors.importDate }}
+                  </p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">Год *</label>
@@ -1248,6 +1362,10 @@ const downloadReceipt = () => {
               </button>
             </div>
 
+            <p v-if="formSubmitted && formErrors.products" class="vld-error mb-4" data-validation-error>
+              <span class="vld-error__icon">&#9888;</span> {{ formErrors.products }}
+            </p>
+
             <div class="space-y-4">
               <div v-for="(item, index) in productItems" :key="item.id" class="cf-card">
                 <!-- Card header -->
@@ -1271,6 +1389,9 @@ const downloadReceipt = () => {
                     accent-color="#f59e0b"
                   />
                   <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
+                  <p v-else-if="formSubmitted && formErrors[`product_${index}_group`]" class="vld-error" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_group`] }}
+                  </p>
 
                   <!-- ГСКП code for producers -->
                   <div v-if="payerType === 'producer' && item.group" class="mt-3">
@@ -1297,10 +1418,13 @@ const downloadReceipt = () => {
                         v-model="item.volume"
                         @input="calculateAmount(item); validationErrors[`product_${index}_volume`] && delete validationErrors[`product_${index}_volume`]"
                         step="0.01" min="0" placeholder="0.00"
-                        :class="['cf-data__input', validationErrors[`product_${index}_volume`] ? 'cf-data__input--error' : '']"
+                        :class="['cf-data__input', (validationErrors[`product_${index}_volume`] || (formSubmitted && formErrors[`product_${index}_volume`])) ? 'cf-data__input--error' : '']"
                       />
                       <span class="cf-data__hint">Масса товаров или упаковки в тоннах</span>
                       <p v-if="validationErrors[`product_${index}_volume`]" class="text-xs text-[#EF4444] mt-1">{{ validationErrors[`product_${index}_volume`] }}</p>
+                      <p v-else-if="formSubmitted && formErrors[`product_${index}_volume`]" class="vld-error" data-validation-error>
+                        <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_volume`] }}
+                      </p>
                     </div>
                     <div class="cf-data__field">
                       <label class="cf-data__label">Гр.8: Передано на переработку, тонн</label>
@@ -1309,9 +1433,12 @@ const downloadReceipt = () => {
                         v-model="item.transferredToRecycling"
                         @input="calculateAmount(item)"
                         step="0.01" min="0" placeholder="0.00"
-                        :class="['cf-data__input', getVolumeError(item) ? 'cf-data__input--error' : '']"
+                        :class="['cf-data__input', (getVolumeError(item) || (formSubmitted && formErrors[`product_${index}_transferred`])) ? 'cf-data__input--error' : '']"
                       />
                       <span class="cf-data__hint">Объём переданный на переработку лицензированному переработчику</span>
+                      <p v-if="formSubmitted && formErrors[`product_${index}_transferred`]" class="vld-error" data-validation-error>
+                        <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_transferred`] }}
+                      </p>
                     </div>
                     <div class="cf-data__field">
                       <label class="cf-data__label">Гр.9: Вывезено из КР, тонн</label>
@@ -1320,9 +1447,12 @@ const downloadReceipt = () => {
                         v-model="item.exportedFromKR"
                         @input="calculateAmount(item)"
                         step="0.01" min="0" placeholder="0.00"
-                        :class="['cf-data__input', getVolumeError(item) ? 'cf-data__input--error' : '']"
+                        :class="['cf-data__input', (getVolumeError(item) || (formSubmitted && formErrors[`product_${index}_exported`])) ? 'cf-data__input--error' : '']"
                       />
                       <span class="cf-data__hint">Объём вывезенный за пределы Кыргызской Республики</span>
+                      <p v-if="formSubmitted && formErrors[`product_${index}_exported`]" class="vld-error" data-validation-error>
+                        <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_exported`] }}
+                      </p>
                     </div>
                   </div>
 
@@ -1386,10 +1516,13 @@ const downloadReceipt = () => {
                   </div>
 
                   <!-- Validation error: Гр.8 + Гр.9 > Гр.5 -->
-                  <div v-if="getVolumeError(item)" class="norm-msg norm-msg--error">
+                  <div v-if="getVolumeError(item)" class="norm-msg norm-msg--error" data-validation-error>
                     <svg class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
                     {{ getVolumeError(item) }}
                   </div>
+                  <p v-else-if="formSubmitted && formErrors[`product_${index}_sum`]" class="vld-error mt-3" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_sum`] }}
+                  </p>
 
                   <!-- Norm status info -->
                   <div v-else-if="getNormStatus(item)" :class="['norm-msg', getNormStatus(item)!.met ? 'norm-msg--success' : 'norm-msg--warning']">
@@ -1668,6 +1801,8 @@ const downloadReceipt = () => {
                 v-if="currentStep === 2"
                 @click="handleStep2Calculate"
                 class="btn-action btn-action-primary"
+                :disabled="formSubmitted && hasErrors"
+                :title="formSubmitted && hasErrors ? 'Исправьте ошибки в форме' : ''"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1690,6 +1825,8 @@ const downloadReceipt = () => {
                 <button
                   @click="submitForReview"
                   class="btn-action btn-action-primary"
+                  :disabled="formSubmitted && hasErrors"
+                  :title="formSubmitted && hasErrors ? 'Исправьте ошибки в форме' : ''"
                 >
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -1929,6 +2066,24 @@ const downloadReceipt = () => {
 </template>
 
 <style scoped>
+/* ── Validation error styles ── */
+.vld-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #EF4444;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+.vld-error__icon {
+  flex-shrink: 0;
+}
+.vld-input--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }

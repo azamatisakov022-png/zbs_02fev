@@ -2,17 +2,11 @@
 import { ref, reactive, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 const columns = [
   { key: 'inn', label: 'ИНН', width: '10%' },
@@ -66,16 +60,7 @@ const filteredOrganizations = computed(() => {
   })
 })
 
-// --- Status/Type helpers ---
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Активен': return 'bg-green-100 text-green-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Заблокирован': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
-
+// --- Type helper ---
 const getTypeClass = (type: string) => {
   switch (type) {
     case 'Плательщик': return 'bg-blue-100 text-blue-800'
@@ -200,7 +185,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >
@@ -209,12 +194,12 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Организации</h1>
         <p class="text-[#64748b]">Все зарегистрированные организации в системе</p>
       </div>
-      <button @click="openAddModal" class="flex items-center gap-2 bg-[#2563eb] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#1d4ed8] transition-colors">
+      <AppButton variant="primary" @click="openAddModal">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Добавить организацию
-      </button>
+      </AppButton>
     </div>
 
     <!-- Stats -->
@@ -281,24 +266,22 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         </span>
       </template>
       <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button @click="openViewModal(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+          <AppButton variant="ghost" size="sm" @click="openViewModal(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Просмотреть
-          </button>
-          <button @click="openEditModal(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+          </AppButton>
+          <AppButton variant="secondary" size="sm" @click="openEditModal(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             Редактировать
-          </button>
-          <button @click="confirmDelete(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+          </AppButton>
+          <AppButton variant="danger" size="sm" @click="confirmDelete(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             Удалить
-          </button>
+          </AppButton>
         </div>
       </template>
     </DataTable>
@@ -378,8 +361,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-              <button @click="showFormModal = false" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">Отмена</button>
-              <button @click="saveOrganization" class="px-5 py-2.5 bg-[#2563eb] text-white rounded-xl font-medium hover:bg-[#1d4ed8] transition-colors">{{ isEditing ? 'Сохранить' : 'Добавить' }}</button>
+              <AppButton variant="secondary" @click="showFormModal = false">Отмена</AppButton>
+              <AppButton variant="primary" @click="saveOrganization">{{ isEditing ? 'Сохранить' : 'Добавить' }}</AppButton>
             </div>
           </div>
         </div>
@@ -403,7 +386,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
                 <div>
                   <p class="font-bold text-lg text-[#1e293b]">{{ viewingOrg.name }}</p>
                   <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(viewingOrg.type)]">{{ viewingOrg.type }}</span>
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium ml-2', getStatusClass(viewingOrg.status)]">{{ viewingOrg.status }}</span>
+                  <AppBadge :variant="getStatusBadgeVariant(viewingOrg.status)" class="ml-2">{{ viewingOrg.status }}</AppBadge>
                 </div>
               </div>
               <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
@@ -417,8 +400,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </div>
             </div>
             <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-              <button @click="showViewModal = false; openEditModal(viewingOrg!)" class="px-5 py-2.5 text-[#2563eb] border border-[#2563eb] rounded-xl font-medium hover:bg-blue-50 transition-colors">Редактировать</button>
-              <button @click="showViewModal = false" class="px-5 py-2.5 bg-[#2563eb] text-white rounded-xl font-medium hover:bg-[#1d4ed8] transition-colors">Закрыть</button>
+              <AppButton variant="outline" @click="showViewModal = false; openEditModal(viewingOrg!)">Редактировать</AppButton>
+              <AppButton variant="primary" @click="showViewModal = false">Закрыть</AppButton>
             </div>
           </div>
         </div>
@@ -440,8 +423,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               <p class="text-[#64748b]">Вы уверены, что хотите удалить <span class="font-medium text-[#1e293b]">{{ deletingOrg.name }}</span>? Это действие нельзя отменить.</p>
             </div>
             <div class="flex items-center justify-center gap-3 px-8 pb-8">
-              <button @click="showDeleteConfirm = false" class="flex-1 px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">Отмена</button>
-              <button @click="deleteOrganization" class="flex-1 px-5 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors">Удалить</button>
+              <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">Отмена</AppButton>
+              <AppButton variant="danger" class="flex-1" @click="deleteOrganization">Удалить</AppButton>
             </div>
           </div>
         </div>

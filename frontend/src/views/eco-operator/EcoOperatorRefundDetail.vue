@@ -3,26 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { reportStore } from '../../stores/reports'
 import { refundStore, type Refund } from '../../stores/refunds'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -87,7 +76,7 @@ const confirmReject = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП Эко Оператор"
+    :roleTitle="roleTitle"
     userName="Экологический оператор"
     :menuItems="menuItems"
   >
@@ -115,7 +104,7 @@ const confirmReject = () => {
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        <span class="text-sm font-medium">Назад к заявкам</span>
+        <span class="text-sm font-medium">{{ $t('common.back') }}</span>
       </button>
 
       <!-- Header -->
@@ -124,9 +113,7 @@ const confirmReject = () => {
           <div>
             <div class="flex items-center gap-3 mb-1">
               <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Заявка {{ refund.number }}</h1>
-              <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(refund.status)]">
-                {{ refund.status }}
-              </span>
+              <AppBadge :variant="getStatusBadgeVariant(refund.status)">{{ refund.status }}</AppBadge>
             </div>
             <p class="text-[#64748b]">от {{ refund.date }}</p>
           </div>
@@ -212,7 +199,7 @@ const confirmReject = () => {
             <div class="flex-1">
               <p class="text-sm font-medium text-[#1e293b]">{{ doc }}</p>
             </div>
-            <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">Скачать</button>
+            <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
           </div>
         </div>
         <div v-else class="text-sm text-[#64748b]">Документы не прикреплены</div>
@@ -244,24 +231,18 @@ const confirmReject = () => {
       <!-- Action buttons -->
       <div v-if="canTakeAction" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <div class="flex flex-wrap justify-end gap-3">
-          <button
-            @click="openRejectModal"
-            class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors"
-          >
+          <AppButton variant="danger" @click="openRejectModal">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
             Отклонить
-          </button>
-          <button
-            @click="approveRefund"
-            class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
-          >
+          </AppButton>
+          <AppButton variant="primary" @click="approveRefund">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             Одобрить возврат
-          </button>
+          </AppButton>
         </div>
       </div>
     </template>
@@ -307,19 +288,16 @@ const confirmReject = () => {
             ></textarea>
           </div>
           <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button
-              @click="closeRejectModal"
-              class="px-4 py-2.5 border border-[#e2e8f0] text-[#64748b] rounded-lg text-sm font-medium hover:bg-gray-50"
-            >
-              Отмена
-            </button>
-            <button
+            <AppButton variant="secondary" @click="closeRejectModal">
+              {{ $t('common.cancel') }}
+            </AppButton>
+            <AppButton
+              variant="danger"
               @click="confirmReject"
               :disabled="!rejectionReason.trim()"
-              class="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Подтвердить отклонение
-            </button>
+              {{ $t('common.confirm') }}
+            </AppButton>
           </div>
         </div>
       </div>

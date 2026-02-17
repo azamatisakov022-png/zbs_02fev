@@ -2,28 +2,16 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
 import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
 const route = useRoute()
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const report = computed(() => {
   const id = Number(route.params.id)
@@ -121,7 +109,7 @@ const downloadExcel = () => {
 }
 
 const downloadPdf = () => {
-  alert('Функция скачивания PDF в разработке')
+  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
 }
 
 const goBack = () => {
@@ -135,7 +123,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -149,7 +137,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Отчёт не найден</h2>
       <p class="text-[#64748b] mb-6">Запрошенный отчёт не существует</p>
       <button @click="goBack" class="px-6 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white">
-        Назад к списку
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -159,7 +147,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        Назад к входящим отчётам
+        {{ $t('common.back') }}
       </button>
 
       <!-- Header -->
@@ -391,7 +379,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
               <p class="text-sm font-medium text-[#1e293b] truncate">{{ file.name }}</p>
               <p class="text-xs text-[#64748b]">{{ file.size }}</p>
             </div>
-            <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium flex-shrink-0">Скачать</button>
+            <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium flex-shrink-0">{{ $t('common.download') }}</button>
           </div>
         </div>
       </div>
@@ -407,14 +395,14 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
         ></textarea>
         <div class="flex justify-end gap-3 mt-3">
           <button @click="showRejectForm = false" class="px-4 py-2 text-[#64748b] hover:bg-white rounded-lg text-sm">
-            Отмена
+            {{ $t('common.cancel') }}
           </button>
           <button
             @click="rejectReport"
             :disabled="!rejectionReason.trim()"
             class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Подтвердить отклонение
+            {{ $t('common.confirm') }}
           </button>
         </div>
       </div>
@@ -459,7 +447,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border border-[#e2e8f0] text-[#64748b] hover:bg-white transition-colors"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Назад к списку
+          {{ $t('common.back') }}
         </button>
       </div>
     </template>

@@ -4,25 +4,14 @@ import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore, type Calculation } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Tabs
 const activeTab = ref<'calculations' | 'payments'>('calculations')
@@ -214,13 +203,13 @@ const resetPaymentFilters = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <div class="mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие расчёты</h1>
-      <p class="text-[#64748b]">Расчёты утилизационного сбора от плательщиков</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.calculationsTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.calculationsSubtitle') }}</p>
     </div>
 
     <!-- Large Dashboard Stat Cards -->
@@ -363,31 +352,26 @@ const resetPaymentFilters = () => {
           <span class="font-semibold text-[#1e293b]">{{ row.totalAmountFormatted }}</span>
         </template>
         <template #cell-status="{ value }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-            {{ value }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <button
-              @click="openDetail(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-            >
+            <AppButton variant="ghost" size="sm" @click="openDetail(row)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Просмотреть
-            </button>
+              {{ $t('common.view') }}
+            </AppButton>
           </div>
         </template>
         <template #empty>
           <EmptyState
             v-if="isCalcFiltersActive && allCalculations.length > 0"
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-            title="Ничего не найдено"
-            description="Попробуйте изменить параметры поиска"
-            actionLabel="Сбросить фильтры"
+            :title="$t('empty.noSearchResults')"
+            :description="$t('empty.noSearchResultsDesc')"
+            :actionLabel="$t('empty.resetFilters')"
             @action="resetCalcFilters"
           />
           <EmptyState
@@ -427,41 +411,36 @@ const resetPaymentFilters = () => {
           <span class="font-semibold text-[#1e293b]">{{ row.totalAmountFormatted }}</span>
         </template>
         <template #cell-status="{ value }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-            {{ value }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <button
-              @click="openDetailModal(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-            >
+            <AppButton variant="ghost" size="sm" @click="openDetailModal(row)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Детали
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Оплата на проверке'"
+              variant="secondary" size="sm"
               @click="openDetailModal(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               Проверить
-            </button>
+            </AppButton>
           </div>
         </template>
         <template #empty>
           <EmptyState
             v-if="isPaymentFiltersActive && allPayments.length > 0"
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-            title="Ничего не найдено"
-            description="Попробуйте изменить параметры поиска"
-            actionLabel="Сбросить фильтры"
+            :title="$t('empty.noSearchResults')"
+            :description="$t('empty.noSearchResultsDesc')"
+            :actionLabel="$t('empty.resetFilters')"
             @action="resetPaymentFilters"
           />
           <EmptyState
@@ -485,9 +464,7 @@ const resetPaymentFilters = () => {
               <p class="text-sm text-[#64748b]">от {{ selectedCalculation.date }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(selectedCalculation.status)]">
-                {{ selectedCalculation.status }}
-              </span>
+              <AppBadge :variant="getStatusBadgeVariant(selectedCalculation.status)">{{ selectedCalculation.status }}</AppBadge>
               <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -633,16 +610,16 @@ const resetPaymentFilters = () => {
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
               <div class="flex justify-end gap-3 mt-3">
-                <button @click="showRejectForm = false" class="px-4 py-2 text-[#64748b] hover:bg-white rounded-lg text-sm">
-                  Отмена
-                </button>
-                <button
+                <AppButton variant="secondary" @click="showRejectForm = false">
+                  {{ $t('common.cancel') }}
+                </AppButton>
+                <AppButton
+                  variant="danger"
                   @click="rejectCalc"
                   :disabled="!rejectionReason.trim()"
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Подтвердить отклонение
-                </button>
+                  {{ $t('common.confirm') }}
+                </AppButton>
               </div>
             </div>
 
@@ -656,69 +633,57 @@ const resetPaymentFilters = () => {
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
               <div class="flex justify-end gap-3 mt-3">
-                <button @click="showPaymentRejectForm = false" class="px-4 py-2 text-[#64748b] hover:bg-white rounded-lg text-sm">
-                  Отмена
-                </button>
-                <button
+                <AppButton variant="secondary" @click="showPaymentRejectForm = false">
+                  {{ $t('common.cancel') }}
+                </AppButton>
+                <AppButton
+                  variant="danger"
                   @click="rejectPayment"
                   :disabled="!paymentRejectionReason.trim()"
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Подтвердить отклонение оплаты
-                </button>
+                  {{ $t('common.confirm') }}
+                </AppButton>
               </div>
             </div>
           </div>
 
           <!-- Modal Footer: Calculation review actions -->
           <div v-if="selectedCalculation.status === 'На проверке' && !showRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button
-              @click="showRejectForm = true"
-              class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors"
-            >
+            <AppButton variant="danger" @click="showRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
               Отклонить расчёт
-            </button>
-            <button
-              @click="approveCalc"
-              class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
-            >
+            </AppButton>
+            <AppButton variant="primary" @click="approveCalc">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               Принять расчёт
-            </button>
+            </AppButton>
           </div>
 
           <!-- Modal Footer: Payment review actions -->
           <div v-else-if="selectedCalculation.status === 'Оплата на проверке' && !showPaymentRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button
-              @click="showPaymentRejectForm = true"
-              class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors"
-            >
+            <AppButton variant="danger" @click="showPaymentRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
               Отклонить оплату
-            </button>
-            <button
-              @click="approvePayment"
-              class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
-            >
+            </AppButton>
+            <AppButton variant="primary" @click="approvePayment">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               Подтвердить оплату
-            </button>
+            </AppButton>
           </div>
 
           <!-- Close button for other statuses -->
           <div v-else-if="selectedCalculation.status !== 'На проверке' && selectedCalculation.status !== 'Оплата на проверке'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
-            <button @click="closeDetail" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50">
-              Закрыть
-            </button>
+            <AppButton variant="secondary" @click="closeDetail">
+              {{ $t('common.close') }}
+            </AppButton>
           </div>
         </div>
       </div>

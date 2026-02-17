@@ -2,20 +2,14 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
-import { recyclerStore, type Recycler, type RecyclerStatus } from '../../stores/recyclers'
+import { recyclerStore, type Recycler, type RecyclerStatus, type RecyclerCapacity } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // View state
 const showAddForm = ref(false)
@@ -47,7 +41,7 @@ const getStatusLabel = (status: RecyclerStatus) => {
   switch (status) {
     case 'active': return 'Активен'
     case 'suspended': return 'Приостановлен'
-    case 'revoked': return 'Аннулирован'
+    case 'revoked': return 'Исключён'
   }
 }
 
@@ -75,6 +69,39 @@ const getGroupShortLabel = (value: string) => {
   return label
 }
 
+// Capacity helpers
+const getTotalCapacity = (recycler: Recycler) => recyclerStore.getTotalCapacity(recycler)
+const getTotalLoad = (recycler: Recycler) => recyclerStore.getTotalLoad(recycler)
+const getLoadPercent = (recycler: Recycler) => recyclerStore.getLoadPercent(recycler)
+
+const getLoadColor = (percent: number): string => {
+  if (percent >= 90) return '#EF4444'
+  if (percent >= 70) return '#F59E0B'
+  return '#10B981'
+}
+
+const totalCapacityAll = computed(() => {
+  return recyclerStore.state.recyclers
+    .filter(r => r.status === 'active')
+    .reduce((sum, r) => sum + recyclerStore.getTotalCapacity(r), 0)
+})
+
+const getCapacityValue = (wasteType: string, field: 'capacityTons' | 'currentLoadTons'): number => {
+  const cap = newRecycler.value.capacities?.find(c => c.wasteType === wasteType)
+  return cap ? cap[field] : 0
+}
+
+const setCapacityValue = (wasteType: string, field: 'capacityTons' | 'currentLoadTons', value: string) => {
+  if (!newRecycler.value.capacities) newRecycler.value.capacities = []
+  const idx = newRecycler.value.capacities.findIndex(c => c.wasteType === wasteType)
+  const numVal = parseFloat(value) || 0
+  if (idx >= 0) {
+    newRecycler.value.capacities[idx][field] = numVal
+  } else {
+    newRecycler.value.capacities.push({ wasteType, capacityTons: 0, currentLoadTons: 0, [field]: numVal })
+  }
+}
+
 // Toggle status action
 const handleToggleStatus = (recycler: Recycler) => {
   recyclerStore.toggleStatus(recycler.id)
@@ -88,6 +115,7 @@ const newRecycler = ref({
   licenseDate: '',
   licenseExpiry: '',
   wasteTypes: [] as string[],
+  capacities: [] as { wasteType: string, capacityTons: number, currentLoadTons: number }[],
   address: '',
   contactPhone: '',
   contactEmail: '',
@@ -102,6 +130,7 @@ const resetForm = () => {
     licenseDate: '',
     licenseExpiry: '',
     wasteTypes: [],
+    capacities: [],
     address: '',
     contactPhone: '',
     contactEmail: '',
@@ -149,7 +178,7 @@ const resetAllFilters = () => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
@@ -158,19 +187,16 @@ const resetAllFilters = () => {
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Реестр переработчиков</h1>
         <p class="text-[#64748b]">Лицензированные переработчики и утилизаторы отходов</p>
       </div>
-      <button
-        @click="showAddForm = true"
-        class="flex items-center gap-2 bg-[#10b981] text-white px-5 py-2.5 rounded-xl font-medium hover:bg-[#059669] transition-colors shadow-sm flex-shrink-0"
-      >
+      <AppButton variant="primary" @click="showAddForm = true">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Добавить переработчика
-      </button>
+        {{ $t('common.add') }}
+      </AppButton>
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
         <p class="text-sm text-[#64748b] mb-1">Всего</p>
         <p class="text-2xl font-bold text-[#1e293b]">{{ counts.all }}</p>
@@ -184,8 +210,12 @@ const resetAllFilters = () => {
         <p class="text-2xl font-bold text-[#f59e0b]">{{ counts.suspended }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Аннулированных</p>
+        <p class="text-sm text-[#64748b] mb-1">Исключённых</p>
         <p class="text-2xl font-bold text-[#ef4444]">{{ counts.revoked }}</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
+        <p class="text-sm text-[#64748b] mb-1">Общая мощность</p>
+        <p class="text-2xl font-bold text-[#2563eb]">{{ totalCapacityAll }} т/год</p>
       </div>
     </div>
 
@@ -264,24 +294,51 @@ const resetAllFilters = () => {
           </div>
         </div>
 
+        <!-- Capacities -->
+        <div v-if="newRecycler.wasteTypes.length > 0">
+          <label class="block text-sm font-medium text-[#1e293b] mb-2">Мощности переработки (т/год)</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-for="wt in newRecycler.wasteTypes" :key="'cap-' + wt" class="bg-[#f8fafc] rounded-lg p-3">
+              <p class="text-xs font-medium text-[#1e293b] mb-2">{{ getGroupShortLabel(wt) }}</p>
+              <div class="flex gap-2">
+                <div class="flex-1">
+                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">Мощность</label>
+                  <input
+                    type="number"
+                    min="0"
+                    :value="getCapacityValue(wt, 'capacityTons')"
+                    @input="setCapacityValue(wt, 'capacityTons', ($event.target as HTMLInputElement).value)"
+                    placeholder="0"
+                    class="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                  />
+                </div>
+                <div class="flex-1">
+                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">Текущая загрузка</label>
+                  <input
+                    type="number"
+                    min="0"
+                    :value="getCapacityValue(wt, 'currentLoadTons')"
+                    @input="setCapacityValue(wt, 'currentLoadTons', ($event.target as HTMLInputElement).value)"
+                    placeholder="0"
+                    class="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Actions -->
         <div class="flex items-center gap-3 pt-4 border-t border-[#e2e8f0]">
-          <button
-            @click="saveRecycler"
-            :disabled="!newRecycler.name || !newRecycler.inn"
-            class="flex items-center gap-2 bg-[#10b981] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <AppButton variant="primary" @click="saveRecycler" :disabled="!newRecycler.name || !newRecycler.inn">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            Сохранить
-          </button>
-          <button
-            @click="cancelForm"
-            class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors"
-          >
-            Отмена
-          </button>
+            {{ $t('common.save') }}
+          </AppButton>
+          <AppButton variant="secondary" @click="cancelForm">
+            {{ $t('common.cancel') }}
+          </AppButton>
         </div>
       </div>
     </div>
@@ -292,14 +349,14 @@ const resetAllFilters = () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск по названию или ИНН..."
+          :placeholder="$t('common.search')"
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">Все статусы</option>
           <option value="active">Активен</option>
           <option value="suspended">Приостановлен</option>
-          <option value="revoked">Аннулирован</option>
+          <option value="revoked">Исключён</option>
         </select>
         <select v-model="filterWasteType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">Все виды отходов</option>
@@ -320,9 +377,10 @@ const resetAllFilters = () => {
               <th class="px-4 py-3 font-medium">ИНН</th>
               <th class="px-4 py-3 font-medium">Лицензия</th>
               <th class="px-4 py-3 font-medium">Виды отходов</th>
-              <th class="px-4 py-3 font-medium">Статус</th>
-              <th class="px-4 py-3 font-medium">Дата добавления</th>
-              <th class="px-4 py-3 font-medium text-right">Действия</th>
+              <th class="px-4 py-3 font-medium">Мощность</th>
+              <th class="px-4 py-3 font-medium">{{ $t('common.status') }}</th>
+              <th class="px-4 py-3 font-medium">{{ $t('common.date') }}</th>
+              <th class="px-4 py-3 font-medium text-right">{{ $t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody class="text-[#1e293b]">
@@ -358,21 +416,34 @@ const resetAllFilters = () => {
                 </div>
               </td>
               <td class="px-4 py-3">
-                <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(recycler.status)]">
+                <div class="min-w-[120px]">
+                  <div class="flex items-center justify-between text-xs mb-1">
+                    <span class="text-[#64748b]">{{ getTotalLoad(recycler) }} / {{ getTotalCapacity(recycler) }} т</span>
+                    <span class="font-medium" :style="{ color: getLoadColor(getLoadPercent(recycler)) }">{{ getLoadPercent(recycler) }}%</span>
+                  </div>
+                  <div class="w-full h-1.5 bg-[#f1f5f9] rounded-full overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      :style="{ width: Math.min(getLoadPercent(recycler), 100) + '%', backgroundColor: getLoadColor(getLoadPercent(recycler)) }"
+                    ></div>
+                  </div>
+                  <p class="text-[10px] text-[#94a3b8] mt-0.5">Свободно: {{ getTotalCapacity(recycler) - getTotalLoad(recycler) }} т/год</p>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <AppBadge :variant="getStatusBadgeVariant(getStatusLabel(recycler.status))">
                   {{ getStatusLabel(recycler.status) }}
-                </span>
+                </AppBadge>
               </td>
               <td class="px-4 py-3 text-xs text-[#64748b]">{{ recycler.addedDate }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-2">
-                  <button
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-                  >
+                  <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Функция в разработке' })">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Редактировать
-                  </button>
+                  </AppButton>
                   <button
                     v-if="recycler.status !== 'revoked'"
                     @click="handleToggleStatus(recycler)"
@@ -402,7 +473,7 @@ const resetAllFilters = () => {
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
           title="Ничего не найдено"
           description="Попробуйте изменить параметры поиска"
-          actionLabel="Сбросить фильтры"
+          :actionLabel="$t('common.reset')"
           @action="resetAllFilters"
         />
         <EmptyState
@@ -410,7 +481,7 @@ const resetAllFilters = () => {
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>'
           title="Реестр пуст"
           description="Добавьте первого переработчика"
-          actionLabel="+ Добавить"
+          :actionLabel="'+ ' + $t('common.add')"
           @action="showAddForm = true"
         />
       </div>

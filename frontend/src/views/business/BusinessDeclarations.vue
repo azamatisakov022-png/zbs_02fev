@@ -4,21 +4,17 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { calculationStore } from '../../stores/calculations'
+import { reportStore } from '../../stores/reports'
+import { declarationStore, type Declaration } from '../../stores/declarations'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
+import { notificationStore } from '../../stores/notifications'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -41,8 +37,13 @@ const reportingYear = ref('2026')
 
 const companyData = {
   name: 'ОсОО «ТехПром»',
+  fullName: 'Общество с ограниченной ответственностью «ТехПром»',
   inn: '01234567890123',
-  address: 'г. Бишкек, ул. Московская, 123',
+  okpo: '29438765',
+  registrationNumber: 'ПУС-2025-0042',
+  registrationDate: '15.03.2025',
+  legalAddress: 'г. Бишкек, ул. Московская, 123',
+  actualAddress: 'г. Бишкек, ул. Московская, 123',
 }
 
 // Calculations for selected year (Принято / Оплачено)
@@ -111,9 +112,63 @@ const totalPaid = computed(() =>
 )
 const totalDebt = computed(() => totalAmount.value - totalPaid.value)
 
+// Accepted recycling reports for the same company and year
+const yearReports = computed(() => {
+  return reportStore.state.reports.filter(r =>
+    r.company === companyData.name &&
+    r.year === reportingYear.value &&
+    r.status === 'Принят'
+  )
+})
+
+// Processed volume by group from accepted reports
+const processedByGroup = computed(() => {
+  const map = new Map<string, number>()
+  for (const report of yearReports.value) {
+    for (const item of report.items) {
+      const current = map.get(item.wasteType) || 0
+      map.set(item.wasteType, current + parseFloat(item.processed))
+    }
+  }
+  return map
+})
+
+const totalProcessed = computed(() => {
+  let sum = 0
+  for (const val of processedByGroup.value.values()) sum += val
+  return sum
+})
+
 // Step 3
 const confirmData = ref(false)
 const showDetails = ref(false)
+const signedWithEcp = ref(false)
+const attachedDocs = ref<{ id: number; name: string; size: string }[]>([])
+let nextDocId = 1
+
+const handleDocUpload = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  for (const file of Array.from(input.files)) {
+    if (file.size > 10 * 1024 * 1024) continue
+    attachedDocs.value.push({
+      id: nextDocId++,
+      name: file.name,
+      size: file.size < 1024 * 1024
+        ? (file.size / 1024).toFixed(0) + ' KB'
+        : (file.size / (1024 * 1024)).toFixed(1) + ' MB',
+    })
+  }
+  input.value = ''
+}
+
+const removeDoc = (id: number) => {
+  attachedDocs.value = attachedDocs.value.filter(d => d.id !== id)
+}
+
+const simulateEcp = () => {
+  signedWithEcp.value = true
+}
 
 // Navigation
 const nextStep = () => { if (currentStep.value < totalSteps) currentStep.value++ }
@@ -124,34 +179,68 @@ const goToStep = (step: number) => { if (step <= currentStep.value) currentStep.
 const submittedDeclaration = ref({ number: '', date: '' })
 
 const submitDeclaration = () => {
-  const now = new Date()
-  const num = String(Math.floor(Math.random() * 900) + 100)
-  const decl = {
-    id: declarations.value.length + 2,
-    number: `ДК-${now.getFullYear()}-${num}`,
-    year: reportingYear.value,
-    calcCount: yearCalculations.value.length,
-    totalAmount: totalAmount.value,
-    submittedAt: now.toLocaleDateString('ru-RU'),
-    status: 'На проверке',
-  }
-  declarations.value.unshift(decl)
+  const decl = declarationStore.addDeclaration({
+    company: companyData.name,
+    opf: 'ОсОО',
+    inn: companyData.inn,
+    address: companyData.legalAddress,
+    contactPerson: 'Абдыкеримов К.Б.',
+    phone: '+996 555 12-34-56',
+    email: 'info@techprom.kg',
+    reportingYear: reportingYear.value,
+    calculationCount: yearCalculations.value.length,
+    totalCharged: totalAmount.value,
+    totalPaid: totalPaid.value,
+    balance: totalPaid.value - totalAmount.value,
+    calculations: yearCalculations.value.map(c => ({
+      number: c.number, period: c.period, categories: c.items.map(i => i.group).join(', '),
+      mass: c.items.reduce((s, i) => s + (parseFloat(i.mass) || 0), 0),
+      amount: c.totalAmount, calcStatus: c.status, acceptedDate: c.date,
+    })),
+    reports: yearReports.value.map(r => ({
+      number: r.number, period: r.year, categories: r.items.map(i => i.wasteType).join(', '),
+      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '—',
+    })),
+    payments: [],
+    documents: [],
+  }, 'На рассмотрении')
+  notificationStore.add({
+    type: 'info',
+    title: 'Новая декларация',
+    message: 'Получена новая декларация на проверку.',
+    role: 'eco-operator',
+    link: '/eco-operator/incoming-declarations'
+  })
   submittedDeclaration.value = { number: decl.number, date: decl.submittedAt }
   viewMode.value = 'success'
 }
 
 const saveDraft = () => {
-  const now = new Date()
-  const num = String(Math.floor(Math.random() * 900) + 100)
-  declarations.value.unshift({
-    id: declarations.value.length + 2,
-    number: `ДК-${now.getFullYear()}-${num}`,
-    year: reportingYear.value,
-    calcCount: yearCalculations.value.length,
-    totalAmount: totalAmount.value,
-    submittedAt: now.toLocaleDateString('ru-RU'),
-    status: 'Черновик',
-  })
+  declarationStore.addDeclaration({
+    company: companyData.name,
+    opf: 'ОсОО',
+    inn: companyData.inn,
+    address: companyData.legalAddress,
+    contactPerson: 'Абдыкеримов К.Б.',
+    phone: '+996 555 12-34-56',
+    email: 'info@techprom.kg',
+    reportingYear: reportingYear.value,
+    calculationCount: yearCalculations.value.length,
+    totalCharged: totalAmount.value,
+    totalPaid: totalPaid.value,
+    balance: totalPaid.value - totalAmount.value,
+    calculations: yearCalculations.value.map(c => ({
+      number: c.number, period: c.period, categories: c.items.map(i => i.group).join(', '),
+      mass: c.items.reduce((s, i) => s + (parseFloat(i.mass) || 0), 0),
+      amount: c.totalAmount, calcStatus: c.status, acceptedDate: c.date,
+    })),
+    reports: yearReports.value.map(r => ({
+      number: r.number, period: r.year, categories: r.items.map(i => i.wasteType).join(', '),
+      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '—',
+    })),
+    payments: [],
+    documents: [],
+  }, 'Черновик')
   viewMode.value = 'list'
 }
 
@@ -180,27 +269,24 @@ const columns = [
   { key: 'status', label: 'Статус', width: '10%' },
 ]
 
-const declarations = ref([
-  {
-    id: 1,
-    number: 'ДК-2026-089',
-    year: '2025',
-    calcCount: 2,
-    totalAmount: 83950,
-    submittedAt: '15.01.2026',
-    status: 'Принята',
-  },
-])
+// Declarations from shared store filtered by company
+const storeDeclarations = computed(() => declarationStore.getByCompany(companyData.name))
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принята': return 'bg-green-100 text-green-800'
-    case 'Отклонена': return 'bg-red-100 text-red-800'
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
+const declarations = computed(() =>
+  storeDeclarations.value.map(d => ({
+    id: d.id,
+    number: d.number,
+    year: d.reportingYear,
+    calcCount: d.calculationCount,
+    totalAmount: d.totalCharged,
+    submittedAt: d.submittedAt,
+    status: d.status,
+    reviewComment: d.reviewComment,
+    reviewDate: d.reviewDate,
+    reviewer: d.reviewer,
+  }))
+)
+
 
 // Filters
 const searchQuery = ref('')
@@ -232,7 +318,7 @@ const resetFilters = () => {
 
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  alert('Функция скачивания PDF в разработке')
+  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
 }
 
 const handlePrint = () => {
@@ -243,7 +329,7 @@ const handlePrint = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -293,6 +379,34 @@ const handlePrint = () => {
         </div>
       </div>
 
+      <!-- Review result banners from shared store -->
+      <div v-for="decl in storeDeclarations.filter(d => d.status === 'Отклонена' || d.status === 'На доработке')" :key="'banner-' + decl.id" class="mb-4">
+        <div
+          :class="[
+            'rounded-xl p-4 flex items-start gap-3 border',
+            decl.status === 'Отклонена' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
+          ]"
+        >
+          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5', decl.status === 'Отклонена' ? 'bg-red-100' : 'bg-orange-100']">
+            <svg v-if="decl.status === 'Отклонена'" class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <svg v-else class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p :class="['text-sm font-semibold', decl.status === 'Отклонена' ? 'text-red-900' : 'text-orange-900']">
+              {{ decl.number }} — {{ decl.status === 'Отклонена' ? 'Отклонена' : 'Возвращена на доработку' }}
+              <span v-if="decl.reviewDate" class="font-normal">от {{ decl.reviewDate }}</span>
+            </p>
+            <p v-if="decl.reviewComment" :class="['text-xs mt-1', decl.status === 'Отклонена' ? 'text-red-700' : 'text-orange-700']">
+              {{ decl.reviewComment }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <template v-if="isLoading">
         <div class="mb-6"><SkeletonLoader variant="card" /></div>
         <SkeletonLoader variant="table" />
@@ -317,9 +431,10 @@ const handlePrint = () => {
           <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
             <option value="">Все статусы</option>
             <option value="Черновик">Черновик</option>
-            <option value="На проверке">На проверке</option>
-            <option value="Принята">Принята</option>
+            <option value="На рассмотрении">На рассмотрении</option>
+            <option value="Одобрена">Одобрена</option>
             <option value="Отклонена">Отклонена</option>
+            <option value="На доработке">На доработке</option>
           </select>
         </div>
       </div>
@@ -360,39 +475,37 @@ const handlePrint = () => {
           <span class="font-medium">{{ value.toLocaleString() }} сом</span>
         </template>
         <template #cell-status="{ value }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap', getStatusClass(value)]">
-            {{ value }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex flex-wrap items-center justify-end gap-2">
-            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Просмотр декларации', message: row.number })">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Просмотреть
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Принята'"
+              variant="outline" size="sm"
               @click="handleDownloadPdf"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Принята'"
+              variant="secondary" size="sm"
               @click="handlePrint"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#64748b] text-white hover:bg-[#475569] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               Печать
-            </button>
+            </AppButton>
           </div>
         </template>
       </DataTable>
@@ -490,7 +603,7 @@ const handlePrint = () => {
                   </div>
                   <div class="sm:col-span-2">
                     <label class="block text-xs text-[#64748b] mb-1">Адрес</label>
-                    <input type="text" :value="companyData.address" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
+                    <input type="text" :value="companyData.legalAddress" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                 </div>
               </div>
@@ -613,12 +726,9 @@ const handlePrint = () => {
                       <td class="py-2">{{ calc.date }}</td>
                       <td class="py-2 text-right font-medium">{{ calc.totalAmount.toLocaleString() }}</td>
                       <td class="py-2">
-                        <span :class="[
-                          'px-2 py-0.5 rounded-full text-xs font-medium',
-                          calc.status === 'Оплачено' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        ]">
+                        <AppBadge :variant="calc.status === 'Оплачено' ? 'success' : 'warning'">
                           {{ calc.status === 'Оплачено' ? 'Оплачено' : 'Не оплачено' }}
-                        </span>
+                        </AppBadge>
                       </td>
                     </tr>
                   </tbody>
@@ -641,6 +751,39 @@ const handlePrint = () => {
                 <p class="text-2xl font-bold text-blue-800">{{ totalPaid.toLocaleString() }} сом</p>
                 <p v-if="totalDebt > 0" class="text-sm font-semibold text-red-600 mt-1">Задолженность: {{ totalDebt.toLocaleString() }} сом</p>
               </div>
+            </div>
+
+            <!-- Recycling Reports Integration -->
+            <div v-if="yearReports.length > 0" class="bg-green-50 border border-green-200 rounded-xl p-5 mt-6">
+              <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <h3 class="font-medium text-green-800">Данные о переработке (из принятых отчётов: {{ yearReports.length }})</h3>
+              </div>
+              <div class="space-y-2">
+                <div v-for="item in aggregatedItems" :key="'proc_' + item.group + item.subgroup" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm py-1 border-b border-green-200 last:border-0">
+                  <span class="text-green-900 font-medium">{{ item.groupLabel }}</span>
+                  <div class="flex items-center gap-4 text-xs sm:text-sm">
+                    <span class="text-[#64748b]">Задекл.: {{ item.mass.toFixed(1) }} т</span>
+                    <span class="text-green-700 font-medium">Перераб.: {{ (processedByGroup.get(item.group) || 0).toFixed(1) }} т</span>
+                    <span :class="[(processedByGroup.get(item.group) || 0) >= item.mass ? 'text-green-600' : 'text-orange-600', 'font-medium']">
+                      {{ item.mass > 0 ? (((processedByGroup.get(item.group) || 0) / item.mass) * 100).toFixed(0) : 0 }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 pt-3 border-t border-green-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 font-medium">
+                <span class="text-green-900">Итого переработано</span>
+                <span class="text-green-700">{{ totalProcessed.toFixed(1) }} т из {{ totalMass.toFixed(1) }} т ({{ totalMass > 0 ? ((totalProcessed / totalMass) * 100).toFixed(1) : 0 }}%)</span>
+              </div>
+            </div>
+
+            <div v-else class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-6 flex items-start gap-3">
+              <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm text-yellow-800">Принятых отчётов о переработке за {{ reportingYear }} год пока нет. Данные о переработке будут отображены после принятия отчётов.</p>
             </div>
           </div>
 
@@ -693,7 +836,80 @@ const handlePrint = () => {
                 </div>
               </div>
 
-              <!-- Checkbox -->
+              <!-- Attached Documents -->
+              <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+                <h3 class="font-medium text-[#1e293b] mb-3 flex items-center gap-2">
+                  <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  Прикреплённые документы
+                </h3>
+                <p class="text-xs text-[#64748b] mb-3">Прикрепите подтверждающие документы (акты, договоры, счета). PDF, JPG, PNG до 10 МБ.</p>
+
+                <!-- File list -->
+                <div v-if="attachedDocs.length > 0" class="space-y-2 mb-3">
+                  <div v-for="doc in attachedDocs" :key="doc.id" class="flex items-center justify-between px-3 py-2 bg-white rounded-lg border border-[#e2e8f0]">
+                    <div class="flex items-center gap-2">
+                      <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      <span class="text-sm text-[#1e293b]">{{ doc.name }}</span>
+                      <span class="text-xs text-[#94a3b8]">{{ doc.size }}</span>
+                    </div>
+                    <button @click="removeDoc(doc.id)" class="p-1 text-[#94a3b8] hover:text-red-500 transition-colors">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Upload button -->
+                <label class="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-[#94a3b8] rounded-lg text-sm text-[#64748b] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Добавить файл
+                  <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocUpload" />
+                </label>
+              </div>
+
+              <!-- ECP (Digital Signature) -->
+              <div class="rounded-xl p-5 border" :class="signedWithEcp ? 'bg-green-50 border-green-200' : 'bg-[#f8fafc] border-[#e2e8f0]'">
+                <h3 class="font-medium text-[#1e293b] mb-3 flex items-center gap-2">
+                  <svg class="w-5 h-5" :class="signedWithEcp ? 'text-green-600' : 'text-[#64748b]'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Электронная цифровая подпись (ЭЦП)
+                </h3>
+
+                <div v-if="!signedWithEcp">
+                  <p class="text-sm text-[#64748b] mb-3">Для отправки декларации необходимо подписать её электронной цифровой подписью.</p>
+                  <button
+                    @click="simulateEcp"
+                    class="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] text-white rounded-lg text-sm font-medium hover:bg-[#1d4ed8] transition-colors"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Подписать ЭЦП
+                  </button>
+                </div>
+
+                <div v-else class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-medium text-green-800">Документ подписан ЭЦП</p>
+                    <p class="text-xs text-green-600">Сертификат: CN={{ companyData.name }}, ИНН={{ companyData.inn }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Confirmation Checkbox -->
               <label class="flex items-start gap-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -707,29 +923,29 @@ const handlePrint = () => {
 
           <!-- Navigation Buttons -->
           <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
-            <button
+            <AppButton
               v-if="currentStep > 1"
+              variant="secondary"
               @click="prevStep"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
               Назад
-            </button>
+            </AppButton>
             <div v-else></div>
 
             <div class="flex flex-col sm:flex-row gap-3">
-              <button
+              <AppButton
                 v-if="currentStep === 3"
+                variant="secondary"
                 @click="saveDraft"
-                class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                 </svg>
                 Сохранить черновик
-              </button>
+              </AppButton>
 
               <button
                 v-if="currentStep < 3"
@@ -743,17 +959,17 @@ const handlePrint = () => {
                 </svg>
               </button>
 
-              <button
+              <AppButton
                 v-if="currentStep === 3"
+                variant="primary"
+                :disabled="!confirmData || !signedWithEcp"
                 @click="submitDeclaration"
-                :disabled="!confirmData"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Отправить декларацию
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -783,9 +999,7 @@ const handlePrint = () => {
             </div>
             <div>
               <p class="text-sm text-[#64748b] mb-1">Статус</p>
-              <span class="inline-block px-4 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                На проверке
-              </span>
+              <AppBadge variant="warning">На проверке</AppBadge>
             </div>
           </div>
         </div>

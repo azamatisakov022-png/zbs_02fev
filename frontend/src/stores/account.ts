@@ -21,6 +21,7 @@ export interface CorrectionRequest {
   calculationId: number
   calculationNumber: string
   company: string
+  comment?: string
   items: CorrectionItem[]
   totalCorrectionAmount: number
   action: 'balance' | 'refund'
@@ -235,6 +236,7 @@ function submitCorrection(data: {
   calculationId: number
   calculationNumber: string
   company: string
+  comment?: string
   items: CorrectionItem[]
   totalCorrectionAmount: number
   action: 'balance' | 'refund'

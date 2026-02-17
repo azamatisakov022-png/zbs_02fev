@@ -2,28 +2,22 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
+import { validators, scrollToFirstError } from '../../utils/validators'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
-
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 const showInstruction = ref(false)
+const formSubmitted = ref(false)
+
+// Correction comment / reason
+const correctionComment = ref('')
 
 // View mode
 type ViewMode = 'form' | 'success'
@@ -184,6 +178,13 @@ function formatAmount(amount: number): string {
 
 // Submit correction
 function submitCorrection() {
+  formSubmitted.value = true
+
+  if (hasErrors.value) {
+    scrollToFirstError()
+    return
+  }
+
   const calc = selectedCalculation.value
   if (!calc) return
 
@@ -193,6 +194,7 @@ function submitCorrection() {
     calculationId: calc.id,
     calculationNumber: calc.number,
     company: calc.company,
+    comment: correctionComment.value.trim(),
     items: correctionItems.value.map(row => ({
       group: row.group,
       subgroup: row.subgroup,
@@ -216,17 +218,64 @@ function submitCorrection() {
   viewMode.value = 'success'
 }
 
+// Form-level validation errors
+const formErrors = computed(() => {
+  const errors: Record<string, string> = {}
+
+  // Comment / reason is required, minimum 10 characters
+  const commentRequired = validators.required(correctionComment.value.trim(), 'Основание корректировки')
+  if (commentRequired) {
+    errors.comment = commentRequired
+  } else {
+    const commentMin = validators.minLength(correctionComment.value.trim(), 10, 'Основание корректировки')
+    if (commentMin) errors.comment = commentMin
+  }
+
+  // Calculation must be selected
+  const calcRequired = validators.required(selectedCalculationId.value, 'Расчёт')
+  if (calcRequired) errors.calculation = calcRequired
+
+  // At least one row must have additional data
+  if (selectedCalculationId.value && !hasAdditionalData.value) {
+    errors.items = 'Укажите дополнительные объёмы хотя бы по одной позиции'
+  }
+
+  // Per-row validation: additionalTransferred and additionalExported must be non-negative
+  correctionItems.value.forEach((row, index) => {
+    const transferredErr = validators.positiveNumber(row.additionalTransferred, 'Доп. переработка')
+    if (transferredErr) errors[`row_${index}_transferred`] = transferredErr
+
+    const exportedErr = validators.positiveNumber(row.additionalExported, 'Доп. вывоз')
+    if (exportedErr) errors[`row_${index}_exported`] = exportedErr
+
+    // Sum must not exceed volume (Гр.5)
+    if (!isRowValid(row)) {
+      errors[`row_${index}_overflow`] = `Сумма переработки и вывоза не может превышать общий объём (${row.volume} т)`
+    }
+  })
+
+  // Correction amount must be positive
+  if (selectedCalculationId.value && hasAdditionalData.value && totalCorrectionAmount.value <= 0) {
+    errors.amount = 'Сумма корректировки должна быть положительной'
+  }
+
+  return errors
+})
+
+const hasErrors = computed(() => Object.keys(formErrors.value).length > 0)
+
 // Can submit
 const canSubmit = computed(() =>
   selectedCalculationId.value !== null &&
   hasAdditionalData.value &&
   !hasValidationErrors.value &&
+  !hasErrors.value &&
   totalCorrectionAmount.value > 0
 )
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <!-- FORM VIEW -->
     <template v-if="viewMode === 'form'">
       <!-- Header with back button -->
@@ -260,13 +309,16 @@ const canSubmit = computed(() =>
         <select
           v-model="selectedCalculationId"
           @change="onCalculationSelect"
-          class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] text-[#1e293b] bg-white"
+          :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] text-[#1e293b] bg-white', { 'vld-input--error': formSubmitted && formErrors['calculation'] }]"
         >
           <option :value="null" disabled>-- Выберите расчёт --</option>
           <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
             {{ calc.number }} от {{ calc.date }} -- {{ formatAmount(calc.totalAmount) }}
           </option>
         </select>
+        <p v-if="formSubmitted && formErrors['calculation']" class="vld-error" data-validation-error>
+          <span class="vld-error__icon">&#9888;</span> {{ formErrors['calculation'] }}
+        </p>
         <p v-if="paidCalculations.length === 0" class="mt-3 text-sm text-[#f59e0b]">
           Нет оплаченных расчётов для корректировки.
         </p>
@@ -393,6 +445,11 @@ const canSubmit = computed(() =>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5).
+          </p>
+        </div>
+        <div v-if="formSubmitted && formErrors['items']" class="px-5 py-3">
+          <p class="vld-error" data-validation-error>
+            <span class="vld-error__icon">&#9888;</span> {{ formErrors['items'] }}
           </p>
         </div>
       </div>
@@ -591,6 +648,25 @@ const canSubmit = computed(() =>
         </div>
       </div>
 
+      <!-- Step 3.5: Correction reason / comment -->
+      <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#f59e0b] text-white text-sm font-bold flex items-center justify-center">4</span>
+          Основание корректировки <span class="text-red-500">*</span>
+        </h2>
+        <p class="text-sm text-[#64748b] mb-3">Опишите причину подачи корректировки (минимум 10 символов)</p>
+        <textarea
+          v-model="correctionComment"
+          rows="4"
+          placeholder="Например: Дополнительно передано на переработку 5.2 тонн бумажной упаковки по акту №123 от 15.01.2026"
+          :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] text-[#1e293b] bg-white resize-y', { 'vld-input--error': formSubmitted && formErrors['comment'] }]"
+        ></textarea>
+        <p v-if="formSubmitted && formErrors['comment']" class="vld-error" data-validation-error>
+          <span class="vld-error__icon">&#9888;</span> {{ formErrors['comment'] }}
+        </p>
+        <p v-else class="text-xs text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 мин. символов</p>
+      </div>
+
       <!-- Total correction amount (visible only when data entered) -->
       <div v-if="selectedCalculation && hasAdditionalData" class="cf-total-banner mb-6">
         <span class="cf-total-banner__label">Сумма корректировки:</span>
@@ -598,12 +674,15 @@ const canSubmit = computed(() =>
           class="cf-total-banner__value"
           :style="{ color: totalCorrectionAmount > 0 ? '#059669' : totalCorrectionAmount < 0 ? '#EF4444' : '#64748B' }"
         >{{ totalCorrectionAmount > 0 ? '+' : '' }}{{ formatAmount(totalCorrectionAmount) }}</span>
+        <p v-if="formSubmitted && formErrors['amount']" class="vld-error w-full" data-validation-error>
+          <span class="vld-error__icon">&#9888;</span> {{ formErrors['amount'] }}
+        </p>
       </div>
 
       <!-- Action selection -->
       <div v-if="selectedCalculation && hasAdditionalData" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">4</span>
+          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">5</span>
           Действие с суммой корректировки
         </h2>
         <div class="space-y-3">
@@ -628,7 +707,7 @@ const canSubmit = computed(() =>
       <div class="flex flex-col sm:flex-row gap-4">
         <button
           @click="submitCorrection"
-          :disabled="!canSubmit"
+          :disabled="!canSubmit || (formSubmitted && hasErrors)"
           class="flex items-center justify-center gap-2 px-6 py-3 bg-[#10b981] text-white rounded-xl font-semibold hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1041,6 +1120,24 @@ const canSubmit = computed(() =>
 .cf-total-banner__value {
   font-size: 28px;
   font-weight: 800;
+}
+
+/* ── Validation ── */
+.vld-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #EF4444;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+.vld-error__icon {
+  flex-shrink: 0;
+}
+.vld-input--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
 /* ── Mobile ── */

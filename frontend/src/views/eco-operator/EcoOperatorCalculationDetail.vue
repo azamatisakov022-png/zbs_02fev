@@ -2,29 +2,18 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore, type Calculation } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
 import { accountStore } from '../../stores/account'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
+import { notificationStore } from '../../stores/notifications'
 
 const route = useRoute()
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const calcId = computed(() => Number(route.params.id))
 const calc = computed<Calculation | undefined>(() => calculationStore.getCalculationById(calcId.value))
@@ -83,6 +72,13 @@ const toastMessage = ref('')
 const approveCalc = () => {
   if (!calc.value) return
   calculationStore.approveCalculation(calc.value.id)
+  notificationStore.add({
+    type: 'success',
+    title: `Расчёт ${calc.value.number} принят`,
+    message: 'Ваш расчёт утилизационного сбора принят и ожидает оплаты.',
+    role: 'business',
+    link: `/business/calculations/${calc.value.id}`
+  })
   toastMessage.value = `Расчёт ${calc.value.number} принят`
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
@@ -96,6 +92,12 @@ const openRejectModal = () => {
 const rejectCalc = () => {
   if (!calc.value || rejectionReason.value.trim().length < 10) return
   calculationStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
+  notificationStore.add({
+    type: 'error',
+    title: `Расчёт ${calc.value.number} отклонён`,
+    message: rejectionReason.value.trim() || 'Расчёт отклонён. Исправьте и отправьте повторно.',
+    role: 'business'
+  })
   showRejectModal.value = false
   toastMessage.value = `Расчёт ${calc.value.number} отклонён`
   showToast.value = true
@@ -105,7 +107,7 @@ const rejectCalc = () => {
 const goBack = () => router.push('/eco-operator/calculations')
 
 const downloadFile = (name: string) => {
-  alert(`Скачивание файла: ${name}`)
+  toastStore.show({ type: 'info', title: 'Скачивание файла', message: name })
 }
 
 const downloadExcel = () => {
@@ -119,11 +121,11 @@ const downloadExcel = () => {
 </script>
 
 <template>
-  <DashboardLayout role="eco-operator" roleTitle="ГП «Эко Оператор»" userName="ОсОО «ЭкоПереработка»" :menuItems="menuItems">
+  <DashboardLayout role="eco-operator" :roleTitle="roleTitle" userName="ОсОО «ЭкоПереработка»" :menuItems="menuItems">
     <!-- Not Found -->
     <div v-if="!calc" class="text-center py-16">
       <p class="text-lg text-[#64748b] mb-4">Расчёт не найден</p>
-      <button @click="goBack" class="px-6 py-2 bg-[#2563eb] text-white rounded-lg hover:bg-[#1d4ed8]">Назад к списку</button>
+      <button @click="goBack" class="px-6 py-2 bg-[#2563eb] text-white rounded-lg hover:bg-[#1d4ed8]">{{ $t('common.back') }}</button>
     </div>
 
     <template v-else>
@@ -138,7 +140,7 @@ const downloadExcel = () => {
         </div>
         <button @click="goBack" class="inline-flex items-center gap-2 px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Назад к списку
+          {{ $t('common.back') }}
         </button>
       </div>
 
@@ -316,7 +318,7 @@ const downloadExcel = () => {
       <!-- Sticky Action Bar -->
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-6 lg:-mx-8 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <button @click="goBack" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-          Назад к списку
+          {{ $t('common.back') }}
         </button>
                 <button @click="downloadExcel" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -355,7 +357,7 @@ const downloadExcel = () => {
           </div>
           <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
             <button @click="showRejectModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="rejectCalc"

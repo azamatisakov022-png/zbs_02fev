@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import TheHeader from './components/layout/TheHeader.vue'
 import TheNavigation from './components/layout/TheNavigation.vue'
 import TheFooter from './components/layout/TheFooter.vue'
+import AppToast from './components/ui/AppToast.vue'
 
 const route = useRoute()
 
@@ -14,7 +15,8 @@ const isDashboard = computed(() => {
     path.startsWith('/admin') ||
     path.startsWith('/employee') ||
     path.startsWith('/business') ||
-    path.startsWith('/eco-operator')
+    path.startsWith('/eco-operator') ||
+    path.startsWith('/ministry')
   )
 })
 </script>
@@ -37,5 +39,8 @@ const isDashboard = computed(() => {
 
     <!-- Public footer - only show on public pages -->
     <TheFooter v-if="!isDashboard" />
+
+    <!-- Global Toast Notifications -->
+    <AppToast />
   </div>
 </template>

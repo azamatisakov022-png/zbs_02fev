@@ -4,17 +4,17 @@ const footerLinks = [
   { name: 'licenses', path: '/licenses', label: 'Лицензии' },
   { name: 'publications', path: '/publications', label: 'Публикации' },
   { name: 'registries', path: '/registries', label: 'Реестры' },
-  { name: 'calculator', path: '/calculator', label: 'Калькулятор' },
+  { name: 'calculator', path: '/calculator', label: 'Калькулятор РОП' },
   { name: 'contests', path: '/contests', label: 'Конкурсы' },
   { name: 'glossary', path: '/glossary', label: 'Глоссарий' },
 ]
 
 const socialLinks = [
-  { name: 'instagram', icon: '/images/social/instagram.svg', url: '#', label: 'Instagram', handle: 'reestr_kg' },
-  { name: 'telegram', icon: '/images/social/telegram.svg', url: '#', label: 'Telegram', handle: '@reestr_kg' },
-  { name: 'facebook', icon: '/images/social/facebook.svg', url: '#', label: 'Facebook', handle: '@reestr_kg' },
-  { name: 'youtube', icon: '/images/social/youtube.svg', url: '#', label: 'YouTube', handle: '@reestr_kg' },
-  { name: 'linkedin', icon: '/images/social/linkedin.svg', url: '#', label: 'Linkedin', handle: '@reestr_kg' },
+  { name: 'instagram', icon: '/images/social/instagram.svg', url: 'https://instagram.com/reestr_kg', label: 'Instagram', handle: 'reestr_kg' },
+  { name: 'telegram', icon: '/images/social/telegram.svg', url: 'https://t.me/reestr_kg', label: 'Telegram', handle: '@reestr_kg' },
+  { name: 'facebook', icon: '/images/social/facebook.svg', url: 'https://facebook.com/reestr_kg', label: 'Facebook', handle: '@reestr_kg' },
+  { name: 'youtube', icon: '/images/social/youtube.svg', url: 'https://youtube.com/@reestr_kg', label: 'YouTube', handle: '@reestr_kg' },
+  { name: 'linkedin', icon: '/images/social/linkedin.svg', url: 'https://linkedin.com/company/reestr_kg', label: 'Linkedin', handle: '@reestr_kg' },
 ]
 </script>
 
@@ -24,18 +24,9 @@ const socialLinks = [
       <!-- Top footer - Logo and Navigation -->
       <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between py-5 lg:py-6 gap-4 lg:gap-0">
         <!-- Logo -->
-        <div class="flex items-center gap-2 lg:gap-3">
-          <div class="flex items-center relative w-[60px] h-[50px] lg:w-[76px] lg:h-[64px]">
-            <img src="/images/logo-circle1.svg" alt="" class="absolute" style="top: 48px; left: 5px; width: 48px; height: 36px;" />
-            <img src="/images/logo-circle2.svg" alt="" class="absolute" style="top: 5px; left: 0; width: 37px; height: 47px;" />
-            <img src="/images/logo-circle3.svg" alt="" class="absolute" style="top: 0; left: 33px; width: 49px; height: 36px;" />
-          </div>
-          <div class="flex flex-col ml-2">
-            <span class="text-[#0e888d] font-bold text-xs md:text-sm lg:text-base uppercase leading-[16px]">
-              ГП Эко Оператор
-            </span>
-          </div>
-        </div>
+        <router-link to="/" class="flex items-center">
+          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="max-height: 48px; width: auto; object-fit: contain;" />
+        </router-link>
 
         <!-- Footer navigation -->
         <nav class="hidden lg:flex items-center gap-[40px]">
@@ -100,6 +91,8 @@ const socialLinks = [
             v-for="social in socialLinks"
             :key="social.name"
             :href="social.url"
+            target="_blank"
+            rel="noopener noreferrer"
             class="flex items-center gap-2 lg:gap-3 text-[#415861] text-xs leading-[15px] hover:text-[#0e888d] transition-colors"
           >
             <img :src="social.icon" :alt="social.label" class="w-5 h-5 lg:w-6 lg:h-6" />

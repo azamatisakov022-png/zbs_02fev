@@ -6,21 +6,12 @@ import StatsCard from '../../components/dashboard/StatsCard.vue'
 import LineChart from '../../components/charts/LineChart.vue'
 import PieChart from '../../components/charts/PieChart.vue'
 import ProgressBar from '../../components/charts/ProgressBar.vue'
-import { icons, statsIcons } from '../../utils/menuIcons'
+import { statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 const actionCards = [
   {
@@ -112,7 +103,7 @@ onMounted(() => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >

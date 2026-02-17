@@ -1,21 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { useI18n } from 'vue-i18n'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { t } = useI18n()
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ==================== MAP STATE ====================
 const mapCenter = ref<[number, number]>([41.2, 74.7])
@@ -25,13 +19,14 @@ const mapSearchQuery = ref('')
 const mapSearchResults = ref<MapPoint[]>([])
 const showMapSearchResults = ref(false)
 
-type LayerType = 'recyclers' | 'reception' | 'landfills' | 'producers'
+type LayerType = 'recyclers' | 'reception' | 'landfills' | 'dumps' | 'payers'
 
 const layers = ref([
-  { id: 'landfills' as LayerType, name: 'Полигоны/свалки', icon: '🏭', visible: true, color: '#f97316' },
-  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '📍', visible: true, color: '#3b82f6' },
-  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '♻️', visible: true, color: '#22c55e' },
-  { id: 'producers' as LayerType, name: 'Производители', icon: '🏢', visible: true, color: '#a855f7' },
+  { id: 'landfills' as LayerType, name: 'Полигоны ТБО', icon: '🟢', visible: true, color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '🔵', visible: true, color: '#2563EB' },
+  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '🟡', visible: true, color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: 'Несанкц. свалки', icon: '🟠', visible: true, color: '#DC2626' },
+  { id: 'payers' as LayerType, name: 'Плательщики', icon: '🟣', visible: false, color: '#9333EA' },
 ])
 
 interface MapPoint {
@@ -57,10 +52,11 @@ const notificationMessage = ref('')
 const isCreating = ref(false)
 
 const registries = [
-  { id: 'landfills' as LayerType, name: 'Полигоны/свалки', icon: '🏭', color: 'orange' },
-  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '📍', color: 'blue' },
-  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '♻️', color: 'green' },
-  { id: 'producers' as LayerType, name: 'Производители', icon: '🏢', color: 'purple' },
+  { id: 'landfills' as LayerType, name: 'Полигоны ТБО', icon: '🟢', color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '🔵', color: '#2563EB' },
+  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '🟡', color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: 'Несанкц. свалки', icon: '🟠', color: '#DC2626' },
+  { id: 'payers' as LayerType, name: 'Плательщики', icon: '🟣', color: '#9333EA' },
 ]
 
 const regions = ['г. Бишкек', 'г. Ош', 'Чуйская обл.', 'Ошская обл.', 'Джалал-Абадская обл.', 'Иссык-Кульская обл.', 'Нарынская обл.', 'Таласская обл.', 'Баткенская обл.']
@@ -166,6 +162,60 @@ const filteredProducers = computed(() => {
   return producers.value.filter(p => p.name.toLowerCase().includes(q) || p.inn.includes(q) || p.region.toLowerCase().includes(q))
 })
 
+// ==================== DUMPS ====================
+interface Dump {
+  id: number; name: string; region: string; address: string; gpsLat: string; gpsLng: string
+  area: number; discoveryDate: string; dumpStatus: string; notes: string
+}
+
+const dumps = ref<Dump[]>([
+  { id: 41, name: 'Свалка у р. Аламедин', region: 'Чуйская обл.', address: 'берег р. Аламедин', gpsLat: '42.9456', gpsLng: '74.5123', area: 2.5, discoveryDate: '15.03.2024', dumpStatus: 'Ликвидируется', notes: 'Бытовые и строительные отходы' },
+  { id: 42, name: 'Свалка «Токмок»', region: 'Чуйская обл.', address: 'окрестности г. Токмок', gpsLat: '42.8567', gpsLng: '75.3123', area: 8.0, discoveryDate: '20.06.2018', dumpStatus: 'Ликвидируется', notes: 'Крупная стихийная свалка' },
+  { id: 43, name: 'Свалка у трассы Бишкек–Ош', region: 'Чуйская обл.', address: 'вдоль трассы, км 45', gpsLat: '42.6234', gpsLng: '74.3567', area: 1.2, discoveryDate: '10.08.2024', dumpStatus: 'Обнаружена', notes: 'Пластик и строительный мусор' },
+  { id: 44, name: 'Свалка у с. Кара-Балта', region: 'Чуйская обл.', address: 'Жайылский р-н', gpsLat: '42.8123', gpsLng: '73.8456', area: 3.0, discoveryDate: '05.11.2023', dumpStatus: 'Ликвидирована', notes: 'Рекультивация завершена' },
+  { id: 45, name: 'Свалка у оз. Иссык-Куль', region: 'Иссык-Кульская обл.', address: 'южный берег озера', gpsLat: '42.5012', gpsLng: '77.3456', area: 0.8, discoveryDate: '22.05.2024', dumpStatus: 'Ликвидируется', notes: 'Курортная зона, приоритет' },
+  { id: 46, name: 'Свалка в пригороде Ош', region: 'Ошская обл.', address: 'Кара-Сууйский р-н', gpsLat: '40.4812', gpsLng: '72.6789', area: 5.2, discoveryDate: '03.02.2023', dumpStatus: 'Ликвидируется', notes: 'Смешанные отходы, рядом жилмассив' },
+  { id: 47, name: 'Свалка у Кызыл-Кия', region: 'Баткенская обл.', address: 'г. Кызыл-Кия', gpsLat: '40.2567', gpsLng: '72.1234', area: 2.0, discoveryDate: '18.07.2024', dumpStatus: 'Обнаружена', notes: 'Строительные и промышленные отходы' },
+  { id: 48, name: 'Свалка у Майлуу-Суу', region: 'Джалал-Абадская обл.', address: 'г. Майлуу-Суу', gpsLat: '41.2623', gpsLng: '72.4512', area: 3.5, discoveryDate: '12.01.2022', dumpStatus: 'Ликвидирована', notes: 'Радиоактивные хвосты' },
+  { id: 49, name: 'Свалка у с. Кочкорка', region: 'Нарынская обл.', address: 'Кочкорский р-н', gpsLat: '42.0234', gpsLng: '75.7567', area: 1.8, discoveryDate: '07.10.2024', dumpStatus: 'Обнаружена', notes: 'Бытовые отходы' },
+  { id: 50, name: 'Свалка у р. Талас', region: 'Таласская обл.', address: 'пойма р. Талас', gpsLat: '42.5512', gpsLng: '72.1823', area: 1.0, discoveryDate: '19.06.2024', dumpStatus: 'Ликвидируется', notes: 'Сельскохозяйственные отходы' },
+])
+
+const selectedDump = ref<Dump | null>(null)
+const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' })
+
+const filteredDumps = computed(() => {
+  if (!registrySearchQuery.value) return dumps.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return dumps.value.filter(d => d.name.toLowerCase().includes(q) || d.region.toLowerCase().includes(q))
+})
+
+// ==================== PAYERS ====================
+interface Payer {
+  id: number; name: string; inn: string; region: string; address: string; gpsLat: string; gpsLng: string
+  phone: string; category: string; calcStatus: string
+}
+
+const payers = ref<Payer[]>([
+  { id: 61, name: 'ОсОО «Кока-Кола Бишкек Ботлерс»', inn: '02907202010020', region: 'г. Бишкек', address: 'ул. Фучика, 14/1', gpsLat: '42.8345', gpsLng: '74.5567', phone: '+996 312 54-32-10', category: 'Крупный импортёр', calcStatus: 'Оплачен' },
+  { id: 62, name: 'ОАО «Бишкексут»', inn: '01204200010399', region: 'г. Бишкек', address: 'ул. Фрунзе, 480', gpsLat: '42.8567', gpsLng: '74.5234', phone: '+996 312 43-21-09', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 63, name: 'ОсОО «Шоро»', inn: '02406200210072', region: 'г. Бишкек', address: 'ул. Ибраимова, 29', gpsLat: '42.8789', gpsLng: '74.5890', phone: '+996 312 32-10-98', category: 'Производитель', calcStatus: 'На проверке' },
+  { id: 64, name: 'ОсОО «Арпа»', inn: '02502200310045', region: 'г. Бишкек', address: 'ул. Льва Толстого, 36', gpsLat: '42.8123', gpsLng: '74.6012', phone: '+996 312 21-09-87', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 65, name: 'ОсОО «Южный Пластик»', inn: '12308200110089', region: 'г. Ош', address: 'ул. Промышленная, 12', gpsLat: '40.5345', gpsLng: '72.7789', phone: '+996 3222 3-45-67', category: 'Производитель', calcStatus: 'Просрочен' },
+  { id: 66, name: 'ОсОО «ИнтерГласс»', inn: '02309200410156', region: 'Чуйская обл.', address: 'г. Токмок, ул. Промышленная, 25', gpsLat: '42.8234', gpsLng: '75.2789', phone: '+996 3138 8-76-54', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 67, name: 'ОсОО «Азия Фуд»', inn: '02410200510234', region: 'г. Бишкек', address: 'ул. Жибек Жолу, 498', gpsLat: '42.8456', gpsLng: '74.6234', phone: '+996 312 10-98-76', category: 'Импортёр', calcStatus: 'На проверке' },
+  { id: 68, name: 'ОсОО «ЭнергоПром»', inn: '02511200610312', region: 'г. Бишкек', address: 'ул. Сухэ-Батора, 5', gpsLat: '42.8678', gpsLng: '74.5012', phone: '+996 312 09-87-65', category: 'Импортёр', calcStatus: 'Оплачен' },
+])
+
+const selectedPayer = ref<Payer | null>(null)
+const payerForm = ref<Payer>({ id: 0, name: '', inn: '', region: '', address: '', gpsLat: '', gpsLng: '', phone: '', category: '', calcStatus: '' })
+
+const filteredPayers = computed(() => {
+  if (!registrySearchQuery.value) return payers.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return payers.value.filter(p => p.name.toLowerCase().includes(q) || p.inn.includes(q) || p.region.toLowerCase().includes(q))
+})
+
 // ==================== MAP POINTS FROM REGISTRY DATA ====================
 const allMapPoints = computed<MapPoint[]>(() => {
   const points: MapPoint[] = []
@@ -200,8 +250,26 @@ const allMapPoints = computed<MapPoint[]>(() => {
   producers.value.forEach(p => {
     if (p.gpsLat && p.gpsLng) {
       points.push({
-        id: p.id, type: 'producers', name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
+        id: p.id, type: 'recyclers' as LayerType, name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
         address: p.address, phone: p.phone, status: p.status, description: p.productType
+      })
+    }
+  })
+
+  dumps.value.forEach(d => {
+    if (d.gpsLat && d.gpsLng) {
+      points.push({
+        id: d.id, type: 'dumps', name: d.name, lat: parseFloat(d.gpsLat), lng: parseFloat(d.gpsLng),
+        address: d.address || d.region, phone: '', status: d.dumpStatus, description: d.notes
+      })
+    }
+  })
+
+  payers.value.forEach(p => {
+    if (p.gpsLat && p.gpsLng) {
+      points.push({
+        id: p.id, type: 'payers', name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
+        address: p.address, phone: p.phone, status: p.calcStatus, description: p.category
       })
     }
   })
@@ -238,6 +306,11 @@ const getStatusInfo = (status: string) => {
     'Временно закрыт': { label: 'Временно закрыт', color: 'bg-yellow-100 text-yellow-700' },
     'На проверке': { label: 'На проверке', color: 'bg-yellow-100 text-yellow-700' },
     'На реконструкции': { label: 'На реконструкции', color: 'bg-blue-100 text-blue-700' },
+    'Обнаружена': { label: 'Обнаружена', color: 'bg-red-100 text-red-700' },
+    'Ликвидируется': { label: 'Ликвидируется', color: 'bg-orange-100 text-orange-700' },
+    'Ликвидирована': { label: 'Ликвидирована', color: 'bg-green-100 text-green-700' },
+    'Оплачен': { label: 'Оплачен', color: 'bg-green-100 text-green-700' },
+    'Просрочен': { label: 'Просрочен', color: 'bg-red-100 text-red-700' },
   }
   return map[status] || { label: status, color: 'bg-gray-100 text-gray-700' }
 }
@@ -304,6 +377,11 @@ const getStatusClass = (status: string) => {
     'Закрыт': 'bg-gray-100 text-gray-700', 'Временно закрыт': 'bg-yellow-100 text-yellow-700',
     'На проверке': 'bg-yellow-100 text-yellow-700', 'На реконструкции': 'bg-blue-100 text-blue-700',
     'Приостановлен': 'bg-red-100 text-red-700', 'Рекультивирован': 'bg-teal-100 text-teal-700',
+    'Обнаружена': 'bg-red-100 text-red-700',
+    'Ликвидируется': 'bg-orange-100 text-orange-700',
+    'Ликвидирована': 'bg-green-100 text-green-700',
+    'Оплачен': 'bg-green-100 text-green-700',
+    'Просрочен': 'bg-red-100 text-red-700',
   }
   return map[status] || 'bg-gray-100 text-gray-700'
 }
@@ -313,6 +391,8 @@ const openView = (item: any) => {
   else if (activeRegistry.value === 'reception') selectedReception.value = item
   else if (activeRegistry.value === 'recyclers') selectedRecycler.value = item
   else if (activeRegistry.value === 'producers') selectedProducer.value = item
+  else if (activeRegistry.value === 'dumps') selectedDump.value = item
+  else if (activeRegistry.value === 'payers') selectedPayer.value = item
   showViewModal.value = true
 }
 
@@ -322,6 +402,8 @@ const openEdit = (item: any) => {
   else if (activeRegistry.value === 'reception') { receptionForm.value = { ...item }; selectedReception.value = item }
   else if (activeRegistry.value === 'recyclers') { recyclerForm.value = { ...item }; selectedRecycler.value = item }
   else if (activeRegistry.value === 'producers') { producerForm.value = { ...item }; selectedProducer.value = item }
+  else if (activeRegistry.value === 'dumps') { dumpForm.value = { ...item }; selectedDump.value = item }
+  else if (activeRegistry.value === 'payers') { payerForm.value = { ...item }; selectedPayer.value = item }
   showEditModal.value = true
 }
 
@@ -335,6 +417,10 @@ const openCreate = () => {
     recyclerForm.value = { id: Math.max(0, ...recyclers.value.map(r => r.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: 'Активен', notes: '' }
   } else if (activeRegistry.value === 'producers') {
     producerForm.value = { id: Math.max(0, ...producers.value.map(p => p.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: 'Активен', notes: '' }
+  } else if (activeRegistry.value === 'dumps') {
+    dumpForm.value = { id: Math.max(0, ...dumps.value.map(d => d.id)) + 1, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' }
+  } else if (activeRegistry.value === 'payers') {
+    payerForm.value = { id: Math.max(0, ...payers.value.map(p => p.id)) + 1, name: '', inn: '', region: '', address: '', gpsLat: '', gpsLng: '', phone: '', category: '', calcStatus: '' }
   }
   showEditModal.value = true
 }
@@ -344,6 +430,8 @@ const openDelete = (item: any) => {
   else if (activeRegistry.value === 'reception') selectedReception.value = item
   else if (activeRegistry.value === 'recyclers') selectedRecycler.value = item
   else if (activeRegistry.value === 'producers') selectedProducer.value = item
+  else if (activeRegistry.value === 'dumps') selectedDump.value = item
+  else if (activeRegistry.value === 'payers') selectedPayer.value = item
   showDeleteConfirm.value = true
 }
 
@@ -360,6 +448,12 @@ const saveItem = () => {
   } else if (activeRegistry.value === 'producers') {
     if (isCreating.value) producers.value.push({ ...producerForm.value })
     else { const idx = producers.value.findIndex(p => p.id === producerForm.value.id); if (idx !== -1) producers.value[idx] = { ...producerForm.value } }
+  } else if (activeRegistry.value === 'dumps') {
+    if (isCreating.value) dumps.value.push({ ...dumpForm.value })
+    else { const idx = dumps.value.findIndex(d => d.id === dumpForm.value.id); if (idx !== -1) dumps.value[idx] = { ...dumpForm.value } }
+  } else if (activeRegistry.value === 'payers') {
+    if (isCreating.value) payers.value.push({ ...payerForm.value })
+    else { const idx = payers.value.findIndex(p => p.id === payerForm.value.id); if (idx !== -1) payers.value[idx] = { ...payerForm.value } }
   }
   showEditModal.value = false
   notificationMessage.value = isCreating.value ? 'Запись успешно создана' : 'Данные обновлены'
@@ -372,6 +466,8 @@ const deleteItem = () => {
   else if (activeRegistry.value === 'reception' && selectedReception.value) receptionPoints.value = receptionPoints.value.filter(r => r.id !== selectedReception.value!.id)
   else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) recyclers.value = recyclers.value.filter(r => r.id !== selectedRecycler.value!.id)
   else if (activeRegistry.value === 'producers' && selectedProducer.value) producers.value = producers.value.filter(p => p.id !== selectedProducer.value!.id)
+  else if (activeRegistry.value === 'dumps' && selectedDump.value) dumps.value = dumps.value.filter(d => d.id !== selectedDump.value!.id)
+  else if (activeRegistry.value === 'payers' && selectedPayer.value) payers.value = payers.value.filter(p => p.id !== selectedPayer.value!.id)
   showDeleteConfirm.value = false
   notificationMessage.value = 'Запись удалена'
   showNotification.value = true
@@ -390,12 +486,13 @@ const getSelectedItemName = () => {
   if (activeRegistry.value === 'reception') return selectedReception.value?.name
   if (activeRegistry.value === 'recyclers') return selectedRecycler.value?.name
   if (activeRegistry.value === 'producers') return selectedProducer.value?.name
+  if (activeRegistry.value === 'dumps') return selectedDump.value?.name
+  if (activeRegistry.value === 'payers') return selectedPayer.value?.name
   return ''
 }
 
 const getRegistryAddButtonText = () => {
-  const map: Record<string, string> = { 'landfills': 'Добавить полигон', 'reception': 'Добавить пункт приёма', 'recyclers': 'Добавить переработчика', 'producers': 'Добавить производителя' }
-  return map[activeRegistry.value] || 'Добавить'
+  return t('common.add')
 }
 
 const countByType = computed(() => ({
@@ -403,23 +500,25 @@ const countByType = computed(() => ({
   reception: receptionPoints.value.length,
   recyclers: recyclers.value.length,
   producers: producers.value.length,
+  dumps: dumps.value.length,
+  payers: payers.value.length,
   total: allMapPoints.value.length,
 }))
 </script>
 
 <template>
-  <DashboardLayout role="employee" roleTitle="Сотрудник МПРЭТН КР" userName="Мамытова Айгуль" :menuItems="menuItems">
+  <DashboardLayout role="employee" :roleTitle="roleTitle" userName="Мамытова Айгуль" :menuItems="menuItems">
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">ГИС-карта</h1>
-          <p class="text-gray-600 mt-1">Географическое распределение объектов и управление реестрами</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.mapTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.employee.mapSubtitle') }}</p>
         </div>
         <div class="flex items-center gap-2">
-          <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="toastStore.show({ type: 'info', title: 'Экспорт данных карты', message: 'Функция в разработке' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            Экспорт
+            {{ $t('common.export') }}
           </button>
           <button @click="openCreate" class="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -428,88 +527,89 @@ const countByType = computed(() => ({
         </div>
       </div>
 
-      <!-- Map Section -->
-      <div class="map-container grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="relative h-[400px]">
-              <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0">
-                <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' layer-type="base" name="OpenStreetMap" />
-                <LMarker v-for="point in visiblePoints" :key="`${point.type}-${point.id}`" :lat-lng="[point.lat, point.lng]" :icon="getMarkerIcon(point.type)">
-                  <LPopup :options="{ maxWidth: 300 }">
-                    <div class="min-w-[220px]">
-                      <div class="flex items-start justify-between mb-2">
-                        <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ point.name }}</h4>
-                        <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(point.status).color]">{{ getStatusInfo(point.status).label }}</span>
-                      </div>
-                      <div class="space-y-1 text-xs">
-                        <p class="flex items-start gap-2"><span class="text-gray-400">Тип:</span><span class="text-gray-700">{{ getTypeLabel(point.type) }}</span></p>
-                        <p class="flex items-start gap-2"><span class="text-gray-400">Адрес:</span><span class="text-gray-700">{{ point.address }}</span></p>
-                        <p v-if="point.phone" class="flex items-start gap-2"><span class="text-gray-400">Тел:</span><span class="text-gray-700">{{ point.phone }}</span></p>
-                        <p v-if="point.description" class="flex items-start gap-2"><span class="text-gray-400">Инфо:</span><span class="text-gray-700">{{ point.description }}</span></p>
-                      </div>
-                    </div>
-                  </LPopup>
-                </LMarker>
-              </LMap>
-
-              <!-- Search overlay -->
-              <div class="absolute top-4 left-4 w-64 z-[1000]" @click.stop>
-                <div class="relative">
-                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                  <input v-model="mapSearchQuery" type="text" placeholder="Поиск на карте..." class="w-full pl-10 pr-4 py-2 bg-white border-0 rounded-lg shadow-md focus:ring-2 focus:ring-sky-500" @focus="showMapSearchResults = mapSearchResults.length > 0" />
-                </div>
-                <div v-if="showMapSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
-                  <div v-for="result in mapSearchResults" :key="`${result.type}-${result.id}`" @click="goToMapPoint(result)" class="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full flex-shrink-0" :style="{ backgroundColor: layers.find(l => l.id === result.type)?.color }"></div>
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">{{ result.name }}</p>
-                        <p class="text-xs text-gray-500 truncate">{{ result.address }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Legend -->
-              <div class="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3 z-[1000]">
-                <p class="text-xs font-semibold text-gray-700 mb-2">Легенда</p>
-                <div class="space-y-1">
-                  <div v-for="layer in layers" :key="layer.id" class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: layer.color }"></div>
-                    <span class="text-xs text-gray-600">{{ layer.name }}</span>
+      <!-- Horizontal Filter Bar -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex items-center gap-3 px-4 py-3 flex-wrap">
+          <!-- Search -->
+          <div class="relative w-[220px] flex-shrink-0">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input
+              v-model="mapSearchQuery"
+              type="text"
+              placeholder="Поиск объекта..."
+              class="w-full h-9 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              @focus="showMapSearchResults = mapSearchResults.length > 0"
+              @blur="setTimeout(() => showMapSearchResults = false, 200)"
+            />
+            <div v-if="showMapSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto z-50">
+              <div v-for="result in mapSearchResults" :key="`${result.type}-${result.id}`" @mousedown.prevent="goToMapPoint(result)" class="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layers.find(l => l.id === result.type)?.color }"></div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ result.name }}</p>
+                    <p class="text-[11px] text-gray-500 truncate">{{ result.address }}</p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div class="w-px h-7 bg-gray-200 flex-shrink-0"></div>
+
+          <!-- Layer type chips -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="layer in layers"
+              :key="layer.id"
+              @click="toggleLayer(layer.id)"
+              :class="[
+                'flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] font-medium transition-all border',
+                layer.visible
+                  ? 'bg-white border-current shadow-sm'
+                  : 'bg-gray-100 border-gray-200 text-gray-400'
+              ]"
+              :style="layer.visible ? { color: layer.color, borderColor: layer.color } : {}"
+            >
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.visible ? layer.color : '#d1d5db' }"></span>
+              <span class="whitespace-nowrap">{{ layer.name }}</span>
+              <span class="text-[11px] px-1.5 py-0.5 rounded-full font-semibold"
+                :style="layer.visible ? { backgroundColor: layer.color + '1a', color: layer.color } : { backgroundColor: '#e5e7eb', color: '#6b7280' }"
+              >{{ countByType[layer.id] }}</span>
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-4">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-900 mb-3">Слои карты</h3>
-            <div class="space-y-2">
-              <label v-for="layer in layers" :key="layer.id" class="flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors" :class="layer.visible ? 'bg-sky-50' : 'bg-gray-50'">
-                <div class="flex items-center gap-2">
-                  <input type="checkbox" :checked="layer.visible" @change="toggleLayer(layer.id)" class="w-4 h-4 text-sky-600 border-gray-300 rounded focus:ring-sky-500" />
-                  <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: layer.color }"></div>
-                  <span class="text-sm" :class="layer.visible ? 'text-gray-900' : 'text-gray-500'">{{ layer.name }}</span>
+      <!-- Map Section -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="relative" style="height: calc(100vh - 360px); min-height: 350px; max-height: 600px;">
+          <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0">
+            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' layer-type="base" name="OpenStreetMap" />
+            <LMarker v-for="point in visiblePoints" :key="`${point.type}-${point.id}`" :lat-lng="[point.lat, point.lng]" :icon="getMarkerIcon(point.type)">
+              <LPopup :options="{ maxWidth: 300 }">
+                <div class="min-w-[220px]">
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ point.name }}</h4>
+                    <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(point.status).color]">{{ getStatusInfo(point.status).label }}</span>
+                  </div>
+                  <div class="space-y-1 text-xs">
+                    <p class="flex items-start gap-2"><span class="text-gray-400">Тип:</span><span class="text-gray-700">{{ getTypeLabel(point.type) }}</span></p>
+                    <p class="flex items-start gap-2"><span class="text-gray-400">Адрес:</span><span class="text-gray-700">{{ point.address }}</span></p>
+                    <p v-if="point.phone" class="flex items-start gap-2"><span class="text-gray-400">Тел:</span><span class="text-gray-700">{{ point.phone }}</span></p>
+                    <p v-if="point.description" class="flex items-start gap-2"><span class="text-gray-400">Инфо:</span><span class="text-gray-700">{{ point.description }}</span></p>
+                  </div>
                 </div>
-                <span class="text-xs px-1.5 py-0.5 rounded-full" :class="layer.visible ? 'bg-sky-200 text-sky-700' : 'bg-gray-200 text-gray-600'">{{ countByType[layer.id] }}</span>
-              </label>
-            </div>
-          </div>
+              </LPopup>
+            </LMarker>
+          </LMap>
 
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-900 mb-3">Сводка</h3>
-            <div class="space-y-2 text-sm">
-              <div class="flex items-center justify-between"><span class="text-gray-500">Всего объектов</span><span class="font-bold text-gray-900">{{ countByType.total }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Полигонов</span><span class="font-bold text-orange-600">{{ countByType.landfills }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Пунктов приёма</span><span class="font-bold text-blue-600">{{ countByType.reception }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Переработчиков</span><span class="font-bold text-green-600">{{ countByType.recyclers }}</span></div>
-              <div class="flex items-center justify-between"><span class="text-gray-500">Производителей</span><span class="font-bold text-purple-600">{{ countByType.producers }}</span></div>
+          <!-- Legend -->
+          <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-gray-200/60 px-3 py-2.5 z-[1000]">
+            <div class="space-y-1.5">
+              <div v-for="layer in layers" :key="layer.id" class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: layer.color }"></div>
+                <span class="text-[12px] text-gray-600 whitespace-nowrap">{{ layer.name }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -530,7 +630,7 @@ const countByType = computed(() => ({
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <div class="relative">
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input v-model="registrySearchQuery" type="text" placeholder="Поиск по названию, региону..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+          <input v-model="registrySearchQuery" type="text" :placeholder="$t('common.search')" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
         </div>
       </div>
 
@@ -545,8 +645,8 @@ const countByType = computed(() => ({
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
                 <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Площадь</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -560,7 +660,7 @@ const countByType = computed(() => ({
                   <div class="flex items-center justify-center gap-1">
                     <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>Просмотр</button>
                     <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>Изменить</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>Удалить</button>
+                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</button>
                   </div>
                 </td>
               </tr>
@@ -580,8 +680,8 @@ const countByType = computed(() => ({
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Адрес</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Виды отходов</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -615,8 +715,8 @@ const countByType = computed(() => ({
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид деятельности</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -650,8 +750,8 @@ const countByType = computed(() => ({
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид продукции</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -666,6 +766,75 @@ const countByType = computed(() => ({
                     <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
                     <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                     <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DUMPS TABLE -->
+      <div v-if="activeRegistry === 'dumps'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр несанкционированных свалок</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Площадь (га)</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата обнаружения</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredDumps" :key="item.id" @click="onTableRowClick(item, 'dumps')" class="hover:bg-red-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-900">{{ item.area }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.discoveryDate }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.dumpStatus)]">{{ item.dumpStatus }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">Просмотр</button>
+                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">Изменить</button>
+                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">Удалить</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PAYERS TABLE -->
+      <div v-if="activeRegistry === 'payers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр плательщиков утильсбора</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категория</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус расчётов</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredPayers" :key="item.id" @click="onTableRowClick(item, 'payers')" class="hover:bg-purple-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 font-mono">{{ item.inn }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.category }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.calcStatus)]">{{ item.calcStatus }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">Просмотр</button>
+                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">Изменить</button>
                   </div>
                 </td>
               </tr>
@@ -755,7 +924,7 @@ const countByType = computed(() => ({
               </div>
             </div>
           </div>
-          <div class="p-6 border-t border-gray-200 flex justify-end"><button @click="showViewModal = false" class="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700">Закрыть</button></div>
+          <div class="p-6 border-t border-gray-200 flex justify-end"><button @click="showViewModal = false" class="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700">{{ $t('common.close') }}</button></div>
         </div>
       </div>
     </Teleport>
@@ -845,8 +1014,8 @@ const countByType = computed(() => ({
             </template>
           </div>
           <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-            <button @click="showEditModal = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">Отмена</button>
-            <button @click="saveItem" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-medium">{{ isCreating ? 'Создать' : 'Сохранить' }}</button>
+            <button @click="showEditModal = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('common.cancel') }}</button>
+            <button @click="saveItem" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-medium">{{ isCreating ? $t('common.add') : $t('common.save') }}</button>
           </div>
         </div>
       </div>
@@ -861,8 +1030,8 @@ const countByType = computed(() => ({
             <h3 class="text-xl font-bold text-gray-900 mb-2">Удалить запись?</h3>
             <p class="text-gray-600 mb-6">Вы уверены, что хотите удалить "{{ getSelectedItemName() }}"? Это действие нельзя отменить.</p>
             <div class="flex gap-3 justify-center">
-              <button @click="showDeleteConfirm = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">Отмена</button>
-              <button @click="deleteItem" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">Удалить</button>
+              <button @click="showDeleteConfirm = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('common.cancel') }}</button>
+              <button @click="deleteItem" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">{{ $t('common.delete') }}</button>
             </div>
           </div>
         </div>

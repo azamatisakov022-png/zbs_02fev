@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { getLocale, setLocale } from '../../i18n'
 import NotificationBell from './NotificationBell.vue'
 import BreadcrumbNav from './BreadcrumbNav.vue'
 
@@ -22,8 +24,14 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const sidebarOpen = ref(false)
+const currentLocale = computed(() => getLocale())
+
+const switchLocale = (locale: 'ru' | 'ky') => {
+  setLocale(locale)
+}
 
 const currentRoute = computed(() => route.path)
 
@@ -60,7 +68,7 @@ const breadcrumbs = computed(() => {
   const label = route.meta.breadcrumbLabel as string | undefined
   if (!label) return []
   return [
-    { label: 'Главная', path: basePath },
+    { label: t('breadcrumb.home'), path: basePath },
     { label },
   ]
 })
@@ -69,7 +77,7 @@ const breadcrumbs = computed(() => {
 <template>
   <div class="dashboard-layout min-h-screen bg-[#F8FAFC]">
     <!-- Skip to content link -->
-    <a href="#main-content" class="skip-link">Перейти к содержимому</a>
+    <a href="#main-content" class="skip-link">{{ t('common.skipToContent') }}</a>
 
     <!-- Mobile Header -->
     <header
@@ -80,7 +88,7 @@ const breadcrumbs = computed(() => {
       <button
         @click="toggleSidebar"
         class="p-2 text-[#4B5563] hover:bg-[#f1f5f9] rounded-lg transition-colors"
-        aria-label="Открыть меню"
+        :aria-label="t('common.openMenu')"
       >
         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -92,7 +100,7 @@ const breadcrumbs = computed(() => {
         <button
           @click="handleLogout"
           class="p-2 text-[#4B5563] hover:bg-[#f1f5f9] rounded-lg transition-colors"
-          aria-label="Выйти из системы"
+          :aria-label="t('common.logoutSystem')"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -118,24 +126,21 @@ const breadcrumbs = computed(() => {
       ]"
       style="box-shadow: 4px 0 6px rgba(0,0,0,0.04), 2px 0 4px rgba(0,0,0,0.03)"
       role="navigation"
-      aria-label="Основная навигация"
+      :aria-label="t('common.mainNav')"
     >
       <!-- Logo -->
       <div class="h-20 flex items-center px-6" style="border-bottom: 1px solid rgba(0,0,0,0.06)">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-[#2D8B4E] flex items-center justify-center" style="box-shadow: 0 2px 4px rgba(45,139,78,0.3)">
-            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-            </svg>
+        <router-link to="/" class="flex items-center gap-2">
+          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 44px; width: 44px; object-fit: cover; object-position: left;" />
+          <div class="flex flex-col whitespace-nowrap">
+            <span class="text-[14px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">ГП Эко Оператор</span>
+            <span class="text-[11px] font-normal text-[#6b7280]">Государственное предприятие</span>
           </div>
-          <div class="flex flex-col">
-            <span class="text-[#2D8B4E] font-bold text-sm leading-tight">ГП Эко Оператор</span>
-          </div>
-        </div>
+        </router-link>
       </div>
 
       <!-- Navigation -->
-      <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-5rem-4rem)]" aria-label="Меню">
+      <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
         <button
           v-for="item in menuItems"
           :key="item.id"
@@ -185,17 +190,28 @@ const breadcrumbs = computed(() => {
       >
         <h1 class="text-xl font-bold text-[#111827] tracking-tight">{{ roleTitle }}</h1>
         <div class="flex items-center gap-4">
+          <div class="flex items-center gap-1 text-sm">
+            <button
+              @click="switchLocale('ru')"
+              :class="['px-1.5 py-0.5 rounded transition-colors', currentLocale === 'ru' ? 'font-bold text-[#2D8B4E]' : 'text-[#94a3b8] hover:text-[#4B5563]']"
+            >RU</button>
+            <span class="text-[#cbd5e1]">|</span>
+            <button
+              @click="switchLocale('ky')"
+              :class="['px-1.5 py-0.5 rounded transition-colors', currentLocale === 'ky' ? 'font-bold text-[#2D8B4E]' : 'text-[#94a3b8] hover:text-[#4B5563]']"
+            >KY</button>
+          </div>
           <span class="text-[#4B5563] font-medium">{{ userName }}</span>
           <NotificationBell :role="role" />
           <button
             @click="handleLogout"
             class="btn-action btn-action-ghost text-sm"
-            aria-label="Выйти из системы"
+            :aria-label="t('common.logoutSystem')"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Выйти
+            {{ t('common.logout') }}
           </button>
         </div>
       </header>

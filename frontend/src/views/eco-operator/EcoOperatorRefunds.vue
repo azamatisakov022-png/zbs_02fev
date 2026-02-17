@@ -5,24 +5,13 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { reportStore } from '../../stores/reports'
 import { refundStore } from '../../stores/refunds'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -86,13 +75,13 @@ const resetFilters = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП Эко Оператор"
+    :roleTitle="roleTitle"
     userName="Экологический оператор"
     :menuItems="menuItems"
   >
     <div class="mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Заявки на возврат утилизационного сбора</h1>
-      <p class="text-[#64748b]">Входящие заявки на возврат утилизационного сбора от плательщиков</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.refundsTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.refundsSubtitle') }}</p>
     </div>
 
     <!-- Gradient Stat Cards -->
@@ -200,38 +189,33 @@ const resetFilters = () => {
         <span class="font-semibold text-[#10b981]">{{ value.toLocaleString('ru-RU') }} сом</span>
       </template>
       <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button
-            @click="viewRefund(row)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-          >
+          <AppButton variant="ghost" size="sm" @click="viewRefund(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            Просмотреть
-          </button>
+            {{ $t('common.view') }}
+          </AppButton>
         </div>
       </template>
       <template #empty>
         <EmptyState
           v-if="isFiltersActive && allRefunds.length > 0"
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-          title="Ничего не найдено"
-          description="Попробуйте изменить параметры поиска"
-          actionLabel="Сбросить фильтры"
+          :title="$t('empty.noSearchResults')"
+          :description="$t('empty.noSearchResultsDesc')"
+          :actionLabel="$t('empty.resetFilters')"
           @action="resetFilters"
         />
         <EmptyState
           v-else
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>'
-          title="Нет заявок на возврат"
-          description="Заявки на возврат утилизационного сбора пока не поступали"
+          :title="$t('empty.noRefunds')"
+          :description="$t('empty.noRefundsDesc')"
         />
       </template>
     </DataTable>
