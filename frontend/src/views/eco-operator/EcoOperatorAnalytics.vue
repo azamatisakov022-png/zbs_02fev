@@ -11,11 +11,13 @@ import { toastStore } from '../../stores/toast'
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // ─── Tabs ───
-type TabId = 'finance' | 'products' | 'reports'
-const activeTab = ref<TabId>('finance')
+type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
+const activeTab = ref<TabId>('summary')
 const tabs: { id: TabId; label: string }[] = [
+  { id: 'summary', label: 'Общая сводка' },
   { id: 'finance', label: 'Финансы' },
   { id: 'products', label: 'Товары и переработка' },
+  { id: 'regional', label: 'Региональная статистика' },
   { id: 'reports', label: 'Выгрузка отчётов' },
 ]
 
@@ -853,6 +855,128 @@ const getCoverageBg = (coverage: number) => {
   if (coverage >= 50) return '#fef3c7'
   return '#fee2e2'
 }
+
+// ─── Tab: Summary KPIs ───
+const summaryRegionData = [
+  { key: 'bishkek', name: 'г. Бишкек', shortName: 'Бишкек', payers: 89, charged: 68_500_000, collected: 62_100_000, collectionRate: 90.7, recyclers: 12, landfills: 1, dumps: 3, wasteVolume: 4850 },
+  { key: 'chuy', name: 'Чуйская область', shortName: 'Чуйская', payers: 45, charged: 32_100_000, collected: 27_800_000, collectionRate: 86.6, recyclers: 8, landfills: 3, dumps: 12, wasteVolume: 2340 },
+  { key: 'osh_city', name: 'г. Ош', shortName: 'г. Ош', payers: 28, charged: 16_200_000, collected: 14_100_000, collectionRate: 87.0, recyclers: 5, landfills: 1, dumps: 2, wasteVolume: 1280 },
+  { key: 'osh', name: 'Ошская область', shortName: 'Ошская', payers: 22, charged: 12_800_000, collected: 10_500_000, collectionRate: 82.0, recyclers: 4, landfills: 2, dumps: 18, wasteVolume: 980 },
+  { key: 'jalal_abad', name: 'Джалал-Абадская обл.', shortName: 'Жалал-Абад', payers: 19, charged: 10_400_000, collected: 8_200_000, collectionRate: 78.8, recyclers: 3, landfills: 2, dumps: 15, wasteVolume: 820 },
+  { key: 'issyk_kul', name: 'Иссык-Кульская обл.', shortName: 'Иссык-Куль', payers: 16, charged: 7_200_000, collected: 5_400_000, collectionRate: 75.0, recyclers: 2, landfills: 1, dumps: 8, wasteVolume: 540 },
+  { key: 'batken', name: 'Баткенская область', shortName: 'Баткен', payers: 12, charged: 4_800_000, collected: 3_100_000, collectionRate: 64.6, recyclers: 1, landfills: 1, dumps: 11, wasteVolume: 340 },
+  { key: 'naryn', name: 'Нарынская область', shortName: 'Нарын', payers: 9, charged: 2_900_000, collected: 1_600_000, collectionRate: 55.2, recyclers: 0, landfills: 1, dumps: 9, wasteVolume: 180 },
+  { key: 'talas', name: 'Таласская область', shortName: 'Талас', payers: 7, charged: 1_900_000, collected: 1_400_000, collectionRate: 73.7, recyclers: 0, landfills: 1, dumps: 7, wasteVolume: 120 },
+]
+
+const summaryTotalPayers = computed(() => summaryRegionData.reduce((s, r) => s + r.payers, 0))
+const summaryTotalCharged = computed(() => summaryRegionData.reduce((s, r) => s + r.charged, 0))
+const summaryTotalCollected = computed(() => summaryRegionData.reduce((s, r) => s + r.collected, 0))
+const summaryTotalDebt = computed(() => summaryTotalCharged.value - summaryTotalCollected.value)
+const summaryCollectionPct = computed(() => summaryTotalCharged.value ? ((summaryTotalCollected.value / summaryTotalCharged.value) * 100).toFixed(1) : '0')
+const summaryDebtPct = computed(() => summaryTotalCharged.value ? ((summaryTotalDebt.value / summaryTotalCharged.value) * 100).toFixed(1) : '0')
+const summaryTotalWaste = computed(() => summaryRegionData.reduce((s, r) => s + r.wasteVolume, 0))
+
+const summaryMonthlyData = [
+  { month: 'Янв', charged: 11200, collected: 9800 },
+  { month: 'Фев', charged: 10800, collected: 9200 },
+  { month: 'Мар', charged: 12400, collected: 10600 },
+  { month: 'Апр', charged: 13100, collected: 11400 },
+  { month: 'Май', charged: 14200, collected: 12800 },
+  { month: 'Июн', charged: 13600, collected: 11900 },
+  { month: 'Июл', charged: 12900, collected: 11100 },
+  { month: 'Авг', charged: 13400, collected: 11800 },
+  { month: 'Сен', charged: 14800, collected: 13200 },
+  { month: 'Окт', charged: 15100, collected: 13600 },
+  { month: 'Ноя', charged: 12800, collected: 11200 },
+  { month: 'Дек', charged: 12500, collected: 10800 },
+]
+const summaryMaxMonthly = computed(() => Math.max(...summaryMonthlyData.map(d => d.charged)))
+
+const summaryPayerCategories = [
+  { label: 'Импортёры', value: 112, color: '#3B82F6' },
+  { label: 'Производители', value: 89, color: '#22C55E' },
+  { label: 'Импортёры и производители', value: 46, color: '#8B5CF6' },
+]
+const summaryTotalPayersCat = summaryPayerCategories.reduce((s, c) => s + c.value, 0)
+
+function summaryDonutPath(startAngle: number, endAngle: number, r: number, cx: number, cy: number): string {
+  const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) }
+  const end = { x: cx + r * Math.cos(endAngle), y: cy + r * Math.sin(endAngle) }
+  const large = endAngle - startAngle > Math.PI ? 1 : 0
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 1 ${end.x} ${end.y}`
+}
+
+const summaryDonutArcs = computed(() => {
+  const arcs: { d: string; color: string; label: string; pct: string }[] = []
+  let cumAngle = -Math.PI / 2
+  for (const cat of summaryPayerCategories) {
+    const pct = cat.value / summaryTotalPayersCat
+    const angle = pct * 2 * Math.PI
+    arcs.push({
+      d: summaryDonutPath(cumAngle, cumAngle + angle, 70, 100, 100),
+      color: cat.color,
+      label: cat.label,
+      pct: (pct * 100).toFixed(1),
+    })
+    cumAngle += angle
+  }
+  return arcs
+})
+
+const summaryTopDebtors = [
+  { id: 1, company: 'ОАО "Кыргыз Электроникс"', inn: '0120345678', debt: 4_823_575, overdue: 45 },
+  { id: 2, company: 'ОсОО "БишкекИмпорт"', inn: '0234567890', debt: 3_456_200, overdue: 38 },
+  { id: 3, company: 'ОсОО "АзияТрейд"', inn: '0654321098', debt: 2_890_100, overdue: 32 },
+  { id: 4, company: 'ИП Кадыров А.М.', inn: '1234509876', debt: 1_945_800, overdue: 28 },
+  { id: 5, company: 'ОсОО "ОшТехСнаб"', inn: '0345678901', debt: 1_234_500, overdue: 21 },
+]
+
+function summaryGetCollectionColor(rate: number): string {
+  if (rate >= 90) return '#15803d'
+  if (rate >= 70) return '#65a30d'
+  if (rate >= 50) return '#d97706'
+  return '#dc2626'
+}
+
+function summaryGetCollectionBg(rate: number): string {
+  if (rate >= 90) return 'bg-green-100 text-green-800'
+  if (rate >= 70) return 'bg-lime-100 text-lime-800'
+  if (rate >= 50) return 'bg-yellow-100 text-yellow-800'
+  return 'bg-red-100 text-red-800'
+}
+
+function summaryFmt(n: number): string { return n.toLocaleString('ru-RU') }
+function summaryFmtM(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' млн'
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' тыс'
+  return summaryFmt(n)
+}
+
+// ─── Tab: Regional Statistics ───
+const regionalSortCol = ref('charged')
+const regionalSortDir = ref<'asc' | 'desc'>('desc')
+
+const regionalSortedRegions = computed(() => {
+  const list = [...summaryRegionData]
+  list.sort((a, b) => {
+    const va = (a as any)[regionalSortCol.value] ?? 0
+    const vb = (b as any)[regionalSortCol.value] ?? 0
+    return regionalSortDir.value === 'desc' ? vb - va : va - vb
+  })
+  return list
+})
+
+function regionalToggleSort(col: string) {
+  if (regionalSortCol.value === col) {
+    regionalSortDir.value = regionalSortDir.value === 'desc' ? 'asc' : 'desc'
+  } else {
+    regionalSortCol.value = col
+    regionalSortDir.value = 'desc'
+  }
+}
+
+const selectedSummaryRegion = ref('all')
 </script>
 
 <template>
@@ -906,7 +1030,7 @@ const getCoverageBg = (coverage: number) => {
     </div>
 
     <!-- Shared filters (visible for finance and products tabs) -->
-    <template v-if="activeTab !== 'reports'">
+    <template v-if="activeTab === 'finance' || activeTab === 'products'">
       <!-- Period filter (sticky) -->
       <div class="an-period-bar">
         <div class="an-period-chips">
@@ -1009,6 +1133,178 @@ const getCoverageBg = (coverage: number) => {
             <span class="an-payer-dropdown__name">{{ p.company }}</span>
             <span class="an-payer-dropdown__inn">ИНН: {{ p.inn }}</span>
           </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: Общая сводка                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <template v-if="activeTab === 'summary'">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <!-- Payers -->
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border border-blue-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-blue-900">{{ summaryFmt(summaryTotalPayers) }}</p>
+          <p class="text-xs text-blue-700">Плательщиков на учёте</p>
+          <p class="text-xs text-blue-500 mt-1">+12 за месяц</p>
+        </div>
+        <!-- Charged -->
+        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 border border-green-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-green-900">{{ summaryFmtM(summaryTotalCharged) }}</p>
+          <p class="text-xs text-green-700">Начислено утильсбора</p>
+          <p class="text-xs text-green-500 mt-1">сом</p>
+        </div>
+        <!-- Collected -->
+        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-4 border border-emerald-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-emerald-900">{{ summaryFmtM(summaryTotalCollected) }}</p>
+          <p class="text-xs text-emerald-700">Собрано утильсбора</p>
+          <p class="text-xs text-emerald-500 mt-1">{{ summaryCollectionPct }}% собираемость</p>
+        </div>
+        <!-- Debt -->
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-4 border border-red-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-red-900">{{ summaryFmtM(summaryTotalDebt) }}</p>
+          <p class="text-xs text-red-700">Задолженность</p>
+          <p class="text-xs text-red-500 mt-1">{{ summaryDebtPct }}% от начислений</p>
+        </div>
+        <!-- Declarations -->
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 border border-purple-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-purple-900">189</p>
+          <p class="text-xs text-purple-700">Деклараций подано</p>
+          <p class="text-xs text-purple-500 mt-1">94% в срок</p>
+        </div>
+        <!-- Recycled -->
+        <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-4 border border-teal-200 shadow-sm">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </div>
+          </div>
+          <p class="text-2xl font-bold text-teal-900">{{ summaryFmt(summaryTotalWaste) }}</p>
+          <p class="text-xs text-teal-700">Переработано (тонн)</p>
+          <p class="text-xs text-teal-500 mt-1">+8% к плану</p>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Bar Chart: Monthly collections -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Динамика сбора утилизационного сбора</h3>
+          <div class="overflow-x-auto">
+            <svg viewBox="0 0 600 260" class="w-full" preserveAspectRatio="xMidYMid meet">
+              <line v-for="i in 5" :key="'sgl'+i" :x1="40" :x2="590" :y1="20 + (i-1)*50" :y2="20 + (i-1)*50" stroke="#f1f5f9" stroke-width="1" />
+              <text v-for="(v,i) in [15,12,9,6,3]" :key="'syl'+i" :x="36" :y="24 + i*50 - 50" text-anchor="end" fill="#94a3b8" font-size="10">{{ v }}K</text>
+              <g v-for="(d, i) in summaryMonthlyData" :key="'sbar'+i">
+                <rect :x="48 + i*46" :y="220 - (d.charged / summaryMaxMonthly) * 200" width="16" :height="(d.charged / summaryMaxMonthly) * 200" rx="3" fill="#bbf7d0" />
+                <rect :x="66 + i*46" :y="220 - (d.collected / summaryMaxMonthly) * 200" width="16" :height="(d.collected / summaryMaxMonthly) * 200" rx="3" fill="#22C55E" />
+                <text :x="66 + i*46" y="240" text-anchor="middle" fill="#94a3b8" font-size="9">{{ d.month }}</text>
+              </g>
+            </svg>
+          </div>
+          <div class="flex items-center gap-4 mt-3 justify-center">
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#bbf7d0]"></span>Начислено</span>
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>Собрано</span>
+          </div>
+        </div>
+
+        <!-- Donut: Payer categories -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Структура плательщиков по категориям</h3>
+          <div class="flex items-center gap-6">
+            <div class="relative flex-shrink-0">
+              <svg viewBox="0 0 200 200" width="180" height="180">
+                <path v-for="(arc, i) in summaryDonutArcs" :key="i" :d="arc.d" fill="none" :stroke="arc.color" stroke-width="28" stroke-linecap="round" />
+                <text x="100" y="95" text-anchor="middle" fill="#1e293b" font-size="28" font-weight="700">{{ summaryTotalPayersCat }}</text>
+                <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">всего</text>
+              </svg>
+            </div>
+            <div class="space-y-3 flex-1">
+              <div v-for="cat in summaryPayerCategories" :key="cat.label" class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full flex-shrink-0" :style="{ background: cat.color }"></span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-[#1e293b] truncate">{{ cat.label }}</p>
+                  <p class="text-xs text-[#64748b]">{{ cat.value }} ({{ ((cat.value / summaryTotalPayersCat) * 100).toFixed(1) }}%)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Horizontal bars: Regional collection -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Собираемость по регионам</h3>
+          <div class="space-y-3">
+            <div v-for="r in [...summaryRegionData].sort((a,b) => b.charged - a.charged)" :key="r.key" class="flex items-center gap-3">
+              <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
+              <div class="flex-1 h-5 bg-[#f1f5f9] rounded-full overflow-hidden relative">
+                <div class="h-full rounded-full transition-all"
+                  :style="{ width: (r.charged / summaryRegionData[0].charged * 100) + '%', background: '#d1fae5' }"></div>
+                <div class="h-full rounded-full absolute top-0 left-0 transition-all"
+                  :style="{ width: (r.collected / summaryRegionData[0].charged * 100) + '%', background: summaryGetCollectionColor(r.collectionRate) }"></div>
+              </div>
+              <span class="text-xs font-semibold w-10 text-right" :style="{ color: summaryGetCollectionColor(r.collectionRate) }">{{ r.collectionRate }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top debtors -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Топ-5 должников</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-[#64748b] text-xs">
+                  <th class="pb-2 font-medium">#</th>
+                  <th class="pb-2 font-medium">Компания</th>
+                  <th class="pb-2 font-medium text-right">Задолженность</th>
+                  <th class="pb-2 font-medium text-right">Просрочка</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="d in summaryTopDebtors" :key="d.id"
+                  class="border-t border-[#f1f5f9] hover:bg-[#f8fafc] transition-colors">
+                  <td class="py-2.5 text-[#94a3b8]">{{ d.id }}</td>
+                  <td class="py-2.5">
+                    <p class="font-medium text-[#1e293b]">{{ d.company }}</p>
+                    <p class="text-xs text-[#94a3b8]">ИНН: {{ d.inn }}</p>
+                  </td>
+                  <td class="py-2.5 text-right font-semibold text-red-600">{{ summaryFmt(d.debt) }} сом</td>
+                  <td class="py-2.5 text-right">
+                    <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ d.overdue }} дн.</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </template>
@@ -1780,6 +2076,147 @@ const getCoverageBg = (coverage: number) => {
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {{ $t('common.exportData') }}
         </button>
+      </div>
+    </template>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: Региональная статистика                  -->
+    <!-- ═══════════════════════════════════════════ -->
+    <template v-if="activeTab === 'regional'">
+      <!-- Region map cards -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
+        <h3 class="text-base font-bold text-[#1e293b] mb-4">Карта собираемости по регионам</h3>
+        <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+          <button v-for="r in summaryRegionData" :key="'rmap-'+r.key"
+            @click="selectedSummaryRegion = selectedSummaryRegion === r.key ? 'all' : r.key"
+            :class="['rounded-xl p-3 border-2 transition-all text-center cursor-pointer',
+              selectedSummaryRegion === r.key ? 'border-[#22C55E] shadow-md scale-105' : 'border-transparent hover:border-[#e2e8f0]']"
+            :style="{ background: `${summaryGetCollectionColor(r.collectionRate)}15` }">
+            <div class="w-8 h-8 mx-auto rounded-full mb-1.5 flex items-center justify-center text-white text-xs font-bold"
+              :style="{ background: summaryGetCollectionColor(r.collectionRate) }">
+              {{ Math.round(r.collectionRate) }}
+            </div>
+            <p class="text-xs font-medium text-[#1e293b] truncate">{{ r.shortName }}</p>
+            <p class="text-[10px] text-[#64748b]">{{ summaryFmtM(r.collected) }} сом</p>
+          </button>
+        </div>
+        <div class="flex items-center gap-4 mt-4 justify-center text-xs text-[#64748b]">
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#15803d"></span>&gt;90%</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#65a30d"></span>70-90%</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#d97706"></span>50-70%</span>
+          <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#dc2626"></span>&lt;50%</span>
+        </div>
+      </div>
+
+      <!-- Sortable region table -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
+        <h3 class="text-base font-bold text-[#1e293b] mb-4">Детальная статистика по регионам</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-[#64748b] bg-[#f8fafc] text-xs">
+                <th class="px-3 py-2.5 font-medium rounded-tl-lg">Регион</th>
+                <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('payers')">
+                  Плательщиков
+                  <span v-if="regionalSortCol==='payers'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('charged')">
+                  Начислено
+                  <span v-if="regionalSortCol==='charged'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('collected')">
+                  Собрано
+                  <span v-if="regionalSortCol==='collected'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="px-3 py-2.5 font-medium text-center cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('collectionRate')">
+                  Собираемость
+                  <span v-if="regionalSortCol==='collectionRate'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('recyclers')">
+                  Переработчиков
+                  <span v-if="regionalSortCol==='recyclers'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
+                </th>
+                <th class="px-3 py-2.5 font-medium text-right">Полигонов</th>
+                <th class="px-3 py-2.5 font-medium text-right rounded-tr-lg">Свалок</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in regionalSortedRegions" :key="'rtbl-'+r.key"
+                class="border-t border-[#f1f5f9] hover:bg-[#f8fafc] transition-colors">
+                <td class="px-3 py-2.5 font-medium text-[#1e293b]">{{ r.name }}</td>
+                <td class="px-3 py-2.5 text-right">{{ r.payers }}</td>
+                <td class="px-3 py-2.5 text-right font-medium">{{ summaryFmtM(r.charged) }} сом</td>
+                <td class="px-3 py-2.5 text-right font-medium text-green-600">{{ summaryFmtM(r.collected) }} сом</td>
+                <td class="px-3 py-2.5 text-center">
+                  <span :class="['px-2 py-0.5 rounded-full text-xs font-semibold', summaryGetCollectionBg(r.collectionRate)]">
+                    {{ r.collectionRate }}%
+                  </span>
+                </td>
+                <td class="px-3 py-2.5 text-right">{{ r.recyclers }}</td>
+                <td class="px-3 py-2.5 text-right">{{ r.landfills }}</td>
+                <td class="px-3 py-2.5 text-right">{{ r.dumps }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="bg-[#f8fafc] font-semibold border-t-2 border-[#e2e8f0]">
+                <td class="px-3 py-2.5 text-[#1e293b]">ИТОГО</td>
+                <td class="px-3 py-2.5 text-right">{{ summaryRegionData.reduce((s,r) => s+r.payers,0) }}</td>
+                <td class="px-3 py-2.5 text-right">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.charged,0)) }} сом</td>
+                <td class="px-3 py-2.5 text-right text-green-600">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.collected,0)) }} сом</td>
+                <td class="px-3 py-2.5 text-center">
+                  <span :class="['px-2 py-0.5 rounded-full text-xs font-semibold', summaryGetCollectionBg(parseFloat(summaryCollectionPct))]">
+                    {{ summaryCollectionPct }}%
+                  </span>
+                </td>
+                <td class="px-3 py-2.5 text-right">{{ summaryRegionData.reduce((s,r) => s+r.recyclers,0) }}</td>
+                <td class="px-3 py-2.5 text-right">{{ summaryRegionData.reduce((s,r) => s+r.landfills,0) }}</td>
+                <td class="px-3 py-2.5 text-right">{{ summaryRegionData.reduce((s,r) => s+r.dumps,0) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Two charts: waste distribution + infrastructure -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Stacked bar: Waste by region -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Распределение отходов по регионам</h3>
+          <div class="space-y-2.5">
+            <div v-for="r in [...summaryRegionData].sort((a,b) => b.wasteVolume - a.wasteVolume)" :key="'rwaste-'+r.key" class="flex items-center gap-3">
+              <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
+              <div class="flex-1 h-6 bg-[#f1f5f9] rounded-lg overflow-hidden">
+                <div class="h-full rounded-lg transition-all bg-gradient-to-r from-[#22C55E] to-[#10b981]"
+                  :style="{ width: (r.wasteVolume / summaryRegionData[0].wasteVolume * 100) + '%' }"></div>
+              </div>
+              <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ summaryFmt(r.wasteVolume) }} т</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grouped bar: Infrastructure -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">Инфраструктура по регионам</h3>
+          <div class="space-y-2.5">
+            <div v-for="r in [...summaryRegionData].sort((a,b) => (b.recyclers+b.landfills) - (a.recyclers+a.landfills))" :key="'rinfra-'+r.key"
+              class="flex items-center gap-3">
+              <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
+              <div class="flex-1 flex gap-0.5">
+                <div v-if="r.recyclers" class="h-5 bg-[#22C55E] rounded-l" :style="{ width: r.recyclers * 8 + 'px' }"
+                  :title="'Переработчиков: ' + r.recyclers"></div>
+                <div v-if="r.landfills" class="h-5 bg-[#3B82F6]" :style="{ width: r.landfills * 8 + 'px' }"
+                  :title="'Полигонов: ' + r.landfills"></div>
+                <div v-if="r.dumps" class="h-5 bg-[#F59E0B] rounded-r" :style="{ width: Math.min(r.dumps, 20) * 5 + 'px' }"
+                  :title="'Свалок: ' + r.dumps"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 mt-4 justify-center text-xs text-[#64748b]">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>Переработчики</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>Полигоны</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>Свалки</span>
+          </div>
+        </div>
       </div>
     </template>
 

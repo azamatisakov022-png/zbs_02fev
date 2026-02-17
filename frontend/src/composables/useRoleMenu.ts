@@ -50,7 +50,6 @@ export function useEmployeeMenu() {
     { id: 'dashboard', label: t('nav.employee.dashboard'), icon: icons.dashboard, route: '/employee' },
     { id: 'notifications', label: t('notifications.title'), icon: icons.notification, route: '/employee/notifications', badge: notificationStore.getUnreadCount('employee') },
     { id: 'analytics', label: t('nav.employee.analytics'), icon: icons.analytics, route: '/ministry/analytics' },
-    { id: 'payers', label: t('nav.employee.payers'), icon: icons.registries, route: '/ministry/payers' },
     { id: 'compliance', label: t('nav.employee.compliance'), icon: icons.compliance, route: '/employee/compliance' },
     { id: 'licenses', label: t('nav.employee.licenses'), icon: icons.license, route: '/employee/licenses' },
     { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
