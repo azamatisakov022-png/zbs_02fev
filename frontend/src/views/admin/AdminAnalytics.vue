@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 // Period filter
 const selectedPeriod = ref('year')
@@ -123,7 +115,7 @@ const exportReport = () => {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >

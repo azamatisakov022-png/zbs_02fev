@@ -5,22 +5,13 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { refundStore } from '../../stores/refunds'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
-
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -42,15 +33,6 @@ const companyRefunds = computed(() => {
 
 const hasRefunds = computed(() => companyRefunds.value.length > 0)
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Новая': return 'bg-gray-100 text-gray-800'
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Одобрена': return 'bg-green-100 text-green-800'
-    case 'Отклонена': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 
 const formatAmount = (amount: number) => amount.toLocaleString('ru-RU') + ' сом'
 
@@ -60,7 +42,7 @@ const goToNewRefund = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Возврат утильсбора</h1>
       <p class="text-[#64748b]">Заявки на возврат утилизационного сбора за вывезенные товары</p>
@@ -138,19 +120,17 @@ const goToNewRefund = () => {
           <span class="font-semibold text-[#1e293b]">{{ formatAmount(value) }}</span>
         </template>
         <template #cell-status="{ value }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap', getStatusClass(value)]">
-            {{ value }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+            <AppButton variant="ghost" size="sm">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Просмотреть
-            </button>
+            </AppButton>
           </div>
         </template>
       </DataTable>

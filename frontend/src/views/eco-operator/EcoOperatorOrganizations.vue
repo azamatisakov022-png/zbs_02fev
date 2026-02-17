@@ -1,22 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { productGroups } from '../../data/product-groups'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Organization interface
 interface Organization {
@@ -46,6 +36,11 @@ interface Organization {
   status: string
   region: string
   registeredAt: string
+  productGroupValues?: string[]
+}
+
+const getProductGroupLabel = (value: string) => {
+  return productGroups.find(g => g.value === value)?.label || value
 }
 
 // Initial organizations data
@@ -77,6 +72,7 @@ const organizations = ref<Organization[]>([
     status: 'Активен',
     region: 'г. Бишкек',
     registeredAt: '15.03.2024',
+    productGroupValues: ['group_6', 'group_7', 'group_9', 'group_10', 'group_15', 'group_16'],
   },
   {
     id: 2,
@@ -105,6 +101,7 @@ const organizations = ref<Organization[]>([
     status: 'Активен',
     region: 'г. Бишкек',
     registeredAt: '10.02.2024',
+    productGroupValues: ['group_1', 'group_2', 'group_6', 'group_19', 'group_22'],
   },
   {
     id: 3,
@@ -133,6 +130,7 @@ const organizations = ref<Organization[]>([
     status: 'Активен',
     region: 'Чуйская обл.',
     registeredAt: '22.01.2024',
+    productGroupValues: ['group_4', 'group_5', 'group_8', 'group_24'],
   },
   {
     id: 4,
@@ -161,6 +159,7 @@ const organizations = ref<Organization[]>([
     status: 'Активен',
     region: 'г. Ош',
     registeredAt: '05.01.2024',
+    productGroupValues: ['group_19', 'group_20', 'group_21', 'group_22', 'group_23'],
   },
   {
     id: 5,
@@ -189,6 +188,7 @@ const organizations = ref<Organization[]>([
     status: 'На проверке',
     region: 'г. Бишкек',
     registeredAt: '20.01.2025',
+    productGroupValues: ['group_3', 'group_6', 'group_7'],
   },
   {
     id: 6,
@@ -217,6 +217,7 @@ const organizations = ref<Organization[]>([
     status: 'Активен',
     region: 'Иссык-Кульская обл.',
     registeredAt: '18.12.2023',
+    productGroupValues: ['group_8', 'group_24'],
   },
 ])
 
@@ -385,7 +386,7 @@ const copyLegalToActual = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="Экологический оператор"
+    :roleTitle="roleTitle"
     userName="Нуркулов Алмаз"
     :menuItems="menuItems"
   >
@@ -393,18 +394,15 @@ const copyLegalToActual = () => {
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Организации</h1>
-          <p class="text-gray-600 mt-1">Реестр зарегистрированных организаций</p>
+          <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{ $t('pages.ecoOperator.organizationsTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.organizationsSubtitle') }}</p>
         </div>
-        <button
-          @click="openCreate"
-          class="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors"
-        >
+        <AppButton variant="primary" @click="openCreate">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Добавить организацию
-        </button>
+        </AppButton>
       </div>
 
       <!-- Stats -->
@@ -475,6 +473,7 @@ const copyLegalToActual = () => {
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Виды продукции</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата рег.</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
@@ -490,31 +489,45 @@ const copyLegalToActual = () => {
                   <span class="font-medium text-gray-900">{{ org.shortName }}</span>
                 </td>
                 <td class="px-6 py-4">
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(org.type)]">
-                    {{ org.type }}
-                  </span>
+                  <AppBadge :variant="getStatusBadgeVariant(org.type)">{{ org.type }}</AppBadge>
+                </td>
+                <td class="px-6 py-4">
+                  <div v-if="org.productGroupValues && org.productGroupValues.length > 0" class="flex flex-wrap gap-1 max-w-[260px]">
+                    <span
+                      v-for="gv in org.productGroupValues.slice(0, 2)"
+                      :key="gv"
+                      class="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap"
+                    >
+                      {{ getProductGroupLabel(gv).replace(/^\d+\.\s*/, '') }}
+                    </span>
+                    <span
+                      v-if="org.productGroupValues.length > 2"
+                      class="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 whitespace-nowrap"
+                    >
+                      +{{ org.productGroupValues.length - 2 }} ещё
+                    </span>
+                  </div>
+                  <span v-else class="text-sm text-gray-400">—</span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.region }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.registeredAt }}</td>
                 <td class="px-6 py-4 text-center">
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(org.status)]">
-                    {{ org.status }}
-                  </span>
+                  <AppBadge :variant="getStatusBadgeVariant(org.status)">{{ org.status }}</AppBadge>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
-                    <button @click="openView(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+                    <AppButton variant="ghost" size="sm" @click="openView(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                      Просмотреть
-                    </button>
-                    <button @click="openEdit(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+                      {{ $t('common.view') }}
+                    </AppButton>
+                    <AppButton variant="secondary" size="sm" @click="openEdit(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                      Редактировать
-                    </button>
-                    <button @click="openDelete(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                      {{ $t('common.edit') }}
+                    </AppButton>
+                    <AppButton variant="danger" size="sm" @click="openDelete(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      Удалить
-                    </button>
+                      {{ $t('common.delete') }}
+                    </AppButton>
                   </div>
                 </td>
               </tr>
@@ -557,8 +570,8 @@ const copyLegalToActual = () => {
                 <h4 class="text-xl font-bold text-gray-900">{{ selectedOrg.shortName }}</h4>
                 <p class="text-gray-500 text-sm">{{ selectedOrg.fullName }}</p>
                 <div class="flex items-center gap-2 mt-2">
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(selectedOrg.type)]">{{ selectedOrg.type }}</span>
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(selectedOrg.status)]">{{ selectedOrg.status }}</span>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.type)">{{ selectedOrg.type }}</AppBadge>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.status)">{{ selectedOrg.status }}</AppBadge>
                 </div>
               </div>
             </div>
@@ -627,20 +640,36 @@ const copyLegalToActual = () => {
               </div>
             </div>
 
+            <!-- Product Groups -->
+            <div v-if="selectedOrg.productGroupValues && selectedOrg.productGroupValues.length > 0">
+              <p class="text-sm font-semibold text-gray-700 mb-2">Виды продукции</p>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="gv in selectedOrg.productGroupValues"
+                  :key="gv"
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                >
+                  {{ getProductGroupLabel(gv) }}
+                </span>
+              </div>
+            </div>
+
             <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
+              <AppButton
+                variant="primary"
+                class="flex-1"
                 @click="showViewModal = false; openEdit(selectedOrg)"
-                class="flex-1 px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
               >
-                Редактировать
-              </button>
-              <button
+                {{ $t('common.edit') }}
+              </AppButton>
+              <AppButton
+                variant="secondary"
+                class="flex-1"
                 @click="showViewModal = false"
-                class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
-                Закрыть
-              </button>
+                {{ $t('common.close') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -820,18 +849,20 @@ const copyLegalToActual = () => {
 
             <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
+              <AppButton
+                variant="primary"
+                class="flex-1"
                 @click="saveOrganization"
-                class="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
               >
-                {{ isCreating ? 'Создать' : 'Сохранить' }}
-              </button>
-              <button
+                {{ isCreating ? $t('common.create') : $t('common.save') }}
+              </AppButton>
+              <AppButton
+                variant="secondary"
+                class="flex-1"
                 @click="showEditModal = false"
-                class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
-                Отмена
-              </button>
+                {{ $t('common.cancel') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -853,18 +884,20 @@ const copyLegalToActual = () => {
               Вы уверены, что хотите удалить организацию <strong>{{ selectedOrg.shortName }}</strong>? Это действие нельзя отменить.
             </p>
             <div class="flex gap-3">
-              <button
+              <AppButton
+                variant="danger"
+                class="flex-1"
                 @click="deleteOrganization"
-                class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
               >
-                Удалить
-              </button>
-              <button
+                {{ $t('common.delete') }}
+              </AppButton>
+              <AppButton
+                variant="secondary"
+                class="flex-1"
                 @click="showDeleteConfirm = false"
-                class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
-                Отмена
-              </button>
+                {{ $t('common.cancel') }}
+              </AppButton>
             </div>
           </div>
         </div>

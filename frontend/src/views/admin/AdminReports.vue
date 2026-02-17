@@ -2,17 +2,11 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 const columns = [
   { key: 'number', label: 'Номер', width: '9%' },
@@ -52,15 +46,6 @@ const filteredReports = computed(() => {
     return true
   })
 })
-
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принят': return 'bg-green-100 text-green-800'
-    case 'Отклонён': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 
 // View
 const showViewModal = ref(false)
@@ -116,16 +101,16 @@ function handleOverlay(e: MouseEvent, close: () => void) {
 </script>
 
 <template>
-  <DashboardLayout role="admin" roleTitle="Администратор" userName="Иван Петров" :menuItems="menuItems">
+  <DashboardLayout role="admin" :roleTitle="roleTitle" userName="Иван Петров" :menuItems="menuItems">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Все отчёты</h1>
         <p class="text-[#64748b]">Отчёты о нормативах переработки от всех организаций</p>
       </div>
-      <button @click="exportToExcel" class="flex items-center gap-2 bg-[#10b981] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#059669] transition-colors">
+      <AppButton variant="primary" @click="exportToExcel">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
         Экспорт в Excel
-      </button>
+      </AppButton>
     </div>
 
     <!-- Stats -->
@@ -153,25 +138,25 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     <DataTable :columns="columns" :data="filteredReports" :actions="true">
       <template #cell-number="{ value }"><span class="font-mono font-medium text-[#2563eb]">{{ value }}</span></template>
       <template #cell-company="{ value }"><span class="font-medium text-[#1e293b]">{{ value }}</span></template>
-      <template #cell-status="{ value }"><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">{{ value }}</span></template>
+      <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge></template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <button @click="openView(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+          <AppButton variant="ghost" size="sm" @click="openView(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Просмотреть
-          </button>
-          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'accept')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+          </AppButton>
+          <AppButton v-if="row.status === 'На проверке'" variant="primary" size="sm" @click="openConfirm(row, 'accept')">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             Принять
-          </button>
-          <button v-if="row.status === 'На проверке'" @click="openConfirm(row, 'reject')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+          </AppButton>
+          <AppButton v-if="row.status === 'На проверке'" variant="danger" size="sm" @click="openConfirm(row, 'reject')">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             Отклонить
-          </button>
-          <button @click="downloadPdf(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+          </AppButton>
+          <AppButton variant="outline" size="sm" @click="downloadPdf(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Скачать PDF
-          </button>
+          </AppButton>
         </div>
       </template>
     </DataTable>
@@ -192,15 +177,15 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               <div><p class="text-[#94a3b8]">Организация</p><p class="text-[#1e293b] font-medium">{{ viewingReport.company }}</p></div>
               <div><p class="text-[#94a3b8]">Период</p><p class="text-[#1e293b] font-medium">{{ viewingReport.period }}</p></div>
               <div><p class="text-[#94a3b8]">Дата подачи</p><p class="text-[#1e293b] font-medium">{{ viewingReport.submittedAt }}</p></div>
-              <div><p class="text-[#94a3b8]">Статус</p><span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(viewingReport.status)]">{{ viewingReport.status }}</span></div>
+              <div><p class="text-[#94a3b8]">Статус</p><AppBadge :variant="getStatusBadgeVariant(viewingReport.status)">{{ viewingReport.status }}</AppBadge></div>
               <div><p class="text-[#94a3b8]">Переработано</p><p class="text-[#1e293b] font-bold">{{ viewingReport.recycledTons }}</p></div>
               <div><p class="text-[#94a3b8]">Категории</p><p class="text-[#1e293b] font-medium">{{ viewingReport.categories }}</p></div>
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-            <button v-if="viewingReport.status === 'На проверке'" @click="showViewModal = false; openConfirm(viewingReport!, 'reject')" class="px-5 py-2.5 text-red-600 border border-red-300 rounded-xl font-medium hover:bg-red-50">Отклонить</button>
-            <button v-if="viewingReport.status === 'На проверке'" @click="showViewModal = false; openConfirm(viewingReport!, 'accept')" class="px-5 py-2.5 bg-[#10b981] text-white rounded-xl font-medium hover:bg-[#059669]">Принять</button>
-            <button v-else @click="showViewModal = false" class="px-5 py-2.5 bg-[#2563eb] text-white rounded-xl font-medium hover:bg-[#1d4ed8]">Закрыть</button>
+            <AppButton v-if="viewingReport.status === 'На проверке'" variant="danger" @click="showViewModal = false; openConfirm(viewingReport!, 'reject')">Отклонить</AppButton>
+            <AppButton v-if="viewingReport.status === 'На проверке'" variant="primary" @click="showViewModal = false; openConfirm(viewingReport!, 'accept')">Принять</AppButton>
+            <AppButton v-else variant="primary" @click="showViewModal = false">Закрыть</AppButton>
           </div>
         </div>
       </div>
@@ -223,7 +208,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <textarea v-model="rejectReason" rows="3" placeholder="Укажите причину отклонения..." class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 resize-none"></textarea>
           </div>
           <div class="flex items-center justify-center gap-3 px-6 pb-6">
-            <button @click="showConfirmModal = false" class="flex-1 px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc]">Отмена</button>
+            <AppButton variant="secondary" class="flex-1" @click="showConfirmModal = false">Отмена</AppButton>
             <button @click="executeAction" :class="['flex-1 px-5 py-2.5 text-white rounded-xl font-medium', confirmAction === 'accept' ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-red-500 hover:bg-red-600']">
               {{ confirmAction === 'accept' ? 'Принять' : 'Отклонить' }}
             </button>

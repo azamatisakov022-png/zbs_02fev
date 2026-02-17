@@ -2,19 +2,12 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // View state
 const showUploadModal = ref(false)
@@ -157,23 +150,13 @@ const getCategoryName = (category: string) => {
   return cat?.name || category
 }
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Подписан': return 'bg-green-100 text-green-800'
-    case 'Действует': return 'bg-blue-100 text-blue-800'
-    case 'Оплачен': return 'bg-purple-100 text-purple-800'
-    case 'Загружен': return 'bg-gray-100 text-gray-800'
-    case 'Истёк': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 
 const downloadDocument = (doc: Document) => {
-  alert(`Скачивание: ${doc.name}`)
+  toastStore.show({ type: 'info', title: 'Скачивание документа', message: doc.name })
 }
 
 const viewDocument = (doc: Document) => {
-  alert(`Просмотр: ${doc.name}`)
+  toastStore.show({ type: 'info', title: 'Просмотр документа', message: doc.name })
 }
 
 const deleteDocument = (doc: Document) => {
@@ -201,7 +184,7 @@ const resetDocFilters = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Документы</h1>
       <p class="text-[#64748b]">Управление документами компании</p>
@@ -368,40 +351,29 @@ const resetDocFilters = () => {
           </span>
 
           <!-- Status -->
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(doc.status)]">
-            {{ doc.status }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ doc.status }}</AppBadge>
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
-            <button
-              @click="viewDocument(doc)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-            >
+            <AppButton variant="ghost" size="sm" @click="viewDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Просмотреть
-            </button>
-            <button
-              @click="downloadDocument(doc)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
-            >
+            </AppButton>
+            <AppButton variant="outline" size="sm" @click="downloadDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать
-            </button>
-            <button
-              @click="deleteDocument(doc)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"
-            >
+            </AppButton>
+            <AppButton variant="danger" size="sm" @click="deleteDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Удалить
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -514,12 +486,9 @@ const resetDocFilters = () => {
 
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-[#e2e8f0] flex justify-end gap-3">
-          <button
-            @click="closeUploadModal"
-            class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors"
-          >
+          <AppButton variant="secondary" @click="closeUploadModal">
             Отмена
-          </button>
+          </AppButton>
           <button
             @click="finishUpload"
             :disabled="uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'uploading')"

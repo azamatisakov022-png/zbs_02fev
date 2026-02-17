@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton } from '../../components/ui'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 const activeTab = ref('rates')
 
@@ -166,17 +159,17 @@ function handleOverlay(e: MouseEvent, close: () => void) {
 </script>
 
 <template>
-  <DashboardLayout role="admin" roleTitle="Администратор" userName="Иван Петров" :menuItems="menuItems">
+  <DashboardLayout role="admin" :roleTitle="roleTitle" userName="Иван Петров" :menuItems="menuItems">
     <div class="space-y-6">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Настройки расчётов</h1>
           <p class="text-gray-600 mt-1">Управление ставками, нормативами и формулами расчёта</p>
         </div>
-        <button @click="openAddModal" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors flex items-center gap-2">
+        <AppButton variant="primary" @click="openAddModal">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           Добавить ставку
-        </button>
+        </AppButton>
       </div>
 
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
@@ -217,14 +210,14 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               <td class="px-6 py-4 text-center"><span :class="rate.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-1 rounded-full text-xs font-medium">{{ rate.isActive ? 'Активна' : 'Неактивна' }}</span></td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
-                  <button @click="openEditModal(rate)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+                  <AppButton variant="secondary" size="sm" @click="openEditModal(rate)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     Изменить
-                  </button>
-                  <button @click="confirmDeleteRate(rate)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                  </AppButton>
+                  <AppButton variant="danger" size="sm" @click="confirmDeleteRate(rate)">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     Удалить
-                  </button>
+                  </AppButton>
                 </div>
               </td>
             </tr>
@@ -292,8 +285,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <label class="flex items-center gap-2"><input type="checkbox" v-model="editingRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">Ставка активна</span></label>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <button @click="showEditModal = false" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200">Отмена</button>
-            <button @click="saveRate" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700">Сохранить</button>
+            <AppButton variant="secondary" class="flex-1" @click="showEditModal = false">Отмена</AppButton>
+            <AppButton variant="primary" class="flex-1" @click="saveRate">Сохранить</AppButton>
           </div>
         </div>
       </div>
@@ -349,8 +342,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <label class="flex items-center gap-2"><input type="checkbox" v-model="newRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">Ставка активна</span></label>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <button @click="showAddModal = false" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200">Отмена</button>
-            <button @click="addRate" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700">Добавить</button>
+            <AppButton variant="secondary" class="flex-1" @click="showAddModal = false">Отмена</AppButton>
+            <AppButton variant="primary" class="flex-1" @click="addRate">Добавить</AppButton>
           </div>
         </div>
       </div>
@@ -366,8 +359,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
           <h3 class="text-lg font-bold text-gray-900 mb-2">Удалить ставку?</h3>
           <p class="text-gray-500 text-sm mb-6">{{ deletingRate.code }} — {{ deletingRate.subcategory }} ({{ formatNumber(deletingRate.rate) }} {{ deletingRate.unit }})</p>
           <div class="flex gap-3">
-            <button @click="showDeleteConfirm = false" class="flex-1 px-4 py-2.5 text-gray-700 border border-gray-300 rounded-xl font-medium hover:bg-gray-50">Отмена</button>
-            <button @click="deleteRate" class="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600">Удалить</button>
+            <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">Отмена</AppButton>
+            <AppButton variant="danger" class="flex-1" @click="deleteRate">Удалить</AppButton>
           </div>
         </div>
       </div>
@@ -388,8 +381,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <div><label class="block text-sm font-medium text-gray-700 mb-1">Текущий показатель (%)</label><input v-model.number="editingNorm.currentPercent" type="number" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" /></div>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <button @click="showNormModal = false" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200">Отмена</button>
-            <button @click="saveNorm" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700">Сохранить</button>
+            <AppButton variant="secondary" class="flex-1" @click="showNormModal = false">Отмена</AppButton>
+            <AppButton variant="primary" class="flex-1" @click="saveNorm">Сохранить</AppButton>
           </div>
         </div>
       </div>
@@ -409,8 +402,8 @@ function handleOverlay(e: MouseEvent, close: () => void) {
             <label class="flex items-center gap-2"><input type="checkbox" v-model="editingFormula.active" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">Формула активна</span></label>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <button @click="showFormulaModal = false" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200">Отмена</button>
-            <button @click="saveFormula" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700">Сохранить</button>
+            <AppButton variant="secondary" class="flex-1" @click="showFormulaModal = false">Отмена</AppButton>
+            <AppButton variant="primary" class="flex-1" @click="saveFormula">Сохранить</AppButton>
           </div>
         </div>
       </div>

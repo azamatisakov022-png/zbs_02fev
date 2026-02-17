@@ -163,7 +163,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/employee/organizations',
-    redirect: '/eco-operator/organizations',
+    redirect: '/ministry/payers',
   },
   {
     path: '/employee/licenses',
@@ -195,15 +195,19 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/employee/landfills',
-    name: 'employee-landfills',
-    component: () => import('../views/employee/EmployeeLandfills.vue'),
-    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Полигоны и свалки' },
+    redirect: '/ministry/landfills',
   },
   {
     path: '/employee/profile',
     name: 'employee-profile',
     component: () => import('../views/employee/EmployeeProfile.vue'),
     meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Мой профиль' },
+  },
+  {
+    path: '/employee/notifications',
+    name: 'employee-notifications',
+    component: () => import('../views/employee/EmployeeNotifications.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Уведомления' },
   },
 
   // Business routes
@@ -301,6 +305,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/business/BusinessRefundNew.vue'),
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Заявка на возврат' },
   },
+  {
+    path: '/business/recyclers',
+    name: 'business-recyclers',
+    component: () => import('../views/business/BusinessRecyclers.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Переработчики' },
+  },
+  {
+    path: '/business/notifications',
+    name: 'business-notifications',
+    component: () => import('../views/business/BusinessNotifications.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Уведомления' },
+  },
 
   // Eco Operator routes
   {
@@ -322,10 +338,16 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Входящие декларации' },
   },
   {
+    path: '/eco-operator/declarations/:id',
+    name: 'eco-operator-declaration-detail',
+    component: () => import('../views/eco-operator/EcoOperatorDeclarationDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Рассмотрение декларации' },
+  },
+  {
     path: '/eco-operator/incoming-reports',
     name: 'eco-operator-incoming-reports',
     component: () => import('../views/eco-operator/EcoOperatorIncomingReports.vue'),
-    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Входящие отчёты' },
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Отчёты о переработке' },
   },
   {
     path: '/eco-operator/calculations',
@@ -348,6 +370,20 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-recyclers',
     component: () => import('../views/eco-operator/EcoOperatorRecyclersRegistry.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Реестр переработчиков' },
+  },
+  {
+    path: '/eco-operator/recyclers/:id',
+    name: 'eco-operator-recycler-detail',
+    component: () => import('../views/eco-operator/EcoOperatorRecyclerDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Карточка переработчика' },
+  },
+  {
+    path: '/eco-operator/landfills',
+    redirect: '/ministry/landfills',
+  },
+  {
+    path: '/eco-operator/landfills/:id',
+    redirect: to => '/ministry/landfills/' + to.params.id,
   },
   {
     path: '/eco-operator/licenses',
@@ -406,6 +442,66 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-refund-detail',
     component: () => import('../views/eco-operator/EcoOperatorRefundDetail.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Просмотр заявки' },
+  },
+  {
+    path: '/eco-operator/notifications',
+    name: 'eco-operator-notifications',
+    component: () => import('../views/eco-operator/EcoOperatorNotifications.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Уведомления' },
+  },
+
+  // Ministry (МПРЭТН) routes
+  {
+    path: '/ministry/landfills',
+    name: 'ministry-landfills',
+    component: () => import('../views/ministry/MinistryLandfills.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Полигоны ТБО' },
+  },
+  {
+    path: '/ministry/landfills/:id',
+    name: 'ministry-landfill-detail',
+    component: () => import('../views/ministry/MinistryLandfillDetail.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Карточка полигона' },
+  },
+
+  {
+    path: '/ministry/analytics',
+    name: 'ministry-analytics',
+    component: () => import('../views/ministry/MinistryAnalytics.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Аналитика' },
+  },
+  {
+    path: '/ministry/payers',
+    name: 'ministry-payers',
+    component: () => import('../views/ministry/MinistryPayers.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Реестр плательщиков' },
+  },
+  {
+    path: '/ministry/payers/:id',
+    name: 'ministry-payer-detail',
+    component: () => import('../views/ministry/MinistryPayerDetail.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Карточка плательщика' },
+  },
+
+  // Eco-operator payers
+  {
+    path: '/eco-operator/payers',
+    name: 'eco-operator-payers',
+    component: () => import('../views/eco-operator/EcoOperatorPayers.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Реестр плательщиков' },
+  },
+  {
+    path: '/eco-operator/payers/:id',
+    name: 'eco-operator-payer-detail',
+    component: () => import('../views/eco-operator/EcoOperatorPayerDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'Карточка плательщика' },
+  },
+
+  // 404 catch-all
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../views/NotFound.vue'),
   },
 ]
 

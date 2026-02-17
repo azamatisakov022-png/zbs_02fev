@@ -4,26 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { reportStore } from '../../stores/reports'
-import { refundStore } from '../../stores/refunds'
 import { accountStore, type CompanyAccount, type AccountTransaction } from '../../stores/account'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -136,7 +124,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП Эко Оператор"
+    :roleTitle="roleTitle"
     userName="Экологический оператор"
     :menuItems="menuItems"
   >
@@ -157,7 +145,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Назад к лицевым счетам
+          {{ $t('common.back') }}
         </router-link>
       </div>
       <div class="bg-white rounded-2xl p-8 shadow-sm border border-[#e2e8f0] text-center">
@@ -187,7 +175,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Назад к лицевым счетам
+          {{ $t('common.back') }}
         </router-link>
       </div>
 
@@ -212,16 +200,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             </div>
           </div>
           <div>
-            <span
-              :class="[
-                'px-4 py-1.5 rounded-full text-sm font-medium',
-                account.status === 'Активен'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              ]"
-            >
-              {{ account.status }}
-            </span>
+            <AppBadge :variant="getStatusBadgeVariant(account.status)">{{ account.status }}</AppBadge>
           </div>
         </div>
       </div>
@@ -315,7 +294,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             @click="resetFilters"
             class="px-4 py-2 text-sm text-[#64748b] hover:text-[#1e293b] border border-[#e2e8f0] rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Сбросить
+            {{ $t('common.reset') }}
           </button>
         </div>
       </div>
@@ -335,9 +314,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
 
         <!-- Type -->
         <template #cell-type="{ row }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeBadgeClass(row.type)]">
-            {{ getTypeLabel(row.type) }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(getTypeLabel(row.type))">{{ getTypeLabel(row.type) }}</AppBadge>
         </template>
 
         <!-- Calculation Number -->
@@ -384,16 +361,13 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
         <!-- Actions -->
         <template #actions="{ row }">
           <div class="flex items-center justify-end">
-            <router-link
-              :to="`/eco-operator/calculations/${row.calculationId}`"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-            >
+            <AppButton variant="ghost" size="sm" @click="router.push(`/eco-operator/calculations/${row.calculationId}`)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Просмотреть расчёт
-            </router-link>
+            </AppButton>
           </div>
         </template>
 
@@ -413,7 +387,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
               @click="resetFilters"
               class="mt-2 px-4 py-2 text-sm font-medium text-[#2563eb] hover:text-[#1d4ed8] border border-[#2563eb] rounded-lg hover:bg-blue-50 transition-colors"
             >
-              Сбросить фильтры
+              {{ $t('empty.resetFilters') }}
             </button>
           </div>
         </template>

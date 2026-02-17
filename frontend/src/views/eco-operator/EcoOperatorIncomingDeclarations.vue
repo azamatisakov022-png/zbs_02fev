@@ -1,133 +1,159 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
-import { productGroups, productSubgroups, getSubgroupData, getSubgroupLabel, isPackagingGroup } from '../../data/product-groups'
+import { declarationStore } from '../../stores/declarations'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const router = useRouter()
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
-const columns = [
-  { key: 'number', label: 'Номер', width: '9%' },
-  { key: 'company', label: 'Компания', width: '15%' },
-  { key: 'type', label: 'Тип декларации', width: '18%' },
-  { key: 'period', label: 'Период', width: '8%' },
-  { key: 'submittedAt', label: 'Дата подачи', width: '9%' },
-  { key: 'status', label: 'Статус', width: '10%' },
-]
+// Filters
+const searchQuery = ref('')
+const statusFilter = ref('')
+const yearFilter = ref('')
 
-const declarations = ref([
-  { id: 1, number: 'ДК-2026-052', company: 'ОсОО «ТехПром»', type: 'Декларация о товарах и упаковке', period: 'Q4 2025', submittedAt: '21.01.2026', status: 'Новая' },
-  { id: 2, number: 'ДК-2026-051', company: 'ОАО «СтройМаркет»', type: 'Декларация о товарах и упаковке', period: 'Q4 2025', submittedAt: '20.01.2026', status: 'Новая' },
-  { id: 3, number: 'ДК-2026-050', company: 'ОсОО «ПищеПром»', type: 'Декларация о товарах и упаковке', period: 'Q4 2025', submittedAt: '20.01.2026', status: 'На рассмотрении' },
-  { id: 4, number: 'ДК-2026-048', company: 'ИП Иванов', type: 'Декларация о товарах и упаковке', period: 'Q4 2025', submittedAt: '19.01.2026', status: 'На рассмотрении' },
-  { id: 5, number: 'ДК-2026-045', company: 'ОсОО «ТехПром»', type: 'Декларация о товарах и упаковке', period: 'Q3 2025', submittedAt: '15.10.2025', status: 'Принята' },
-  { id: 6, number: 'ДК-2026-042', company: 'ОАО «МегаТорг»', type: 'Декларация о товарах и упаковке', period: 'Q4 2025', submittedAt: '14.01.2026', status: 'Принята' },
-])
+// Stats
+const pendingCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'На рассмотрении').length)
+const approvedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'Одобрена').length)
+const rejectedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'Отклонена').length)
+const totalCount = computed(() => declarationStore.state.declarations.length)
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Новая': return 'bg-blue-100 text-blue-800'
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Принята': return 'bg-green-100 text-green-800'
-    case 'Отклонена': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
+// Filtered data
+const filteredDeclarations = computed(() => {
+  let list = declarationStore.state.declarations
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(d => d.company.toLowerCase().includes(q) || d.inn.includes(q))
   }
-}
-
-// Detail view
-const selectedDeclaration = ref<number | null>(null)
-
-const declarationItems: Record<number, Array<{
-  group: string
-  subgroup: string
-  mass: number
-  rate: number
-}>> = {
-  1: [
-    { group: 'group_1', subgroup: 'g1_corrugated_boxes', mass: 12.5, rate: 4600 },
-    { group: 'group_4', subgroup: 'g4_tires_car', mass: 8.0, rate: 5100 },
-    { group: 'group_19', subgroup: 'g19_pet_bottles', mass: 3.2, rate: 3800 },
-  ],
-  2: [
-    { group: 'group_12', subgroup: 'g12_starter', mass: 5.0, rate: 6400 },
-    { group: 'group_20', subgroup: 'g20_corrugated', mass: 15.0, rate: 3200 },
-  ],
-  3: [
-    { group: 'group_7', subgroup: 'g7_monitors', mass: 2.0, rate: 12800 },
-    { group: 'group_19', subgroup: 'g19_pp_packaging', mass: 6.5, rate: 3800 },
-    { group: 'group_23', subgroup: 'g23_aluminum_cans', mass: 1.8, rate: 5600 },
-  ],
-  4: [
-    { group: 'group_1', subgroup: 'g1_newspapers', mass: 4.0, rate: 4600 },
-    { group: 'group_22', subgroup: 'g22_bottles', mass: 10.0, rate: 4200 },
-  ],
-  5: [
-    { group: 'group_4', subgroup: 'g4_tires_truck', mass: 20.0, rate: 5100 },
-  ],
-  6: [
-    { group: 'group_21', subgroup: 'g21_beverages', mass: 7.5, rate: 4800 },
-    { group: 'group_5', subgroup: 'g5_lubricants', mass: 3.0, rate: 7200 },
-  ],
-}
-
-const selectedItems = computed(() => {
-  if (!selectedDeclaration.value) return []
-  const items = declarationItems[selectedDeclaration.value] || []
-  return items.map(item => {
-    const groupObj = productGroups.find(g => g.value === item.group)
-    return {
-      ...item,
-      groupLabel: groupObj?.label || item.group,
-      subgroupLabel: getSubgroupLabel(item.group, item.subgroup) || '—',
-      amount: item.mass * item.rate,
-    }
-  })
+  if (statusFilter.value) {
+    list = list.filter(d => d.status === statusFilter.value)
+  }
+  if (yearFilter.value) {
+    list = list.filter(d => d.reportingYear === yearFilter.value)
+  }
+  return list
 })
 
-const selectedTotal = computed(() => selectedItems.value.reduce((s, i) => s + i.amount, 0))
-const selectedTotalMass = computed(() => selectedItems.value.reduce((s, i) => s + i.mass, 0))
+const isFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || yearFilter.value))
+const isFilteredEmpty = computed(() => filteredDeclarations.value.length === 0 && declarationStore.state.declarations.length > 0 && isFiltersActive.value)
 
-const openDetail = (id: number) => {
-  selectedDeclaration.value = selectedDeclaration.value === id ? null : id
+const resetFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  yearFilter.value = ''
+}
+
+// Table columns
+const columns = [
+  { key: 'number', label: '\u2116 \u0434\u0435\u043A\u043B\u0430\u0440\u0430\u0446\u0438\u0438', width: '9%' },
+  { key: 'submittedAt', label: '\u0414\u0430\u0442\u0430 \u043F\u043E\u0434\u0430\u0447\u0438', width: '9%' },
+  { key: 'company', label: '\u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A', width: '15%' },
+  { key: 'inn', label: '\u0418\u041D\u041D', width: '11%' },
+  { key: 'reportingYear', label: '\u041E\u0442\u0447. \u0433\u043E\u0434', width: '6%' },
+  { key: 'totalCharged', label: '\u041D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u043E', width: '10%' },
+  { key: 'totalPaid', label: '\u041E\u043F\u043B\u0430\u0447\u0435\u043D\u043E', width: '10%' },
+  { key: 'balance', label: '\u0421\u0430\u043B\u044C\u0434\u043E', width: '10%' },
+  { key: 'status', label: '\u0421\u0442\u0430\u0442\u0443\u0441', width: '10%' },
+]
+
+const formatBalance = (value: number) => {
+  const sign = value > 0 ? '+' : ''
+  return sign + value.toLocaleString() + ' \u0441\u043E\u043C'
 }
 </script>
 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
+    <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие декларации</h1>
-        <p class="text-[#64748b]">Декларации о товарах и упаковке от плательщиков</p>
+        <p class="text-[#64748b]">Просмотр и рассмотрение деклараций плательщиков утилизационного сбора</p>
       </div>
       <div class="flex items-center gap-3">
-        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-          2 новых
+        <span v-if="pendingCount > 0" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+          {{ pendingCount }} на рассмотрении
         </span>
+      </div>
+    </div>
+
+    <!-- Gradient Stat Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-5 border border-yellow-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-yellow-800">На рассмотрении</p>
+        </div>
+        <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
+        <p class="text-xs text-yellow-600 mt-1">деклараций ожидают решения</p>
+      </div>
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-green-800">Одобрено</p>
+        </div>
+        <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
+        <p class="text-xs text-green-600 mt-1">деклараций одобрено</p>
+      </div>
+      <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-red-800">Отклонено</p>
+        </div>
+        <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
+        <p class="text-xs text-red-600 mt-1">деклараций отклонено</p>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-blue-800">Всего деклараций</p>
+        </div>
+        <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
+        <p class="text-xs text-blue-600 mt-1">всего деклараций в системе</p>
+      </div>
+    </div>
+
+    <!-- Yellow Alert Banner -->
+    <div v-if="pendingCount > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'декларация ожидает' : 'деклараций ожидают' }} рассмотрения. Проверьте данные и примите решение.</p>
       </div>
     </div>
 
@@ -137,169 +163,90 @@ const openDetail = (id: number) => {
     </template>
 
     <template v-if="!isLoading">
-    <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Всего деклараций</p>
-        <p class="text-2xl font-bold text-[#1e293b]">156</p>
-      </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Новых</p>
-        <p class="text-2xl font-bold text-[#2563eb]">12</p>
-      </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">На рассмотрении</p>
-        <p class="text-2xl font-bold text-[#f59e0b]">8</p>
-      </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Принято за месяц</p>
-        <p class="text-2xl font-bold text-[#10b981]">45</p>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
-      <div class="flex flex-wrap gap-4">
-        <input
-          type="text"
-          placeholder="Поиск по номеру или компании..."
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
-        />
-        <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все периоды</option>
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
-          <option value="2029">2029</option>
-          <option value="2030">2030</option>
-        </select>
-        <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все статусы</option>
-          <option value="new">Новая</option>
-          <option value="review">На рассмотрении</option>
-          <option value="accepted">Принята</option>
-          <option value="rejected">Отклонена</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <DataTable :columns="columns" :data="declarations" :actions="true">
-      <template #cell-number="{ value }">
-        <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
-      </template>
-      <template #cell-company="{ value }">
-        <span class="font-medium text-[#1e293b]">{{ value }}</span>
-      </template>
-      <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
-      </template>
-      <template #actions="{ row }">
-        <div class="flex flex-wrap items-center justify-end gap-2">
-          <button
-            @click="openDetail(row.id)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            Детали
-          </button>
-          <button
-            v-if="row.status === 'Новая' || row.status === 'На рассмотрении'"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            Принять
-          </button>
-          <button
-            v-if="row.status === 'Новая' || row.status === 'На рассмотрении'"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Отклонить
-          </button>
+      <!-- Filters -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+        <div class="flex flex-wrap gap-4">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Поиск по наименованию компании или ИНН..."
+            class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+          />
+          <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
+            <option value="">Все статусы</option>
+            <option value="На рассмотрении">На рассмотрении</option>
+            <option value="Одобрена">Одобрена</option>
+            <option value="Отклонена">Отклонена</option>
+            <option value="На доработке">На доработке</option>
+          </select>
+          <select v-model="yearFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
+            <option value="">Все годы</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+            <option value="2030">2030</option>
+          </select>
         </div>
-      </template>
-      <template #empty>
+      </div>
+
+      <!-- Search no results state -->
+      <div v-if="isFilteredEmpty" class="mb-6">
         <EmptyState
-          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
-          title="Нет входящих деклараций"
-          description="Все декларации обработаны"
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+          title="Ничего не найдено"
+          description="По заданным фильтрам деклараций не найдено. Попробуйте изменить параметры поиска."
+          actionLabel="Сбросить фильтры"
+          @action="resetFilters"
         />
-      </template>
-    </DataTable>
-
-    <!-- Detail Panel -->
-    <div v-if="selectedDeclaration" class="mt-6 bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 bg-[#f8fafc] border-b border-[#e2e8f0]">
-        <div>
-          <h3 class="font-semibold text-[#1e293b]">
-            Детали декларации {{ declarations.find(d => d.id === selectedDeclaration)?.number }}
-          </h3>
-          <p class="text-sm text-[#64748b] mt-0.5">
-            {{ declarations.find(d => d.id === selectedDeclaration)?.company }} — {{ declarations.find(d => d.id === selectedDeclaration)?.period }}
-          </p>
-        </div>
-        <button @click="selectedDeclaration = null" class="p-2 text-[#64748b] hover:text-[#1e293b] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
       </div>
 
-      <div class="p-6 overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left text-[#64748b] bg-[#f8fafc]">
-              <th class="px-3 py-3 font-medium">Группа товаров</th>
-              <th class="px-3 py-3 font-medium">Подгруппа</th>
-              <th class="px-3 py-3 font-medium">Код ГСКП / Материал</th>
-              <th class="px-3 py-3 font-medium">Код ТН ВЭД / ТР ТС</th>
-              <th class="px-3 py-3 font-medium">Наименование</th>
-              <th class="px-3 py-3 font-medium text-right">Масса (т)</th>
-              <th class="px-3 py-3 font-medium text-right">Ставка (сом/т)</th>
-              <th class="px-3 py-3 font-medium text-right">Сумма (сом)</th>
-            </tr>
-          </thead>
-          <tbody class="text-[#1e293b]">
-            <tr v-for="(item, idx) in selectedItems" :key="idx" class="border-t border-[#e2e8f0]">
-              <td class="px-3 py-3 text-xs">{{ item.groupLabel }}</td>
-              <td class="px-3 py-3 text-xs">{{ item.subgroupLabel }}</td>
-              <template v-if="!isPackagingGroup(item.group)">
-                <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
-                <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || '—' }}</td>
-                <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedName || '—' }}</td>
-              </template>
-              <template v-else>
-                <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingMaterial || '—' }}</td>
-                <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
-                <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
-              </template>
-              <td class="px-3 py-3 text-right font-medium">{{ item.mass.toFixed(1) }}</td>
-              <td class="px-3 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
-              <td class="px-3 py-3 text-right font-medium">{{ item.amount.toLocaleString() }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="border-t-2 border-[#1e293b] font-semibold bg-[#f8fafc]">
-              <td colspan="5" class="px-3 py-3">ИТОГО</td>
-              <td class="px-3 py-3 text-right">{{ selectedTotalMass.toFixed(1) }}</td>
-              <td class="px-3 py-3"></td>
-              <td class="px-3 py-3 text-right">{{ selectedTotal.toLocaleString() }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
+      <!-- Table -->
+      <DataTable v-if="!isFilteredEmpty" :columns="columns" :data="filteredDeclarations" :actions="true">
+        <template #cell-number="{ value }">
+          <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+        </template>
+        <template #cell-company="{ value }">
+          <span class="font-medium text-[#1e293b]">{{ value }}</span>
+        </template>
+        <template #cell-inn="{ value }">
+          <span class="font-mono text-sm text-[#64748b]">{{ value }}</span>
+        </template>
+        <template #cell-reportingYear="{ value }">
+          <span>{{ value }} год</span>
+        </template>
+        <template #cell-totalCharged="{ value }">
+          <span class="font-medium">{{ value.toLocaleString() }} сом</span>
+        </template>
+        <template #cell-totalPaid="{ value }">
+          <span class="font-medium text-[#10b981]">{{ value.toLocaleString() }} сом</span>
+        </template>
+        <template #cell-balance="{ value }">
+          <span :class="['font-medium', value < 0 ? 'text-[#ef4444]' : 'text-[#10b981]']">{{ formatBalance(value) }}</span>
+        </template>
+        <template #cell-status="{ value }">
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+        </template>
+        <template #actions="{ row }">
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <AppButton variant="ghost" size="sm" @click="router.push('/eco-operator/declarations/' + row.id)">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Рассмотреть
+            </AppButton>
+          </div>
+        </template>
+        <template #empty>
+          <EmptyState
+            icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
+            title="Нет входящих деклараций"
+            description="Декларации от плательщиков пока не поступали"
+          />
+        </template>
+      </DataTable>
     </template>
   </DashboardLayout>
 </template>

@@ -5,27 +5,18 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
 import { reportStore, type Report } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
+import { notificationStore } from '../../stores/notifications'
 
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -110,17 +101,70 @@ const closeDetail = () => {
   rejectionReason.value = ''
 }
 
-const approveReport = () => {
+// Confirmation modals
+const showApproveConfirm = ref(false)
+const approveComment = ref('')
+const showReturnModal = ref(false)
+const returnComment = ref('')
+
+// Toast
+const toastMessage = ref('')
+const toastType = ref<'success' | 'danger' | 'warning'>('success')
+const showToast = ref(false)
+
+const displayToast = (message: string, type: 'success' | 'danger' | 'warning' = 'success') => {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+const openApproveConfirm = () => {
+  approveComment.value = ''
+  showApproveConfirm.value = true
+}
+
+const confirmApprove = () => {
   if (selectedReport.value) {
-    reportStore.approveReport(selectedReport.value.id)
+    reportStore.approveReport(selectedReport.value.id, approveComment.value.trim() || undefined)
+    notificationStore.add({
+      type: 'success',
+      title: 'Отчёт о переработке принят',
+      message: 'Ваш отчёт о переработке был принят.',
+      role: 'business'
+    })
+    showApproveConfirm.value = false
     closeDetail()
+    displayToast('Отчёт о переработке принят', 'success')
+  }
+}
+
+const openReturnModal = () => {
+  returnComment.value = ''
+  showReturnModal.value = true
+}
+
+const confirmReturn = () => {
+  if (selectedReport.value && returnComment.value.trim().length >= 10) {
+    reportStore.returnReportForRevision(selectedReport.value.id, returnComment.value.trim())
+    showReturnModal.value = false
+    closeDetail()
+    displayToast('Отчёт возвращён на доработку', 'warning')
   }
 }
 
 const rejectReport = () => {
-  if (selectedReport.value && rejectionReason.value.trim()) {
+  if (selectedReport.value && rejectionReason.value.trim().length >= 10) {
     reportStore.rejectReport(selectedReport.value.id, rejectionReason.value.trim())
+    notificationStore.add({
+      type: 'error',
+      title: 'Отчёт о переработке отклонён',
+      message: 'Отчёт отклонён. Проверьте замечания.',
+      role: 'business'
+    })
+    showRejectForm.value = false
     closeDetail()
+    displayToast('Отчёт о переработке отклонён', 'danger')
   }
 }
 
@@ -147,13 +191,13 @@ const resetFilters = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <div class="mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие отчёты о переработке</h1>
-      <p class="text-[#64748b]">Отчёты о выполнении нормативов переработки от плательщиков</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.incomingReportsTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.incomingReportsSubtitle') }}</p>
     </div>
 
     <!-- Gradient Stat Cards -->
@@ -168,7 +212,7 @@ const resetFilters = () => {
           <p class="text-sm font-medium text-yellow-800">На проверке</p>
         </div>
         <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
-        <p class="text-xs text-yellow-600 mt-1">отчётов ожидают проверки</p>
+        <p class="text-xs text-yellow-600 mt-1">отчётов о переработке на проверке</p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -180,7 +224,7 @@ const resetFilters = () => {
           <p class="text-sm font-medium text-green-800">Принято</p>
         </div>
         <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
-        <p class="text-xs text-green-600 mt-1">отчётов принято</p>
+        <p class="text-xs text-green-600 mt-1">отчётов о переработке принято</p>
       </div>
       <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -192,7 +236,7 @@ const resetFilters = () => {
           <p class="text-sm font-medium text-red-800">Отклонено</p>
         </div>
         <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
-        <p class="text-xs text-red-600 mt-1">отчётов отклонено</p>
+        <p class="text-xs text-red-600 mt-1">отчётов о переработке отклонено</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -204,7 +248,7 @@ const resetFilters = () => {
           <p class="text-sm font-medium text-blue-800">Всего отчётов</p>
         </div>
         <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
-        <p class="text-xs text-blue-600 mt-1">всего получено</p>
+        <p class="text-xs text-blue-600 mt-1">всего отчётов о переработке</p>
       </div>
     </div>
 
@@ -217,7 +261,7 @@ const resetFilters = () => {
       </div>
       <div>
         <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'новый отчёт' : 'новых отчётов' }} на проверке. Проверьте данные и примите решение.</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'новый отчёт о переработке' : 'новых отчёта о переработке' }} на проверке. Проверьте данные и примите решение.</p>
       </div>
     </div>
 
@@ -241,6 +285,7 @@ const resetFilters = () => {
           <option value="На проверке">На проверке</option>
           <option value="Принят">Принят</option>
           <option value="Отклонён">Отклонён</option>
+          <option value="На доработке">На доработке</option>
         </select>
         <select v-model="periodFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">Все периоды</option>
@@ -266,41 +311,36 @@ const resetFilters = () => {
         <span :class="getPercentClass(value)">{{ value }}%</span>
       </template>
       <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex flex-wrap items-center justify-end gap-2">
-          <button
-            @click="router.push('/eco-operator/reports/' + row.id)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-          >
+          <AppButton variant="ghost" size="sm" @click="router.push('/eco-operator/reports/' + row.id)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
             Детали
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             v-if="row.status === 'На проверке'"
+            variant="secondary" size="sm"
             @click="openDetail(row)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             Проверить
-          </button>
+          </AppButton>
         </div>
       </template>
       <template #empty>
         <EmptyState
           v-if="isFiltersActive && allReports.length > 0"
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-          title="Ничего не найдено"
-          description="Попробуйте изменить параметры поиска"
-          actionLabel="Сбросить фильтры"
+          :title="$t('empty.noSearchResults')"
+          :description="$t('empty.noSearchResultsDesc')"
+          :actionLabel="$t('empty.resetFilters')"
           @action="resetFilters"
         />
         <EmptyState
@@ -324,9 +364,7 @@ const resetFilters = () => {
               <p class="text-sm text-[#64748b]">от {{ selectedReport.date }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(selectedReport.status)]">
-                {{ selectedReport.status }}
-              </span>
+              <AppBadge :variant="getStatusBadgeVariant(selectedReport.status)">{{ selectedReport.status }}</AppBadge>
               <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -447,7 +485,7 @@ const resetFilters = () => {
                     <p class="text-sm font-medium text-[#1e293b]">{{ file.name }}</p>
                     <p class="text-xs text-[#64748b]">{{ file.size }}</p>
                   </div>
-                  <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">Скачать</button>
+                  <button @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Функция в разработке' })" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
                 </div>
               </div>
             </div>
@@ -458,10 +496,10 @@ const resetFilters = () => {
 
             <!-- Excel Export Button -->
             <div class="flex justify-end">
-              <button @click="downloadReportExcel" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#059669] text-white hover:bg-[#047857] transition-colors">
+              <AppButton variant="primary" size="sm" @click="downloadReportExcel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 Скачать отчёт (Excel)
-              </button>
+              </AppButton>
             </div>
 
             <!-- Rejection reason if rejected -->
@@ -479,36 +517,69 @@ const resetFilters = () => {
                 placeholder="Опишите причину отклонения отчёта..."
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
-              <div class="flex justify-end gap-3 mt-3">
-                <button @click="showRejectForm = false" class="px-4 py-2 text-[#64748b] hover:bg-white rounded-lg text-sm">
+              <p class="text-xs text-[#94a3b8] mt-1 mb-3">Минимум 10 символов</p>
+              <div class="flex justify-end gap-3">
+                <AppButton variant="secondary" @click="showRejectForm = false">
                   Отмена
-                </button>
-                <button
+                </AppButton>
+                <AppButton
+                  variant="danger"
                   @click="rejectReport"
-                  :disabled="!rejectionReason.trim()"
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="rejectionReason.trim().length < 10"
                 >
-                  Подтвердить отклонение
-                </button>
+                  Отклонить отчёт
+                </AppButton>
+              </div>
+            </div>
+          </div>
+
+          <!-- Review result banner for processed reports -->
+          <div v-if="selectedReport.status === 'Принят' && selectedReport.reviewDate" class="mx-6 mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+            <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <div>
+              <p class="font-medium text-green-800">Отчёт принят {{ selectedReport.reviewDate }} сотрудником {{ selectedReport.reviewer }}</p>
+            </div>
+          </div>
+          <div v-if="selectedReport.status === 'На доработке' && selectedReport.rejectionReason" class="mx-6 mb-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <p class="font-medium text-orange-800 mb-1">Возвращён на доработку {{ selectedReport.reviewDate }}</p>
+            <p class="text-sm text-orange-700">{{ selectedReport.rejectionReason }}</p>
+          </div>
+
+          <!-- History log -->
+          <div v-if="selectedReport.history && selectedReport.history.length > 0" class="mx-6 mb-4">
+            <h3 class="font-semibold text-[#1e293b] mb-3">История рассмотрения</h3>
+            <div class="space-y-3">
+              <div v-for="entry in selectedReport.history" :key="entry.id" class="flex items-start gap-3">
+                <div :class="[
+                  'w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0',
+                  entry.action.includes('принят') ? 'bg-green-500' :
+                  entry.action.includes('отклонён') ? 'bg-red-500' :
+                  entry.action.includes('доработку') ? 'bg-orange-500' : 'bg-blue-500'
+                ]"></div>
+                <div>
+                  <p class="text-sm text-[#1e293b]"><span class="font-medium">{{ entry.action }}</span> — {{ entry.user }}</p>
+                  <p class="text-xs text-[#94a3b8]">{{ entry.date }}</p>
+                  <p v-if="entry.comment" class="text-xs text-[#64748b] mt-1">{{ entry.comment }}</p>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Modal Footer: Review actions -->
-          <div v-if="selectedReport.status === 'На проверке' && !showRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button
-              @click="showRejectForm = true"
-              class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors"
-            >
+          <div v-if="selectedReport.status === 'На проверке' && !showRejectForm" class="flex flex-wrap justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+            <AppButton variant="danger" @click="showRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Отклонить отчёт
+              Отклонить
+            </AppButton>
+            <button @click="openReturnModal" class="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              На доработку
             </button>
-            <button
-              @click="approveReport"
-              class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
-            >
+            <button @click="openApproveConfirm" class="flex items-center gap-2 px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -518,12 +589,77 @@ const resetFilters = () => {
 
           <!-- Close button for other statuses -->
           <div v-else-if="selectedReport.status !== 'На проверке'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
-            <button @click="closeDetail" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50">
-              Закрыть
-            </button>
+            <AppButton variant="secondary" @click="closeDetail">
+              {{ $t('common.close') }}
+            </AppButton>
           </div>
         </div>
       </div>
     </Teleport>
+    <!-- Approve Confirmation Modal -->
+    <Teleport to="body">
+      <div v-if="showApproveConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showApproveConfirm = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">Принять отчёт?</h3>
+          <p class="text-sm text-[#64748b] mb-4">Вы уверены, что хотите принять отчёт {{ selectedReport?.number }}?</p>
+          <textarea
+            v-model="approveComment"
+            rows="3"
+            placeholder="Комментарий (необязательно)"
+            class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#22C55E] focus:ring-2 focus:ring-[#22C55E]/20 resize-none mb-4 text-sm"
+          ></textarea>
+          <div class="flex justify-end gap-3">
+            <button @click="showApproveConfirm = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">Отмена</button>
+            <button @click="confirmApprove" class="px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">Подтвердить</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Return for Revision Modal -->
+    <Teleport to="body">
+      <div v-if="showReturnModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showReturnModal = false"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">Возврат на доработку</h3>
+          <p class="text-sm text-[#64748b] mb-4">Отчёт {{ selectedReport?.number }} от {{ selectedReport?.company }}</p>
+          <label class="block text-sm font-medium text-[#1e293b] mb-2">Укажите что нужно исправить *</label>
+          <textarea
+            v-model="returnComment"
+            rows="4"
+            placeholder="Опишите что нужно исправить или дополнить..."
+            class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 resize-none mb-1 text-sm"
+          ></textarea>
+          <p class="text-xs text-[#94a3b8] mb-4">Минимум 10 символов</p>
+          <div class="flex justify-end gap-3">
+            <button @click="showReturnModal = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">Отмена</button>
+            <button @click="confirmReturn" :disabled="returnComment.trim().length < 10" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">Вернуть на доработку</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Toast Notification -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div v-if="showToast" :class="[
+          'fixed top-6 right-6 z-[200] px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium flex items-center gap-2',
+          toastType === 'success' ? 'bg-[#22C55E]' : toastType === 'danger' ? 'bg-red-500' : 'bg-orange-500'
+        ]">
+          <svg v-if="toastType === 'success'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          <svg v-else-if="toastType === 'danger'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+          {{ toastMessage }}
+        </div>
+      </Transition>
+    </Teleport>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.toast-enter-active { transition: all 0.3s ease-out; }
+.toast-leave-active { transition: all 0.3s ease-in; }
+.toast-enter-from { opacity: 0; transform: translateX(100px); }
+.toast-leave-to { opacity: 0; transform: translateX(100px); }
+</style>

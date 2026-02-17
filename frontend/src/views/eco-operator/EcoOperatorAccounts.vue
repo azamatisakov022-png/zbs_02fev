@@ -5,25 +5,12 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { reportStore } from '../../stores/reports'
-import { refundStore } from '../../stores/refunds'
 import { accountStore } from '../../stores/account'
+import { AppButton } from '../../components/ui'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
-
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
@@ -35,19 +22,34 @@ const allAccounts = computed(() => accountStore.getAllAccounts())
 // Search filter
 const searchQuery = ref('')
 
+// Balance filter tabs
+type BalanceFilter = 'all' | 'debt' | 'overpaid' | 'zero'
+const balanceFilter = ref<BalanceFilter>('all')
+
 const filteredAccounts = computed(() => {
-  if (!searchQuery.value) return allAccounts.value
-  const q = searchQuery.value.toLowerCase()
-  return allAccounts.value.filter(a =>
-    a.company.toLowerCase().includes(q) || a.inn.includes(q)
-  )
+  let list = allAccounts.value
+
+  // Apply balance filter
+  if (balanceFilter.value === 'debt') list = list.filter(a => a.balance < 0)
+  else if (balanceFilter.value === 'overpaid') list = list.filter(a => a.balance > 0)
+  else if (balanceFilter.value === 'zero') list = list.filter(a => a.balance === 0)
+
+  // Apply search
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(a => a.company.toLowerCase().includes(q) || a.inn.includes(q))
+  }
+
+  return list
 })
 
 // Stats
 const totalCompanies = computed(() => allAccounts.value.length)
-const positiveBalanceCount = computed(() => accountStore.getAccountsWithPositiveBalance().length)
-const debtCount = computed(() => accountStore.getAccountsWithDebt().length)
-const monthlyIncome = computed(() => accountStore.getTotalMonthlyIncome())
+const debtAccounts = computed(() => allAccounts.value.filter(a => a.balance < 0))
+const overpaidAccounts = computed(() => allAccounts.value.filter(a => a.balance > 0))
+const zeroAccounts = computed(() => allAccounts.value.filter(a => a.balance === 0))
+const totalDebt = computed(() => debtAccounts.value.reduce((sum, a) => sum + Math.abs(a.balance), 0))
+const totalOverpaid = computed(() => overpaidAccounts.value.reduce((sum, a) => sum + a.balance, 0))
 
 // Table columns
 const columns = [
@@ -75,16 +77,19 @@ const tableData = computed(() => {
 
 // Balance formatting
 const formatBalance = (balance: number): string => {
-  const formatted = Math.abs(balance).toLocaleString('ru-RU')
-  if (balance > 0) return '+' + formatted + ' сом'
-  if (balance < 0) return '-' + formatted + ' сом'
-  return '0 сом'
+  return Math.abs(balance).toLocaleString('ru-RU') + ' сом'
 }
 
-const getBalanceClass = (balance: number): string => {
-  if (balance > 0) return 'text-[#10b981] font-semibold'
-  if (balance < 0) return 'text-[#ef4444] font-semibold'
-  return 'text-[#94a3b8] font-medium'
+const getBalanceLabel = (balance: number): string => {
+  if (balance < 0) return 'Задолженность'
+  if (balance > 0) return 'Переплата'
+  return 'Оплачено'
+}
+
+const getBalanceColor = (balance: number): string => {
+  if (balance < 0) return '#EF4444'
+  if (balance > 0) return '#F59E0B'
+  return '#059669'
 }
 
 const getStatusStyle = (status: string) => {
@@ -96,62 +101,68 @@ const viewPayer = (row: { id: number }) => {
   router.push(`/eco-operator/accounts/${row.id}`)
 }
 
-const isFiltersActive = computed(() => !!searchQuery.value)
-const resetFilters = () => { searchQuery.value = '' }
+const isFiltersActive = computed(() => !!searchQuery.value || balanceFilter.value !== 'all')
+const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all' }
 </script>
 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП Эко Оператор"
+    :roleTitle="roleTitle"
     userName="Экологический оператор"
     :menuItems="menuItems"
   >
     <div class="mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Лицевые счета плательщиков</h1>
-      <p class="text-[#64748b]">Управление лицевыми счетами и корректировками</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.accountsTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.accountsSubtitle') }}</p>
     </div>
 
-    <!-- Stat Cards -->
+    <!-- KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
+      <!-- 1. Total organizations -->
+      <div class="bg-white rounded-2xl p-5 border border-[#e2e8f0] shadow-sm">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+          <div class="w-10 h-10 bg-[#64748b] rounded-xl flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           </div>
-          <p class="text-sm font-medium text-blue-800">Всего компаний</p>
+          <p class="text-sm font-medium text-[#64748b]">Всего организаций</p>
         </div>
-        <p class="text-3xl font-bold text-blue-900">{{ totalCompanies }}</p>
+        <p class="text-3xl font-bold text-[#1e293b]">{{ totalCompanies }}</p>
       </div>
 
-      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <p class="text-sm font-medium text-green-800">Положительный баланс</p>
-        </div>
-        <p class="text-3xl font-bold text-green-900">{{ positiveBalanceCount }}</p>
-      </div>
-
+      <!-- 2. With debt -->
       <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+          <div class="w-10 h-10 bg-[#EF4444] rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
           </div>
-          <p class="text-sm font-medium text-red-800">Задолженность</p>
+          <p class="text-sm font-medium text-red-800">С задолженностью</p>
         </div>
-        <p class="text-3xl font-bold text-red-900">{{ debtCount }}</p>
+        <p class="text-3xl font-bold text-red-900">{{ debtAccounts.length }}</p>
+        <p class="text-xs text-red-600 mt-1 font-medium">{{ totalDebt.toLocaleString('ru-RU') }} сом</p>
       </div>
 
-      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200 shadow-sm">
+      <!-- 3. Overpaid -->
+      <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-5 border border-amber-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div class="w-10 h-10 bg-[#F59E0B] rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
           </div>
-          <p class="text-sm font-medium text-purple-800">Поступления за месяц</p>
+          <p class="text-sm font-medium text-amber-800">С переплатой</p>
         </div>
-        <p class="text-3xl font-bold text-purple-900">{{ monthlyIncome.toLocaleString('ru-RU') }} <span class="text-lg font-semibold">сом</span></p>
+        <p class="text-3xl font-bold text-amber-900">{{ overpaidAccounts.length }}</p>
+        <p class="text-xs text-amber-600 mt-1 font-medium">{{ totalOverpaid.toLocaleString('ru-RU') }} сом</p>
+      </div>
+
+      <!-- 4. No debt (balance = 0) -->
+      <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-5 border border-emerald-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-[#059669] rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          </div>
+          <p class="text-sm font-medium text-emerald-800">Без задолженности</p>
+        </div>
+        <p class="text-3xl font-bold text-emerald-900">{{ zeroAccounts.length }}</p>
       </div>
     </div>
 
@@ -161,7 +172,40 @@ const resetFilters = () => { searchQuery.value = '' }
     </template>
 
     <template v-if="!isLoading">
+      <!-- Filter tabs + search -->
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button
+            v-for="tab in ([
+              { key: 'all', label: 'Все', count: totalCompanies },
+              { key: 'debt', label: 'С задолженностью', count: debtAccounts.length },
+              { key: 'overpaid', label: 'С переплатой', count: overpaidAccounts.length },
+              { key: 'zero', label: 'Без задолженности', count: zeroAccounts.length },
+            ] as { key: BalanceFilter, label: string, count: number }[])"
+            :key="tab.key"
+            @click="balanceFilter = tab.key"
+            :class="[
+              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+              balanceFilter === tab.key
+                ? tab.key === 'debt' ? 'bg-red-100 text-red-700'
+                  : tab.key === 'overpaid' ? 'bg-amber-100 text-amber-700'
+                  : tab.key === 'zero' ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-[#1e293b] text-white'
+                : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
+            ]"
+          >
+            {{ tab.label }}
+            <span :class="[
+              'ml-1.5 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold',
+              balanceFilter === tab.key
+                ? tab.key === 'debt' ? 'bg-red-200 text-red-800'
+                  : tab.key === 'overpaid' ? 'bg-amber-200 text-amber-800'
+                  : tab.key === 'zero' ? 'bg-emerald-200 text-emerald-800'
+                  : 'bg-white/20 text-white'
+                : 'bg-[#e2e8f0] text-[#64748b]'
+            ]">{{ tab.count }}</span>
+          </button>
+        </div>
         <input
           v-model="searchQuery"
           type="text"
@@ -178,7 +222,21 @@ const resetFilters = () => { searchQuery.value = '' }
           <span class="font-mono text-[#374151] text-xs">{{ value }}</span>
         </template>
         <template #cell-balance="{ row }">
-          <span :class="getBalanceClass(row.balance)">{{ formatBalance(row.balance) }}</span>
+          <div class="flex items-start gap-2">
+            <!-- Icon -->
+            <div class="mt-0.5 flex-shrink-0">
+              <!-- Debt: red arrow down -->
+              <svg v-if="row.balance < 0" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#EF4444" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
+              <!-- Overpaid: amber arrow up -->
+              <svg v-else-if="row.balance > 0" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#F59E0B" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+              <!-- Zero: green check -->
+              <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#059669" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <div>
+              <p class="font-bold text-sm leading-tight" :style="{ color: getBalanceColor(row.balance) }">{{ formatBalance(row.balance) }}</p>
+              <p class="text-[11px] font-medium leading-tight mt-0.5" :style="{ color: getBalanceColor(row.balance) }">{{ getBalanceLabel(row.balance) }}</p>
+            </div>
+          </div>
         </template>
         <template #cell-lastPayment="{ value }">
           <span class="text-[#374151] text-sm">{{ value }}</span>
@@ -190,13 +248,10 @@ const resetFilters = () => { searchQuery.value = '' }
           >{{ value }}</span>
         </template>
         <template #actions="{ row }">
-          <button
-            @click="viewPayer(row)"
-            class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-          >
+          <AppButton variant="ghost" size="sm" @click="viewPayer(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Детали
-          </button>
+          </AppButton>
         </template>
         <template #empty>
           <EmptyState
@@ -204,13 +259,13 @@ const resetFilters = () => { searchQuery.value = '' }
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
             title="Ничего не найдено"
             description="Попробуйте изменить параметры поиска"
-            actionLabel="Сбросить фильтры"
+            :actionLabel="$t('empty.resetFilters')"
             @action="resetFilters"
           />
           <EmptyState
             v-else
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>'
-            title="Нет лицевых счетов"
+            :title="$t('empty.noAccounts')"
             description="Плательщики пока не зарегистрированы в системе"
           />
         </template>

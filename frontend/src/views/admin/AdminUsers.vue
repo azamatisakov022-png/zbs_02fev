@@ -3,17 +3,11 @@ import { ref, computed, reactive, watch } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useAdminMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/admin' },
-  { id: 'users', label: 'Пользователи', icon: icons.users, route: '/admin/users' },
-  { id: 'roles', label: 'Роли и права', icon: icons.shield, route: '/admin/roles' },
-  { id: 'references', label: 'Справочники', icon: icons.registries, route: '/admin/references' },
-  { id: 'audit', label: 'Журнал аудита', icon: icons.audit, route: '/admin/audit' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/admin/notifications' },
-  { id: 'settings', label: 'Настройки системы', icon: icons.settings, route: '/admin/settings' },
-]
+const { roleTitle, menuItems } = useAdminMenu()
 
 // --- Types ---
 interface RoleHistoryEntry {
@@ -146,18 +140,6 @@ const users = ref<User[]>([
     ],
   },
 ])
-
-// --- Status helpers ---
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Активен': return 'bg-green-100 text-green-800'
-    case 'Временно заблокирован': return 'bg-orange-100 text-orange-800'
-    case 'Заблокирован': return 'bg-red-100 text-red-800'
-    case 'Ожидает подтверждения': return 'bg-yellow-100 text-yellow-800'
-    case 'Деактивирован': return 'bg-gray-200 text-gray-500'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 
 const getRowClass = (row: Record<string, any>) => {
   return row.status === 'Деактивирован' ? 'opacity-60' : ''
@@ -469,21 +451,18 @@ const resetUserFilters = () => {
 <template>
   <DashboardLayout
     role="admin"
-    roleTitle="Администратор"
+    :roleTitle="roleTitle"
     userName="Иван Петров"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <h2 class="text-2xl font-bold text-[#415861]">Пользователи</h2>
-      <button
-        @click="openAddUser"
-        class="flex items-center gap-2 bg-[#0e888d] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#0a6d71] transition-colors"
-      >
+      <AppButton variant="primary" @click="openAddUser">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Добавить пользователя
-      </button>
+      </AppButton>
     </div>
 
     <!-- Filters -->
@@ -516,42 +495,40 @@ const resetUserFilters = () => {
     <!-- Table -->
     <DataTable :columns="columns" :data="filteredUsers" :actions="true" :rowClass="getRowClass">
       <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
           <!-- Просмотреть (green) — always -->
-          <button @click="openViewUser(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+          <AppButton variant="primary" size="sm" @click="openViewUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             Просмотреть
-          </button>
+          </AppButton>
           <!-- Роль (blue) — not for deactivated -->
-          <button v-if="row.status !== 'Деактивирован'" @click="openChangeRole(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+          <AppButton v-if="row.status !== 'Деактивирован'" variant="ghost" size="sm" @click="openChangeRole(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Роль
-          </button>
+          </AppButton>
           <!-- Заблокировать (orange) — for active / pending -->
-          <button v-if="row.status === 'Активен' || row.status === 'Ожидает подтверждения'" @click="openBlockUser(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+          <AppButton v-if="row.status === 'Активен' || row.status === 'Ожидает подтверждения'" variant="secondary" size="sm" @click="openBlockUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
             Заблокировать
-          </button>
+          </AppButton>
           <!-- Разблокировать — for blocked or temporarily blocked -->
-          <button v-if="row.status === 'Заблокирован' || row.status === 'Временно заблокирован'" @click="openUnblockUser(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+          <AppButton v-if="row.status === 'Заблокирован' || row.status === 'Временно заблокирован'" variant="primary" size="sm" @click="openUnblockUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             Разблокировать
-          </button>
+          </AppButton>
           <!-- Восстановить — for deactivated -->
-          <button v-if="row.status === 'Деактивирован'" @click="openRestoreUser(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm">
+          <AppButton v-if="row.status === 'Деактивирован'" variant="primary" size="sm" @click="openRestoreUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             Восстановить
-          </button>
+          </AppButton>
           <!-- Удалить (red, trash icon) — always -->
-          <button @click="openDeleteUser(row)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+          <AppButton variant="danger" size="sm" @click="openDeleteUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             Удалить
-          </button>
+          </AppButton>
         </div>
       </template>
       <template #empty>
@@ -608,7 +585,7 @@ const resetUserFilters = () => {
                 </div>
                 <div>
                   <p class="text-[#94a3b8] mb-0.5">Статус</p>
-                  <span :class="['inline-block px-3 py-0.5 rounded-full text-xs font-medium', getStatusClass(selectedUser.status)]">{{ selectedUser.status }}</span>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedUser.status)">{{ selectedUser.status }}</AppBadge>
                 </div>
                 <div>
                   <p class="text-[#94a3b8] mb-0.5">Дата регистрации</p>
@@ -666,14 +643,7 @@ const resetUserFilters = () => {
                     <tr v-for="(entry, i) in selectedUser.statusHistory" :key="i" class="border-t border-[#f1f5f9]">
                       <td class="px-4 py-2.5 text-[#415861] whitespace-nowrap">{{ entry.date }}</td>
                       <td class="px-4 py-2.5">
-                        <span :class="[
-                          'px-2 py-0.5 rounded-full text-xs font-medium',
-                          entry.action === 'Активирован' || entry.action === 'Разблокирован' || entry.action === 'Восстановлен' ? 'bg-green-100 text-green-800' :
-                          entry.action === 'Временно заблокирован' ? 'bg-orange-100 text-orange-800' :
-                          entry.action === 'Заблокирован' ? 'bg-red-100 text-red-800' :
-                          entry.action === 'Деактивирован' ? 'bg-gray-200 text-gray-500' :
-                          'bg-yellow-100 text-yellow-800'
-                        ]">{{ entry.action }}</span>
+                        <AppBadge :variant="getStatusBadgeVariant(entry.action)">{{ entry.action }}</AppBadge>
                       </td>
                       <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
                       <td class="px-4 py-2.5 text-[#64748b]">{{ entry.reason || '—' }}</td>
@@ -686,9 +656,9 @@ const resetUserFilters = () => {
           </div>
 
           <div class="flex justify-end p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0a6d71] transition-colors">
+            <AppButton variant="primary" @click="closeModal">
               Закрыть
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -731,9 +701,9 @@ const resetUserFilters = () => {
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">
+            <AppButton variant="secondary" @click="closeModal">
               Отмена
-            </button>
+            </AppButton>
             <button
               @click="submitChangeRole"
               :disabled="!changeRoleForm.newRole || !changeRoleForm.reason.trim()"
@@ -822,9 +792,9 @@ const resetUserFilters = () => {
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">
+            <AppButton variant="secondary" @click="closeModal">
               Отмена
-            </button>
+            </AppButton>
             <button
               @click="submitBlockUser"
               :disabled="!isBlockFormValid"
@@ -862,12 +832,12 @@ const resetUserFilters = () => {
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">
+            <AppButton variant="secondary" @click="closeModal">
               Отмена
-            </button>
-            <button @click="submitUnblockUser" class="px-5 py-2.5 bg-[#10B981] text-white rounded-xl font-medium hover:bg-[#059669] transition-colors">
+            </AppButton>
+            <AppButton variant="primary" @click="submitUnblockUser">
               Разблокировать
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -893,12 +863,12 @@ const resetUserFilters = () => {
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">
+            <AppButton variant="secondary" @click="closeModal">
               Отмена
-            </button>
-            <button @click="submitRestoreUser" class="px-5 py-2.5 bg-[#10B981] text-white rounded-xl font-medium hover:bg-[#059669] transition-colors">
+            </AppButton>
+            <AppButton variant="primary" @click="submitRestoreUser">
               Восстановить
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -938,9 +908,9 @@ const resetUserFilters = () => {
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">
+            <AppButton variant="secondary" @click="closeModal">
               Отмена
-            </button>
+            </AppButton>
             <button
               @click="submitDeleteUser"
               :disabled="deleteConfirmText !== 'УДАЛИТЬ'"
@@ -1054,7 +1024,7 @@ const resetUserFilters = () => {
                 </div>
               </div>
               <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-                <button @click="closeModal" class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors">Отмена</button>
+                <AppButton variant="secondary" @click="closeModal">Отмена</AppButton>
                 <button @click="goToAddConfirm" :disabled="!isAddFormValid"
                   :class="['px-5 py-2.5 rounded-xl font-medium transition-colors', isAddFormValid ? 'bg-[#0e888d] text-white hover:bg-[#0a6d71]' : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed']"
                 >Далее</button>
@@ -1087,7 +1057,7 @@ const resetUserFilters = () => {
                     <div><p class="text-[#94a3b8]">Email</p><p class="text-[#415861] font-medium">{{ addUserForm.email }}</p></div>
                     <div><p class="text-[#94a3b8]">Телефон</p><p class="text-[#415861] font-medium">{{ addUserForm.phone }}</p></div>
                     <div><p class="text-[#94a3b8]">Роль</p><p class="text-[#415861] font-medium">{{ addUserForm.role }}</p></div>
-                    <div><p class="text-[#94a3b8]">Статус</p><span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Ожидает подтверждения</span></div>
+                    <div><p class="text-[#94a3b8]">Статус</p><AppBadge variant="warning">Ожидает подтверждения</AppBadge></div>
                   </div>
                 </div>
                 <div v-if="selectedAddRoleInfo" class="rounded-xl border-2 border-[#0e888d]/20 bg-[#e8f5f5]/30 p-4">
@@ -1118,10 +1088,10 @@ const resetUserFilters = () => {
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                   Назад
                 </button>
-                <button @click="submitAddUser" class="flex items-center gap-2 px-6 py-2.5 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0a6d71] transition-colors">
+                <AppButton variant="primary" @click="submitAddUser">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                   Подтвердить и добавить
-                </button>
+                </AppButton>
               </div>
             </div>
 
@@ -1141,9 +1111,9 @@ const resetUserFilters = () => {
                 </p>
               </div>
               <div class="px-8 pb-8">
-                <button @click="closeModal" class="w-full py-3 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0a6d71] transition-colors">
+                <AppButton variant="primary" class="w-full" @click="closeModal">
                   Закрыть
-                </button>
+                </AppButton>
               </div>
             </div>
           </Transition>

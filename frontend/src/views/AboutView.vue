@@ -22,7 +22,7 @@ const mainFunctions = {
     <!-- Page header -->
     <div class="container-main text-center">
       <h1 class="text-3xl md:text-4xl lg:text-[50px] lg:leading-[68px] font-bold text-[#415861] uppercase mb-4 lg:mb-[22px]">
-        О портале АИС «ЦРО»
+        О портале АИС «ГП Эко Оператор»
       </h1>
       <p class="text-lg md:text-2xl lg:text-[30px] lg:leading-[41px] font-medium text-[#415861] max-w-[601px] mx-auto mb-10 lg:mb-[50px]">
         Автоматизированная информационная система «ГП Эко Оператор»

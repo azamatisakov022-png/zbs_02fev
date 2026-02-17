@@ -1,19 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { validators, scrollToFirstError } from '../../utils/validators'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { productGroups } from '../../data/product-groups'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // Company data
 const companyData = ref({
@@ -28,6 +21,13 @@ const companyData = ref({
   activityType: 'Производство и импорт электроники',
   okved: '26.20 - Производство компьютеров и периферийного оборудования',
 })
+
+// Product groups (selected during registration)
+const selectedProductGroups = ref(['group_6', 'group_7', 'group_9', 'group_10', 'group_15', 'group_16'])
+
+const getProductGroupLabel = (value: string) => {
+  return productGroups.find(g => g.value === value)?.label || value
+}
 
 const contactData = ref({
   phone: '+996 312 123-456',
@@ -69,6 +69,72 @@ const securityData = ref({
   twoFactorEnabled: false,
 })
 
+// Validation
+const formSubmitted = ref(false)
+
+const formErrors = computed(() => {
+  const errors: Record<string, string> = {}
+
+  // --- Company section ---
+  const nameErr = validators.required(companyData.value.name, 'Краткое наименование')
+  if (nameErr) errors.companyName = nameErr
+
+  const innReq = validators.required(companyData.value.inn, 'ИНН')
+  if (innReq) errors.inn = innReq
+  else {
+    const innFmt = validators.inn(companyData.value.inn)
+    if (innFmt) errors.inn = innFmt
+  }
+
+  const legalAddrErr = validators.required(companyData.value.legalAddress, 'Юридический адрес')
+  if (legalAddrErr) errors.legalAddress = legalAddrErr
+
+  // --- Contact section ---
+  const emailReq = validators.required(contactData.value.email, 'Email')
+  if (emailReq) errors.email = emailReq
+  else {
+    const emailFmt = validators.email(contactData.value.email)
+    if (emailFmt) errors.email = emailFmt
+  }
+
+  if (contactData.value.phone) {
+    const phoneFmt = validators.phone(contactData.value.phone)
+    if (phoneFmt) errors.phone = phoneFmt
+  }
+
+  if (contactData.value.additionalPhone) {
+    const addPhoneFmt = validators.phone(contactData.value.additionalPhone)
+    if (addPhoneFmt) errors.additionalPhone = addPhoneFmt
+  }
+
+  // --- Representative section ---
+  if (representativeData.value.contactPersonEmail) {
+    const cpEmailFmt = validators.email(representativeData.value.contactPersonEmail)
+    if (cpEmailFmt) errors.contactPersonEmail = cpEmailFmt
+  }
+
+  if (representativeData.value.contactPersonPhone) {
+    const cpPhoneFmt = validators.phone(representativeData.value.contactPersonPhone)
+    if (cpPhoneFmt) errors.contactPersonPhone = cpPhoneFmt
+  }
+
+  return errors
+})
+
+const hasErrors = computed(() => Object.keys(formErrors.value).length > 0)
+
+// Which error keys belong to each section
+const sectionErrorKeys: Record<string, string[]> = {
+  company: ['companyName', 'inn', 'legalAddress'],
+  contact: ['email', 'phone', 'additionalPhone'],
+  representative: ['contactPersonEmail', 'contactPersonPhone'],
+}
+
+const sectionHasErrors = (section: string) => {
+  const keys = sectionErrorKeys[section] || []
+  return keys.some(k => !!formErrors.value[k])
+}
+
 // Edit states
 const editingSection = ref<string | null>(null)
 const saving = ref(false)
@@ -109,24 +175,34 @@ const profileCompletion = computed(() => {
 })
 
 const startEditing = (section: string) => {
+  formSubmitted.value = false
   editingSection.value = section
 }
 
 const cancelEditing = () => {
+  formSubmitted.value = false
   editingSection.value = null
 }
 
 const saveSection = async () => {
+  formSubmitted.value = true
+  const currentSection = editingSection.value
+  if (currentSection && sectionHasErrors(currentSection)) {
+    await nextTick()
+    scrollToFirstError()
+    return
+  }
   saving.value = true
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1000))
   saving.value = false
+  formSubmitted.value = false
   editingSection.value = null
 }
 
 const changePassword = async () => {
   if (securityData.value.newPassword !== securityData.value.confirmPassword) {
-    alert('Пароли не совпадают')
+    toastStore.show({ type: 'error', title: 'Ошибка', message: 'Пароли не совпадают' })
     return
   }
   saving.value = true
@@ -135,7 +211,7 @@ const changePassword = async () => {
   securityData.value.currentPassword = ''
   securityData.value.newPassword = ''
   securityData.value.confirmPassword = ''
-  alert('Пароль успешно изменён')
+  toastStore.show({ type: 'success', title: 'Пароль успешно изменён' })
 }
 
 const toggleTwoFactor = () => {
@@ -146,7 +222,7 @@ const toggleTwoFactor = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -258,9 +334,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'company'"
                 v-model="companyData.name"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.companyName ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900">{{ companyData.name }}</p>
+              <p v-if="formSubmitted && formErrors.companyName && editingSection === 'company'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.companyName }}
+              </p>
+              <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.name }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Полное наименование</label>
@@ -278,9 +357,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'company'"
                 v-model="companyData.inn"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.inn ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900 font-mono">{{ companyData.inn }}</p>
+              <p v-if="formSubmitted && formErrors.inn && editingSection === 'company'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.inn }}
+              </p>
+              <p v-if="editingSection !== 'company'" class="text-gray-900 font-mono">{{ companyData.inn }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">ОКПО</label>
@@ -318,9 +400,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'company'"
                 v-model="companyData.legalAddress"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.legalAddress ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900">{{ companyData.legalAddress }}</p>
+              <p v-if="formSubmitted && formErrors.legalAddress && editingSection === 'company'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.legalAddress }}
+              </p>
+              <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.legalAddress }}</p>
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-500 mb-1">Фактический адрес</label>
@@ -363,7 +448,7 @@ const toggleTwoFactor = () => {
             </button>
             <button
               @click="saveSection"
-              :disabled="saving"
+              :disabled="saving || (formSubmitted && sectionHasErrors('company'))"
               class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -372,6 +457,37 @@ const toggleTwoFactor = () => {
               </svg>
               {{ saving ? 'Сохранение...' : 'Сохранить' }}
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Groups -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">Виды продукции</h3>
+              <p class="text-sm text-gray-500">Группы товаров, указанные при регистрации</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="gv in selectedProductGroups"
+              :key="gv"
+              class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+            >
+              <svg class="w-3.5 h-3.5 mr-1.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {{ getProductGroupLabel(gv) }}
+            </span>
           </div>
         </div>
       </div>
@@ -406,9 +522,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'contact'"
                 v-model="contactData.phone"
                 type="tel"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.phone ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900">{{ contactData.phone }}</p>
+              <p v-if="formSubmitted && formErrors.phone && editingSection === 'contact'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.phone }}
+              </p>
+              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.phone }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Дополнительный телефон</label>
@@ -416,9 +535,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'contact'"
                 v-model="contactData.additionalPhone"
                 type="tel"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.additionalPhone ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900">{{ contactData.additionalPhone || '—' }}</p>
+              <p v-if="formSubmitted && formErrors.additionalPhone && editingSection === 'contact'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.additionalPhone }}
+              </p>
+              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.additionalPhone || '---' }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Факс</label>
@@ -436,9 +558,12 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'contact'"
                 v-model="contactData.email"
                 type="email"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.email ? 'vld-input--error' : '']"
               />
-              <p v-else class="text-gray-900">{{ contactData.email }}</p>
+              <p v-if="formSubmitted && formErrors.email && editingSection === 'contact'" class="vld-error" data-validation-error>
+                <span class="vld-error__icon">&#9888;</span> {{ formErrors.email }}
+              </p>
+              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.email }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Веб-сайт</label>
@@ -461,7 +586,7 @@ const toggleTwoFactor = () => {
             </button>
             <button
               @click="saveSection"
-              :disabled="saving"
+              :disabled="saving || (formSubmitted && sectionHasErrors('contact'))"
               class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -565,9 +690,12 @@ const toggleTwoFactor = () => {
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.contactPersonPhone"
                     type="tel"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.contactPersonPhone ? 'vld-input--error' : '']"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.contactPersonPhone }}</p>
+                  <p v-if="formSubmitted && formErrors.contactPersonPhone && editingSection === 'representative'" class="vld-error" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors.contactPersonPhone }}
+                  </p>
+                  <p v-if="editingSection !== 'representative'" class="text-gray-900">{{ representativeData.contactPersonPhone }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
@@ -575,9 +703,12 @@ const toggleTwoFactor = () => {
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.contactPersonEmail"
                     type="email"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    :class="['w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500', formSubmitted && formErrors.contactPersonEmail ? 'vld-input--error' : '']"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.contactPersonEmail }}</p>
+                  <p v-if="formSubmitted && formErrors.contactPersonEmail && editingSection === 'representative'" class="vld-error" data-validation-error>
+                    <span class="vld-error__icon">&#9888;</span> {{ formErrors.contactPersonEmail }}
+                  </p>
+                  <p v-if="editingSection !== 'representative'" class="text-gray-900">{{ representativeData.contactPersonEmail }}</p>
                 </div>
               </div>
             </div>
@@ -592,7 +723,7 @@ const toggleTwoFactor = () => {
             </button>
             <button
               @click="saveSection"
-              :disabled="saving"
+              :disabled="saving || (formSubmitted && sectionHasErrors('representative'))"
               class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -948,3 +1079,22 @@ const toggleTwoFactor = () => {
     </div>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.vld-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #EF4444;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+.vld-error__icon {
+  flex-shrink: 0;
+}
+.vld-input--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+</style>

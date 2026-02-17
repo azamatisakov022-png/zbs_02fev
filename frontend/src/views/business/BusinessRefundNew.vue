@@ -2,24 +2,14 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { productGroups, productSubgroups } from '../../data/product-groups'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
 const router = useRouter()
-
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // View mode
 type ViewMode = 'form' | 'success'
@@ -167,12 +157,12 @@ const createRefund = () => {
 }
 
 const saveDraft = () => {
-  alert('Черновик сохранён (демонстрация)')
+  toastStore.show({ type: 'success', title: 'Черновик сохранён' })
 }
 </script>
 
 <template>
-  <DashboardLayout role="business" roleTitle="Плательщик" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
 
     <!-- FORM VIEW -->
     <template v-if="viewMode === 'form'">

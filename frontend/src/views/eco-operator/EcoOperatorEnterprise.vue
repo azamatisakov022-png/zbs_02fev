@@ -1,22 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const isEditing = ref(false)
 
@@ -39,12 +26,12 @@ const enterpriseData = ref({
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <h2 class="text-2xl font-bold text-[#415861]">Моё предприятие</h2>
+      <h2 class="text-2xl font-bold text-[#415861]">{{ $t('pages.ecoOperator.enterpriseTitle') }}</h2>
       <button
         @click="isEditing = !isEditing"
         :class="[
@@ -60,7 +47,7 @@ const enterpriseData = ref({
         <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
-        {{ isEditing ? 'Сохранить' : 'Редактировать' }}
+        {{ isEditing ? $t('common.save') : $t('common.edit') }}
       </button>
     </div>
 

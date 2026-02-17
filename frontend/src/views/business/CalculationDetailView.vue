@@ -2,28 +2,18 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { calculatePaymentDeadline, getRemainingDays, formatDateShort } from '../../utils/dateUtils'
 import { generateCalculationExcel } from '../../utils/excelExport'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
 const router = useRouter()
 const route = useRoute()
-
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 const calcId = computed(() => Number(route.params.id))
 const calc = computed(() => calculationStore.getCalculationById(calcId.value))
@@ -108,7 +98,7 @@ const goBack = () => {
 }
 
 const mockAction = (action: string) => {
-  alert(action)
+  toastStore.show({ type: 'info', title: action })
 }
 
 const downloadExcel = () => {
@@ -124,7 +114,7 @@ const downloadExcel = () => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >

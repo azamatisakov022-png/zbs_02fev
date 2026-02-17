@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Filter
 const searchQuery = ref('')
@@ -172,15 +164,15 @@ const openDetails = (wt: WasteType) => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Виды отходов</h1>
-        <p class="text-gray-600 mt-1">Перечень принимаемых и перерабатываемых отходов</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.wasteTypesTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('pages.employee.wasteTypesSubtitle') }}</p>
       </div>
 
       <!-- Stats Banner -->
@@ -216,7 +208,7 @@ const openDetails = (wt: WasteType) => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по названию или коду..."
+                :placeholder="$t('common.search')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
@@ -397,11 +389,11 @@ const openDetails = (wt: WasteType) => {
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
+              <button @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Функция в разработке' })" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
                 Редактировать
               </button>
               <button @click="showDetailsModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Закрыть
+                {{ $t('common.close') }}
               </button>
             </div>
           </div>

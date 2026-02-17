@@ -1,22 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Tab state
 const activeTab = ref<'licenses' | 'documents'>('licenses')
@@ -232,7 +222,7 @@ const handleFileSelect = (event: Event) => {
 }
 
 const submitUpload = () => {
-  alert('Документ загружен!')
+  toastStore.show({ type: 'success', title: 'Документ загружен' })
   showUploadModal.value = false
   uploadForm.value = { name: '', type: 'Сертификат', expiryDate: '', files: [] }
 }
@@ -241,7 +231,7 @@ const submitUpload = () => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
@@ -249,18 +239,15 @@ const submitUpload = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Лицензии и документы</h1>
-          <p class="text-gray-600 mt-1">Управление разрешительной документацией</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.licensesTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.licensesSubtitle') }}</p>
         </div>
-        <button
-          @click="showUploadModal = true"
-          class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors flex items-center gap-2"
-        >
+        <AppButton variant="primary" @click="showUploadModal = true">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Загрузить документ
-        </button>
+        </AppButton>
       </div>
 
       <!-- Stats -->
@@ -375,9 +362,7 @@ const submitUpload = () => {
                   <p class="text-sm text-gray-500">{{ license.issuedBy }}</p>
                 </div>
               </div>
-              <span :class="['px-3 py-1 rounded-full text-sm font-medium', getStatusClass(license.status)]">
-                {{ getStatusText(license.status) }}
-              </span>
+              <AppBadge :variant="getStatusBadgeVariant(getStatusText(license.status))">{{ getStatusText(license.status) }}</AppBadge>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
@@ -405,7 +390,7 @@ const submitUpload = () => {
                   @click="openLicenseDetails(license)"
                   class="text-lime-600 hover:text-lime-700 font-medium text-sm"
                 >
-                  Подробнее →
+                  {{ $t('common.more') }} →
                 </button>
               </div>
             </div>
@@ -456,31 +441,29 @@ const submitUpload = () => {
               <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(doc.uploadDate) }}</td>
               <td class="px-6 py-4 text-sm text-gray-600">{{ doc.expiryDate ? formatDate(doc.expiryDate) : '—' }}</td>
               <td class="px-6 py-4">
-                <span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(doc.status)]">
-                  {{ getStatusText(doc.status) }}
-                </span>
+                <AppBadge :variant="getStatusBadgeVariant(getStatusText(doc.status))">{{ getStatusText(doc.status) }}</AppBadge>
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
-                  <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+                  <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Просмотр документа', message: '«' + doc.name + '»' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Просмотреть
-                  </button>
-                  <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm">
+                    {{ $t('common.view') }}
+                  </AppButton>
+                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: '«' + doc.name + '»' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Скачать
-                  </button>
-                  <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                    {{ $t('common.download') }}
+                  </AppButton>
+                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'warning', title: 'Удаление документа', message: '«' + doc.name + '» — функция в разработке' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Удалить
-                  </button>
+                    {{ $t('common.delete') }}
+                  </AppButton>
                 </div>
               </td>
             </tr>
@@ -521,9 +504,7 @@ const submitUpload = () => {
               </div>
               <div class="bg-gray-50 rounded-lg p-4">
                 <p class="text-sm text-gray-500">Статус</p>
-                <span :class="['px-2 py-1 rounded-full text-sm font-medium', getStatusClass(selectedLicense.status)]">
-                  {{ getStatusText(selectedLicense.status) }}
-                </span>
+                <AppBadge :variant="getStatusBadgeVariant(getStatusText(selectedLicense.status))">{{ getStatusText(selectedLicense.status) }}</AppBadge>
               </div>
               <div class="bg-gray-50 rounded-lg p-4">
                 <p class="text-sm text-gray-500">Дата выдачи</p>
@@ -554,12 +535,12 @@ const submitUpload = () => {
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button class="flex-1 px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors">
-                Скачать PDF
-              </button>
-              <button @click="showLicenseModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Закрыть
-              </button>
+              <AppButton variant="primary" class="flex-1" @click="toastStore.show({ type: 'info', title: 'Скачивание PDF лицензии', message: '«' + selectedLicense.number + '»' })">
+                {{ $t('common.download') }} {{ $t('common.pdf') }}
+              </AppButton>
+              <AppButton variant="secondary" class="flex-1" @click="showLicenseModal = false">
+                {{ $t('common.close') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -626,19 +607,17 @@ const submitUpload = () => {
             </div>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <button
-              @click="showUploadModal = false"
-              class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-            >
-              Отмена
-            </button>
-            <button
+            <AppButton variant="secondary" class="flex-1" @click="showUploadModal = false">
+              {{ $t('common.cancel') }}
+            </AppButton>
+            <AppButton
+              variant="primary"
+              class="flex-1"
               @click="submitUpload"
               :disabled="!uploadForm.name || uploadForm.files.length === 0"
-              class="flex-1 px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors disabled:opacity-50"
             >
               Загрузить
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>

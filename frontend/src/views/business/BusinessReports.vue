@@ -5,7 +5,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
 import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
@@ -14,26 +15,22 @@ import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionReportHtml } from '../../data/instructionReport'
 import { recyclerStore } from '../../stores/recyclers'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
+import { validators, scrollToFirstError } from '../../utils/validators'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
+import { notificationStore } from '../../stores/notifications'
 
 const router = useRouter()
-
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'account', label: 'Лицевой счёт', icon: icons.money, route: '/business/account' },
-  { id: 'calculator', label: 'Расчёт утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'reports', label: 'Отчёты о переработке', icon: icons.report, route: '/business/reports' },
-  { id: 'declarations', label: 'Декларации', icon: icons.document, route: '/business/declarations' },
-  { id: 'payments', label: 'Платежи', icon: icons.payment, route: '/business/payments' },
-  { id: 'documents', label: 'Документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'normatives', label: 'Нормативы и ставки', icon: icons.registries, route: '/business/normatives' },
-  { id: 'profile', label: 'Профиль компании', icon: icons.building, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 const showInstruction = ref(false)
+
+// Validation state
+const formSubmitted = ref(false)
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'success'
@@ -74,10 +71,15 @@ const getRecyclersForItem = (item: ProcessingItem) => {
   const active = item.wasteType
     ? recyclerStore.getActiveRecyclersByGroup(item.wasteType)
     : recyclerStore.getActiveRecyclers()
-  return active.map(r => ({
-    value: String(r.id),
-    label: `${r.name} (ИНН: ${r.inn})`,
-  }))
+  return active.map(r => {
+    const freeCapacity = item.wasteType ? recyclerStore.getFreeCapacityForGroup(r, item.wasteType) : 0
+    const totalCap = item.wasteType ? (recyclerStore.getCapacityForGroup(r, item.wasteType)?.capacityTons || 0) : 0
+    const capLabel = item.wasteType && totalCap > 0 ? ` (свободно ${freeCapacity} из ${totalCap} т/год)` : ''
+    return {
+      value: String(r.id),
+      label: `${r.name} (ИНН: ${r.inn})` + capLabel,
+    }
+  })
 }
 
 // Tracking state per processing item
@@ -233,6 +235,11 @@ const submittedReport = ref<{ number: string; date: string }>({
 })
 
 const submitReport = () => {
+  formSubmitted.value = true
+  if (hasErrors.value) {
+    scrollToFirstError()
+    return
+  }
   const report = reportStore.addReport({
     company: companyData.name,
     inn: companyData.inn,
@@ -243,6 +250,13 @@ const submitReport = () => {
     totalProcessed: parseFloat(totalProcessed.value),
     processingPercent: parseFloat(processingPercent.value),
   }, 'На проверке')
+  notificationStore.add({
+    type: 'info',
+    title: 'Новый отчёт о переработке',
+    message: 'Получен новый отчёт о переработке на проверку.',
+    role: 'eco-operator',
+    link: '/eco-operator/incoming-reports'
+  })
   submittedReport.value = {
     number: report.number,
     date: report.date,
@@ -273,6 +287,7 @@ const backToList = () => {
   viewMode.value = 'list'
   // Reset form
   currentStep.value = 1
+  formSubmitted.value = false
   processingItems.value = [{ id: 1, wasteType: '', wasteCode: '', declared: '', processed: '', recycler: '', contractNumber: '', contractDate: '' }]
   uploadedFiles.value = []
   // Clear tracking state
@@ -337,6 +352,120 @@ const getItemNormativePercent = (wasteType: string) => {
   return getNormativeForGroup(wasteType, year) * 100
 }
 
+const getItemRequiredProcessing = (item: ProcessingItem) => {
+  const declared = parseFloat(item.declared) || 0
+  const normPercent = getItemNormativePercent(item.wasteType)
+  return declared * normPercent / 100
+}
+
+const getItemFulfillmentPercent = (item: ProcessingItem) => {
+  const required = getItemRequiredProcessing(item)
+  const processed = parseFloat(item.processed) || 0
+  if (required === 0) return 0
+  return (processed / required) * 100
+}
+
+const getItemRemainder = (item: ProcessingItem) => {
+  const required = getItemRequiredProcessing(item)
+  const processed = parseFloat(item.processed) || 0
+  return Math.max(0, required - processed)
+}
+
+const getItemStatus = (item: ProcessingItem) => {
+  const required = getItemRequiredProcessing(item)
+  const processed = parseFloat(item.processed) || 0
+  if (processed >= required && required > 0) return 'fulfilled'
+  if (processed > 0) return 'partial'
+  return 'none'
+}
+
+const getFulfillmentColor = (percent: number) => {
+  if (percent >= 100) return '#059669'
+  if (percent >= 50) return '#CA8A04'
+  return '#EF4444'
+}
+
+const getBaseRate = (wasteType: string) => {
+  return productGroups.find(g => g.value === wasteType)?.baseRate || 0
+}
+
+// Summary computed values
+const totalRequiredProcessing = computed(() => {
+  return processingItems.value
+    .filter(i => i.wasteType)
+    .reduce((sum, item) => sum + getItemRequiredProcessing(item), 0)
+})
+
+const overallFulfillmentPercent = computed(() => {
+  const total = totalRequiredProcessing.value
+  const processed = parseFloat(totalProcessed.value)
+  if (total === 0) return 0
+  return (processed / total) * 100
+})
+
+const totalSurcharge = computed(() => {
+  return processingItems.value
+    .filter(i => i.wasteType)
+    .reduce((sum, item) => {
+      const remainder = getItemRemainder(item)
+      const rate = getBaseRate(item.wasteType)
+      return sum + Math.round(remainder * rate)
+    }, 0)
+})
+
+// Form validation
+const formErrors = computed(() => {
+  const errors: Record<string, string> = {}
+
+  // Reporting year: required
+  if (!reportingYear.value) {
+    errors['reportingYear'] = 'Выберите отчётный период'
+  }
+
+  // At least 1 item with a wasteType filled in
+  const filledItems = processingItems.value.filter(i => i.wasteType)
+  if (filledItems.length === 0) {
+    errors['items'] = 'Добавьте хотя бы одну позицию'
+  }
+
+  // Per-item validation for numeric fields
+  processingItems.value.forEach((item, index) => {
+    // Only validate items that have been started (wasteType chosen)
+    if (!item.wasteType) return
+
+    const declErr = validators.positiveNumber(item.declared, 'Масса задекл.')
+    if (declErr) {
+      errors[`item_${item.id}_declared`] = declErr
+    }
+
+    const procErr = validators.positiveNumber(item.processed, 'Масса переработанная')
+    if (procErr) {
+      errors[`item_${item.id}_processed`] = procErr
+    }
+
+    // Processed cannot exceed declared
+    const declVal = parseFloat(item.declared) || 0
+    const procVal = parseFloat(item.processed) || 0
+    if (declVal > 0 && procVal > declVal) {
+      errors[`item_${item.id}_processed_exceed`] = 'Масса переработанная не может превышать массу задекларированную'
+    }
+
+    // Recycler required if processed mass > 0
+    if (procVal > 0 && !item.recycler) {
+      errors[`item_${item.id}_recycler`] = 'Укажите переработчика при наличии массы переработки'
+    }
+
+    // Warning: contract number if recycler selected (soft warning, not blocking)
+    if (item.recycler && !item.contractNumber) {
+      errors[`item_${item.id}_contract_warn`] = 'Рекомендуется указать № договора с переработчиком'
+    }
+  })
+
+  return errors
+})
+
+const hasErrors = computed(() => Object.keys(formErrors.value).filter(k => !k.endsWith('_warn')).length > 0)
+
 // Table data — from store
 const columns = [
   { key: 'number', label: 'Номер', width: '10%' },
@@ -350,15 +479,6 @@ const businessReports = computed(() => {
   return reportStore.getBusinessReports(companyData.name)
 })
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принят': return 'bg-green-100 text-green-800'
-    case 'Отклонён': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 
 const getPercentClass = (percent: number) => {
   if (percent >= 100) return 'text-[#10b981]'
@@ -384,7 +504,7 @@ const editDraft = (id: number) => {
 
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  alert('Функция скачивания PDF в разработке')
+  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
 }
 
 const handlePrint = () => {
@@ -405,7 +525,7 @@ const downloadReportExcel = (reportId: number) => {
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
@@ -462,10 +582,11 @@ const downloadReportExcel = (reportId: number) => {
 
       <template v-if="!isLoading">
       <!-- Stats -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <p class="text-sm text-[#64748b] mb-1">Норматив переработки</p>
-          <p class="text-2xl font-bold text-[#1e293b]">15%</p>
+          <p class="text-2xl font-bold text-[#1e293b]">{{ yearNormativeStandard }}%</p>
+          <p class="text-xs text-[#94a3b8] mt-1">Группы 1–4: {{ yearNormativeHigh }}%</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <p class="text-sm text-[#64748b] mb-1">Декларировано за год</p>
@@ -478,6 +599,14 @@ const downloadReportExcel = (reportId: number) => {
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <p class="text-sm text-[#64748b] mb-1">Выполнение норматива</p>
           <p class="text-2xl font-bold text-[#10b981]">96.5%</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
+          <p class="text-sm text-[#64748b] mb-1">Средн. % выполнения</p>
+          <p class="text-2xl font-bold text-[#059669]">96.5%</p>
+        </div>
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
+          <p class="text-sm text-[#64748b] mb-1">Доначисление утильсбора</p>
+          <p class="text-2xl font-bold text-[#ef4444]">0 сом</p>
         </div>
       </div>
 
@@ -506,70 +635,65 @@ const downloadReportExcel = (reportId: number) => {
           <span :class="['font-semibold', getPercentClass(value)]">{{ value }}%</span>
         </template>
         <template #cell-status="{ value }">
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-            {{ value }}
-          </span>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex flex-wrap items-center justify-end gap-2">
-            <button
-              @click="router.push('/business/reports/' + row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"
-            >
+            <AppButton variant="ghost" size="sm" @click="router.push('/business/reports/' + row.id)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               Просмотреть
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Черновик'"
+              variant="secondary" size="sm"
               @click="editDraft(row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Редактировать
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Отклонён'"
+              variant="secondary" size="sm"
               @click="resubmitReport(row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Отправить повторно
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Принят'"
+              variant="outline" size="sm"
               @click="handleDownloadPdf"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               Скачать PDF
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Принят'"
+              variant="primary" size="sm"
               @click="downloadReportExcel(row.id)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#059669] text-white hover:bg-[#047857] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
               Excel
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="row.status === 'Принят'"
+              variant="secondary" size="sm"
               @click="handlePrint"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#64748b] text-white hover:bg-[#475569] transition-colors shadow-sm"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
               Печать
-            </button>
+            </AppButton>
           </div>
         </template>
       </DataTable>
@@ -669,14 +793,22 @@ const downloadReportExcel = (reportId: number) => {
                 <label class="block text-sm font-medium text-[#1e293b] mb-2">Отчётный год *</label>
                 <select
                   v-model="reportingYear"
-                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20"
+                  :class="[
+                    'w-full px-4 py-3 border rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20',
+                    formSubmitted && formErrors['reportingYear'] ? 'vld-input--error' : 'border-[#e2e8f0]'
+                  ]"
                 >
+                  <option value="">-- Выберите год --</option>
                   <option value="2026">2026</option>
                   <option value="2027">2027</option>
                   <option value="2028">2028</option>
                   <option value="2029">2029</option>
                   <option value="2030">2030</option>
                 </select>
+                <div v-if="formSubmitted && formErrors['reportingYear']" class="vld-error">
+                  <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  {{ formErrors['reportingYear'] }}
+                </div>
               </div>
 
               <!-- Company Data -->
@@ -748,6 +880,11 @@ const downloadReportExcel = (reportId: number) => {
               </button>
             </div>
 
+            <div v-if="formSubmitted && formErrors['items']" class="vld-error mb-4">
+              <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {{ formErrors['items'] }}
+            </div>
+
             <div class="space-y-4">
               <div
                 v-for="(item, index) in processingItems"
@@ -786,11 +923,35 @@ const downloadReportExcel = (reportId: number) => {
                     step="0.01"
                     min="0"
                     placeholder="0.00"
-                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
+                    :class="[
+                      'w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#10b981] text-sm',
+                      formSubmitted && formErrors[`item_${item.id}_declared`] ? 'vld-input--error' : 'border-[#e2e8f0]'
+                    ]"
                   />
+                  <div v-if="formSubmitted && formErrors[`item_${item.id}_declared`]" class="vld-error">
+                    <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {{ formErrors[`item_${item.id}_declared`] }}
+                  </div>
                 </div>
 
-                <!-- Row 5: Processing data — 4 fields at 25% each -->
+                <!-- Row 5: Normative + Required processing (readonly) -->
+                <div v-if="item.wasteType" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">Норматив переработки (%)</label>
+                    <div class="w-full px-3 py-2 rounded-lg text-sm font-bold" style="background: #F0FDF4; border: 1px solid #D1FAE5; color: #059669;">
+                      {{ getItemNormativePercent(item.wasteType).toFixed(1) }}%
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">К переработке (т)</label>
+                    <div class="w-full px-3 py-2 rounded-lg text-sm font-semibold" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;">
+                      {{ getItemRequiredProcessing(item).toFixed(2) }}
+                    </div>
+                    <p class="text-[10px] text-[#94a3b8] mt-1">= {{ item.declared || '0' }} × {{ getItemNormativePercent(item.wasteType).toFixed(1) }}% / 100</p>
+                  </div>
+                </div>
+
+                <!-- Row 6: Processing data — 4 fields at 25% each -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">Масса переработанная (т)</label>
@@ -800,8 +961,19 @@ const downloadReportExcel = (reportId: number) => {
                       step="0.01"
                       min="0"
                       placeholder="0.00"
-                      class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
+                      :class="[
+                        'w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-[#10b981] text-sm',
+                        formSubmitted && formErrors[`item_${item.id}_processed`] ? 'vld-input--error' : 'border-[#e2e8f0]'
+                      ]"
                     />
+                    <div v-if="formSubmitted && formErrors[`item_${item.id}_processed`]" class="vld-error">
+                      <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {{ formErrors[`item_${item.id}_processed`] }}
+                    </div>
+                    <div v-if="formSubmitted && formErrors[`item_${item.id}_processed_exceed`]" class="vld-error">
+                      <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {{ formErrors[`item_${item.id}_processed_exceed`] }}
+                    </div>
                   </div>
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">Переработчик</label>
@@ -838,6 +1010,10 @@ const downloadReportExcel = (reportId: number) => {
                         </button>
                       </div>
                     </template>
+                    <div v-if="formSubmitted && formErrors[`item_${item.id}_recycler`]" class="vld-error">
+                      <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      {{ formErrors[`item_${item.id}_recycler`] }}
+                    </div>
                   </div>
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">№ договора</label>
@@ -847,6 +1023,10 @@ const downloadReportExcel = (reportId: number) => {
                       placeholder="ДГ-2024-001"
                       class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
                     />
+                    <div v-if="formSubmitted && formErrors[`item_${item.id}_contract_warn`]" class="mt-1 flex items-center gap-1 text-[11px] text-amber-600">
+                      <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                      {{ formErrors[`item_${item.id}_contract_warn`] }}
+                    </div>
                   </div>
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">Дата договора</label>
@@ -858,12 +1038,45 @@ const downloadReportExcel = (reportId: number) => {
                   </div>
                 </div>
 
-                <!-- Percent per item -->
-                <div v-if="item.declared && item.processed" class="mt-3 text-sm">
-                  <span class="text-[#64748b]">Выполнение: </span>
-                  <span :class="['font-semibold', parseFloat(item.processed) / parseFloat(item.declared) >= 1 ? 'text-[#10b981]' : 'text-[#f59e0b]']">
-                    {{ ((parseFloat(item.processed) / parseFloat(item.declared)) * 100).toFixed(1) }}%
-                  </span>
+                <!-- Item summary -->
+                <div v-if="item.wasteType && item.declared && item.processed" class="mt-4 rounded-lg border p-4" :style="{ borderColor: getFulfillmentColor(getItemFulfillmentPercent(item)) + '40', background: getFulfillmentColor(getItemFulfillmentPercent(item)) + '08' }">
+                  <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4" :style="{ color: getFulfillmentColor(getItemFulfillmentPercent(item)) }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span class="text-xs font-semibold text-[#64748b] uppercase tracking-wide">Итог по позиции</span>
+                  </div>
+                  <div class="grid grid-cols-3 gap-4">
+                    <div>
+                      <p class="text-[11px] text-[#94a3b8] mb-0.5">Выполнение норматива</p>
+                      <p class="text-lg font-bold" :style="{ color: getFulfillmentColor(getItemFulfillmentPercent(item)) }">
+                        {{ getItemFulfillmentPercent(item).toFixed(1) }}%
+                      </p>
+                      <!-- progress bar -->
+                      <div class="mt-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all" :style="{ width: Math.min(getItemFulfillmentPercent(item), 100) + '%', background: getFulfillmentColor(getItemFulfillmentPercent(item)) }"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-[11px] text-[#94a3b8] mb-0.5">Остаток к переработке</p>
+                      <p class="text-lg font-bold text-[#1e293b]">{{ getItemRemainder(item).toFixed(2) }} т</p>
+                    </div>
+                    <div>
+                      <p class="text-[11px] text-[#94a3b8] mb-0.5">Статус</p>
+                      <span v-if="getItemStatus(item) === 'fulfilled'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        Выполнен
+                      </span>
+                      <span v-else-if="getItemStatus(item) === 'partial'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" /></svg>
+                        Частично
+                      </span>
+                      <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        Не выполнен
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -878,27 +1091,62 @@ const downloadReportExcel = (reportId: number) => {
               Добавить позицию
             </button>
 
-            <!-- Summary -->
+            <!-- Summary: Сводка по отчёту -->
             <div class="mt-8 pt-6 border-t border-[#e2e8f0]">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-blue-50 rounded-lg p-4 text-center">
-                  <p class="text-sm text-[#64748b] mb-1">Декларировано</p>
+              <div class="flex items-center gap-2 mb-4">
+                <svg class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="text-base font-semibold text-[#1e293b]">Сводка по отчёту</h3>
+              </div>
+
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <!-- KPI 1: Декларировано -->
+                <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
+                  <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
                   <p class="text-xl font-bold text-[#2563eb]">{{ totalDeclared }} т</p>
                 </div>
-                <div class="bg-green-50 rounded-lg p-4 text-center">
-                  <p class="text-sm text-[#64748b] mb-1">Переработано</p>
+                <!-- KPI 2: К переработке -->
+                <div class="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
+                  <p class="text-xs text-[#64748b] mb-1">К переработке (по нормативу)</p>
+                  <p class="text-xl font-bold text-[#7c3aed]">{{ totalRequiredProcessing.toFixed(2) }} т</p>
+                </div>
+                <!-- KPI 3: Переработано -->
+                <div class="bg-green-50 rounded-xl p-4 text-center border border-green-100">
+                  <p class="text-xs text-[#64748b] mb-1">Фактически переработано</p>
                   <p class="text-xl font-bold text-[#10b981]">{{ totalProcessed }} т</p>
                 </div>
+                <!-- KPI 4: Выполнение -->
                 <div :class="[
-                  'rounded-lg p-4 text-center',
-                  parseFloat(processingPercent) >= 100 ? 'bg-green-50' : 'bg-yellow-50'
+                  'rounded-xl p-4 text-center border',
+                  overallFulfillmentPercent >= 100 ? 'bg-emerald-50 border-emerald-100' : overallFulfillmentPercent >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
                 ]">
-                  <p class="text-sm text-[#64748b] mb-1">Выполнение</p>
-                  <p :class="[
-                    'text-xl font-bold',
-                    parseFloat(processingPercent) >= 100 ? 'text-[#10b981]' : 'text-[#f59e0b]'
-                  ]">{{ processingPercent }}%</p>
+                  <p class="text-xs text-[#64748b] mb-1">Выполнение норматива</p>
+                  <p class="text-xl font-bold" :style="{ color: getFulfillmentColor(overallFulfillmentPercent) }">
+                    {{ overallFulfillmentPercent.toFixed(1) }}%
+                  </p>
                 </div>
+              </div>
+
+              <!-- Surcharge estimate -->
+              <div v-if="totalSurcharge > 0" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 flex items-start gap-3">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p class="font-medium text-red-800">Предварительный доначисление утильсбора</p>
+                  <p class="text-lg font-bold text-red-700 mt-1">{{ totalSurcharge.toLocaleString('ru-RU') }} сом</p>
+                  <p class="text-xs text-red-600 mt-1">Начисляется за невыполнение норматива переработки (остаток × базовая ставка)</p>
+                </div>
+              </div>
+
+              <!-- Formula -->
+              <div class="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4">
+                <p class="text-xs text-[#94a3b8] mb-2 uppercase font-medium tracking-wide">Формула расчёта</p>
+                <code class="block text-xs text-[#475569] font-mono leading-relaxed">
+                  Выполнение (%) = Переработано / (Декларировано × Норматив / 100) × 100<br/>
+                  Доначисление = Σ (Остаток_i × Ставка_i), где Остаток = max(0, Требуемое − Переработано)
+                </code>
               </div>
             </div>
           </div>
@@ -1001,6 +1249,19 @@ const downloadReportExcel = (reportId: number) => {
           <!-- Step 4: Review -->
           <div v-if="currentStep === 4" class="p-6 lg:p-8">
             <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Проверка и отправка</h2>
+
+            <!-- Validation error banner -->
+            <div v-if="formSubmitted && hasErrors" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3" data-validation-error>
+              <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <p class="font-medium text-red-800">Обнаружены ошибки в форме</p>
+                <ul class="mt-1 text-sm text-red-700 list-disc list-inside">
+                  <li v-for="(msg, key) in formErrors" :key="key">{{ msg }}</li>
+                </ul>
+              </div>
+            </div>
 
             <div class="space-y-6">
               <!-- Basic Data Summary -->
@@ -1111,52 +1372,53 @@ const downloadReportExcel = (reportId: number) => {
 
           <!-- Navigation Buttons -->
           <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
-            <button
+            <AppButton
               v-if="currentStep > 1"
+              variant="secondary"
               @click="prevStep"
-              class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
             >
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
               Назад
-            </button>
+            </AppButton>
             <div v-else></div>
 
             <div class="flex flex-col sm:flex-row gap-3">
-              <button
+              <AppButton
                 v-if="currentStep === 4"
+                variant="secondary"
                 @click="saveDraft"
-                class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                 </svg>
                 Сохранить черновик
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
                 v-if="currentStep < 4"
-                @click="nextStep"
+                variant="primary"
                 :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="nextStep"
               >
                 Далее
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
+              </AppButton>
 
-              <button
+              <AppButton
                 v-if="currentStep === 4"
+                variant="primary"
+                :disabled="formSubmitted && hasErrors"
                 @click="submitReport"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Подписать и отправить
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -1186,9 +1448,7 @@ const downloadReportExcel = (reportId: number) => {
             </div>
             <div>
               <p class="text-sm text-[#64748b] mb-1">Статус</p>
-              <span class="inline-block px-4 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                На проверке
-              </span>
+              <AppBadge variant="warning">На проверке</AppBadge>
             </div>
           </div>
         </div>
@@ -1232,5 +1492,22 @@ const downloadReportExcel = (reportId: number) => {
   .lg\:ml-72 {
     margin-left: 0 !important;
   }
+}
+
+.vld-error {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #EF4444;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+.vld-error__icon {
+  flex-shrink: 0;
+}
+.vld-input--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 </style>

@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton } from '../../components/ui'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ─── Data types ───
 interface License {
@@ -355,22 +347,19 @@ const hoveredContact = ref<number | null>(null)
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Лицензии</h1>
-        <p class="text-[#64748b]">Реестр лицензий на переработку отходов</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.employee.licensesTitle') }}</h1>
+        <p class="text-[#64748b]">{{ $t('pages.employee.licensesSubtitle') }}</p>
       </div>
-      <button
-        @click="openAddForm"
-        class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10B981] text-white rounded-xl hover:bg-[#059669] transition-colors font-medium shadow-sm"
-      >
+      <AppButton variant="primary" @click="openAddForm">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-        Добавить лицензию
-      </button>
+        {{ $t('common.add') }}
+      </AppButton>
     </div>
 
     <!-- ══ Form (add / edit) ══ -->
@@ -524,19 +513,13 @@ const hoveredContact = ref<number | null>(null)
 
       <!-- Buttons -->
       <div class="flex items-center gap-3 pt-2 border-t border-[#f1f5f9]">
-        <button
-          @click="saveForm"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10B981] text-white rounded-xl hover:bg-[#059669] transition-colors font-medium shadow-sm mt-4"
-        >
+        <AppButton variant="primary" @click="saveForm" class="mt-4">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-          {{ editingId ? 'Сохранить изменения' : 'Сохранить' }}
-        </button>
-        <button
-          @click="cancelForm"
-          class="inline-flex items-center gap-2 px-5 py-2.5 border border-[#e2e8f0] text-[#64748b] rounded-xl hover:bg-gray-50 transition-colors font-medium mt-4"
-        >
-          Отмена
-        </button>
+          {{ $t('common.save') }}
+        </AppButton>
+        <AppButton variant="secondary" @click="cancelForm" class="mt-4">
+          {{ $t('common.cancel') }}
+        </AppButton>
       </div>
     </div>
 
@@ -566,7 +549,7 @@ const hoveredContact = ref<number | null>(null)
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск по номеру или организации..."
+          :placeholder="$t('common.search')"
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="filterType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
@@ -599,7 +582,7 @@ const hoveredContact = ref<number | null>(null)
               <th class="lic-th">Вид деятельности</th>
               <th class="lic-th">Срок действия</th>
               <th class="lic-th">Контакты</th>
-              <th class="lic-th" style="width:170px">Действия</th>
+              <th class="lic-th" style="width:170px">{{ $t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -647,21 +630,18 @@ const hoveredContact = ref<number | null>(null)
               </td>
               <td class="lic-td">
                 <div class="flex items-center gap-1.5">
-                  <button
-                    @click="openEditForm(lic)"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors"
-                  >
+                  <AppButton variant="ghost" size="sm" @click="openEditForm(lic)">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     Редактировать
-                  </button>
-                  <button
+                  </AppButton>
+                  <AppButton
                     v-if="lic.status !== 'Аннулирована' && lic.status !== 'Истекла'"
+                    variant="danger" size="sm"
                     @click="annulLicense(lic)"
-                    class="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
                     Аннулировать
-                  </button>
+                  </AppButton>
                 </div>
               </td>
             </tr>

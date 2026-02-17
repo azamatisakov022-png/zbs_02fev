@@ -2,18 +2,11 @@
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/business' },
-  { id: 'applications', label: 'Мои заявки', icon: icons.document, route: '/business/applications' },
-  { id: 'calculator', label: 'Калькулятор утильсбора', icon: icons.calculator, route: '/business/calculator' },
-  { id: 'documents', label: 'Мои документы', icon: icons.folder, route: '/business/documents' },
-  { id: 'payments', label: 'Платежи и счета', icon: icons.payment, route: '/business/payments' },
-  { id: 'dossier', label: 'Досье', icon: icons.audit, route: '/business/dossier' },
-  { id: 'notifications', label: 'Уведомления', icon: icons.notification, route: '/business/notifications' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/business/profile' },
-]
+const { roleTitle, menuItems } = useBusinessMenu()
 
 const columns = [
   { key: 'number', label: 'Номер', width: '120px' },
@@ -30,20 +23,12 @@ const applications = ref([
   { id: 5, number: '2024-0089', type: 'Регистрация плательщика', submittedAt: '05.03.2024', status: 'Одобрено' },
 ])
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Одобрено': return 'bg-green-100 text-green-800'
-    case 'Отклонено': return 'bg-red-100 text-red-800'
-    default: return 'bg-gray-100 text-gray-800'
-  }
-}
 </script>
 
 <template>
   <DashboardLayout
     role="business"
-    roleTitle="Плательщик"
+    :roleTitle="roleTitle"
     userName="Токтогулов Эрлан"
     :menuItems="menuItems"
   >
@@ -86,9 +71,7 @@ const getStatusClass = (status: string) => {
         <span class="font-mono font-medium text-[#0e888d]">{{ value }}</span>
       </template>
       <template #cell-status="{ value }">
-        <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(value)]">
-          {{ value }}
-        </span>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">

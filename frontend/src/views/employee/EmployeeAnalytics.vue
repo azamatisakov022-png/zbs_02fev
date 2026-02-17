@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Period filter
 const selectedPeriod = ref('year')
@@ -85,7 +77,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
@@ -112,11 +104,11 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               {{ period.name }}
             </button>
           </div>
-          <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="toastStore.show({ type: 'info', title: 'Экспорт аналитики', message: 'Функция в разработке' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            Экспорт
+            {{ $t('common.export') }}
           </button>
         </div>
       </div>

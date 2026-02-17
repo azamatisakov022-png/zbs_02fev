@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'organizations', label: 'Организации', icon: icons.building, route: '/employee/organizations' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Organization interface
 interface Organization {
@@ -382,7 +374,7 @@ const copyLegalToActual = () => {
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
@@ -393,15 +385,12 @@ const copyLegalToActual = () => {
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Организации</h1>
           <p class="text-gray-600 mt-1">Реестр зарегистрированных организаций</p>
         </div>
-        <button
-          @click="openCreate"
-          class="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-xl font-medium hover:bg-sky-700 transition-colors"
-        >
+        <AppButton variant="primary" @click="openCreate">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Добавить организацию
-        </button>
+          {{ $t('common.add') }}
+        </AppButton>
       </div>
 
       <!-- Stats -->
@@ -443,7 +432,7 @@ const copyLegalToActual = () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по ИНН или названию..."
+                :placeholder="$t('common.search')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
@@ -474,8 +463,8 @@ const copyLegalToActual = () => {
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
                 <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата рег.</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -494,24 +483,24 @@ const copyLegalToActual = () => {
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.region }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.registeredAt }}</td>
                 <td class="px-6 py-4 text-center">
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(org.status)]">
+                  <AppBadge :variant="getStatusBadgeVariant(org.status)">
                     {{ org.status }}
-                  </span>
+                  </AppBadge>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
-                    <button @click="openView(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">
+                    <AppButton variant="ghost" size="sm" @click="openView(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                       Просмотреть
-                    </button>
-                    <button @click="openEdit(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">
+                    </AppButton>
+                    <AppButton variant="secondary" size="sm" @click="openEdit(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                       Редактировать
-                    </button>
-                    <button @click="openDelete(org)" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">
+                    </AppButton>
+                    <AppButton variant="danger" size="sm" @click="openDelete(org)">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      Удалить
-                    </button>
+                      {{ $t('common.delete') }}
+                    </AppButton>
                   </div>
                 </td>
               </tr>
@@ -554,8 +543,8 @@ const copyLegalToActual = () => {
                 <h4 class="text-xl font-bold text-gray-900">{{ selectedOrg.shortName }}</h4>
                 <p class="text-gray-500 text-sm">{{ selectedOrg.fullName }}</p>
                 <div class="flex items-center gap-2 mt-2">
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(selectedOrg.type)]">{{ selectedOrg.type }}</span>
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(selectedOrg.status)]">{{ selectedOrg.status }}</span>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.type)">{{ selectedOrg.type }}</AppBadge>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.status)">{{ selectedOrg.status }}</AppBadge>
                 </div>
               </div>
             </div>
@@ -626,18 +615,12 @@ const copyLegalToActual = () => {
 
             <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                @click="showViewModal = false; openEdit(selectedOrg)"
-                class="flex-1 px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
-              >
+              <AppButton variant="primary" fullWidth @click="showViewModal = false; openEdit(selectedOrg)">
                 Редактировать
-              </button>
-              <button
-                @click="showViewModal = false"
-                class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                Закрыть
-              </button>
+              </AppButton>
+              <AppButton variant="secondary" fullWidth @click="showViewModal = false">
+                {{ $t('common.close') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -817,18 +800,12 @@ const copyLegalToActual = () => {
 
             <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                @click="saveOrganization"
-                class="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors"
-              >
-                {{ isCreating ? 'Создать' : 'Сохранить' }}
-              </button>
-              <button
-                @click="showEditModal = false"
-                class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                Отмена
-              </button>
+              <AppButton variant="primary" fullWidth @click="saveOrganization">
+                {{ isCreating ? $t('common.add') : $t('common.save') }}
+              </AppButton>
+              <AppButton variant="secondary" fullWidth @click="showEditModal = false">
+                {{ $t('common.cancel') }}
+              </AppButton>
             </div>
           </div>
         </div>
@@ -850,18 +827,12 @@ const copyLegalToActual = () => {
               Вы уверены, что хотите удалить организацию <strong>{{ selectedOrg.shortName }}</strong>? Это действие нельзя отменить.
             </p>
             <div class="flex gap-3">
-              <button
-                @click="deleteOrganization"
-                class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
-              >
-                Удалить
-              </button>
-              <button
-                @click="showDeleteConfirm = false"
-                class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                Отмена
-              </button>
+              <AppButton variant="danger" fullWidth @click="deleteOrganization">
+                {{ $t('common.delete') }}
+              </AppButton>
+              <AppButton variant="secondary" fullWidth @click="showDeleteConfirm = false">
+                {{ $t('common.cancel') }}
+              </AppButton>
             </div>
           </div>
         </div>

@@ -1,22 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Filter
 const searchQuery = ref('')
@@ -268,15 +255,15 @@ const openDetails = (wt: WasteType) => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Виды отходов</h1>
-        <p class="text-gray-600 mt-1">Перечень принимаемых и перерабатываемых отходов</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.wasteTypesTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.wasteTypesSubtitle') }}</p>
       </div>
 
       <!-- Stats Banner -->
@@ -501,10 +488,10 @@ const openDetails = (wt: WasteType) => {
             <!-- Actions -->
             <div class="flex gap-3 pt-4 border-t border-gray-200">
               <button class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
-                Редактировать
+                {{ $t('common.edit') }}
               </button>
               <button @click="showDetailsModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Закрыть
+                {{ $t('common.close') }}
               </button>
             </div>
           </div>

@@ -7,20 +7,9 @@ import LineChart from '../../components/charts/LineChart.vue'
 import BarChart from '../../components/charts/BarChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
-import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const allCalcs = computed(() => calculationStore.state.calculations)
 
@@ -96,13 +85,13 @@ onMounted(() => {
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Главная</h1>
-      <p class="text-[#64748b]">Приём и обработка деклараций от плательщиков</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.dashboardTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.dashboardSubtitle') }}</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -160,11 +149,11 @@ onMounted(() => {
             <router-link to="/eco-operator/incoming-reports" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#10b981] flex items-center justify-center text-white" v-html="icons.report"></div>
               <div>
-                <span class="font-medium text-[#1e293b] block">Входящие отчёты</span>
+                <span class="font-medium text-[#1e293b] block">Отчёты о переработке</span>
                 <span class="text-sm text-[#64748b]">5 новых</span>
               </div>
             </router-link>
-            <router-link to="/eco-operator/my-reports" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
+            <router-link to="/eco-operator/analytics" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#f59e0b] flex items-center justify-center text-white" v-html="icons.registries"></div>
               <div>
                 <span class="font-medium text-[#1e293b] block">Подать отчёт о переработке</span>

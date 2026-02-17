@@ -1,23 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
-import { reportStore } from '../../stores/reports'
-import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import { recyclerStore } from '../../stores/recyclers'
+import { productGroups, productSubgroups, getSubgroupLabel } from '../../data/product-groups'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = computed(() => [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/eco-operator' },
-  { id: 'incoming-calculations', label: 'Входящие расчёты', icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
-  { id: 'incoming-declarations', label: 'Входящие декларации', icon: icons.document, route: '/eco-operator/incoming-declarations' },
-  { id: 'incoming-reports', label: 'Входящие отчёты', icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
-  { id: 'refunds', label: 'Заявки на возврат', icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
-  { id: 'accounts', label: 'Лицевые счета', icon: icons.money, route: '/eco-operator/accounts' },
-  { id: 'analytics', label: 'Аналитика и отчёты', icon: icons.analytics, route: '/eco-operator/analytics' },
-  { id: 'profile', label: 'Профили компаний', icon: icons.profile, route: '/eco-operator/profile' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков', icon: icons.recycle, route: '/eco-operator/recyclers' },
-])
+const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // ─── Tabs ───
 type TabId = 'finance' | 'products' | 'reports'
@@ -127,13 +118,62 @@ function onPayerFocus() {
   showPayerSuggestions.value = true
 }
 
+// ─── Group/Subgroup filter ───
+const selectedGroup = ref('')
+const selectedSubgroup = ref('')
+
+const subgroupOptions = computed(() => {
+  if (!selectedGroup.value) return []
+  return productSubgroups[selectedGroup.value] || []
+})
+
+function onGroupChange() {
+  selectedSubgroup.value = ''
+}
+
+function clearGroupFilter() {
+  selectedGroup.value = ''
+  selectedSubgroup.value = ''
+}
+
+const activeGroupLabel = computed(() => {
+  if (!selectedGroup.value) return ''
+  const g = productGroups.find(g => g.value === selectedGroup.value)
+  return g?.label || selectedGroup.value
+})
+
+const activeSubgroupLabel = computed(() => {
+  if (!selectedSubgroup.value) return ''
+  const subs = productSubgroups[selectedGroup.value] || []
+  const sg = subs.find(s => s.value === selectedSubgroup.value)
+  return sg?.label || selectedSubgroup.value
+})
+
+const hasGroupFilter = computed(() => !!selectedGroup.value)
+
 // ─── Filtered data from stores ───
-const paidCalcs = computed(() =>
-  calculationStore.state.calculations.filter(c =>
+const paidCalcs = computed(() => {
+  const base = calculationStore.state.calculations.filter(c =>
     (c.status === 'Оплачено' || c.status === 'Принято') && isInRange(c.date) &&
     (!selectedPayer.value || c.company === selectedPayer.value)
   )
-)
+  if (!selectedGroup.value) return base
+  return base.filter(c =>
+    c.items.some(item =>
+      item.group === selectedGroup.value &&
+      (!selectedSubgroup.value || item.subgroup === selectedSubgroup.value)
+    )
+  )
+})
+
+// Helper: get only matching items from a calc
+const getMatchingItems = (items: any[]) => {
+  if (!selectedGroup.value) return items
+  return items.filter(item =>
+    item.group === selectedGroup.value &&
+    (!selectedSubgroup.value || item.subgroup === selectedSubgroup.value)
+  )
+}
 
 const approvedRefunds = computed(() =>
   refundStore.state.refunds.filter(r =>
@@ -143,7 +183,7 @@ const approvedRefunds = computed(() =>
 )
 
 // ─── Financial summary ───
-const totalIncome = computed(() => paidCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
+const totalIncome = computed(() => paidCalcs.value.reduce((s, c) => s + getMatchingItems(c.items).reduce((ss, item) => ss + item.amount, 0), 0))
 const totalRefunded = computed(() => approvedRefunds.value.reduce((s, r) => s + r.totalRefund, 0))
 const netIncome = computed(() => totalIncome.value - totalRefunded.value)
 const avgCalc = computed(() => paidCalcs.value.length ? Math.round(totalIncome.value / paidCalcs.value.length) : 0)
@@ -203,7 +243,7 @@ const groupRanking = computed<GroupAnalytics[]>(() => {
   const map = new Map<string, GroupAnalytics>()
 
   paidCalcs.value.forEach(calc => {
-    calc.items.forEach(item => {
+    getMatchingItems(calc.items).forEach(item => {
       let ga = map.get(item.group)
       if (!ga) {
         const gObj = productGroups.find(g => g.value === item.group)
@@ -223,7 +263,7 @@ const groupRanking = computed<GroupAnalytics[]>(() => {
       sg.amount += item.amount
     })
     // count each calc once per group it touches
-    const groups = new Set(calc.items.map(i => i.group))
+    const groups = new Set(getMatchingItems(calc.items).map(i => i.group))
     groups.forEach(g => {
       const ga = map.get(g)
       if (ga) ga.calcCount++
@@ -246,7 +286,7 @@ const showExportMenu = ref(false)
 
 function doExport(format: string) {
   showExportMenu.value = false
-  alert(`Отчёт формируется в формате ${format}...`)
+  toastStore.show({ type: 'info', title: 'Формирование отчёта', message: `Отчёт формируется в формате ${format}` })
 }
 
 // ─── Reports tab ───
@@ -285,7 +325,7 @@ function generateReport() {
 }
 
 function downloadReportFile(_format: string) {
-  alert('Функция будет реализована с серверной генерацией')
+  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Функция будет реализована с серверной генерацией' })
 }
 
 // Mock data for report previews
@@ -341,7 +381,7 @@ const donutGroupColors = ['#22C55E', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6',
 const incomeByGroup = computed(() => {
   const map = new Map<string, { label: string; amount: number }>()
   paidCalcs.value.forEach(c => {
-    c.items.forEach(item => {
+    getMatchingItems(c.items).forEach(item => {
       const gObj = productGroups.find(g => g.value === item.group)
       const label = gObj?.label || item.group
       const existing = map.get(item.group)
@@ -413,6 +453,7 @@ function startDonutAnimation() {
 }
 
 onMounted(() => {
+  console.log('Analytics page mounted, activeTab:', activeTab.value)
   startDonutAnimation()
 })
 
@@ -536,7 +577,7 @@ const payerRanking = computed<PayerSummary[]>(() => {
       map.set(c.company, p)
     }
     p.calcCount++
-    p.totalAmount += c.totalAmount
+    p.totalAmount += getMatchingItems(c.items).reduce((ss, item) => ss + item.amount, 0)
   })
   return Array.from(map.values()).sort((a, b) => b.totalAmount - a.totalAmount)
 })
@@ -564,7 +605,7 @@ const groupBarMax = computed(() => Math.max(...groupBarData.value.map(g => g.tot
 const incomeByGroupMass = computed(() => {
   const map = new Map<string, { label: string; mass: number }>()
   paidCalcs.value.forEach(c => {
-    c.items.forEach(item => {
+    getMatchingItems(c.items).forEach(item => {
       const gObj = productGroups.find(g => g.value === item.group)
       const label = gObj?.label || item.group
       const existing = map.get(item.group)
@@ -762,22 +803,70 @@ function hideBarTooltip() {
 }
 
 function exportTabData(tabName: string) {
-  alert(`Выгрузка данных раздела «${tabName}» — функция будет реализована с серверной генерацией`)
+  toastStore.show({ type: 'info', title: 'Выгрузка данных', message: `Раздел «${tabName}» — функция будет реализована с серверной генерацией` })
+}
+
+// ─── Capacity balance data ───
+const volumeToProcessMap: Record<string, number> = {
+  group_1: 180, group_2: 220, group_3: 120, group_4: 200,
+  group_5: 80, group_6: 850, group_7: 600, group_8: 380,
+  group_9: 60, group_10: 45, group_11: 70, group_12: 150,
+  group_13: 100, group_14: 35, group_15: 25, group_16: 40,
+  group_17: 15, group_18: 55, group_19: 350, group_20: 30,
+  group_21: 20, group_22: 90, group_23: 400, group_24: 500,
+}
+
+const capacityBalance = computed(() => {
+  const activeRecyclers = recyclerStore.getActiveRecyclers()
+  return productGroups
+    .map(g => {
+      const volumeToProcess = volumeToProcessMap[g.value] || 0
+      const totalCapacity = activeRecyclers.reduce((sum, r) => {
+        const cap = r.capacities.find(c => c.wasteType === g.value)
+        return sum + (cap ? cap.capacityTons : 0)
+      }, 0)
+      const deficit = totalCapacity - volumeToProcess
+      const coverage = volumeToProcess > 0 ? Math.round((totalCapacity / volumeToProcess) * 100) : (totalCapacity > 0 ? 999 : 0)
+      return { group: g, volumeToProcess, totalCapacity, deficit, coverage }
+    })
+    .filter(item => item.volumeToProcess > 0 || item.totalCapacity > 0)
+})
+
+const capacityKpis = computed(() => {
+  const activeRecyclers = recyclerStore.getActiveRecyclers()
+  const totalCapacity = activeRecyclers.reduce((sum, r) => sum + recyclerStore.getTotalCapacity(r), 0)
+  const avgLoad = activeRecyclers.length > 0
+    ? Math.round(activeRecyclers.reduce((sum, r) => sum + recyclerStore.getLoadPercent(r), 0) / activeRecyclers.length)
+    : 0
+  const deficitGroups = capacityBalance.value.filter(b => b.coverage < 100).length
+  return { totalCapacity, avgLoad, deficitGroups }
+})
+
+const getCoverageColor = (coverage: number) => {
+  if (coverage >= 100) return '#22C55E'
+  if (coverage >= 50) return '#F59E0B'
+  return '#EF4444'
+}
+
+const getCoverageBg = (coverage: number) => {
+  if (coverage >= 100) return '#dcfce7'
+  if (coverage >= 50) return '#fef3c7'
+  return '#fee2e2'
 }
 </script>
 
 <template>
   <DashboardLayout
     role="eco-operator"
-    roleTitle="ГП «Эко Оператор»"
+    :roleTitle="roleTitle"
     userName="ОсОО «ЭкоПереработка»"
     :menuItems="menuItems"
   >
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Аналитика и отчёты</h1>
-        <p class="text-[#64748b] mt-1">Финансовая сводка, товарная структура и выгрузка отчётов</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('pages.ecoOperator.analyticsTitle') }}</h1>
+        <p class="text-[#64748b] mt-1">{{ $t('pages.ecoOperator.analyticsSubtitle') }}</p>
       </div>
       <!-- Export button -->
       <div class="relative">
@@ -786,16 +875,16 @@ function exportTabData(tabName: string) {
           class="an-export-btn"
         >
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Выгрузить отчёт
+          {{ $t('common.exportReport') }}
         </button>
         <div v-if="showExportMenu" class="an-export-dropdown">
           <button @click="doExport('Excel')" class="an-export-dropdown__item">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Скачать Excel (.xlsx)
+            {{ $t('common.downloadExcel') }} (.xlsx)
           </button>
           <button @click="doExport('PDF')" class="an-export-dropdown__item">
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-            Скачать PDF
+            {{ $t('common.downloadPdf') }}
           </button>
         </div>
       </div>
@@ -844,6 +933,52 @@ function exportTabData(tabName: string) {
             <input type="text" v-model="customTo" placeholder="DD.MM.YYYY" class="an-period-custom__input" />
           </label>
         </div>
+      </div>
+
+      <!-- Group/Subgroup filter -->
+      <div class="flex flex-wrap items-end gap-3 my-4">
+        <div>
+          <label class="block text-xs font-medium text-[#64748b] mb-1">Группа товаров</label>
+          <select
+            v-model="selectedGroup"
+            @change="onGroupChange"
+            class="an-group-select"
+            style="width: 320px; padding: 10px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 13px; background: white; outline: none;"
+          >
+            <option value="">Все группы</option>
+            <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-[#64748b] mb-1">Подгруппа</label>
+          <select
+            v-model="selectedSubgroup"
+            :disabled="!selectedGroup || subgroupOptions.length === 0"
+            class="an-group-select"
+            style="width: 320px; padding: 10px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 13px; background: white; outline: none;"
+          >
+            <option value="">{{ !selectedGroup ? 'Сначала выберите группу' : subgroupOptions.length === 0 ? 'Нет подгрупп' : 'Все подгруппы' }}</option>
+            <option v-for="sg in subgroupOptions" :key="sg.value" :value="sg.value">{{ sg.label }}</option>
+          </select>
+        </div>
+        <button
+          v-if="hasGroupFilter"
+          @click="clearGroupFilter"
+          class="flex items-center gap-1 text-[13px] text-[#94a3b8] hover:text-[#64748b] transition-colors pb-2.5"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          Сбросить фильтры
+        </button>
+      </div>
+
+      <!-- Active filter indicator -->
+      <div v-if="hasGroupFilter" class="mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-[10px]" style="background: #EFF6FF; border: 1px solid #BFDBFE;">
+        <p class="text-sm" style="color: #1D4ED8;">
+          <span class="font-semibold">Фильтр:</span> {{ activeGroupLabel }}<span v-if="activeSubgroupLabel"> &rarr; {{ activeSubgroupLabel }}</span>
+        </p>
+        <button @click="clearGroupFilter" class="text-xs font-medium flex items-center gap-1 hover:underline" style="color: #1D4ED8;">
+          Сбросить <span>&times;</span>
+        </button>
       </div>
 
       <!-- Payer filter -->
@@ -1197,7 +1332,7 @@ function exportTabData(tabName: string) {
       <div class="an-tab-export-row">
         <button class="an-tab-export-btn" @click="exportTabData('Финансы')">
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Выгрузить данные
+          {{ $t('common.exportData') }}
         </button>
       </div>
     </template>
@@ -1538,11 +1673,112 @@ function exportTabData(tabName: string) {
         </div>
       </div>
 
+      <!-- ═══ Subsection C: Баланс мощностей по стране ═══ -->
+      <div class="an-recycling-divider"></div>
+      <h2 class="an-subsection-title">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+        Баланс мощностей по стране
+      </h2>
+
+      <!-- C1: 3 KPI cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="an-card">
+          <div class="an-card__icon" style="background: #dbeafe; color: #3B82F6">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+          </div>
+          <div class="an-card__body">
+            <span class="an-card__label">Всего мощностей</span>
+            <span class="an-card__value" style="color:#3B82F6">{{ capacityKpis.totalCapacity.toLocaleString('ru-RU') }} т/год</span>
+            <span class="an-card__sub">активные переработчики</span>
+          </div>
+        </div>
+        <div class="an-card">
+          <div class="an-card__icon" style="background: #fef3c7; color: #F59E0B">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          </div>
+          <div class="an-card__body">
+            <span class="an-card__label">Средняя загруженность</span>
+            <span class="an-card__value" style="color:#F59E0B">{{ capacityKpis.avgLoad }}%</span>
+            <span class="an-card__sub">по активным переработчикам</span>
+          </div>
+        </div>
+        <div class="an-card">
+          <div class="an-card__icon" style="background: #fee2e2; color: #EF4444">
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <div class="an-card__body">
+            <span class="an-card__label">Дефицитных групп</span>
+            <span class="an-card__value" style="color:#EF4444">{{ capacityKpis.deficitGroups }}</span>
+            <span class="an-card__sub">покрытие &lt; 100%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- C2: Capacity balance table -->
+      <div class="an-chart-container mb-6">
+        <h2 class="an-section-title mb-4">Баланс мощностей по стране</h2>
+        <div class="an-report-table-wrap">
+          <table class="an-report-table">
+            <thead>
+              <tr>
+                <th>Группа отходов</th>
+                <th class="text-right">Объём к переработке (т)</th>
+                <th class="text-right">Мощность переработчиков (т)</th>
+                <th class="text-right">Дефицит/Профицит (т)</th>
+                <th class="text-right">Покрытие (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(item, i) in capacityBalance"
+                :key="i"
+              >
+                <td class="font-medium">{{ item.group.label }}</td>
+                <td class="text-right text-[#64748b]">{{ item.volumeToProcess.toLocaleString('ru-RU') }}</td>
+                <td class="text-right font-semibold">{{ item.totalCapacity.toLocaleString('ru-RU') }}</td>
+                <td class="text-right font-semibold" :style="{ color: item.deficit >= 0 ? '#22C55E' : '#EF4444' }">
+                  {{ item.deficit >= 0 ? 'Профицит +' + item.deficit.toLocaleString('ru-RU') : 'Дефицит ' + item.deficit.toLocaleString('ru-RU') }}
+                </td>
+                <td class="text-right">
+                  <span
+                    style="display:inline-block; padding:2px 10px; border-radius:8px; font-weight:600; font-size:13px;"
+                    :style="{ color: getCoverageColor(item.coverage), background: getCoverageBg(item.coverage) }"
+                  >
+                    {{ item.coverage > 900 ? '999+' : item.coverage }}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="font-bold">ИТОГО</td>
+                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0).toLocaleString('ru-RU') }}</td>
+                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.totalCapacity, 0).toLocaleString('ru-RU') }}</td>
+                <td class="text-right font-bold" :style="{ color: capacityBalance.reduce((s, b) => s + b.deficit, 0) >= 0 ? '#22C55E' : '#EF4444' }">
+                  {{ capacityBalance.reduce((s, b) => s + b.deficit, 0) >= 0 ? 'Профицит +' : 'Дефицит ' }}{{ capacityBalance.reduce((s, b) => s + b.deficit, 0).toLocaleString('ru-RU') }}
+                </td>
+                <td class="text-right font-bold">
+                  <span
+                    style="display:inline-block; padding:2px 10px; border-radius:8px; font-weight:600; font-size:13px;"
+                    :style="{
+                      color: getCoverageColor(capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) > 0 ? Math.round(capacityBalance.reduce((s, b) => s + b.totalCapacity, 0) / capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) * 100) : 0),
+                      background: getCoverageBg(capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) > 0 ? Math.round(capacityBalance.reduce((s, b) => s + b.totalCapacity, 0) / capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) * 100) : 0)
+                    }"
+                  >
+                    {{ capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) > 0 ? Math.round(capacityBalance.reduce((s, b) => s + b.totalCapacity, 0) / capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0) * 100) : 0 }}%
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
       <!-- B4: Products tab export -->
       <div class="an-tab-export-row">
         <button class="an-tab-export-btn" @click="exportTabData('Товары и переработка')">
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Выгрузить данные
+          {{ $t('common.exportData') }}
         </button>
       </div>
     </template>
@@ -1578,11 +1814,11 @@ function exportTabData(tabName: string) {
             <button @click="generateReport" :disabled="isGeneratingReport" class="an-report-generate-btn">
               <template v-if="isGeneratingReport">
                 <span class="an-report-spinner"></span>
-                Формирование...
+                {{ $t('common.generating') }}
               </template>
               <template v-else>
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Сформировать
+                {{ $t('common.generate') }}
               </template>
             </button>
           </div>
@@ -1595,11 +1831,11 @@ function exportTabData(tabName: string) {
             <div class="flex gap-2">
               <button @click="downloadReportFile('excel')" class="an-report-dl-btn an-report-dl-btn--excel">
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Скачать Excel
+                {{ $t('common.downloadExcel') }}
               </button>
               <button @click="downloadReportFile('pdf')" class="an-report-dl-btn an-report-dl-btn--pdf">
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                Скачать PDF
+                {{ $t('common.downloadPdf') }}
               </button>
             </div>
           </div>
@@ -1734,7 +1970,7 @@ function exportTabData(tabName: string) {
           <h3 class="an-report-card__title">{{ tmpl.title }}</h3>
           <p class="an-report-card__desc">{{ tmpl.description }}</p>
           <button class="an-report-card__btn" :style="{ color: tmpl.color }">
-            Сформировать отчёт
+            {{ $t('common.generate') }}
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
@@ -2664,6 +2900,17 @@ function exportTabData(tabName: string) {
   transition: background 0.15s;
 }
 .an-tab-export-btn:hover { background: #16A34A; }
+
+/* ── Group select ── */
+.an-group-select:focus {
+  border-color: #22C55E !important;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+}
+.an-group-select:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
 
 /* ── Mobile ── */
 @media (max-width: 767px) {

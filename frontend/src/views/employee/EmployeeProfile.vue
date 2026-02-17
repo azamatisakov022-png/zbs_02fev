@@ -1,18 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { icons } from '../../utils/menuIcons'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { toastStore } from '../../stores/toast'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Главная', icon: icons.dashboard, route: '/employee' },
-  { id: 'compliance', label: 'Контроль исполнения', icon: icons.compliance, route: '/employee/compliance' },
-  { id: 'licenses', label: 'Лицензии', icon: icons.license, route: '/employee/licenses' },
-  { id: 'waste-types', label: 'Виды отходов', icon: icons.recycle, route: '/employee/waste-types' },
-  { id: 'landfills', label: 'Полигоны и свалки', icon: icons.landfill, route: '/employee/landfills' },
-  { id: 'reports', label: 'Отчётность', icon: icons.report, route: '/employee/reports' },
-  { id: 'map', label: 'ГИС-карта', icon: icons.map, route: '/employee/map' },
-  { id: 'profile', label: 'Мой профиль', icon: icons.profile, route: '/employee/profile' },
-]
+const router = useRouter()
+const { roleTitle, menuItems } = useEmployeeMenu()
 
 // User data
 const userData = ref({
@@ -90,29 +84,29 @@ const formatDate = (dateStr: string) => {
 
 const changePassword = async () => {
   if (securityData.value.newPassword !== securityData.value.confirmPassword) {
-    alert('Пароли не совпадают')
+    toastStore.show({ type: 'error', title: 'Ошибка', message: 'Пароли не совпадают' })
     return
   }
   saving.value = true
   await new Promise(resolve => setTimeout(resolve, 1000))
   saving.value = false
   securityData.value = { currentPassword: '', newPassword: '', confirmPassword: '', twoFactorEnabled: securityData.value.twoFactorEnabled }
-  alert('Пароль успешно изменён')
+  toastStore.show({ type: 'success', title: 'Пароль успешно изменён' })
 }
 </script>
 
 <template>
   <DashboardLayout
     role="employee"
-    roleTitle="Сотрудник МПРЭТН КР"
+    :roleTitle="roleTitle"
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Мой профиль</h1>
-        <p class="text-gray-600 mt-1">Личные данные и настройки учётной записи</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.profileTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('pages.employee.profileSubtitle') }}</p>
       </div>
 
       <!-- Profile Card -->
@@ -224,8 +218,8 @@ const changePassword = async () => {
                 </div>
               </div>
               <div v-if="editingSection === 'personal'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                <button @click="editingSection = null" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Отмена</button>
-                <button @click="saveSection" :disabled="saving" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">{{ saving ? 'Сохранение...' : 'Сохранить' }}</button>
+                <button @click="editingSection = null" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">{{ $t('common.cancel') }}</button>
+                <button @click="saveSection" :disabled="saving" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">{{ saving ? $t('common.loading') : $t('common.save') }}</button>
               </div>
             </div>
           </div>
@@ -357,7 +351,7 @@ const changePassword = async () => {
                   </div>
                 </div>
               </div>
-              <button class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
+              <button @click="toastStore.show({ type: 'info', title: 'Журнал активности', message: 'Функция в разработке' })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
                 Показать все
               </button>
             </div>
@@ -379,7 +373,7 @@ const changePassword = async () => {
                 </div>
               </div>
             </div>
-            <button class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+            <button @click="router.push('/login')" class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
               Выйти из системы
             </button>
           </div>
