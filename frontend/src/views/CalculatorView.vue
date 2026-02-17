@@ -258,7 +258,7 @@ function downloadPdf() {
   <div class="min-h-screen bg-[#f8fafc]">
     <!-- Banner (contained, rounded, same width as content) -->
     <div class="container-main pt-8 lg:pt-10">
-      <div class="bg-gradient-to-r from-[#065f46] to-[#10b981] text-white rounded-2xl py-10 lg:py-14 px-6 text-center">
+      <div class="text-white rounded-2xl py-10 lg:py-14 px-6 text-center" style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%)">
         <h1 class="text-3xl lg:text-4xl font-bold mb-3">Калькулятор утилизационного сбора (РОП)</h1>
         <p class="text-white/80 text-base lg:text-lg max-w-2xl mx-auto">
           Предварительный расчёт суммы утилизационного сбора согласно ПКМ КР №730
