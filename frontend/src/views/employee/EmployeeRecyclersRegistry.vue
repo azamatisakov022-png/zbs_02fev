@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { recyclerStore, type Recycler, type RecyclerStatus, type RecyclerCapacity } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
@@ -16,6 +17,10 @@ const showAddForm = ref(false)
 const searchQuery = ref('')
 const filterStatus = ref('')
 const filterWasteType = ref('')
+const isEditing = ref(false)
+const editingRecyclerId = ref<number | null>(null)
+const showCoordPicker = ref(false)
+const pickerCoords = ref<{ lat: number; lng: number } | null>(null)
 
 // Counts
 const counts = computed(() => recyclerStore.getCounts())
@@ -120,6 +125,7 @@ const newRecycler = ref({
   contactPhone: '',
   contactEmail: '',
   status: 'active' as RecyclerStatus,
+  coordinates: null as { lat: number; lng: number } | null,
 })
 
 const resetForm = () => {
@@ -135,6 +141,7 @@ const resetForm = () => {
     contactPhone: '',
     contactEmail: '',
     status: 'active',
+    coordinates: null,
   }
 }
 
@@ -163,6 +170,49 @@ const saveRecycler = () => {
 const cancelForm = () => {
   resetForm()
   showAddForm.value = false
+}
+
+const openEditModal = (recycler: Recycler) => {
+  isEditing.value = true
+  editingRecyclerId.value = recycler.id
+  newRecycler.value = {
+    name: recycler.name,
+    inn: recycler.inn,
+    licenseNumber: recycler.licenseNumber,
+    licenseDate: recycler.licenseDate,
+    licenseExpiry: recycler.licenseExpiry,
+    wasteTypes: [...recycler.wasteTypes],
+    capacities: recycler.capacities ? recycler.capacities.map(c => ({ ...c })) : [],
+    address: recycler.address,
+    contactPhone: recycler.contactPhone,
+    contactEmail: recycler.contactEmail,
+    status: recycler.status,
+    coordinates: recycler.coordinates ? { ...recycler.coordinates } : null,
+  }
+  showAddForm.value = true
+}
+
+const saveEdit = () => {
+  if (!editingRecyclerId.value || !newRecycler.value.name || !newRecycler.value.inn) return
+  recyclerStore.updateRecycler(editingRecyclerId.value, {
+    ...newRecycler.value,
+  })
+  toastStore.show({ type: 'success', title: 'Успешно', message: 'Данные переработчика обновлены' })
+  resetForm()
+  showAddForm.value = false
+  isEditing.value = false
+  editingRecyclerId.value = null
+}
+
+const cancelEditForm = () => {
+  resetForm()
+  showAddForm.value = false
+  isEditing.value = false
+  editingRecyclerId.value = null
+}
+
+const onPickerConfirm = (coords: { lat: number; lng: number }) => {
+  newRecycler.value.coordinates = coords
 }
 
 // Empty state helpers
@@ -221,7 +271,7 @@ const resetAllFilters = () => {
 
     <!-- Add Form -->
     <div v-if="showAddForm" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
-      <h2 class="text-lg font-semibold text-[#1e293b] mb-6">Добавление переработчика</h2>
+      <h2 class="text-lg font-semibold text-[#1e293b] mb-6">{{ isEditing ? 'Редактирование переработчика' : 'Добавление переработчика' }}</h2>
       <div class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
@@ -271,6 +321,24 @@ const resetAllFilters = () => {
           <div>
             <label class="block text-sm font-medium text-[#1e293b] mb-1">Email</label>
             <input v-model="newRecycler.contactEmail" type="text" placeholder="info@company.kg" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+          </div>
+        </div>
+
+        <!-- Coordinates -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">Широта</label>
+            <input :value="newRecycler.coordinates?.lat || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lat = v } }" type="number" step="0.0001" placeholder="42.8746" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">Долгота</label>
+            <input :value="newRecycler.coordinates?.lng || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lng = v } }" type="number" step="0.0001" placeholder="74.5698" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+          </div>
+          <div class="flex items-end">
+            <button type="button" @click="pickerCoords = newRecycler.coordinates; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              Указать на карте
+            </button>
           </div>
         </div>
 
@@ -330,13 +398,13 @@ const resetAllFilters = () => {
 
         <!-- Actions -->
         <div class="flex items-center gap-3 pt-4 border-t border-[#e2e8f0]">
-          <AppButton variant="primary" @click="saveRecycler" :disabled="!newRecycler.name || !newRecycler.inn">
+          <AppButton variant="primary" @click="isEditing ? saveEdit() : saveRecycler()" :disabled="!newRecycler.name || !newRecycler.inn">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             {{ $t('common.save') }}
           </AppButton>
-          <AppButton variant="secondary" @click="cancelForm">
+          <AppButton variant="secondary" @click="isEditing ? cancelEditForm() : cancelForm()">
             {{ $t('common.cancel') }}
           </AppButton>
         </div>
@@ -438,7 +506,7 @@ const resetAllFilters = () => {
               <td class="px-4 py-3 text-xs text-[#64748b]">{{ recycler.addedDate }}</td>
               <td class="px-4 py-3">
                 <div class="flex items-center justify-end gap-2">
-                  <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Функция в разработке' })">
+                  <AppButton variant="ghost" size="sm" @click="openEditModal(recycler)">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -486,5 +554,12 @@ const resetAllFilters = () => {
         />
       </div>
     </div>
+
+    <MapCoordinatePicker
+      :visible="showCoordPicker"
+      :modelValue="pickerCoords"
+      @update:visible="showCoordPicker = $event"
+      @update:modelValue="onPickerConfirm"
+    />
   </DashboardLayout>
 </template>

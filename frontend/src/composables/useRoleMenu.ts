@@ -54,6 +54,7 @@ export function useEmployeeMenu() {
     { id: 'licenses', label: t('nav.employee.licenses'), icon: icons.license, route: '/employee/licenses' },
     { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
     { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills' },
+    { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
     { id: 'map', label: t('nav.employee.map'), icon: icons.map, route: '/employee/map' },
     { id: 'profile', label: t('nav.employee.profile'), icon: icons.profile, route: '/employee/profile' },

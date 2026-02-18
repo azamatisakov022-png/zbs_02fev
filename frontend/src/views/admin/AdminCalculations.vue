@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
+import { getRatePerKg } from '../../data/rates'
 
 const { roleTitle, menuItems } = useAdminMenu()
 
@@ -13,17 +14,18 @@ interface FeeRate {
   rate: number; unit: string; effectiveFrom: string; effectiveTo: string | null; isActive: boolean
 }
 
+// Ставки из единого источника data/rates.ts (ПКМ КР №730)
 const feeRates = ref<FeeRate[]>([
-  { id: 1, category: 'Упаковка', subcategory: 'Пластик ПЭТ', code: 'УП-ПЭТ', rate: 120, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 2, category: 'Упаковка', subcategory: 'Пластик ПП/ПЭ', code: 'УП-ПП', rate: 100, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 3, category: 'Упаковка', subcategory: 'Стекло', code: 'УП-СТ', rate: 40, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 4, category: 'Упаковка', subcategory: 'Металл', code: 'УП-МТ', rate: 80, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 5, category: 'Упаковка', subcategory: 'Картон', code: 'УП-КР', rate: 50, unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 6, category: 'Электроника', subcategory: 'Крупная бытовая', code: 'ЭЛ-КБТ', rate: 500, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 7, category: 'Электроника', subcategory: 'Мелкая бытовая', code: 'ЭЛ-МБТ', rate: 200, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 8, category: 'Батареи', subcategory: 'Портативные', code: 'БТ-ПТ', rate: 50, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 9, category: 'Батареи', subcategory: 'Автомобильные', code: 'БТ-АВТ', rate: 300, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
-  { id: 10, category: 'Шины', subcategory: 'Легковые', code: 'ШН-ЛГ', rate: 150, unit: 'сом/шт', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 1, category: 'Упаковка', subcategory: 'Изделия пластмассовые упаковочные', code: 'УП-ПЛ', rate: getRatePerKg(6), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 2, category: 'Упаковка', subcategory: 'Изделия пластмассовые прочие', code: 'УП-ПП', rate: getRatePerKg(7), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 3, category: 'Упаковка', subcategory: 'Стекло полое', code: 'УП-СТ', rate: getRatePerKg(8), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 4, category: 'Упаковка', subcategory: 'Упаковка из комбинированных материалов', code: 'УП-КМ', rate: getRatePerKg(21), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 5, category: 'Упаковка', subcategory: 'Упаковка из гофрированного картона', code: 'УП-КР', rate: getRatePerKg(22), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 6, category: 'Электроника', subcategory: 'Техника бытовая крупная', code: 'ЭЛ-КБТ', rate: getRatePerKg(15), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 7, category: 'Электроника', subcategory: 'Техника бытовая мелкая', code: 'ЭЛ-МБТ', rate: getRatePerKg(16), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 8, category: 'Батареи', subcategory: 'Элементы первичные и батареи', code: 'БТ-ПТ', rate: getRatePerKg(11), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 9, category: 'Батареи', subcategory: 'Аккумуляторы свинцовые', code: 'БТ-АВТ', rate: getRatePerKg(12), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
+  { id: 10, category: 'Шины', subcategory: 'Шины, покрышки и камеры резиновые', code: 'ШН-ЛГ', rate: getRatePerKg(4), unit: 'сом/кг', effectiveFrom: '2025-01-01', effectiveTo: null, isActive: true },
 ])
 
 interface Normative {

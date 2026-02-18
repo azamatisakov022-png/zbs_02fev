@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { UTILIZATION_RATES_2025, getRatePerKg } from '../../data/rates'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -55,65 +56,67 @@ interface FeeRateGroup {
   }[]
 }
 
+// Ставки импортируются из единого источника data/rates.ts (ПКМ КР №730)
+// rate = UTILIZATION_RATES_2025[groupId] / 1000 (конвертация сом/т → сом/кг)
 const feeRateGroups: FeeRateGroup[] = [
   {
     groupLetter: 'А',
     groupTitle: 'Бумага и картон',
     items: [
-      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: 4.20, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: 4.20, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRatePerKg(1), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRatePerKg(2), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Б',
     groupTitle: 'Масла, шины и резина',
     items: [
-      { id: 3, name: 'Масла', rate: 12.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: 18.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: 12.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 3, name: 'Масла', rate: getRatePerKg(3), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRatePerKg(4), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRatePerKg(5), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'В',
     groupTitle: 'Пластмассы и стекло',
     items: [
-      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: 8.50, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 7, name: 'Изделия пластмассовые прочие', rate: 10.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 8, name: 'Стекло полое', rate: 2.80, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRatePerKg(6), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRatePerKg(7), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 8, name: 'Стекло полое', rate: getRatePerKg(8), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Г',
     groupTitle: 'Электроника и оборудование',
     items: [
-      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: 55.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: 35.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 11, name: 'Элементы первичные и батареи', rate: 120.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 12, name: 'Аккумуляторы свинцовые', rate: 5.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 13, name: 'Батареи аккумуляторные', rate: 25.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 14, name: 'Оборудование электрическое осветительное', rate: 150.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRatePerKg(9), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRatePerKg(10), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 11, name: 'Элементы первичные и батареи', rate: getRatePerKg(11), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRatePerKg(12), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 13, name: 'Батареи аккумуляторные', rate: getRatePerKg(13), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRatePerKg(14), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Д',
     groupTitle: 'Бытовая техника и фильтры',
     items: [
-      { id: 15, name: 'Техника бытовая крупная', rate: 22.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: 28.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: 22.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: 35.00, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 15, name: 'Техника бытовая крупная', rate: getRatePerKg(15), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRatePerKg(16), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRatePerKg(17), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRatePerKg(18), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Е',
     groupTitle: 'Упаковка',
     items: [
-      { id: 19, name: 'Упаковка из пластмасс', rate: 8.50, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 20, name: 'Упаковка из бумаги и картона', rate: 4.20, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 21, name: 'Упаковка из комбинированных материалов (тетрапак)', rate: 6.50, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 22, name: 'Упаковка из стекла', rate: 2.80, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 23, name: 'Упаковка из металла', rate: 5.50, unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 24, name: 'Упаковка из дерева', rate: 3.20, unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRatePerKg(19), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRatePerKg(20), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRatePerKg(21), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRatePerKg(22), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRatePerKg(23), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 24, name: 'Упаковка стеклянная', rate: getRatePerKg(24), unit: 'сом/кг', effectiveDate: '01.01.2025' },
     ],
   },
 ]
