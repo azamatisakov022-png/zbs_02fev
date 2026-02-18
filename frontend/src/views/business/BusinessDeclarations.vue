@@ -13,6 +13,9 @@ import { declarationStore, type Declaration } from '../../stores/declarations'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -465,8 +468,8 @@ const handlePrint = () => {
             @action="startWizard()"
           />
         </template>
-        <template #cell-number="{ value }">
-          <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+        <template #cell-number="{ value, row }">
+          <button class="font-mono font-medium text-[#2563eb] hover:underline cursor-pointer" @click="router.push('/business/declarations/' + row.id)">{{ value }}</button>
         </template>
         <template #cell-year="{ value }">
           <span>{{ value }} год</span>
@@ -479,7 +482,7 @@ const handlePrint = () => {
         </template>
         <template #actions="{ row }">
           <div class="flex flex-wrap items-center justify-end gap-2">
-            <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Просмотр декларации', message: row.number })">
+            <AppButton variant="ghost" size="sm" @click="router.push('/business/declarations/' + row.id)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

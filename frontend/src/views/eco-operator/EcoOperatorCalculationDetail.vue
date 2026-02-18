@@ -10,6 +10,7 @@ import { accountStore } from '../../stores/account'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
+import CalculationTimeline from '../../components/CalculationTimeline.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +29,19 @@ const getStatusClass = (status: string) => {
     default: return 'bg-gray-100 text-gray-800'
   }
 }
+
+// Timeline dates
+const timelineDates = computed(() => {
+  if (!calc.value) return {}
+  const d: Record<string, string | undefined> = { created: calc.value.date }
+  const s = calc.value.status
+  if (s !== 'Черновик') d.submitted = calc.value.date
+  if (['На проверке', 'Принято', 'Отклонено', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) d.reviewed = calc.value.date
+  if (['Принято', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
+  if (s === 'Оплачено') d.paid = calc.value.paidAt || calc.value.date
+  if (s === 'Отклонено') d.rejected = calc.value.rejectedAt || calc.value.date
+  return d
+})
 
 const payerTypeLabel = computed(() => {
   if (!calc.value) return ''
@@ -187,6 +201,9 @@ const downloadExcel = () => {
           </div>
         </div>
       </div>
+
+      <!-- Timeline -->
+      <CalculationTimeline v-if="calc" :status="calc.status" :dates="timelineDates" />
 
       <!-- Items Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6 overflow-hidden">

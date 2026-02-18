@@ -39,42 +39,43 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
         </thead>
         <tbody>
           <template v-if="data.length > 0">
-            <tr
-              v-for="(row, index) in data"
-              :key="index"
-              :class="[
-                'table-row border-b border-[#F1F5F9] transition-colors',
-                index % 2 === 1 ? 'bg-[#FAFBFC]' : 'bg-white',
-                rowClass?.(row)
-              ]"
-            >
-              <td
-                v-for="col in columns"
-                :key="col.key"
-                class="px-4 py-4 text-sm text-[#374151]"
+            <template v-for="(row, index) in data" :key="index">
+              <tr
+                :class="[
+                  'table-row border-b border-[#F1F5F9] transition-colors',
+                  index % 2 === 1 ? 'bg-[#FAFBFC]' : 'bg-white',
+                  rowClass?.(row)
+                ]"
               >
-                <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
-                  {{ row[col.key] }}
-                </slot>
-              </td>
-              <td v-if="actions" class="px-4 py-4 text-right whitespace-nowrap">
-                <slot name="actions" :row="row">
-                  <div class="flex items-center justify-end gap-2">
-                    <button
-                      @click="$emit('view', row)"
-                      class="btn-action btn-action-secondary text-xs px-3 py-1.5"
-                      aria-label="Просмотреть"
-                      data-tooltip="Просмотреть"
-                    >
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </button>
-                  </div>
-                </slot>
-              </td>
-            </tr>
+                <td
+                  v-for="col in columns"
+                  :key="col.key"
+                  class="px-4 py-4 text-sm text-[#374151]"
+                >
+                  <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
+                    {{ row[col.key] }}
+                  </slot>
+                </td>
+                <td v-if="actions" class="px-4 py-4 text-right whitespace-nowrap">
+                  <slot name="actions" :row="row">
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        @click="$emit('view', row)"
+                        class="btn-action btn-action-secondary text-xs px-3 py-1.5"
+                        aria-label="Просмотреть"
+                        data-tooltip="Просмотреть"
+                      >
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </slot>
+                </td>
+              </tr>
+              <slot name="row-after" :row="row" :index="index" :colspan="actions ? columns.length + 1 : columns.length" />
+            </template>
           </template>
           <tr v-else>
             <td :colspan="actions ? columns.length + 1 : columns.length">

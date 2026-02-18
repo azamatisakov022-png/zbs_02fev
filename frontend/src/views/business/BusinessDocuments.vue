@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
+import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -151,17 +153,53 @@ const getCategoryName = (category: string) => {
 }
 
 
-const downloadDocument = (doc: Document) => {
-  toastStore.show({ type: 'info', title: 'Скачивание документа', message: doc.name })
-}
+// Document preview modal
+const previewDoc = ref<PreviewDocument | null>(null)
 
 const viewDocument = (doc: Document) => {
-  toastStore.show({ type: 'info', title: 'Просмотр документа', message: doc.name })
+  previewDoc.value = {
+    name: doc.name,
+    type: doc.type,
+    size: doc.size,
+    date: doc.uploadedAt,
+    status: doc.status,
+    category: getCategoryName(doc.category),
+  }
+}
+
+const downloadDocument = (doc: Document) => {
+  toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })
+}
+
+// Confirm dialog state
+const confirmDialog = ref({
+  visible: false,
+  title: '',
+  message: '',
+  icon: 'danger' as 'warning' | 'danger' | 'info' | 'success',
+  confirmText: 'Удалить',
+  confirmColor: 'red' as 'green' | 'red' | 'orange',
+  onConfirm: () => {},
+})
+const handleConfirm = () => {
+  confirmDialog.value.visible = false
+  confirmDialog.value.onConfirm()
+}
+const handleCancel = () => {
+  confirmDialog.value.visible = false
 }
 
 const deleteDocument = (doc: Document) => {
-  if (confirm(`Удалить документ "${doc.name}"?`)) {
-    documents.value = documents.value.filter(d => d.id !== doc.id)
+  confirmDialog.value = {
+    visible: true,
+    title: 'Удалить документ?',
+    message: `Документ «${doc.name}» будет удалён без возможности восстановления.`,
+    icon: 'danger',
+    confirmText: 'Удалить',
+    confirmColor: 'red',
+    onConfirm: () => {
+      documents.value = documents.value.filter(d => d.id !== doc.id)
+    },
   }
 }
 
@@ -396,6 +434,9 @@ const resetDocFilters = () => {
       </div>
     </div>
 
+    <!-- Document Preview Modal -->
+    <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
+
     <!-- Upload Modal -->
     <div
       v-if="showUploadModal"
@@ -499,5 +540,15 @@ const resetDocFilters = () => {
         </div>
       </div>
     </div>
+    <ConfirmDialog
+      :visible="confirmDialog.visible"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :icon="confirmDialog.icon"
+      :confirmText="confirmDialog.confirmText"
+      :confirmColor="confirmDialog.confirmColor"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </DashboardLayout>
 </template>

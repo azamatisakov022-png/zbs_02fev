@@ -6,15 +6,13 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
-import { notificationStore } from '../../stores/notifications'
 
 const route = useRoute()
 const router = useRouter()
-const { roleTitle, menuItems } = useEcoOperatorMenu()
+const { roleTitle, menuItems } = useBusinessMenu()
 
-// Declaration data
 const declaration = ref<Declaration | undefined>(undefined)
 const isLoading = ref(true)
 
@@ -24,31 +22,6 @@ onMounted(() => {
   setTimeout(() => { isLoading.value = false }, 300)
 })
 
-// Document preview
-const previewDoc = ref<PreviewDocument | null>(null)
-
-// Modal states
-const showApproveModal = ref(false)
-const showRejectModal = ref(false)
-const showReturnModal = ref(false)
-
-const approveComment = ref('')
-const rejectReason = ref('')
-const returnComment = ref('')
-
-// Toast state
-const toastVisible = ref(false)
-const toastMessage = ref('')
-const toastType = ref<'success' | 'danger' | 'warning'>('success')
-
-function showToast(message: string, type: 'success' | 'danger' | 'warning') {
-  toastMessage.value = message
-  toastType.value = type
-  toastVisible.value = true
-  setTimeout(() => { toastVisible.value = false }, 3000)
-}
-
-// Format currency
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('ru-RU').format(value)
 }
@@ -60,13 +33,11 @@ function formatWithSign(value: number): string {
   return formatted
 }
 
-// Status badge variant with special handling for "На доработке"
 function getDeclarationBadgeVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
   if (status === 'На доработке') return 'warning'
   return getStatusBadgeVariant(status)
 }
 
-// History dot color
 function getHistoryDotClass(action: string): string {
   const a = action.toLowerCase()
   if (a.includes('одобрен')) return 'bg-[#22C55E]'
@@ -75,64 +46,31 @@ function getHistoryDotClass(action: string): string {
   return 'bg-[#3B82F6]'
 }
 
-// Actions
-function handleApprove() {
+function handleResubmit() {
   if (!declaration.value) return
-  declarationStore.approveDeclaration(declaration.value.id, approveComment.value.trim() || undefined)
+  declarationStore.resubmitDeclaration(declaration.value.id)
   declaration.value = declarationStore.getById(declaration.value.id)
-  notificationStore.add({
-    type: 'success',
-    title: 'Декларация принята',
-    message: 'Ваша декларация была успешно принята.',
-    role: 'business'
-  })
-  showApproveModal.value = false
-  approveComment.value = ''
-  showToast('Декларация успешно одобрена', 'success')
-  setTimeout(() => {
-    router.push('/eco-operator/incoming-declarations')
-  }, 1500)
+  toastStore.show({ type: 'success', title: 'Декларация повторно подана', message: 'Статус изменён на «На рассмотрении».' })
 }
 
-function handleReject() {
-  if (!declaration.value) return
-  declarationStore.rejectDeclaration(declaration.value.id, rejectReason.value.trim())
-  declaration.value = declarationStore.getById(declaration.value.id)
-  notificationStore.add({
-    type: 'error',
-    title: 'Декларация отклонена',
-    message: 'Декларация отклонена. Проверьте замечания и подайте повторно.',
-    role: 'business'
-  })
-  showRejectModal.value = false
-  rejectReason.value = ''
-  showToast('Декларация отклонена', 'danger')
-  setTimeout(() => {
-    router.push('/eco-operator/incoming-declarations')
-  }, 1500)
+function handleDownloadPdf() {
+  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция в разработке' })
 }
 
-function handleReturn() {
-  if (!declaration.value) return
-  declarationStore.returnForRevision(declaration.value.id, returnComment.value.trim())
-  declaration.value = declarationStore.getById(declaration.value.id)
-  showReturnModal.value = false
-  returnComment.value = ''
-  showToast('Декларация возвращена на доработку', 'warning')
-  setTimeout(() => {
-    router.push('/eco-operator/incoming-declarations')
-  }, 1500)
+function handlePrint() {
+  toastStore.show({ type: 'info', title: 'Печать', message: 'Функция в разработке' })
 }
 
-const isRejectValid = computed(() => rejectReason.value.trim().length >= 10)
-const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
+// Document preview
+const previewDoc = ref<PreviewDocument | null>(null)
+
 </script>
 
 <template>
   <DashboardLayout
-    role="eco-operator"
+    role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ЭкоПереработка»"
+    userName="ОсОО «ТехПром»"
     :menuItems="menuItems"
   >
     <!-- Loading -->
@@ -149,7 +87,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Декларация не найдена</h2>
       <p class="text-[#64748b] mb-6">Запрашиваемая декларация не существует или была удалена.</p>
-      <AppButton variant="primary" @click="router.push('/eco-operator/incoming-declarations')">
+      <AppButton variant="primary" @click="router.push('/business/declarations')">
         Вернуться к списку
       </AppButton>
     </div>
@@ -160,12 +98,12 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
       <div class="mb-6">
         <button
           class="flex items-center gap-1 text-sm text-[#64748b] hover:text-[#1e293b] transition-colors mb-4"
-          @click="router.push('/eco-operator/incoming-declarations')"
+          @click="router.push('/business/declarations')"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
-          Входящие декларации
+          Мои декларации
         </button>
         <div class="flex flex-wrap items-center gap-3 mb-1">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Декларация {{ declaration.number }}</h1>
@@ -174,7 +112,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         <p class="text-[#64748b]">Подана {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
       </div>
 
-      <!-- Result banner -->
+      <!-- Status banners -->
       <div
         v-if="declaration.status === 'Одобрена'"
         class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3"
@@ -199,8 +137,16 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <div>
+        <div class="flex-1">
           <p class="text-sm font-semibold text-red-900">Декларация отклонена {{ declaration.reviewDate }}: {{ declaration.reviewComment }}</p>
+          <div class="mt-3">
+            <AppButton variant="danger" size="sm" @click="handleResubmit">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Подать повторно
+            </AppButton>
+          </div>
         </div>
       </div>
 
@@ -213,8 +159,31 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
         </div>
-        <div>
+        <div class="flex-1">
           <p class="text-sm font-semibold text-orange-900">Возвращена на доработку {{ declaration.reviewDate }}: {{ declaration.reviewComment }}</p>
+          <div class="mt-3">
+            <AppButton variant="primary" size="sm" @click="handleResubmit">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Подать повторно
+            </AppButton>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="declaration.status === 'На рассмотрении'"
+        class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+      >
+        <div class="w-8 h-8 bg-[#3B82F6] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-blue-900">Декларация находится на рассмотрении у эко-оператора</p>
+          <p class="text-xs text-blue-700 mt-1">Обычно рассмотрение занимает 3-5 рабочих дней. Вы получите уведомление о результате.</p>
         </div>
       </div>
 
@@ -259,7 +228,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
 
         <!-- KPI Cards -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <!-- Расчётов за год -->
           <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
@@ -273,7 +241,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             <p class="text-xs text-blue-600 mt-1">за {{ declaration.reportingYear }} год</p>
           </div>
 
-          <!-- Итого начислено -->
           <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-5 border border-orange-200 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
@@ -287,7 +254,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             <p class="text-xs text-orange-600 mt-1">сом</p>
           </div>
 
-          <!-- Итого оплачено -->
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
@@ -301,7 +267,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             <p class="text-xs text-green-600 mt-1">сом</p>
           </div>
 
-          <!-- Сальдо -->
           <div :class="[
             'rounded-2xl p-5 border shadow-sm bg-gradient-to-br',
             declaration.balance >= 0
@@ -457,8 +422,8 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         </template>
       </div>
 
-      <!-- BLOCK 4 - История рассмотрения -->
-      <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-24">
+      <!-- BLOCK 4 - История -->
+      <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">История рассмотрения</h2>
         <div class="space-y-0">
           <div
@@ -466,7 +431,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             :key="entry.id"
             class="flex gap-4"
           >
-            <!-- Timeline line + dot -->
             <div class="flex flex-col items-center">
               <div :class="['w-3 h-3 rounded-full flex-shrink-0 mt-1.5', getHistoryDotClass(entry.action)]"></div>
               <div
@@ -474,7 +438,6 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
                 class="w-0.5 bg-[#e2e8f0] flex-1 min-h-[32px]"
               ></div>
             </div>
-            <!-- Content -->
             <div class="pb-5">
               <p class="text-sm font-medium text-[#1e293b]">{{ entry.action }}</p>
               <p class="text-xs text-[#64748b] mt-0.5">{{ entry.date }} &middot; {{ entry.user }}</p>
@@ -486,186 +449,28 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         </div>
       </div>
 
-      <!-- STICKY ACTION BAR -->
-      <div
-        v-if="declaration.status === 'На рассмотрении'"
-        class="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] shadow-lg z-50"
-      >
-        <div class="max-w-5xl mx-auto px-6 py-4 flex flex-wrap items-center justify-end gap-3">
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#F59E0B] hover:bg-[#D97706] transition-colors"
-            @click="showReturnModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-              Вернуть на доработку
-            </span>
-          </button>
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#EF4444] hover:bg-[#DC2626] transition-colors"
-            @click="showRejectModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Отклонить
-            </span>
-          </button>
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#22C55E] hover:bg-[#16A34A] transition-colors shadow-md"
-            @click="showApproveModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              Одобрить декларацию
-            </span>
-          </button>
-        </div>
+      <!-- Action buttons at bottom -->
+      <div class="flex flex-wrap items-center gap-3 mb-6">
+        <AppButton variant="secondary" @click="router.push('/business/declarations')">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Назад к списку
+        </AppButton>
+        <AppButton v-if="declaration.status === 'Одобрена'" variant="outline" @click="handleDownloadPdf">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Скачать PDF
+        </AppButton>
+        <AppButton v-if="declaration.status === 'Одобрена'" variant="outline" @click="handlePrint">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Печать
+        </AppButton>
       </div>
     </template>
-
-    <!-- MODALS -->
-
-    <!-- Approve Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showApproveModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showApproveModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">Одобрить декларацию {{ declaration.number }}?</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <p class="text-sm text-[#64748b]">Вы уверены, что хотите одобрить декларацию?</p>
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">Комментарий (необязательно)</label>
-              <textarea
-                v-model="approveComment"
-                rows="3"
-                placeholder="Введите комментарий..."
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#22C55E] text-sm resize-none"
-              ></textarea>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showApproveModal = false; approveComment = ''">
-              Отмена
-            </AppButton>
-            <AppButton variant="primary" @click="handleApprove">
-              Подтвердить
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Reject Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showRejectModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showRejectModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">Отклонение декларации</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">Причина отклонения <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="rejectReason"
-                rows="4"
-                placeholder="Укажите причину отклонения..."
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#EF4444] text-sm resize-none"
-              ></textarea>
-              <p v-if="rejectReason.trim().length > 0 && rejectReason.trim().length < 10" class="text-xs text-red-500 mt-1">
-                Минимум 10 символов (введено {{ rejectReason.trim().length }})
-              </p>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showRejectModal = false; rejectReason = ''">
-              Отмена
-            </AppButton>
-            <AppButton variant="danger" :disabled="!isRejectValid" @click="handleReject">
-              Отклонить
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Return Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showReturnModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showReturnModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">Возврат на доработку</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">Комментарий <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="returnComment"
-                rows="4"
-                placeholder="Укажите что нужно исправить..."
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#F59E0B] text-sm resize-none"
-              ></textarea>
-              <p v-if="returnComment.trim().length > 0 && returnComment.trim().length < 10" class="text-xs text-orange-500 mt-1">
-                Минимум 10 символов (введено {{ returnComment.trim().length }})
-              </p>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showReturnModal = false; returnComment = ''">
-              Отмена
-            </AppButton>
-            <button
-              class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
-              :class="isReturnValid ? 'bg-[#F59E0B] hover:bg-[#D97706] cursor-pointer' : 'bg-[#F59E0B]/50 cursor-not-allowed'"
-              :disabled="!isReturnValid"
-              @click="handleReturn"
-            >
-              Вернуть на доработку
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <Transition
-        enter-active-class="transition-all duration-300 ease-out"
-        leave-active-class="transition-all duration-300 ease-in"
-        enter-from-class="opacity-0 translate-y-[-16px]"
-        enter-to-class="opacity-100 translate-y-0"
-        leave-from-class="opacity-100 translate-y-0"
-        leave-to-class="opacity-0 translate-y-[-16px]"
-      >
-        <div
-          v-if="toastVisible"
-          :class="[
-            'fixed top-6 right-6 z-[200] px-5 py-3 rounded-xl shadow-lg text-white text-sm font-semibold',
-            toastType === 'success' ? 'bg-[#22C55E]' : toastType === 'danger' ? 'bg-[#EF4444]' : 'bg-[#F59E0B]'
-          ]"
-        >
-          {{ toastMessage }}
-        </div>
-      </Transition>
-    </Teleport>
 
     <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>

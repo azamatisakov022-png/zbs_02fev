@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -312,9 +313,35 @@ function cancelForm() {
   showForm.value = false
 }
 
+// Confirm dialog state
+const confirmDialog = ref({
+  visible: false,
+  title: '',
+  message: '',
+  icon: 'danger' as 'warning' | 'danger' | 'info' | 'success',
+  confirmText: 'Подтвердить',
+  confirmColor: 'red' as 'green' | 'red' | 'orange',
+  onConfirm: () => {},
+})
+const handleConfirm = () => {
+  confirmDialog.value.visible = false
+  confirmDialog.value.onConfirm()
+}
+const handleCancel = () => {
+  confirmDialog.value.visible = false
+}
+
 function annulLicense(lic: License) {
-  if (confirm(`Аннулировать лицензию ${lic.number}?`)) {
-    lic.status = 'Аннулирована'
+  confirmDialog.value = {
+    visible: true,
+    title: 'Аннулировать лицензию?',
+    message: `Лицензия ${lic.number} будет аннулирована. Это действие необратимо.`,
+    icon: 'danger',
+    confirmText: 'Аннулировать',
+    confirmColor: 'red',
+    onConfirm: () => {
+      lic.status = 'Аннулирована'
+    },
   }
 }
 
@@ -660,6 +687,16 @@ const hoveredContact = ref<number | null>(null)
         </table>
       </div>
     </div>
+    <ConfirmDialog
+      :visible="confirmDialog.visible"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :icon="confirmDialog.icon"
+      :confirmText="confirmDialog.confirmText"
+      :confirmColor="confirmDialog.confirmColor"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </DashboardLayout>
 </template>
 

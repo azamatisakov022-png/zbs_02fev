@@ -20,6 +20,7 @@ import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -50,6 +51,35 @@ const steps = [
 
 // Draft saved notification
 const showDraftNotification = ref(false)
+
+// Confirm dialog state
+const confirmDialog = ref({
+  visible: false,
+  title: '',
+  message: '',
+  icon: 'warning' as 'warning' | 'danger' | 'info' | 'success',
+  confirmText: 'Подтвердить',
+  confirmColor: 'green' as 'green' | 'red' | 'orange',
+  onConfirm: () => {},
+})
+const openConfirm = (opts: Partial<typeof confirmDialog.value> & { onConfirm: () => void }) => {
+  Object.assign(confirmDialog.value, {
+    visible: true,
+    title: opts.title || 'Подтвердите действие',
+    message: opts.message || '',
+    icon: opts.icon || 'warning',
+    confirmText: opts.confirmText || 'Подтвердить',
+    confirmColor: opts.confirmColor || 'green',
+    onConfirm: opts.onConfirm,
+  })
+}
+const handleConfirm = () => {
+  confirmDialog.value.visible = false
+  confirmDialog.value.onConfirm()
+}
+const handleCancel = () => {
+  confirmDialog.value.visible = false
+}
 const showRates = ref(false)
 const showInstruction = ref(false)
 
@@ -591,8 +621,12 @@ const calculations = computed(() => {
     createdAt: c.date,
     status: c.status,
     rejectionReason: c.rejectionReason,
+    rejectedAt: c.rejectedAt,
+    rejectedBy: c.rejectedBy,
     paymentRejectionReason: c.paymentRejectionReason,
     totalAmount: c.totalAmount,
+    parentId: c.parentId,
+    parentNumber: c.parentId ? calculationStore.getCalculationById(c.parentId)?.number : undefined,
   }))
 })
 
@@ -606,6 +640,51 @@ const statusStyles: Record<string, string> = {
   'Оплата отклонена': 'background:#FEE2E2;color:#991B1B',
 }
 const getStatusStyle = (status: string) => statusStyles[status] || 'background:#F3F4F6;color:#6B7280'
+
+// Row class for colored left indicator
+const calcRowClass = (row: Record<string, any>) => {
+  const map: Record<string, string> = {
+    'Оплачено': 'calc-row--paid',
+    'Принято': 'calc-row--accepted',
+    'На проверке': 'calc-row--review',
+    'Черновик': 'calc-row--draft',
+    'Отклонено': 'calc-row--rejected',
+    'Оплата на проверке': 'calc-row--pay-review',
+    'Оплата отклонена': 'calc-row--pay-rejected',
+  }
+  return map[row.status] || ''
+}
+
+// Rejection tooltip
+const tooltipRowId = ref<number | null>(null)
+const tooltipPos = ref({ top: 0, left: 0 })
+let tooltipTimer: ReturnType<typeof setTimeout> | null = null
+
+const showTooltip = (id: number, event: MouseEvent) => {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  const el = event.currentTarget as HTMLElement
+  tooltipTimer = setTimeout(() => {
+    const rect = el.getBoundingClientRect()
+    tooltipPos.value = {
+      top: rect.bottom + 8,
+      left: Math.min(rect.left, window.innerWidth - 420),
+    }
+    tooltipRowId.value = id
+  }, 200)
+}
+const hideTooltip = () => {
+  if (tooltipTimer) clearTimeout(tooltipTimer)
+  tooltipRowId.value = null
+}
+
+// More menu (⋯)
+const openMenuId = ref<number | null>(null)
+const toggleMenu = (id: number) => {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+const closeMenu = () => {
+  openMenuId.value = null
+}
 
 // Save as draft
 const saveDraft = () => {
@@ -638,43 +717,68 @@ const submitForReview = () => {
     scrollToFirstError()
     return
   }
-  if (!confirm('Отправить расчёт на проверку Эко Оператору? После отправки редактирование будет недоступно.')) return
-  const now = new Date()
-  const num = String(Math.floor(Math.random() * 900) + 100)
-  const calcData = {
-    number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
-    date: calculationResult.value.date || now.toLocaleDateString('ru-RU'),
-    company: companyData.name,
-    inn: companyData.inn,
-    address: companyData.address,
-    quarter: calculationQuarter.value,
-    year: calculationYear.value,
-    payerType: payerType.value,
-    importDate: payerType.value === 'importer' ? importDate.value : undefined,
-    items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
-    totalAmount: totalAmount.value,
-  }
-  calculationStore.addCalculation(calcData, 'На проверке')
-  notificationStore.add({
-    type: 'info',
-    title: 'Новый расчёт создан',
-    message: 'Расчёт утилизационного сбора отправлен на проверку.',
-    role: 'eco-operator'
+  openConfirm({
+    icon: 'warning',
+    title: 'Отправить на проверку?',
+    message: 'Расчёт будет отправлен на проверку Эко Оператору. После отправки редактирование будет недоступно.',
+    confirmText: 'Отправить',
+    confirmColor: 'green',
+    onConfirm: () => {
+      const now = new Date()
+      const num = String(Math.floor(Math.random() * 900) + 100)
+      const calcData = {
+        number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
+        date: calculationResult.value.date || now.toLocaleDateString('ru-RU'),
+        company: companyData.name,
+        inn: companyData.inn,
+        address: companyData.address,
+        quarter: calculationQuarter.value,
+        year: calculationYear.value,
+        payerType: payerType.value,
+        importDate: payerType.value === 'importer' ? importDate.value : undefined,
+        items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
+        totalAmount: totalAmount.value,
+      }
+      calculationStore.addCalculation(calcData, 'На проверке')
+      notificationStore.add({
+        type: 'info',
+        title: 'Новый расчёт создан',
+        message: 'Расчёт утилизационного сбора отправлен на проверку.',
+        role: 'eco-operator'
+      })
+      notificationStore.add({
+        type: 'success',
+        title: 'Расчёт отправлен',
+        message: 'Ваш расчёт утилизационного сбора отправлен на проверку.',
+        role: 'business',
+        link: '/business/calculator'
+      })
+      viewMode.value = 'result'
+    },
   })
-  notificationStore.add({
-    type: 'success',
-    title: 'Расчёт отправлен',
-    message: 'Ваш расчёт утилизационного сбора отправлен на проверку.',
-    role: 'business',
-    link: '/business/calculator'
-  })
-  viewMode.value = 'result'
 }
 
 // Resubmit rejected calculation
 const resubmitCalculation = (id: number) => {
-  if (!confirm('Отправить расчёт повторно на проверку?')) return
-  calculationStore.resubmitCalculation(id)
+  openConfirm({
+    icon: 'warning',
+    title: 'Отправить повторно?',
+    message: 'Расчёт будет повторно отправлен на проверку Эко Оператору.',
+    confirmText: 'Отправить',
+    confirmColor: 'green',
+    onConfirm: () => {
+      calculationStore.resubmitCalculation(id)
+    },
+  })
+}
+
+// Copy rejected calculation and open for editing
+const copyAndFixCalculation = (sourceId: number) => {
+  const copy = calculationStore.copyCalculation(sourceId)
+  if (copy) {
+    toastStore.show({ type: 'success', title: 'Создана копия расчёта', message: 'Внесите исправления и отправьте повторно.' })
+    router.push('/business/calculations/' + copy.id)
+  }
 }
 
 // Payment confirmation form
@@ -913,7 +1017,7 @@ const downloadReceipt = () => {
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История расчётов</h2>
       </div>
 
-      <DataTable :columns="columns" :data="calculations" :actions="true">
+      <DataTable :columns="columns" :data="calculations" :actions="true" :rowClass="calcRowClass">
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 11.67h10m0 16.66v-5m-5 5h.017M15 28.33h.017M15 23.33h.017M20 23.33h.017M25 18.33h.017M20 18.33h.017M15 18.33h.017M11.67 35h16.66A3.33 3.33 0 0031.67 31.67V8.33A3.33 3.33 0 0028.33 5H11.67A3.33 3.33 0 008.33 8.33v23.34A3.33 3.33 0 0011.67 35z&quot;/></svg>'"
@@ -923,133 +1027,165 @@ const downloadReceipt = () => {
             @action="startWizard()"
           />
         </template>
-        <template #cell-number="{ value }">
+        <template #cell-number="{ value, row }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+          <div v-if="row.parentNumber" class="text-[11px] text-amber-600 mt-0.5">Повторно (на основе {{ row.parentNumber }})</div>
         </template>
         <template #cell-amount="{ value }">
           <span class="font-semibold text-[#1e293b]">{{ value }}</span>
         </template>
-        <template #cell-status="{ value }">
+        <template #cell-status="{ value, row }">
+          <!-- Отклонено: badge + warning icon + tooltip on hover -->
+          <div
+            v-if="value === 'Отклонено'"
+            class="status-badge-wrap"
+            @mouseenter="showTooltip(row.id, $event)"
+            @mouseleave="hideTooltip()"
+          >
+            <span
+              :style="getStatusStyle(value)"
+              style="display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap;cursor:default"
+            >
+              {{ value }}
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            <!-- Tooltip -->
+            <div
+              v-if="tooltipRowId === row.id"
+              class="status-tooltip"
+              :style="{ top: tooltipPos.top + 'px', left: tooltipPos.left + 'px' }"
+            >
+              <div class="status-tooltip__arrow"></div>
+              <div class="status-tooltip__title">Причина отклонения</div>
+              <div class="status-tooltip__text">{{ row.rejectionReason }}</div>
+              <div v-if="row.rejectedBy || row.rejectedAt" class="status-tooltip__meta">
+                <template v-if="row.rejectedBy">{{ row.rejectedBy }}</template>
+                <template v-if="row.rejectedBy && row.rejectedAt"> &middot; </template>
+                <template v-if="row.rejectedAt">{{ row.rejectedAt }}</template>
+              </div>
+            </div>
+          </div>
+          <!-- Оплачено: checkmark badge -->
           <span
+            v-else-if="value === 'Оплачено'"
+            :style="getStatusStyle(value)"
+            style="display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
+          >
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            {{ value }}
+          </span>
+          <!-- All other statuses: simple badge -->
+          <span
+            v-else
             :style="getStatusStyle(value)"
             style="display:inline-block;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
           >{{ value }}</span>
         </template>
         <template #actions="{ row }">
           <div class="act-wrap">
-            <!-- Черновик -->
+            <!-- Черновик: [Отправить (filled green)] [Редактировать (outline)] [⋯ → Удалить] -->
             <template v-if="row.status === 'Черновик'">
-              <button @click="calculationStore.submitForReview(row.id)" class="act-pill act-pill--amber">
+              <button @click="calculationStore.submitForReview(row.id)" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                Отправить на проверку
+                Отправить
               </button>
-              <button @click="mockAction('Редактирование расчёта ' + row.number)" class="act-pill act-pill--blue">
+              <router-link :to="'/business/calculations/' + row.id + '?edit=true'" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 Редактировать
-              </button>
-              <button @click="mockAction('Удаление расчёта ' + row.number)" class="act-pill act-pill--red">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                Удалить
-              </button>
+              </router-link>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item act-dropdown__item--red" @click="mockAction('Удаление расчёта ' + row.number); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Удалить
+                  </button>
+                </div>
+              </div>
             </template>
-            <!-- На проверке -->
+            <!-- На проверке: [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'На проверке'">
-              <span class="act-pill act-pill--amber act-pill--badge">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                На проверке ГП Эко Оператора
-              </span>
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
             </template>
-            <!-- Принято -->
+            <!-- Принято: [Оплатить (filled green)] [Просмотреть (outline)] [⋯ → PDF, Excel] -->
             <template v-else-if="row.status === 'Принято'">
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
-              </router-link>
-              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-pill act-pill--green">
+              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
               </button>
-              <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="act-pill act-pill--purple">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Скачать PDF
-              </button>
-              <button @click="downloadExcel(row.id)" class="act-pill act-pill--teal">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Excel
-              </button>
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item" @click="mockAction('Скачивание PDF расчёта ' + row.number); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Скачать PDF
+                  </button>
+                  <button class="act-dropdown__item" @click="downloadExcel(row.id); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Скачать Excel
+                  </button>
+                </div>
+              </div>
             </template>
-            <!-- Оплачено -->
+            <!-- Оплачено: [Просмотреть (outline)] [⋯ → PDF, Excel] -->
             <template v-else-if="row.status === 'Оплачено'">
-              <span class="act-pill act-pill--teal act-pill--badge">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                Оплачено
-              </span>
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
-              <button @click="mockAction('Скачивание PDF расчёта ' + row.number)" class="act-pill act-pill--purple">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Скачать PDF
-              </button>
-              <button @click="downloadExcel(row.id)" class="act-pill act-pill--teal">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Excel
-              </button>
-              <button @click="mockAction('Создание декларации по расчёту ' + row.number)" class="act-pill act-pill--amber">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Создать декларацию
-              </button>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item" @click="mockAction('Скачивание PDF расчёта ' + row.number); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Скачать PDF
+                  </button>
+                  <button class="act-dropdown__item" @click="downloadExcel(row.id); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Скачать Excel
+                  </button>
+                </div>
+              </div>
             </template>
-            <!-- Отклонено -->
+            <!-- Отклонено: [Исправить (filled orange)] [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'Отклонено'">
-              <button @click="mockAction('Создание копии расчёта для исправления')" class="act-pill act-pill--red">
+              <router-link :to="'/business/calculations/' + row.id + '?edit=true'" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Исправить и отправить
-              </button>
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+                Исправить
+              </router-link>
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
-              <div
-                v-if="row.rejectionReason"
-                class="act-reason"
-                :title="row.rejectionReason"
-              >Причина: {{ row.rejectionReason }}</div>
             </template>
-            <!-- Оплата на проверке -->
+            <!-- Оплата на проверке: [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'Оплата на проверке'">
-              <span class="act-pill act-pill--amber act-pill--badge">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Оплата на проверке
-              </span>
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
             </template>
-            <!-- Оплата отклонена -->
+            <!-- Оплата отклонена: [Подтвердить оплату (filled orange)] [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'Оплата отклонена'">
-              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-pill act-pill--amber">
+              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 Подтвердить оплату
               </button>
-              <router-link :to="'/business/calculations/' + row.id" class="act-pill act-pill--blue">
+              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
-              <div
-                v-if="row.paymentRejectionReason"
-                class="act-reason"
-                :title="row.paymentRejectionReason"
-              >Причина: {{ row.paymentRejectionReason }}</div>
             </template>
           </div>
         </template>
+
       </DataTable>
 
       <!-- Rates Info (collapsible) -->
@@ -1843,8 +1979,8 @@ const downloadReceipt = () => {
     <!-- RESULT VIEW (After Submit) -->
     <template v-else-if="viewMode === 'result'">
       <div class="max-w-2xl mx-auto text-center py-12">
-        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-amber-100 flex items-center justify-center">
-          <svg class="w-12 h-12 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
+          <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -1858,59 +1994,30 @@ const downloadReceipt = () => {
               <p class="text-lg font-bold text-[#f59e0b] font-mono">{{ calculationResult.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Сумма к оплате</p>
+              <p class="text-sm text-[#64748b] mb-1">Сумма</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ formattedTotalAmount }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Срок оплаты</p>
-              <p class="text-lg font-bold" :style="{ color: deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? '#DC2626' : '#f59e0b' }">
-                {{ calculationResult.dueDate }}
-              </p>
-              <p v-if="deadlineStatus" class="text-xs mt-0.5" :style="{ color: deadlineStatus.overdue ? '#DC2626' : '#94a3b8' }">
-                <template v-if="deadlineStatus.overdue">Просрочено на {{ deadlineStatus.days }} дн.!</template>
-                <template v-else>Осталось {{ deadlineStatus.days }} дн.</template>
-              </p>
+              <p class="text-sm text-[#64748b] mb-1">Дата отправки</p>
+              <p class="text-lg font-bold text-[#1e293b]">{{ calculationResult.date }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Payment requisites block -->
+        <!-- What's next info block -->
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 text-left">
-          <h3 class="font-semibold text-[#1e293b] mb-3">Реквизиты для банковского перевода</h3>
-          <div class="text-sm text-[#64748b] space-y-1">
-            <p><span class="font-medium text-[#1e293b]">Получатель:</span> Государственный экологический фонд КР</p>
-            <p><span class="font-medium text-[#1e293b]">ИНН:</span> 00000000000000</p>
-            <p><span class="font-medium text-[#1e293b]">Расчётный счёт:</span> 1234567890123456</p>
-            <p><span class="font-medium text-[#1e293b]">Банк:</span> Национальный банк КР (НБКР)</p>
-            <p><span class="font-medium text-[#1e293b]">Назначение платежа:</span> Утилизационный сбор по расчёту {{ calculationResult.number }}</p>
-          </div>
+          <h3 class="font-semibold text-[#1e293b] mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Что дальше?
+          </h3>
+          <ol class="text-sm text-[#475569] space-y-2 list-decimal list-inside">
+            <li>Эко Оператор проверит ваш расчёт в течение 3 рабочих дней</li>
+            <li>Вы получите уведомление о результате проверки</li>
+            <li>После принятия расчёта вам будет доступен счёт на оплату</li>
+          </ol>
         </div>
 
-        <p class="text-[#64748b] mb-8">
-          Расчёт утилизационного сбора отправлен на проверку Эко Оператору.<br/>
-          После принятия расчёта произведите оплату по указанным реквизитам и загрузите подтверждение.
-        </p>
-
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button
-            @click="downloadReceipt"
-            class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Скачать квитанцию
-          </button>
-          <button
-            disabled
-            class="flex items-center justify-center gap-2 px-6 py-3 bg-[#10b981] text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Доступно после принятия расчёта"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Подтвердить оплату
-          </button>
+        <div class="flex justify-center">
           <button
             @click="backToList"
             class="flex items-center justify-center gap-2 px-6 py-3 bg-[#f59e0b] text-white rounded-xl font-medium hover:bg-[#d97706] transition-colors"
@@ -2062,6 +2169,16 @@ const downloadReceipt = () => {
       </div>
     </template>
     <InstructionDrawer v-model="showInstruction" title="Инструкция — Расчёт утильсбора" :contentHtml="instructionCalculationHtml" />
+    <ConfirmDialog
+      :visible="confirmDialog.visible"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :icon="confirmDialog.icon"
+      :confirmText="confirmDialog.confirmText"
+      :confirmColor="confirmDialog.confirmColor"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </DashboardLayout>
 </template>
 
@@ -2231,51 +2348,191 @@ const downloadReceipt = () => {
   color: white;
 }
 
-/* ── Unified action pill buttons ── */
+/* ── Action buttons ── */
 .act-wrap {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
+  align-items: center;
   flex-wrap: wrap;
 }
-.act-pill {
+.act-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
   font-size: 12px;
   font-weight: 500;
-  color: white;
-  border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
-.act-pill--badge {
-  cursor: default;
+.act-btn--filled {
+  color: white;
+  border: none;
 }
-.act-pill--blue { background: #3B82F6; }
-.act-pill--blue:hover { background: #2563EB; box-shadow: 0 3px 10px rgba(59,130,246,0.3); }
-.act-pill--green { background: #22C55E; }
-.act-pill--green:hover { background: #16A34A; box-shadow: 0 3px 10px rgba(34,197,94,0.3); }
-.act-pill--purple { background: #8B5CF6; }
-.act-pill--purple:hover { background: #7C3AED; box-shadow: 0 3px 10px rgba(139,92,246,0.3); }
-.act-pill--amber { background: #F59E0B; }
-.act-pill--amber:hover { background: #D97706; box-shadow: 0 3px 10px rgba(245,158,11,0.3); }
-.act-pill--teal { background: #059669; }
-.act-pill--teal:hover { background: #047857; box-shadow: 0 3px 10px rgba(5,150,105,0.3); }
-.act-pill--red { background: #EF4444; }
-.act-pill--red:hover { background: #DC2626; box-shadow: 0 3px 10px rgba(239,68,68,0.3); }
-.act-pill--badge:hover { filter: none; box-shadow: none; }
-.act-reason {
-  font-size: 11px;
-  color: #DC2626;
-  max-width: 220px;
+.act-btn--green { background: #22c55e; }
+.act-btn--green:hover { background: #16a34a; box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
+.act-btn--orange { background: #f59e0b; }
+.act-btn--orange:hover { background: #d97706; box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+.act-btn--outline {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.act-btn--outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+/* More menu (⋯) */
+.act-more-wrap {
+  position: relative;
+}
+.act-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.15s;
+}
+.act-more:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+.act-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+  min-width: 170px;
+  padding: 4px;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+.act-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #374151;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
   white-space: nowrap;
+}
+.act-dropdown__item:hover {
+  background: #f3f4f6;
+}
+.act-dropdown__item--red {
+  color: #dc2626;
+}
+.act-dropdown__item--red:hover {
+  background: #fef2f2;
+}
+
+/* ── Status row left-border indicators ── */
+:deep(.calc-row--paid td:first-child) {
+  box-shadow: inset 4px 0 0 #22c55e;
+}
+:deep(.calc-row--accepted td:first-child) {
+  box-shadow: inset 4px 0 0 #3b82f6;
+}
+:deep(.calc-row--review td:first-child) {
+  box-shadow: inset 4px 0 0 #f59e0b;
+}
+:deep(.calc-row--draft td:first-child) {
+  box-shadow: inset 4px 0 0 #d1d5db;
+}
+:deep(.calc-row--rejected td:first-child) {
+  box-shadow: inset 4px 0 0 #ef4444;
+}
+:deep(.calc-row--rejected) {
+  background: #fffbeb !important;
+}
+:deep(.calc-row--rejected.table-row:hover) {
+  background: #fef9c3 !important;
+}
+:deep(.calc-row--pay-review td:first-child) {
+  box-shadow: inset 4px 0 0 #f97316;
+}
+:deep(.calc-row--pay-rejected td:first-child) {
+  box-shadow: inset 4px 0 0 #ef4444;
+}
+
+/* ── Rejection tooltip ── */
+.status-badge-wrap {
+  position: relative;
+  display: inline-block;
+}
+.status-tooltip {
+  position: fixed;
+  z-index: 9999;
+  background: white;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  max-width: 320px;
+  min-width: 240px;
+  padding: 12px 16px;
+}
+.status-tooltip__arrow {
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #fecaca;
+}
+.status-tooltip__arrow::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: -5px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid white;
+}
+.status-tooltip__title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #991b1b;
+  margin-bottom: 4px;
+}
+.status-tooltip__text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.status-tooltip__meta {
+  font-size: 11px;
+  color: #9ca3af;
 }
 
 /* ── Card-form ── */

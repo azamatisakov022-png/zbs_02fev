@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { toastStore } from '../../stores/toast'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+// Document preview
+const previewDoc = ref<PreviewDocument | null>(null)
 
 // Tab state
 const activeTab = ref<'licenses' | 'documents'>('licenses')
@@ -445,14 +449,14 @@ const submitUpload = () => {
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
-                  <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Просмотр документа', message: '«' + doc.name + '»' })">
+                  <AppButton variant="ghost" size="sm" @click="previewDoc = { name: doc.name, type: doc.type, size: doc.fileSize, date: formatDate(doc.uploadDate), status: getStatusText(doc.status) }">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
                     {{ $t('common.view') }}
                   </AppButton>
-                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: '«' + doc.name + '»' })">
+                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
@@ -622,5 +626,7 @@ const submitUpload = () => {
         </div>
       </div>
     </Teleport>
+
+    <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>
 </template>
