@@ -10,15 +10,26 @@ import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
 import { recyclerStore } from '../stores/recyclers'
+import { landfillStore } from '../stores/landfills'
+import { collectionPointStore } from '../stores/collectionPoints'
+import { dumpStore } from '../stores/dumps'
 import { productGroups } from '../data/product-groups'
-import {
-  landfillsData,
-  receptionPointsData,
-  dumpsData,
-  recyclerCoords,
-  gisRegions,
-} from '../data/gis-map-data'
-import type { LandfillData, ReceptionPointData, DumpData } from '../data/gis-map-data'
+
+const recyclerCoords: Record<string, { lat: number; lng: number; region: string }> = {
+  'ОсОО «ЭкоРесайкл»': { lat: 42.8746, lng: 74.5698, region: 'Бишкек' },
+  'ОсОО «ГринТек»': { lat: 42.8432, lng: 74.6123, region: 'Бишкек' },
+  'ОсОО «ПластПром»': { lat: 42.8612, lng: 75.0890, region: 'Чуйская' },
+  'ОсОО «МеталлРесайкл»': { lat: 42.8923, lng: 74.5234, region: 'Бишкек' },
+  'ОсОО «СтеклоПром»': { lat: 42.8412, lng: 75.2856, region: 'Чуйская' },
+  'ОсОО «АвтоУтиль»': { lat: 42.8345, lng: 74.5567, region: 'Бишкек' },
+  'ОсОО «ТекстильРесайкл»': { lat: 40.5283, lng: 72.7985, region: 'Ошская' },
+  'ОсОО «СтройПереработка»': { lat: 42.8234, lng: 74.6345, region: 'Бишкек' },
+}
+
+const gisRegions = [
+  'Бишкек', 'Чуйская', 'Ошская', 'Джалал-Абадская',
+  'Иссык-Кульская', 'Нарынская', 'Таласская', 'Баткенская',
+]
 
 // ════════════════════════════════════════════════════════════════════
 // Types & Interfaces
@@ -182,7 +193,7 @@ const allMapPoints = computed<MapPoint[]>(() => {
     capacity: r.capacity,
   }))
 
-  const recPoints: MapPoint[] = receptionPointsData.map(p => ({
+  const recPoints: MapPoint[] = collectionPointStore.getForGisMap().map(p => ({
     id: p.id,
     type: 'reception' as LayerType,
     name: p.name,
@@ -197,23 +208,22 @@ const allMapPoints = computed<MapPoint[]>(() => {
     operator: p.operator,
   }))
 
-  const landfillPoints: MapPoint[] = landfillsData.map(l => ({
+  const landfillPoints: MapPoint[] = landfillStore.getForGisMap().map(l => ({
     id: l.id,
     type: 'landfills' as LayerType,
     name: l.name,
     lat: l.lat,
     lng: l.lng,
     address: l.address,
-    phone: l.phone,
+    phone: l.phone || '',
     status: l.status,
     region: l.region,
     landfillType: l.landfillType,
     area: l.area,
-    capacity: l.capacity,
     fillLevel: l.fillLevel,
   }))
 
-  const dumpPoints: MapPoint[] = dumpsData.map(d => ({
+  const dumpPoints: MapPoint[] = dumpStore.state.dumps.map(d => ({
     id: d.id,
     type: 'dumps' as LayerType,
     name: d.name,
@@ -223,7 +233,7 @@ const allMapPoints = computed<MapPoint[]>(() => {
     phone: '',
     status: d.dumpStatus,
     region: d.region,
-    area: d.area,
+    area: d.area + ' га',
     discoveryDate: d.discoveryDate,
     dumpStatus: d.dumpStatus,
     notes: d.notes,
@@ -280,11 +290,11 @@ const countByType = computed(() => {
 })
 
 const totalCountByType = computed(() => ({
-  landfills: landfillsData.length,
+  landfills: landfillStore.state.landfills.length,
   recyclers: recyclerTableData.value.length,
-  reception: receptionPointsData.length,
-  dumps: dumpsData.length,
-  total: landfillsData.length + recyclerTableData.value.length + receptionPointsData.length + dumpsData.length,
+  reception: collectionPointStore.state.points.length,
+  dumps: dumpStore.state.dumps.length,
+  total: landfillStore.state.landfills.length + recyclerTableData.value.length + collectionPointStore.state.points.length + dumpStore.state.dumps.length,
 }))
 
 // ════════════════════════════════════════════════════════════════════
@@ -345,7 +355,7 @@ const displayItems = computed<DisplayItem[]>(() => {
 // ════════════════════════════════════════════════════════════════════
 
 const filteredLandfills = computed(() => {
-  let result = [...landfillsData]
+  let result = landfillStore.getForGisMap()
 
   // Apply global region filter
   if (regionFilter.value) {
@@ -379,7 +389,7 @@ const filteredRecyclers = computed(() => {
 })
 
 const filteredReceptionPoints = computed(() => {
-  let result = [...receptionPointsData]
+  let result = collectionPointStore.getForGisMap()
 
   // Apply global region filter
   if (regionFilter.value) {
@@ -394,7 +404,7 @@ const filteredReceptionPoints = computed(() => {
 })
 
 const filteredDumps = computed(() => {
-  let result = [...dumpsData]
+  let result = [...dumpStore.state.dumps]
 
   // Apply global region filter
   if (regionFilter.value) {
@@ -1475,7 +1485,7 @@ const hasActiveFilters = computed(() => {
                     highlightedPointId === dump.id ? getRowHighlightClass('dumps') : getRowHoverClass('dumps')]"
                 >
                   <td class="py-3 px-4 font-medium text-[#415861] min-w-[200px] leading-snug">{{ dump.name }}</td>
-                  <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.area }}</td>
+                  <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.area }} га</td>
                   <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.discoveryDate }}</td>
                   <td class="py-3 px-4">
                     <span :class="['px-2.5 py-1 rounded-full text-[12px] font-medium whitespace-nowrap', getDumpStatusInfo(dump.dumpStatus).color]">
