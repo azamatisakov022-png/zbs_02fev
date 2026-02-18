@@ -471,6 +471,13 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Аналитика' },
   },
   {
+    path: '/ministry/collection-points',
+    name: 'ministry-collection-points',
+    component: () => import('../views/ministry/MinistryCollectionPoints.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'Пункты приёма' },
+  },
+
+  {
     path: '/ministry/payers',
     name: 'ministry-payers',
     component: () => import('../views/ministry/MinistryPayers.vue'),

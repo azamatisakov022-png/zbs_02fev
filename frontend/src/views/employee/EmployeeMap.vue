@@ -4,6 +4,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { useI18n } from 'vue-i18n'
 import { toastStore } from '../../stores/toast'
@@ -50,6 +51,23 @@ const showDeleteConfirm = ref(false)
 const showNotification = ref(false)
 const notificationMessage = ref('')
 const isCreating = ref(false)
+
+const showCoordPicker = ref(false)
+const pickerCoords = ref<{ lat: number; lng: number } | null>(null)
+const activeFormForPicker = ref<any>(null)
+
+const openCoordPicker = (form: any) => {
+  activeFormForPicker.value = form
+  pickerCoords.value = (form.gpsLat && form.gpsLng) ? { lat: parseFloat(form.gpsLat), lng: parseFloat(form.gpsLng) } : null
+  showCoordPicker.value = true
+}
+
+const onPickerConfirm = (coords: { lat: number; lng: number }) => {
+  if (activeFormForPicker.value) {
+    activeFormForPicker.value.gpsLat = String(coords.lat)
+    activeFormForPicker.value.gpsLng = String(coords.lng)
+  }
+}
 
 const registries = [
   { id: 'landfills' as LayerType, name: 'Полигоны ТБО', icon: '🟢', color: '#22c55e' },
@@ -183,6 +201,32 @@ const dumps = ref<Dump[]>([
 
 const selectedDump = ref<Dump | null>(null)
 const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' })
+
+const dumpPhotos = ref<Array<{ name: string; data: string; size: string }>>([])
+
+const handleDumpPhotoUpload = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  const files = Array.from(input.files)
+  for (const file of files) {
+    if (dumpPhotos.value.length >= 5) break
+    const reader = new FileReader()
+    reader.onload = () => {
+      const sizeKB = Math.round(file.size / 1024)
+      dumpPhotos.value.push({
+        name: file.name,
+        data: reader.result as string,
+        size: sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' МБ' : sizeKB + ' КБ',
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+  input.value = ''
+}
+
+const removeDumpPhoto = (index: number) => {
+  dumpPhotos.value.splice(index, 1)
+}
 
 const filteredDumps = computed(() => {
   if (!registrySearchQuery.value) return dumps.value
@@ -951,6 +995,7 @@ const countByType = computed(() => ({
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="landfillForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="landfillForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="landfillForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(landfillForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Организация</label><input v-model="landfillForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Виды отходов</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(landfillForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', landfillForm.wasteTypes.includes(wt) ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Примечания</label><textarea v-model="landfillForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
@@ -965,6 +1010,7 @@ const countByType = computed(() => ({
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="receptionForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="receptionForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="receptionForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(receptionForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Режим работы</label><input v-model="receptionForm.workingHours" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="09:00-18:00" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="receptionForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Работает</option><option>Временно закрыт</option><option>Закрыт</option></select></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="receptionForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
@@ -982,6 +1028,7 @@ const countByType = computed(() => ({
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="recyclerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="recyclerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="recyclerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(recyclerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Директор</label><input v-model="recyclerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Контактное лицо</label><input v-model="recyclerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="recyclerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
@@ -1002,6 +1049,7 @@ const countByType = computed(() => ({
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="producerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="producerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="producerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(producerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Директор</label><input v-model="producerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Контактное лицо</label><input v-model="producerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="producerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
@@ -1010,6 +1058,51 @@ const countByType = computed(() => ({
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Годовой объём (т)</label><input v-model.number="producerForm.annualVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="producerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Активен</option><option>На проверке</option><option>Приостановлен</option></select></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Типы упаковки</label><div class="flex flex-wrap gap-2"><button v-for="pt in ['ПЭТ-бутылки', 'Стеклянные бутылки', 'Алюминиевые банки', 'Тетрапак', 'Пластиковые контейнеры', 'Пластиковые стаканы', 'Картонная упаковка']" :key="pt" @click="toggleWasteType(producerForm, pt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', producerForm.packagingTypes.includes(pt) ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ pt }}</button></div></div>
+              </div>
+            </template>
+            <!-- Dump form -->
+            <template v-if="activeRegistry === 'dumps'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Название *</label><input v-model="dumpForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="dumpForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="dumpForm.dumpStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Обнаружена</option><option>Ликвидируется</option><option>Ликвидирована</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес / Местоположение</label><input v-model="dumpForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="dumpForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="dumpForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(dumpForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Площадь (га)</label><input v-model.number="dumpForm.area" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Дата обнаружения</label><input v-model="dumpForm.discoveryDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Примечания</label><textarea v-model="dumpForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
+                <!-- Photo upload -->
+                <div class="col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Фотографии (макс. 5)</label>
+                  <div class="flex flex-wrap gap-3 mb-3">
+                    <div v-for="(photo, idx) in dumpPhotos" :key="idx" class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
+                      <img :src="photo.data" :alt="photo.name" class="w-full h-full object-cover" />
+                      <button @click="removeDumpPhoto(idx)" class="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                      <p class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5 truncate">{{ photo.size }}</p>
+                    </div>
+                    <label v-if="dumpPhotos.length < 5" class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition-colors">
+                      <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                      <span class="text-[10px] text-gray-400 mt-0.5">Фото</span>
+                      <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" @change="handleDumpPhotoUpload" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <!-- Payer form -->
+            <template v-if="activeRegistry === 'payers'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Наименование *</label><input v-model="payerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label><input v-model="payerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="payerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="payerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="payerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="payerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(payerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="payerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">Категория</label><input v-model="payerForm.category" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
               </div>
             </template>
           </div>
@@ -1045,6 +1138,12 @@ const countByType = computed(() => ({
         <span class="font-medium">{{ notificationMessage }}</span>
       </div>
     </Teleport>
+    <MapCoordinatePicker
+      :visible="showCoordPicker"
+      :modelValue="pickerCoords"
+      @update:visible="showCoordPicker = $event"
+      @update:modelValue="onPickerConfirm"
+    />
   </DashboardLayout>
 </template>
 

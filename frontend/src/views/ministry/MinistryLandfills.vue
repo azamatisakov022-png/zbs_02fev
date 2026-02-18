@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import {
   landfillStore,
@@ -23,6 +24,13 @@ const { roleTitle, menuItems } = useEmployeeMenu()
 // ==================== VIEW STATE ====================
 const viewMode = ref<'list' | 'map'>('list')
 const showAddModal = ref(false)
+const showCoordPicker = ref(false)
+const pickerCoords = ref<{ lat: number; lng: number } | null>(null)
+
+const onPickerConfirm = (coords: { lat: number; lng: number }) => {
+  newLandfill.value.lat = coords.lat
+  newLandfill.value.lng = coords.lng
+}
 
 // ==================== FILTERS ====================
 const searchQuery = ref('')
@@ -780,8 +788,8 @@ const resetAllFilters = () => {
             <!-- Coordinates -->
             <div>
               <label class="block text-sm font-medium text-[#1e293b] mb-1">Координаты</label>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
+              <div class="flex items-end gap-3">
+                <div class="flex-1">
                   <input
                     v-model.number="newLandfill.lat"
                     type="number"
@@ -790,7 +798,7 @@ const resetAllFilters = () => {
                     class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                   />
                 </div>
-                <div>
+                <div class="flex-1">
                   <input
                     v-model.number="newLandfill.lng"
                     type="number"
@@ -799,6 +807,14 @@ const resetAllFilters = () => {
                     class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                   />
                 </div>
+                <button
+                  type="button"
+                  @click="pickerCoords = (newLandfill.lat && newLandfill.lng) ? { lat: newLandfill.lat, lng: newLandfill.lng } : null; showCoordPicker = true"
+                  class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  На карте
+                </button>
               </div>
             </div>
           </div>
@@ -827,6 +843,12 @@ const resetAllFilters = () => {
         </div>
       </div>
     </Teleport>
+    <MapCoordinatePicker
+      :visible="showCoordPicker"
+      :modelValue="pickerCoords"
+      @update:visible="showCoordPicker = $event"
+      @update:modelValue="onPickerConfirm"
+    />
   </DashboardLayout>
 </template>
 

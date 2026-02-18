@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
+import { UTILIZATION_RATES_2025 } from '../../data/rates'
 
 const { roleTitle, menuItems } = useAdminMenu()
 
@@ -141,15 +142,16 @@ const wasteData = ref<Record<string, any>[]>([
   { id: 10, code: '05.02.01', name: 'Отходы текстильные (ткани)', hazardClass: 4, unit: 'кг' },
 ])
 
+// Ставки из единого источника data/rates.ts (ПКМ КР №730, сом/т)
 const productsData = ref<Record<string, any>[]>([
-  { id: 1, code: 'ГТ-001', name: 'Пластиковая тара и упаковка', rate: 480 },
-  { id: 2, code: 'ГТ-002', name: 'Стеклянная тара', rate: 320 },
-  { id: 3, code: 'ГТ-003', name: 'Бумажная и картонная упаковка', rate: 250 },
-  { id: 4, code: 'ГТ-004', name: 'Металлическая тара (алюминий)', rate: 550 },
-  { id: 5, code: 'ГТ-005', name: 'Электронное оборудование', rate: 1200 },
-  { id: 6, code: 'ГТ-006', name: 'Аккумуляторы и батареи', rate: 1800 },
-  { id: 7, code: 'ГТ-007', name: 'Автомобильные шины', rate: 950 },
-  { id: 8, code: 'ГТ-008', name: 'Текстильная продукция', rate: 380 },
+  { id: 1, code: 'ГТ-001', name: 'Изделия пластмассовые упаковочные', rate: UTILIZATION_RATES_2025[6] },
+  { id: 2, code: 'ГТ-002', name: 'Стекло полое', rate: UTILIZATION_RATES_2025[8] },
+  { id: 3, code: 'ГТ-003', name: 'Изделия из гофрированной бумаги/картона', rate: UTILIZATION_RATES_2025[1] },
+  { id: 4, code: 'ГТ-004', name: 'Аккумуляторы свинцовые', rate: UTILIZATION_RATES_2025[12] },
+  { id: 5, code: 'ГТ-005', name: 'Компьютеры и периферийное оборудование', rate: UTILIZATION_RATES_2025[9] },
+  { id: 6, code: 'ГТ-006', name: 'Батареи аккумуляторные', rate: UTILIZATION_RATES_2025[13] },
+  { id: 7, code: 'ГТ-007', name: 'Шины, покрышки и камеры резиновые', rate: UTILIZATION_RATES_2025[4] },
+  { id: 8, code: 'ГТ-008', name: 'Техника бытовая мелкая, инструмент ручной', rate: UTILIZATION_RATES_2025[16] },
 ])
 
 const regionsData = ref<Record<string, any>[]>([

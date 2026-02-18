@@ -6,6 +6,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { landfillStore, type Landfill } from '../../stores/landfills'
 import BarChart from '../../components/charts/BarChart.vue'
+import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
+import { toastStore } from '../../stores/toast'
 
 // Map imports
 import 'leaflet/dist/leaflet.css'
@@ -20,6 +22,59 @@ const { roleTitle, menuItems } = useEmployeeMenu()
 // --- Data ---
 const landfillId = computed(() => Number(route.params.id))
 const landfill = computed(() => landfillStore.getLandfillById(landfillId.value))
+
+// --- Edit mode ---
+const isEditing = ref(false)
+const editData = ref({
+  name: '',
+  type: '' as string,
+  status: '' as string,
+  region: '',
+  district: '',
+  operator: '',
+  designCapacity: 0,
+  currentVolume: 0,
+  lat: 0,
+  lng: 0,
+  expiryYear: 0,
+})
+
+const showCoordPicker = ref(false)
+const pickerCoords = ref<{ lat: number; lng: number } | null>(null)
+
+const startEditing = () => {
+  if (!landfill.value) return
+  editData.value = {
+    name: landfill.value.name,
+    type: landfill.value.type,
+    status: landfill.value.status,
+    region: landfill.value.region,
+    district: landfill.value.district,
+    operator: landfill.value.operator,
+    designCapacity: landfill.value.designCapacity,
+    currentVolume: landfill.value.currentVolume,
+    lat: landfill.value.lat,
+    lng: landfill.value.lng,
+    expiryYear: landfill.value.expiryYear,
+  }
+  isEditing.value = true
+}
+
+const cancelEditing = () => {
+  isEditing.value = false
+}
+
+const saveEditing = () => {
+  if (!landfill.value) return
+  landfillStore.updateLandfill(landfill.value.id, { ...editData.value })
+  isEditing.value = false
+  toastStore.show({ type: 'success', title: 'Сохранено', message: 'Данные полигона обновлены' })
+}
+
+const onPickerConfirm = (coords: { lat: number; lng: number }) => {
+  editData.value.lat = coords.lat
+  editData.value.lng = coords.lng
+}
 
 // --- Type / Status labels & styles ---
 const typeLabels: Record<string, string> = {
@@ -228,6 +283,16 @@ const coordsText = computed(() => {
         </button>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{ landfill.name }}</h1>
+          <button
+            v-if="!isEditing"
+            @click="startEditing"
+            class="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Редактировать
+          </button>
           <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', typeBadgeClass]">
             {{ typeLabels[landfill.type] || landfill.type }}
           </span>
@@ -240,7 +305,75 @@ const coordsText = computed(() => {
       <!-- ==================== BLOCK 1: General Info ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Общая информация</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+        <!-- Edit mode -->
+        <div v-if="isEditing" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+              <input v-model="editData.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Тип объекта</label>
+              <select v-model="editData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
+                <option value="sanitary">Санитарный полигон</option>
+                <option value="unauthorized">Несанкционированная свалка</option>
+                <option value="sorting">Мусоросортировочная станция</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+              <select v-model="editData.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
+                <option value="active">Действующий</option>
+                <option value="closed">Закрыт</option>
+                <option value="recultivation">Рекультивация</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Оператор</label>
+              <input v-model="editData.operator" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <input v-model="editData.region" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Район</label>
+              <input v-model="editData.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Проектная ёмкость (тыс. т)</label>
+              <input v-model.number="editData.designCapacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Текущий объём (тыс. т)</label>
+              <input v-model.number="editData.currentVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Срок эксплуатации до (год)</label>
+              <input v-model.number="editData.expiryYear" type="number" min="2024" max="2100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+            </div>
+          </div>
+          <!-- Coordinates with map picker -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Координаты</label>
+            <div class="flex items-center gap-3">
+              <input v-model.number="editData.lat" type="number" step="0.0001" placeholder="Широта" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <input v-model.number="editData.lng" type="number" step="0.0001" placeholder="Долгота" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <button type="button" @click="pickerCoords = { lat: editData.lat, lng: editData.lng }; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-teal-700 border border-teal-300 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-2 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                На карте
+              </button>
+            </div>
+          </div>
+          <!-- Save / Cancel -->
+          <div class="flex items-center gap-3 pt-4 border-t border-gray-200">
+            <button @click="saveEditing" class="px-5 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">Сохранить</button>
+            <button @click="cancelEditing" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Отмена</button>
+          </div>
+        </div>
+
+        <!-- View mode (existing content) -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           <div class="flex justify-between py-2 border-b border-gray-100">
             <span class="text-sm text-gray-500">Название</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.name }}</span>
@@ -574,6 +707,12 @@ const coordsText = computed(() => {
         </div>
       </div>
     </template>
+    <MapCoordinatePicker
+      :visible="showCoordPicker"
+      :modelValue="pickerCoords"
+      @update:visible="showCoordPicker = $event"
+      @update:modelValue="onPickerConfirm"
+    />
   </DashboardLayout>
 </template>
 
