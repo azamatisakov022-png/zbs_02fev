@@ -9,6 +9,10 @@ import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { useI18n } from 'vue-i18n'
 import { toastStore } from '../../stores/toast'
+import { landfillStore, getFillPercent, type Landfill as StoreLandfill } from '../../stores/landfills'
+import { recyclerStore, type Recycler as StoreRecycler } from '../../stores/recyclers'
+import { collectionPointStore, type CollectionPoint } from '../../stores/collectionPoints'
+import { dumpStore, getDumpStatusLabel, type Dump as StoreDump } from '../../stores/dumps'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
@@ -88,15 +92,24 @@ interface Landfill {
   discoveryDate: string; status: string; photo: string; notes: string
 }
 
-const landfills = ref<Landfill[]>([
-  { id: 1, name: 'Полигон ТБО «Бишкек»', region: 'Чуйская обл.', district: 'Аламудунский', type: 'Санкционированный', area: 45.5, volume: 125000, wasteTypes: ['Бытовые', 'Строительные'], gpsLat: '42.9234', gpsLng: '74.4567', address: 'с. Ново-Павловка', organization: 'МП «Тазалык»', discoveryDate: '01.01.1985', status: 'Активен', photo: '', notes: 'Основной полигон г. Бишкек' },
-  { id: 2, name: 'Полигон ТБО «Ош»', region: 'Ошская обл.', district: 'Кара-Сууский', type: 'Санкционированный', area: 28.0, volume: 78000, wasteTypes: ['Бытовые'], gpsLat: '40.4923', gpsLng: '72.7456', address: 'пригород г. Ош', organization: 'МП «Ош-Тазалык»', discoveryDate: '15.03.1990', status: 'Активен', photo: '', notes: '' },
-  { id: 3, name: 'Свалка «Токмок»', region: 'Чуйская обл.', district: 'Чуйский', type: 'Несанкционированный', area: 8.5, volume: 15000, wasteTypes: ['Бытовые', 'Строительные'], gpsLat: '42.8567', gpsLng: '75.3123', address: 'окрестности г. Токмок', organization: '', discoveryDate: '20.06.2018', status: 'Закрыт', photo: '', notes: 'Закрыта, требуется рекультивация' },
-  { id: 4, name: 'Полигон «Каракол»', region: 'Иссык-Кульская обл.', district: 'Ак-Суйский', type: 'Санкционированный', area: 12.0, volume: 32000, wasteTypes: ['Бытовые'], gpsLat: '42.4567', gpsLng: '78.4234', address: 'г. Каракол', organization: 'МП «Каракол-Тазалык»', discoveryDate: '01.01.1992', status: 'На реконструкции', photo: '', notes: 'Модернизация полигона' },
-  { id: 5, name: 'Полигон «Нарын»', region: 'Нарынская обл.', district: 'Нарынский', type: 'Санкционированный', area: 6.5, volume: 12000, wasteTypes: ['Бытовые'], gpsLat: '41.4012', gpsLng: '76.0123', address: 'г. Нарын', organization: 'МП «Нарын-Тазалык»', discoveryDate: '01.01.1995', status: 'Активен', photo: '', notes: '' },
-  { id: 6, name: 'Полигон «Джалал-Абад»', region: 'Джалал-Абадская обл.', district: 'Сузакский', type: 'Санкционированный', area: 10.0, volume: 25000, wasteTypes: ['Бытовые'], gpsLat: '41.0567', gpsLng: '72.9567', address: 'г. Джалал-Абад', organization: 'МП «ЖА-Тазалык»', discoveryDate: '01.01.1988', status: 'Активен', photo: '', notes: '' },
-  { id: 7, name: 'Полигон «Талас»', region: 'Таласская обл.', district: 'Таласский', type: 'Санкционированный', area: 5.0, volume: 8000, wasteTypes: ['Бытовые'], gpsLat: '42.4923', gpsLng: '72.2678', address: 'г. Талас', organization: 'МП «Талас-Тазалык»', discoveryDate: '01.01.1993', status: 'Активен', photo: '', notes: '' },
-])
+const landfills = computed(() => landfillStore.state.landfills.map(l => ({
+  id: l.id,
+  name: l.name,
+  region: l.region,
+  district: l.district,
+  type: l.type === 'sanitary' ? 'Санкционированный' : 'Несанкционированный',
+  area: l.designCapacity / 100,
+  volume: l.currentVolume * 1000,
+  wasteTypes: l.wasteAcceptance.map(w => w.category),
+  gpsLat: String(l.lat),
+  gpsLng: String(l.lng),
+  address: l.address,
+  organization: l.operator,
+  discoveryDate: '01.01.' + l.openYear,
+  status: l.status === 'active' ? 'Активен' : l.status === 'closed' ? 'Закрыт' : 'На реконструкции',
+  photo: '',
+  notes: '',
+})))
 
 const selectedLandfill = ref<Landfill | null>(null)
 const landfillForm = ref<Landfill>({ id: 0, name: '', region: '', district: '', type: 'Санкционированный', area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: 'Активен', photo: '', notes: '' })
@@ -113,16 +126,22 @@ interface ReceptionPoint {
   wasteTypes: string[]; workingHours: string; phone: string; email: string; organization: string; status: string; notes: string
 }
 
-const receptionPoints = ref<ReceptionPoint[]>([
-  { id: 1, name: 'Пункт приёма №1', region: 'г. Бишкек', district: 'Первомайский', address: 'ул. Киевская, 45', gpsLat: '42.8821', gpsLng: '74.5823', wasteTypes: ['Пластик', 'Бумага', 'Стекло'], workingHours: '09:00-18:00', phone: '+996 555 12-34-56', email: 'punkt1@eco.kg', organization: 'ОсОО «ЭкоПереработка»', status: 'Работает', notes: '' },
-  { id: 2, name: 'Пункт приёма №2', region: 'г. Бишкек', district: 'Свердловский', address: 'ул. Боконбаева, 78', gpsLat: '42.8567', gpsLng: '74.6012', wasteTypes: ['Пластик', 'Металл', 'Электроника'], workingHours: '10:00-19:00', phone: '+996 555 23-45-67', email: 'punkt2@eco.kg', organization: 'ОсОО «ЭкоПереработка»', status: 'Работает', notes: '' },
-  { id: 3, name: 'Пункт приёма «Ош-1»', region: 'г. Ош', district: 'Центр', address: 'ул. Масалиева, 23', gpsLat: '40.5367', gpsLng: '72.8056', wasteTypes: ['Пластик', 'Бумага'], workingHours: '09:00-17:00', phone: '+996 550 12-34-56', email: 'osh1@eco.kg', organization: 'ОсОО «Ош-Ресайкл»', status: 'Работает', notes: '' },
-  { id: 4, name: 'Пункт приёма «Каракол»', region: 'Иссык-Кульская обл.', district: 'г. Каракол', address: 'ул. Токтогула, 34', gpsLat: '42.4823', gpsLng: '78.4012', wasteTypes: ['Пластик', 'Стекло'], workingHours: '09:00-16:00', phone: '+996 557 12-34-56', email: 'karakol@eco.kg', organization: 'ОсОО «Иссык-Куль Ресурс»', status: 'Работает', notes: '' },
-  { id: 5, name: 'Пункт приёма №7', region: 'г. Бишкек', district: 'Октябрьский', address: 'мкр. Аламедин, 78', gpsLat: '42.8789', gpsLng: '74.6456', wasteTypes: ['Пластик', 'Бумага', 'Батарейки'], workingHours: '10:00-18:00', phone: '+996 555 78-90-12', email: 'punkt7@eco.kg', organization: 'ОсОО «ГринРесайкл»', status: 'Временно закрыт', notes: 'Ремонт до 15.02.2025' },
-  { id: 6, name: 'Пункт приёма «Джалал-Абад»', region: 'Джалал-Абадская обл.', district: 'г. Джалал-Абад', address: 'ул. Ленина, 78', gpsLat: '41.0312', gpsLng: '72.9945', wasteTypes: ['Пластик', 'Бумага'], workingHours: '09:00-17:00', phone: '+996 559 12-34-56', email: 'ja@eco.kg', organization: 'ОсОО «Джалал-Эко»', status: 'Работает', notes: '' },
-  { id: 7, name: 'Пункт приёма «Нарын»', region: 'Нарынская обл.', district: 'г. Нарын', address: 'ул. Ленина, 89', gpsLat: '41.4356', gpsLng: '75.9823', wasteTypes: ['Пластик'], workingHours: '10:00-16:00', phone: '+996 556 12-34-56', email: 'naryn@eco.kg', organization: 'ОсОО «НарынЭко»', status: 'Работает', notes: '' },
-  { id: 8, name: 'Пункт приёма «Талас»', region: 'Таласская обл.', district: 'г. Талас', address: 'ул. Сарыгулова, 12', gpsLat: '42.5234', gpsLng: '72.2412', wasteTypes: ['Пластик', 'Металл'], workingHours: '09:00-17:00', phone: '+996 551 12-34-56', email: 'talas@eco.kg', organization: 'ОсОО «Талас-Ресайкл»', status: 'Работает', notes: '' },
-])
+const receptionPoints = computed(() => collectionPointStore.state.points.map(p => ({
+  id: p.id,
+  name: p.name,
+  region: p.region,
+  district: p.district,
+  address: p.address,
+  gpsLat: String(p.lat),
+  gpsLng: String(p.lng),
+  wasteTypes: p.wasteTypes,
+  workingHours: p.workingHours,
+  phone: p.phone,
+  email: p.email,
+  organization: p.organization,
+  status: p.status === 'active' ? 'Работает' : p.status === 'paused' ? 'Временно закрыт' : 'Закрыт',
+  notes: p.notes,
+})))
 
 const selectedReception = ref<ReceptionPoint | null>(null)
 const receptionForm = ref<ReceptionPoint>({ id: 0, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: 'Работает', notes: '' })
@@ -140,13 +159,26 @@ interface Recycler {
   capacity: number; licenseNumber: string; licenseExpiry: string; region: string; status: string; notes: string
 }
 
-const recyclers = ref<Recycler[]>([
-  { id: 1, name: 'ОсОО «ЭкоПереработка»', inn: '01234567891234', address: 'г. Бишкек, ул. Жибек Жолу, 555', gpsLat: '42.8746', gpsLng: '74.5698', director: 'Мамытов Эрлан', contactPerson: 'Кыдыралиева Айгуль', phone: '+996 312 45-67-89', email: 'eco@pererabotka.kg', activityType: 'Переработка пластика', wasteTypes: ['Пластик', 'ПЭТ', 'Полиэтилен'], capacity: 5000, licenseNumber: 'ЛЦ-2024/0156', licenseExpiry: '31.12.2025', region: 'г. Бишкек', status: 'Активен', notes: '' },
-  { id: 2, name: 'ОсОО «СтеклоРесурс»', inn: '01234567891235', address: 'г. Токмок, ул. Промышленная, 12', gpsLat: '42.8412', gpsLng: '75.2856', director: 'Касымов Нурбек', contactPerson: 'Петрова Елена', phone: '+996 3138 2-12-34', email: 'glass@resource.kg', activityType: 'Переработка стекла', wasteTypes: ['Стекло'], capacity: 3000, licenseNumber: 'ЛЦ-2023/0234', licenseExpiry: '31.12.2024', region: 'Чуйская обл.', status: 'Активен', notes: '' },
-  { id: 3, name: 'ОсОО «МеталлСервис»', inn: '01234567891236', address: 'г. Бишкек, ул. Ахунбаева, 156', gpsLat: '42.8923', gpsLng: '74.5234', director: 'Асанов Талант', contactPerson: 'Иванов Сергей', phone: '+996 312 56-78-90', email: 'metal@service.kg', activityType: 'Переработка металла', wasteTypes: ['Металл', 'Алюминий'], capacity: 8000, licenseNumber: 'ЛЦ-2022/0089', licenseExpiry: '31.12.2025', region: 'г. Бишкек', status: 'Активен', notes: '' },
-  { id: 4, name: 'ОсОО «Ош-Ресайкл»', inn: '01234567891237', address: 'г. Ош, ул. Курманжан Датки, 45', gpsLat: '40.5283', gpsLng: '72.7985', director: 'Сыдыков Нурлан', contactPerson: 'Асанова Гульмира', phone: '+996 3222 5-12-34', email: 'osh@recycle.kg', activityType: 'Переработка пластика и бумаги', wasteTypes: ['Пластик', 'Бумага'], capacity: 2500, licenseNumber: 'ЛЦ-2023/0145', licenseExpiry: '31.12.2025', region: 'г. Ош', status: 'Активен', notes: '' },
-  { id: 5, name: 'ОсОО «ШинПром»', inn: '01234567891238', address: 'г. Ош, ул. Промышленная, 78', gpsLat: '40.5412', gpsLng: '72.8123', director: 'Омуров Бакыт', contactPerson: 'Токтосунова Айжан', phone: '+996 3222 4-56-78', email: 'shin@prom.kg', activityType: 'Переработка шин', wasteTypes: ['Шины'], capacity: 1500, licenseNumber: 'ЛЦ-2024/0078', licenseExpiry: '31.12.2026', region: 'г. Ош', status: 'На проверке', notes: 'Заявка на продление' },
-])
+const recyclers = computed(() => recyclerStore.state.recyclers.map(r => ({
+  id: r.id,
+  name: r.name,
+  inn: r.inn,
+  address: r.address,
+  gpsLat: String(r.coordinates?.lat || 42.87),
+  gpsLng: String(r.coordinates?.lng || 74.59),
+  director: r.directorName || '',
+  contactPerson: r.contactPerson || '',
+  phone: r.contactPhone,
+  email: r.contactEmail,
+  activityType: r.wasteTypes.join(', '),
+  wasteTypes: r.wasteTypes,
+  capacity: r.capacities?.reduce((s: number, c: any) => s + (c.capacityTons || 0), 0) || 0,
+  licenseNumber: r.licenseNumber,
+  licenseExpiry: r.licenseExpiry,
+  region: r.region || '',
+  status: r.status === 'active' ? 'Активен' : r.status === 'suspended' ? 'Приостановлен' : 'Неактивен',
+  notes: r.notes || '',
+})))
 
 const selectedRecycler = ref<Recycler | null>(null)
 const recyclerForm = ref<Recycler>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: 'Активен', notes: '' })
@@ -187,18 +219,18 @@ interface Dump {
   area: number; discoveryDate: string; dumpStatus: string; notes: string
 }
 
-const dumps = ref<Dump[]>([
-  { id: 41, name: 'Свалка у р. Аламедин', region: 'Чуйская обл.', address: 'берег р. Аламедин', gpsLat: '42.9456', gpsLng: '74.5123', area: 2.5, discoveryDate: '15.03.2024', dumpStatus: 'Ликвидируется', notes: 'Бытовые и строительные отходы' },
-  { id: 42, name: 'Свалка «Токмок»', region: 'Чуйская обл.', address: 'окрестности г. Токмок', gpsLat: '42.8567', gpsLng: '75.3123', area: 8.0, discoveryDate: '20.06.2018', dumpStatus: 'Ликвидируется', notes: 'Крупная стихийная свалка' },
-  { id: 43, name: 'Свалка у трассы Бишкек–Ош', region: 'Чуйская обл.', address: 'вдоль трассы, км 45', gpsLat: '42.6234', gpsLng: '74.3567', area: 1.2, discoveryDate: '10.08.2024', dumpStatus: 'Обнаружена', notes: 'Пластик и строительный мусор' },
-  { id: 44, name: 'Свалка у с. Кара-Балта', region: 'Чуйская обл.', address: 'Жайылский р-н', gpsLat: '42.8123', gpsLng: '73.8456', area: 3.0, discoveryDate: '05.11.2023', dumpStatus: 'Ликвидирована', notes: 'Рекультивация завершена' },
-  { id: 45, name: 'Свалка у оз. Иссык-Куль', region: 'Иссык-Кульская обл.', address: 'южный берег озера', gpsLat: '42.5012', gpsLng: '77.3456', area: 0.8, discoveryDate: '22.05.2024', dumpStatus: 'Ликвидируется', notes: 'Курортная зона, приоритет' },
-  { id: 46, name: 'Свалка в пригороде Ош', region: 'Ошская обл.', address: 'Кара-Сууйский р-н', gpsLat: '40.4812', gpsLng: '72.6789', area: 5.2, discoveryDate: '03.02.2023', dumpStatus: 'Ликвидируется', notes: 'Смешанные отходы, рядом жилмассив' },
-  { id: 47, name: 'Свалка у Кызыл-Кия', region: 'Баткенская обл.', address: 'г. Кызыл-Кия', gpsLat: '40.2567', gpsLng: '72.1234', area: 2.0, discoveryDate: '18.07.2024', dumpStatus: 'Обнаружена', notes: 'Строительные и промышленные отходы' },
-  { id: 48, name: 'Свалка у Майлуу-Суу', region: 'Джалал-Абадская обл.', address: 'г. Майлуу-Суу', gpsLat: '41.2623', gpsLng: '72.4512', area: 3.5, discoveryDate: '12.01.2022', dumpStatus: 'Ликвидирована', notes: 'Радиоактивные хвосты' },
-  { id: 49, name: 'Свалка у с. Кочкорка', region: 'Нарынская обл.', address: 'Кочкорский р-н', gpsLat: '42.0234', gpsLng: '75.7567', area: 1.8, discoveryDate: '07.10.2024', dumpStatus: 'Обнаружена', notes: 'Бытовые отходы' },
-  { id: 50, name: 'Свалка у р. Талас', region: 'Таласская обл.', address: 'пойма р. Талас', gpsLat: '42.5512', gpsLng: '72.1823', area: 1.0, discoveryDate: '19.06.2024', dumpStatus: 'Ликвидируется', notes: 'Сельскохозяйственные отходы' },
-])
+const dumps = computed(() => dumpStore.state.dumps.map(d => ({
+  id: d.id,
+  name: d.name,
+  region: d.region,
+  address: d.address,
+  gpsLat: String(d.lat),
+  gpsLng: String(d.lng),
+  area: d.area,
+  discoveryDate: d.discoveryDate,
+  dumpStatus: getDumpStatusLabel(d.dumpStatus),
+  notes: d.notes,
+})))
 
 const selectedDump = ref<Dump | null>(null)
 const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' })
@@ -480,22 +512,102 @@ const openDelete = (item: any) => {
   showDeleteConfirm.value = true
 }
 
+const mapLandfillFormToStore = (form: Landfill): Omit<StoreLandfill, 'id'> => {
+  const existing = landfillStore.getLandfillById(form.id)
+  return {
+    name: form.name, region: form.region, district: form.district,
+    type: form.type === 'Санкционированный' ? 'sanitary' : 'unauthorized',
+    status: form.status === 'Активен' ? 'active' : form.status === 'Закрыт' ? 'closed' : 'recultivation',
+    operator: form.organization, address: form.address,
+    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+    designCapacity: form.area * 100, currentVolume: form.volume / 1000,
+    openYear: parseInt(form.discoveryDate.split('.').pop() || '2000') || 2000,
+    wasteAcceptance: form.wasteTypes.map(w => ({ category: w, hazardClass: 'IV-V', acceptedPerYear: 0, limitPerYear: 0 })),
+    settlement: existing?.settlement || '', expiryYear: existing?.expiryYear || 2050,
+    hazardClasses: existing?.hazardClasses || ['IV', 'V'],
+    monthlyIntake: existing?.monthlyIntake || [0,0,0,0,0,0,0,0,0,0,0,0],
+    infrastructure: existing?.infrastructure || { fencing: false, weighControl: false, monitoring: false, drainage: false, leachateCollection: false, fireSafety: false, ecoMonitoring: false },
+    permits: existing?.permits || { operationPermit: { number: '', date: '', expiry: '' }, ecoConclusion: { number: '', date: '' } },
+    documents: existing?.documents || [],
+    population: existing?.population || 0, servicedPopulation: existing?.servicedPopulation || 0,
+    tariffPhysical: existing?.tariffPhysical || 0, tariffLegal: existing?.tariffLegal || 0,
+    dailyVolume: existing?.dailyVolume || 0, wasteSchedule: existing?.wasteSchedule || '',
+    equipment: existing?.equipment || { trucks: 0, excavators: 0, tractors: 0, bulldozers: 0 },
+    morphology: existing?.morphology || { plastic: 0, paper: 0, glass: 0, food: 0, other: 0 },
+    landCategory: existing?.landCategory || '',
+  }
+}
+
+const mapReceptionFormToStore = (form: ReceptionPoint): Omit<CollectionPoint, 'id'> => ({
+  name: form.name, region: form.region, district: form.district, address: form.address,
+  lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+  wasteTypes: form.wasteTypes, workingHours: form.workingHours,
+  phone: form.phone, email: form.email, organization: form.organization,
+  status: form.status === 'Работает' ? 'active' : form.status === 'Временно закрыт' ? 'paused' : 'closed',
+  notes: form.notes,
+})
+
+const mapDumpFormToStore = (form: Dump): Omit<StoreDump, 'id'> => {
+  const existing = dumpStore.getDumpById(form.id)
+  const statusMap: Record<string, 'discovered' | 'liquidating' | 'liquidated'> = {
+    'Обнаружена': 'discovered', 'Ликвидируется': 'liquidating', 'Ликвидирована': 'liquidated',
+  }
+  return {
+    name: form.name, region: form.region, address: form.address,
+    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+    area: form.area, discoveryDate: form.discoveryDate,
+    dumpStatus: statusMap[form.dumpStatus] || 'discovered',
+    district: existing?.district || '', responsibleAuthority: existing?.responsibleAuthority || '',
+    notes: form.notes, photos: existing?.photos || [],
+  }
+}
+
+const mapRecyclerFormToStore = (form: Recycler): Partial<StoreRecycler> => {
+  const existing = recyclerStore.getRecyclerById(form.id)
+  return {
+    name: form.name, inn: form.inn, address: form.address, region: form.region,
+    coordinates: { lat: parseFloat(form.gpsLat) || 42.87, lng: parseFloat(form.gpsLng) || 74.59 },
+    directorName: form.director, contactPerson: form.contactPerson || null,
+    contactPhone: form.phone, contactEmail: form.email,
+    wasteTypes: form.wasteTypes, licenseNumber: form.licenseNumber, licenseExpiry: form.licenseExpiry,
+    status: form.status === 'Активен' ? 'active' : form.status === 'Приостановлен' ? 'suspended' : 'revoked',
+    notes: form.notes || null,
+    ...(existing ? {} : {
+      fullName: form.name, opf: 'ОсОО', legalAddress: form.address, actualAddress: form.address,
+      directorPosition: 'Директор', contactPosition: null, website: '',
+      licenseDate: '', licenseAuthority: '', licenseActivities: [],
+      ecoPassportNumber: null, ecoPassportDate: null,
+      capacities: [], technologies: {}, equipment: null, productionArea: null,
+      employeesCount: '0', certifications: [], processingMethods: [],
+      inspectionStatus: null, lastInspectionDate: null, inspectionRemarks: null, nextInspectionDate: null,
+      processedCurrentYear: 0, processedPreviousYear: 0,
+      suspensionReason: null, updatedAt: new Date().toLocaleDateString('ru-RU'),
+      addedDate: new Date().toLocaleDateString('ru-RU'), addedBy: '',
+      documents: [], rating: 0,
+    }),
+  }
+}
+
 const saveItem = () => {
   if (activeRegistry.value === 'landfills') {
-    if (isCreating.value) landfills.value.push({ ...landfillForm.value })
-    else { const idx = landfills.value.findIndex(l => l.id === landfillForm.value.id); if (idx !== -1) landfills.value[idx] = { ...landfillForm.value } }
+    const storeData = mapLandfillFormToStore(landfillForm.value)
+    if (isCreating.value) landfillStore.addLandfill(storeData)
+    else landfillStore.updateLandfill(landfillForm.value.id, storeData)
   } else if (activeRegistry.value === 'reception') {
-    if (isCreating.value) receptionPoints.value.push({ ...receptionForm.value })
-    else { const idx = receptionPoints.value.findIndex(r => r.id === receptionForm.value.id); if (idx !== -1) receptionPoints.value[idx] = { ...receptionForm.value } }
+    const storeData = mapReceptionFormToStore(receptionForm.value)
+    if (isCreating.value) collectionPointStore.addPoint(storeData)
+    else collectionPointStore.updatePoint(receptionForm.value.id, storeData)
   } else if (activeRegistry.value === 'recyclers') {
-    if (isCreating.value) recyclers.value.push({ ...recyclerForm.value })
-    else { const idx = recyclers.value.findIndex(r => r.id === recyclerForm.value.id); if (idx !== -1) recyclers.value[idx] = { ...recyclerForm.value } }
+    const storeData = mapRecyclerFormToStore(recyclerForm.value)
+    if (isCreating.value) recyclerStore.addRecycler(storeData as Omit<StoreRecycler, 'id'>)
+    else recyclerStore.updateRecycler(recyclerForm.value.id, storeData)
   } else if (activeRegistry.value === 'producers') {
     if (isCreating.value) producers.value.push({ ...producerForm.value })
     else { const idx = producers.value.findIndex(p => p.id === producerForm.value.id); if (idx !== -1) producers.value[idx] = { ...producerForm.value } }
   } else if (activeRegistry.value === 'dumps') {
-    if (isCreating.value) dumps.value.push({ ...dumpForm.value })
-    else { const idx = dumps.value.findIndex(d => d.id === dumpForm.value.id); if (idx !== -1) dumps.value[idx] = { ...dumpForm.value } }
+    const storeData = mapDumpFormToStore(dumpForm.value)
+    if (isCreating.value) dumpStore.addDump(storeData)
+    else dumpStore.updateDump(dumpForm.value.id, storeData)
   } else if (activeRegistry.value === 'payers') {
     if (isCreating.value) payers.value.push({ ...payerForm.value })
     else { const idx = payers.value.findIndex(p => p.id === payerForm.value.id); if (idx !== -1) payers.value[idx] = { ...payerForm.value } }
@@ -507,11 +619,17 @@ const saveItem = () => {
 }
 
 const deleteItem = () => {
-  if (activeRegistry.value === 'landfills' && selectedLandfill.value) landfills.value = landfills.value.filter(l => l.id !== selectedLandfill.value!.id)
-  else if (activeRegistry.value === 'reception' && selectedReception.value) receptionPoints.value = receptionPoints.value.filter(r => r.id !== selectedReception.value!.id)
-  else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) recyclers.value = recyclers.value.filter(r => r.id !== selectedRecycler.value!.id)
+  if (activeRegistry.value === 'landfills' && selectedLandfill.value) {
+    const idx = landfillStore.state.landfills.findIndex(l => l.id === selectedLandfill.value!.id)
+    if (idx !== -1) landfillStore.state.landfills.splice(idx, 1)
+  }
+  else if (activeRegistry.value === 'reception' && selectedReception.value) collectionPointStore.deletePoint(selectedReception.value.id)
+  else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) {
+    const idx = recyclerStore.state.recyclers.findIndex(r => r.id === selectedRecycler.value!.id)
+    if (idx !== -1) recyclerStore.state.recyclers.splice(idx, 1)
+  }
   else if (activeRegistry.value === 'producers' && selectedProducer.value) producers.value = producers.value.filter(p => p.id !== selectedProducer.value!.id)
-  else if (activeRegistry.value === 'dumps' && selectedDump.value) dumps.value = dumps.value.filter(d => d.id !== selectedDump.value!.id)
+  else if (activeRegistry.value === 'dumps' && selectedDump.value) dumpStore.deleteDump(selectedDump.value.id)
   else if (activeRegistry.value === 'payers' && selectedPayer.value) payers.value = payers.value.filter(p => p.id !== selectedPayer.value!.id)
   showDeleteConfirm.value = false
   notificationMessage.value = 'Запись удалена'

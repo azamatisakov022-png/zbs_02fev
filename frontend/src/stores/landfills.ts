@@ -72,7 +72,7 @@ export interface Landfill {
   landCategory: string
 }
 
-let nextId = 8
+let nextId = 10
 
 const state = reactive<{ landfills: Landfill[] }>({
   landfills: [
@@ -423,6 +423,100 @@ const state = reactive<{ landfills: Landfill[] }>({
       morphology: { plastic: 18, paper: 10, glass: 7, food: 48, other: 17 },
       landCategory: 'Земли запаса',
     },
+    {
+      id: 8,
+      name: 'Таласский полигон ТБО',
+      type: 'sanitary' as LandfillType,
+      status: 'closed' as LandfillStatus,
+      operator: 'МП Талас-Тазалык',
+      region: 'Таласская область',
+      district: 'г. Талас',
+      settlement: 'г. Талас',
+      address: 'Промзона, восточная окраина',
+      lat: 42.4923,
+      lng: 72.2678,
+      openYear: 1995,
+      expiryYear: 2030,
+      hazardClasses: ['IV', 'V'],
+      designCapacity: 500,
+      currentVolume: 500,
+      monthlyIntake: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      wasteAcceptance: [
+        { category: 'ТБО (закрыт)', hazardClass: 'IV-V', acceptedPerYear: 0, limitPerYear: 400 },
+      ],
+      infrastructure: {
+        fencing: true,
+        weighControl: false,
+        monitoring: false,
+        drainage: false,
+        leachateCollection: false,
+        fireSafety: true,
+        ecoMonitoring: false,
+      },
+      permits: {
+        operationPermit: { number: 'ОП-1995/0056', date: '01.06.1995', expiry: '31.12.2030' },
+        ecoConclusion: { number: 'ЭЗ-2019/0145', date: '10.04.2019' },
+      },
+      documents: [
+        { name: 'Лицензия', date: '01.06.1995', size: '0.5 МБ' },
+      ],
+      population: 35,
+      servicedPopulation: 33,
+      tariffPhysical: 35,
+      tariffLegal: 180,
+      dailyVolume: 0,
+      wasteSchedule: 'Закрыт',
+      equipment: { trucks: 0, excavators: 0, tractors: 0, bulldozers: 0 },
+      morphology: { plastic: 18, paper: 12, glass: 7, food: 45, other: 18 },
+      landCategory: 'Земли промышленности',
+    },
+    {
+      id: 9,
+      name: 'Баткенский полигон ТБО',
+      type: 'unauthorized' as LandfillType,
+      status: 'active' as LandfillStatus,
+      operator: 'МП Баткен-Тазалык',
+      region: 'Баткенская область',
+      district: 'г. Баткен',
+      settlement: 'г. Баткен',
+      address: 'Южная окраина города',
+      lat: 40.0628,
+      lng: 70.8194,
+      openYear: 2000,
+      expiryYear: 2030,
+      hazardClasses: ['IV', 'V'],
+      designCapacity: 350,
+      currentVolume: 273,
+      monthlyIntake: [22, 20, 24, 25, 26, 28, 27, 29, 25, 23, 21, 22],
+      wasteAcceptance: [
+        { category: 'ТБО', hazardClass: 'IV-V', acceptedPerYear: 280, limitPerYear: 350 },
+      ],
+      infrastructure: {
+        fencing: true,
+        weighControl: false,
+        monitoring: false,
+        drainage: false,
+        leachateCollection: false,
+        fireSafety: true,
+        ecoMonitoring: false,
+      },
+      permits: {
+        operationPermit: { number: 'ВР-2000/0023', date: '15.03.2000', expiry: '31.12.2030' },
+        ecoConclusion: { number: 'ЭЗ-2021/0089', date: '20.05.2021' },
+      },
+      documents: [
+        { name: 'Временное разрешение', date: '15.03.2000', size: '0.4 МБ' },
+      ],
+      population: 30,
+      servicedPopulation: 28,
+      tariffPhysical: 30,
+      tariffLegal: 150,
+      dailyVolume: 22,
+      wasteSchedule: '3 раза в неделю',
+      equipment: { trucks: 2, excavators: 0, tractors: 1, bulldozers: 0 },
+      morphology: { plastic: 16, paper: 10, glass: 6, food: 50, other: 18 },
+      landCategory: 'Земли промышленности',
+    },
   ],
 })
 
@@ -488,6 +582,23 @@ export function getFillColor(percent: number): string {
   return 'green'
 }
 
+function getForGisMap() {
+  return state.landfills.map(l => ({
+    id: l.id,
+    name: l.name,
+    lat: l.lat,
+    lng: l.lng,
+    address: l.address,
+    phone: '',
+    region: l.region,
+    landfillType: l.type === 'sanitary' ? 'Санитарный полигон' : 'Несанитарный полигон',
+    area: l.designCapacity + ' тыс. т',
+    capacity: (l.designCapacity * 1000).toLocaleString('ru-RU') + ' т',
+    fillLevel: getFillPercent(l) + '%',
+    status: l.status,
+  }))
+}
+
 export const landfillStore = {
   state,
   addLandfill,
@@ -501,4 +612,5 @@ export const landfillStore = {
   getTotalCurrentVolume,
   getAverageFillLevel,
   getOverfilledCount,
+  getForGisMap,
 }
