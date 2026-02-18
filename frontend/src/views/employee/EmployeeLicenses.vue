@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -361,6 +362,13 @@ const hoveredContact = ref<number | null>(null)
         {{ $t('common.add') }}
       </AppButton>
     </div>
+
+    <SectionGuide
+      title="Управление лицензиями"
+      description="Реестр лицензий на деятельность по обращению с отходами."
+      :actions="['Просмотр действующих лицензий', 'Контроль сроков истечения', 'Проверка документов', 'Приостановка/отзыв лицензий']"
+      storageKey="employee-licenses"
+    />
 
     <!-- ══ Form (add / edit) ══ -->
     <div v-if="showForm" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">

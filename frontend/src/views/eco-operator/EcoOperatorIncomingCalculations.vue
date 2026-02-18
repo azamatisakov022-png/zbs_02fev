@@ -9,6 +9,7 @@ import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } fr
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -211,6 +212,13 @@ const resetPaymentFilters = () => {
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.calculationsTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('pages.ecoOperator.calculationsSubtitle') }}</p>
     </div>
+
+    <SectionGuide
+      title="Входящие расчёты утилизационного сбора"
+      description="Расчёты, поступившие от плательщиков для проверки и утверждения."
+      :actions="['Просмотр новых расчётов', 'Проверка правильности данных', 'Одобрение или отклонение расчёта', 'Возврат на доработку с комментарием']"
+      storageKey="eco-calculations"
+    />
 
     <!-- Large Dashboard Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

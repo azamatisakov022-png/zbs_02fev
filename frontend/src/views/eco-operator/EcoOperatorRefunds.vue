@@ -9,6 +9,7 @@ import { refundStore } from '../../stores/refunds'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -83,6 +84,13 @@ const resetFilters = () => {
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.refundsTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('pages.ecoOperator.refundsSubtitle') }}</p>
     </div>
+
+    <SectionGuide
+      title="Заявки на возврат средств"
+      description="Заявки от плательщиков на возврат излишне уплаченного сбора."
+      :actions="['Просмотр заявок', 'Проверка оснований для возврата', 'Одобрение или отклонение', 'Формирование акта возврата']"
+      storageKey="eco-refunds"
+    />
 
     <!-- Gradient Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

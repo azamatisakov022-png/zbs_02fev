@@ -9,6 +9,7 @@ import { declarationStore } from '../../stores/declarations'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -91,6 +92,13 @@ const formatBalance = (value: number) => {
         </span>
       </div>
     </div>
+
+    <SectionGuide
+      title="Входящие декларации"
+      description="Годовые декларации от плательщиков утилизационного сбора."
+      :actions="['Просмотр поданных деклараций', 'Сверка с расчётами и платежами', 'Утверждение или отклонение', 'Просмотр прикреплённых документов']"
+      storageKey="eco-declarations"
+    />
 
     <!-- Gradient Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

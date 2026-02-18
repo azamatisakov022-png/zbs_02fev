@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import {
@@ -166,6 +167,13 @@ const onPickerConfirm = (coords: { lat: number; lng: number }) => {
           Добавить
         </button>
       </div>
+
+      <SectionGuide
+        title="Реестр пунктов приёма вторсырья"
+        description="Управление сетью пунктов приёма отходов от населения."
+        :actions="['Добавление новых пунктов', 'Обновление контактных данных', 'Указание координат на карте', 'Изменение статуса работы']"
+        storageKey="ministry-collection-points"
+      />
 
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">

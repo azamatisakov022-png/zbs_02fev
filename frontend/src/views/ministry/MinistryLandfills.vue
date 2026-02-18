@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import {
@@ -333,6 +334,13 @@ const resetAllFilters = () => {
           </button>
         </div>
       </div>
+
+      <SectionGuide
+        title="Реестр полигонов ТБО"
+        description="Управление данными о санкционированных полигонах и несанкционированных свалках."
+        :actions="['Добавление новых полигонов', 'Обновление данных о загруженности', 'Регистрация несанкционированных свалок', 'Контроль ликвидации свалок']"
+        storageKey="ministry-landfills"
+      />
 
       <!-- ==================== STATS ==================== -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">

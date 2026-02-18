@@ -73,6 +73,8 @@ const typeConfig: Record<string, { color: string; bg: string; icon: string; labe
         </div>
       </div>
 
+      <slot />
+
       <!-- Filters -->
       <div class="flex gap-2">
         <button

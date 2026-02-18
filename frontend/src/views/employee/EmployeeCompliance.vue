@@ -5,6 +5,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -156,6 +157,13 @@ const summaryStats = computed(() => {
         <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.complianceTitle') }}</h1>
         <p class="text-gray-600 mt-1">{{ $t('pages.employee.complianceSubtitle') }}</p>
       </div>
+
+      <SectionGuide
+        title="Контроль исполнения"
+        description="Мониторинг выполнения обязательств переработчиками и операторами."
+        :actions="['Проверка выполнения нормативов', 'Контроль сроков лицензий', 'Формирование предписаний']"
+        storageKey="employee-compliance"
+      />
 
       <!-- Summary Stat Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -9,6 +9,7 @@ import { generatedSubgroups } from '../../data/product-subgroups-generated'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -314,6 +315,13 @@ const resetAllFilters = () => {
         Добавить переработчика
       </AppButton>
     </div>
+
+    <SectionGuide
+      title="Реестр переработчиков отходов"
+      description="Информация о предприятиях по сбору, переработке и утилизации отходов."
+      :actions="['Добавление переработчиков', 'Редактирование данных', 'Контроль лицензий и мощностей', 'Проверка выполнения нормативов']"
+      storageKey="eco-recyclers"
+    />
 
     <!-- Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">

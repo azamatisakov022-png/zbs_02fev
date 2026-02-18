@@ -8,6 +8,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { accountStore } from '../../stores/account'
 import { AppButton } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -116,6 +117,13 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.accountsTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('pages.ecoOperator.accountsSubtitle') }}</p>
     </div>
+
+    <SectionGuide
+      title="Лицевые счета плательщиков"
+      description="Финансовая информация по каждому плательщику утилизационного сбора."
+      :actions="['Просмотр баланса счетов', 'История начислений и платежей', 'Формирование выписок', 'Контроль задолженностей']"
+      storageKey="eco-accounts"
+    />
 
     <!-- KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
