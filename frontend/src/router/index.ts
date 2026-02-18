@@ -277,6 +277,12 @@ const routes: RouteRecordRaw[] = [
     redirect: '/business/reports',
   },
   {
+    path: '/business/declarations/:id',
+    name: 'business-declaration-detail',
+    component: () => import('../views/business/BusinessDeclarationDetail.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Просмотр декларации' },
+  },
+  {
     path: '/business/declarations/new',
     name: 'business-declarations-new',
     redirect: '/business/declarations',

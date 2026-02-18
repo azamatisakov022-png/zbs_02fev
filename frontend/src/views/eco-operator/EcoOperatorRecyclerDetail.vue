@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { recyclerStore, type Recycler, type RecyclerCapacity, type InspectionStatus, type RecyclerDocument } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
@@ -15,6 +16,9 @@ import L from 'leaflet'
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+// Document preview
+const previewDoc = ref<PreviewDocument | null>(null)
 
 // Get recycler by route param
 const recyclerId = computed(() => Number(route.params.id))
@@ -1091,7 +1095,7 @@ const goToGisMap = () => {
                 <td class="px-4 py-3 text-right font-mono">{{ entry.volume.toFixed(1) }}</td>
                 <td class="px-4 py-3">
                   <button
-                    @click="toastStore.show({ type: 'info', title: 'Просмотр акта', message: entry.actNumber + ' — функционал в разработке' })"
+                    @click="previewDoc = { name: 'Акт ' + entry.actNumber }"
                     class="text-[#2563eb] hover:underline text-sm font-medium"
                   >
                     {{ entry.actNumber }}
@@ -1175,13 +1179,13 @@ const goToGisMap = () => {
             <!-- Actions -->
             <div class="flex items-center gap-2 flex-shrink-0">
               <button
-                @click="toastStore.show({ type: 'info', title: 'Просмотр документа', message: '«' + doc.name + '» — функционал в разработке' })"
+                @click="previewDoc = { name: doc.name, type: doc.type.toUpperCase(), size: doc.size, date: doc.date }"
                 class="px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-[#eff6ff] rounded-lg hover:bg-[#dbeafe] transition-colors"
               >
                 Просмотр
               </button>
               <button
-                @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: '«' + doc.name + '» — функционал в разработке' })"
+                @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })"
                 class="px-3 py-1.5 text-xs font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
               >
                 Скачать
@@ -1258,6 +1262,8 @@ const goToGisMap = () => {
         </div>
       </div>
     </div>
+
+    <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>
 </template>
 

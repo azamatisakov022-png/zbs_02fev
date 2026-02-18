@@ -361,6 +361,53 @@ const visiblePoints = computed(() => {
   })
 })
 
+// ==================== CLUSTERING ====================
+interface ClusterItem { type: 'cluster'; lat: number; lng: number; count: number; points: MapPoint[] }
+interface MarkerItem { type: 'marker'; point: MapPoint }
+type DisplayItem = ClusterItem | MarkerItem
+
+const getGridSize = (zoom: number): number => {
+  if (zoom <= 7) return 2.0
+  if (zoom <= 8) return 1.0
+  if (zoom <= 9) return 0.5
+  if (zoom <= 10) return 0.25
+  return 0
+}
+
+const displayItems = computed<DisplayItem[]>(() => {
+  const gridSize = getGridSize(mapZoom.value)
+  if (gridSize === 0) {
+    return visiblePoints.value.map(p => ({ type: 'marker' as const, point: p }))
+  }
+  const grid: Record<string, MapPoint[]> = {}
+  visiblePoints.value.forEach(p => {
+    const cellX = Math.floor(p.lng / gridSize)
+    const cellY = Math.floor(p.lat / gridSize)
+    const key = `${cellX}:${cellY}`
+    if (!grid[key]) grid[key] = []
+    grid[key].push(p)
+  })
+  const items: DisplayItem[] = []
+  Object.values(grid).forEach(points => {
+    if (points.length === 1) {
+      items.push({ type: 'marker', point: points[0] })
+    } else {
+      let latSum = 0; let lngSum = 0
+      points.forEach(p => { latSum += p.lat; lngSum += p.lng })
+      items.push({ type: 'cluster', lat: latSum / points.length, lng: lngSum / points.length, count: points.length, points })
+    }
+  })
+  return items
+})
+
+const onClusterClick = (cluster: ClusterItem) => {
+  const map = mapRef.value?.leafletObject
+  if (map) {
+    const bounds = L.latLngBounds(cluster.points.map(p => [p.lat, p.lng] as [number, number]))
+    map.flyToBounds(bounds, { padding: [50, 50], duration: 1 })
+  }
+}
+
 // ==================== MAP FUNCTIONS ====================
 const createIcon = (color: string) => {
   return L.divIcon({
@@ -373,6 +420,16 @@ const createIcon = (color: string) => {
 const getMarkerIcon = (type: LayerType) => {
   const layer = layers.value.find(l => l.id === type)
   return createIcon(layer?.color || '#666')
+}
+
+const createClusterIcon = (count: number) => {
+  const size = count > 20 ? 50 : count > 10 ? 44 : 38
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background-color:#0e888d;width:${size}px;height:${size}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(14,136,141,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:${count > 99 ? 12 : 14}px;">${count}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
 }
 
 const getStatusInfo = (status: string) => {
@@ -753,24 +810,27 @@ const countByType = computed(() => ({
       <!-- Map Section -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="relative" style="height: calc(100vh - 360px); min-height: 350px; max-height: 600px;">
-          <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0">
+          <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0" @update:zoom="mapZoom = $event">
             <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' layer-type="base" name="OpenStreetMap" />
-            <LMarker v-for="point in visiblePoints" :key="`${point.type}-${point.id}`" :lat-lng="[point.lat, point.lng]" :icon="getMarkerIcon(point.type)">
-              <LPopup :options="{ maxWidth: 300 }">
-                <div class="min-w-[220px]">
-                  <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ point.name }}</h4>
-                    <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(point.status).color]">{{ getStatusInfo(point.status).label }}</span>
+            <template v-for="(item, idx) in displayItems" :key="'di-' + idx">
+              <LMarker v-if="item.type === 'marker'" :lat-lng="[item.point.lat, item.point.lng]" :icon="getMarkerIcon(item.point.type)">
+                <LPopup :options="{ maxWidth: 300 }">
+                  <div class="min-w-[220px]">
+                    <div class="flex items-start justify-between mb-2">
+                      <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ item.point.name }}</h4>
+                      <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(item.point.status).color]">{{ getStatusInfo(item.point.status).label }}</span>
+                    </div>
+                    <div class="space-y-1 text-xs">
+                      <p class="flex items-start gap-2"><span class="text-gray-400">Тип:</span><span class="text-gray-700">{{ getTypeLabel(item.point.type) }}</span></p>
+                      <p class="flex items-start gap-2"><span class="text-gray-400">Адрес:</span><span class="text-gray-700">{{ item.point.address }}</span></p>
+                      <p v-if="item.point.phone" class="flex items-start gap-2"><span class="text-gray-400">Тел:</span><span class="text-gray-700">{{ item.point.phone }}</span></p>
+                      <p v-if="item.point.description" class="flex items-start gap-2"><span class="text-gray-400">Инфо:</span><span class="text-gray-700">{{ item.point.description }}</span></p>
+                    </div>
                   </div>
-                  <div class="space-y-1 text-xs">
-                    <p class="flex items-start gap-2"><span class="text-gray-400">Тип:</span><span class="text-gray-700">{{ getTypeLabel(point.type) }}</span></p>
-                    <p class="flex items-start gap-2"><span class="text-gray-400">Адрес:</span><span class="text-gray-700">{{ point.address }}</span></p>
-                    <p v-if="point.phone" class="flex items-start gap-2"><span class="text-gray-400">Тел:</span><span class="text-gray-700">{{ point.phone }}</span></p>
-                    <p v-if="point.description" class="flex items-start gap-2"><span class="text-gray-400">Инфо:</span><span class="text-gray-700">{{ point.description }}</span></p>
-                  </div>
-                </div>
-              </LPopup>
-            </LMarker>
+                </LPopup>
+              </LMarker>
+              <LMarker v-else :lat-lng="[item.lat, item.lng]" :icon="createClusterIcon(item.count)" @click="onClusterClick(item as ClusterItem)" />
+            </template>
           </LMap>
 
           <!-- Legend -->

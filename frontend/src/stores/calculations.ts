@@ -1,6 +1,26 @@
 import { reactive } from 'vue'
 import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
 
+export type DocumentType = 'gtd' | 'act' | 'invoice_goods' | 'invoice' | 'contract' | 'other'
+
+export const documentTypeLabels: Record<DocumentType, string> = {
+  gtd: 'ГТД',
+  act: 'Акт приёма-передачи',
+  invoice_goods: 'Товарная накладная',
+  invoice: 'Инвойс',
+  contract: 'Договор с переработчиком',
+  other: 'Иное',
+}
+
+export interface AttachedDocument {
+  id: number
+  fileName: string
+  fileSize: number
+  fileType: string
+  docType: DocumentType
+  dataUrl: string
+}
+
 export interface ProductItem {
   id: number
   group: string           // Гр.1: Группа товаров/упаковки
@@ -54,13 +74,17 @@ export interface Calculation {
   totalAmount: number
   status: CalculationStatus
   rejectionReason?: string
+  rejectedAt?: string
+  rejectedBy?: string
+  parentId?: number
   paidAt?: string
   payment?: PaymentData
   paymentRejectionReason?: string
   attachedFiles?: string[]
+  documents?: AttachedDocument[]
 }
 
-let nextId = 11
+let nextId = 13
 
 // Ставки (Сус) из постановления: group_1=4793, group_6=9418, group_8=4219
 // Нормативы (Нпер): 2025 — группы 1-4: 0.2, группы 5-24: 0.1
@@ -299,6 +323,53 @@ const state = reactive<{ calculations: Calculation[] }>({
       rejectionReason: 'Неверно указан объём для группы 8 (стекло). Необходимо пересчитать.',
       attachedFiles: ['декларация_импорт.pdf'],
     },
+    {
+      id: 11,
+      number: 'РС-2026-412',
+      date: '28.01.2026',
+      company: 'ОсОО «ТехПром»',
+      inn: '01234567890123',
+      address: 'г. Бишкек, ул. Московская, 123',
+      period: 'Q1 2026',
+      quarter: 'Q1',
+      year: '2026',
+      payerType: 'importer',
+      importDate: '15.01.2026',
+      dueDate: '02.02.2026',
+      items: [
+        { id: 1, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '', tnvedCode: '3923', volume: '15.5', recyclingStandard: 20, volumeToRecycle: 3.10, transferredToRecycling: '0.5', exportedFromKR: '', taxableVolume: 2.60, rate: 9418, amount: 24487 },
+        { id: 2, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '', tnvedCode: '7010', volume: '10.2', recyclingStandard: 10, volumeToRecycle: 1.02, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 1.02, rate: 4219, amount: 4303 },
+      ],
+      totalAmount: 28790,
+      status: 'Отклонено',
+      rejectionReason: 'Неверно указана масса товаров в группе 6 (пластик). Необходимо предоставить подтверждающие документы (таможенная декларация или накладная). Масса в накладной ГТД-2026-0045 указана 12.3 т, а в расчёте — 15.5 т.',
+      rejectedAt: '01.02.2026',
+      rejectedBy: 'Иванова А.К., ведущий специалист ГП Эко Оператор',
+      attachedFiles: ['ГТД_ввоз_пластик.pdf'],
+    },
+    {
+      id: 12,
+      number: 'РС-2026-418',
+      date: '30.01.2026',
+      company: 'ОсОО «ТехПром»',
+      inn: '01234567890123',
+      address: 'г. Бишкек, ул. Московская, 123',
+      period: 'Q4 2025',
+      quarter: 'Q4',
+      year: '2025',
+      payerType: 'producer',
+      dueDate: '15.01.2026',
+      items: [
+        { id: 1, group: 'group_1', subgroup: 'g1_corrugated_boxes', gskpCode: '17.21.1', tnvedCode: '4819 10', volume: '8.0', recyclingStandard: 20, volumeToRecycle: 1.60, transferredToRecycling: '0.3', exportedFromKR: '', taxableVolume: 1.30, rate: 4793, amount: 6231 },
+        { id: 2, group: 'group_6', subgroup: 'g6_bottles_small', gskpCode: '22.22.1', tnvedCode: '3923', volume: '5.0', recyclingStandard: 20, volumeToRecycle: 1.00, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 1.00, rate: 9418, amount: 9418 },
+        { id: 3, group: 'group_8', subgroup: 'g8_bottles_clear', gskpCode: '23.13.1', tnvedCode: '7010', volume: '3.0', recyclingStandard: 10, volumeToRecycle: 0.30, transferredToRecycling: '', exportedFromKR: '', taxableVolume: 0.30, rate: 4219, amount: 1266 },
+      ],
+      totalAmount: 16915,
+      status: 'Отклонено',
+      rejectionReason: 'Отсутствуют акты приёма-передачи на переработку для группы 1 (бумага/картон). Документ об утилизации 0.3 т не подтверждён переработчиком.',
+      rejectedAt: '05.02.2026',
+      rejectedBy: 'Сыдыкова Б.М., специалист отдела контроля',
+    },
   ],
 })
 
@@ -359,11 +430,13 @@ function approveCalculation(id: number) {
   }
 }
 
-function rejectCalculation(id: number, reason: string) {
+function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
   const calc = state.calculations.find(c => c.id === id)
   if (calc && calc.status === 'На проверке') {
     calc.status = 'Отклонено'
     calc.rejectionReason = reason
+    calc.rejectedAt = new Date().toLocaleDateString('ru-RU')
+    calc.rejectedBy = rejectedBy
   }
 }
 
@@ -408,6 +481,51 @@ function resubmitCalculation(id: number) {
   }
 }
 
+function updateCalculationItems(id: number, items: ProductItem[], totalAmount: number) {
+  const calc = state.calculations.find(c => c.id === id)
+  if (calc && (calc.status === 'Черновик' || calc.status === 'Отклонено')) {
+    calc.items = items
+    calc.totalAmount = totalAmount
+  }
+}
+
+function updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
+  const calc = state.calculations.find(c => c.id === id)
+  if (calc) {
+    calc.documents = documents
+  }
+}
+
+function copyCalculation(sourceId: number): Calculation | undefined {
+  const src = state.calculations.find(c => c.id === sourceId)
+  if (!src) return undefined
+  const newId = nextId++
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('ru-RU')
+  const numStr = `РСЧ-${now.getFullYear()}-${String(newId).padStart(3, '0')}`
+  const copy: Calculation = {
+    id: newId,
+    number: numStr,
+    date: dateStr,
+    company: src.company,
+    inn: src.inn,
+    address: src.address,
+    period: src.period,
+    quarter: src.quarter,
+    year: src.year,
+    payerType: src.payerType,
+    importDate: src.importDate,
+    dueDate: src.dueDate,
+    items: src.items.map(i => ({ ...i })),
+    totalAmount: src.totalAmount,
+    status: 'Черновик',
+    parentId: sourceId,
+    attachedFiles: src.attachedFiles ? [...src.attachedFiles] : undefined,
+  }
+  state.calculations.unshift(copy)
+  return copy
+}
+
 function getCalculationById(id: number): Calculation | undefined {
   return state.calculations.find(c => c.id === id)
 }
@@ -439,6 +557,9 @@ export const calculationStore = {
   rejectPayment,
   markAsPaid,
   resubmitCalculation,
+  updateCalculationItems,
+  updateCalculationDocuments,
+  copyCalculation,
   getCalculationById,
   getBusinessCalculations,
   getPendingCount,
