@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -174,6 +175,13 @@ const openDetails = (wt: WasteType) => {
         <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.wasteTypesTitle') }}</h1>
         <p class="text-gray-600 mt-1">{{ $t('pages.employee.wasteTypesSubtitle') }}</p>
       </div>
+
+      <SectionGuide
+        title="Справочник видов отходов"
+        description="Классификатор отходов с кодами и категориями."
+        :actions="['Просмотр классификатора', 'Редактирование категорий', 'Управление кодами отходов']"
+        storageKey="employee-waste-types"
+      />
 
       <!-- Stats Banner -->
       <div class="rounded-2xl p-6 text-white" style="background: linear-gradient(135deg, #115E59, #0D9488);">

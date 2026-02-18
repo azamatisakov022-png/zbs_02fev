@@ -7,6 +7,7 @@ import { recyclerStore } from '../../stores/recyclers'
 import { productGroups, productSubgroups, getSubgroupLabel } from '../../data/product-groups'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -1013,6 +1014,13 @@ const selectedSummaryRegion = ref('all')
         </div>
       </div>
     </div>
+
+    <SectionGuide
+      title="Аналитика и отчётность"
+      description="Сводные показатели и формирование отчётов по сбору утилизационного сбора."
+      :actions="['Финансовая аналитика', 'Статистика по товарам и переработке', 'Региональная статистика', 'Выгрузка отчётов в Excel/PDF']"
+      storageKey="eco-analytics"
+    />
 
     <!-- Tab bar -->
     <div class="flex gap-1 border-b border-[#e2e8f0] mb-6">

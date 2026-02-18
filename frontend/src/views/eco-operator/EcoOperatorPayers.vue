@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import {
   payerStore,
   formatMoney,
@@ -386,6 +387,13 @@ onMounted(() => {
           Найдено: <span class="font-semibold text-gray-900">{{ filteredCount }}</span> из <span class="font-semibold text-gray-900">{{ totalCount }}</span> плательщиков
         </div>
       </div>
+
+      <SectionGuide
+        title="Реестр плательщиков утилизационного сбора"
+        description="Полный реестр организаций-плательщиков с финансовой информацией."
+        :actions="['Поиск по наименованию или ИНН', 'Просмотр карточки плательщика', 'Контроль статуса отчётности', 'Экспорт данных в Excel/PDF/CSV']"
+        storageKey="eco-payers"
+      />
 
       <!-- Export & Column Settings -->
       <div class="flex flex-wrap items-center justify-between gap-3">

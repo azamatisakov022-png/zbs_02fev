@@ -5,6 +5,7 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -404,6 +405,13 @@ const copyLegalToActual = () => {
           Добавить организацию
         </AppButton>
       </div>
+
+      <SectionGuide
+        title="Профили компаний"
+        description="Управление данными организаций — плательщиков и переработчиков."
+        :actions="['Просмотр профилей компаний', 'Проверка регистрационных данных', 'Контроль актуальности информации']"
+        storageKey="eco-companies"
+      />
 
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">

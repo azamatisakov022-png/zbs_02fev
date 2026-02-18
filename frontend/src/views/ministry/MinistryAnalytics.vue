@@ -7,6 +7,7 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { toastStore } from '../../stores/toast'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -214,6 +215,13 @@ function exportReport() {
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Аналитика управления отходами</h1>
       <p class="text-[#64748b]">Сводные показатели системы РОП Кыргызской Республики</p>
     </div>
+
+    <SectionGuide
+      title="Аналитика управления отходами"
+      description="Сводные показатели экологической инфраструктуры Кыргызской Республики."
+      :actions="['Анализ переработки и нормативов', 'Региональная статистика', 'Мониторинг инфраструктуры', 'Выгрузка отчётов']"
+      storageKey="ministry-analytics"
+    />
 
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
@@ -570,6 +571,13 @@ const countByType = computed(() => ({
           </button>
         </div>
       </div>
+
+      <SectionGuide
+        title="Интерактивная ГИС-карта"
+        description="Карта объектов обращения с отходами Кыргызской Республики."
+        :actions="['Просмотр объектов на карте', 'Фильтрация по типам объектов', 'Добавление новых объектов', 'Управление координатами']"
+        storageKey="employee-gis-map"
+      />
 
       <!-- Horizontal Filter Bar -->
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm">

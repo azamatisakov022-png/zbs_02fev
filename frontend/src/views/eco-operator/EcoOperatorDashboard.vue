@@ -8,6 +8,7 @@ import BarChart from '../../components/charts/BarChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -93,6 +94,13 @@ onMounted(() => {
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.dashboardTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('pages.ecoOperator.dashboardSubtitle') }}</p>
     </div>
+
+    <SectionGuide
+      title="Панель управления Эко Оператора"
+      description="Общий обзор деятельности по управлению утилизационным сбором."
+      :actions="['Просмотр ключевых показателей', 'Мониторинг поступлений', 'Контроль задолженностей']"
+      storageKey="eco-dashboard"
+    />
 
     <!-- Skeleton Loading -->
     <template v-if="isLoading">

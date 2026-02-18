@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
@@ -108,6 +109,13 @@ const changePassword = async () => {
         <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.profileTitle') }}</h1>
         <p class="text-gray-600 mt-1">{{ $t('pages.employee.profileSubtitle') }}</p>
       </div>
+
+      <SectionGuide
+        title="Профиль сотрудника"
+        description="Управление личными данными и настройками учётной записи."
+        :actions="['Редактирование личных данных', 'Смена пароля', 'Настройки уведомлений']"
+        storageKey="employee-profile"
+      />
 
       <!-- Profile Card -->
       <div class="bg-gradient-to-r from-sky-600 to-blue-600 rounded-2xl p-6 text-white">

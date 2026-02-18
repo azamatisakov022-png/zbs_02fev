@@ -13,6 +13,7 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import { notificationStore } from '../../stores/notifications'
 
 const router = useRouter()
@@ -199,6 +200,13 @@ const resetFilters = () => {
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.incomingReportsTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('pages.ecoOperator.incomingReportsSubtitle') }}</p>
     </div>
+
+    <SectionGuide
+      title="Отчёты о переработке"
+      description="Отчёты от переработчиков о фактических объёмах переработанных отходов."
+      :actions="['Просмотр поступивших отчётов', 'Проверка объёмов переработки', 'Сверка с нормативами', 'Утверждение или отклонение']"
+      storageKey="eco-recycling-reports"
+    />
 
     <!-- Gradient Stat Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { AppButton, AppBadge } from '../../components/ui'
@@ -452,6 +453,13 @@ const goBack = () => {
           </div>
         </div>
       </div>
+
+      <SectionGuide
+        title="Формирование отчётности"
+        description="Генерация регламентных и аналитических отчётов."
+        :actions="['Формирование отчётов по расписанию', 'Создание аналитических выборок', 'Экспорт в Excel/PDF']"
+        storageKey="employee-reports"
+      />
 
       <template v-if="isLoading">
         <div class="mb-6"><SkeletonLoader variant="card" /></div>
