@@ -49,6 +49,13 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public AccountResponse getAccountByInn(String inn) {
+        Account account = accountRepository.findByCompanyInn(inn)
+                .orElseThrow(() -> new ResourceNotFoundException("Лицевой счёт для ИНН " + inn + " не найден"));
+        return accountMapper.toResponse(account);
+    }
+
+    @Override
     public AccountResponse getAccountByCompanyId(Long companyId) {
         Account account = findAccountByCompanyId(companyId);
         return accountMapper.toResponse(account);

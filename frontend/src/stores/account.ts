@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api from '../api/client'
+import { authStore } from './auth'
 
 export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund'
 
@@ -180,9 +181,32 @@ const state = reactive<{
 async function fetchAll() {
   state.loading = true
   try {
-    const { data } = await api.get('/accounts')
-    if (Array.isArray(data)) {
-      state.accounts = data
+    const role = authStore.state.user?.role
+    if (role === 'business') {
+      const { data } = await api.get('/accounts/my')
+      if (data && data.id) {
+        // Map backend response to local CompanyAccount format
+        const acc: CompanyAccount = {
+          id: data.id,
+          company: data.companyName || '',
+          inn: data.companyInn || '',
+          balance: data.balance || 0,
+          status: 'Активен',
+          transactions: [],
+        }
+        const existing = state.accounts.find(a => a.inn === acc.inn)
+        if (existing) {
+          existing.balance = acc.balance
+        } else {
+          state.accounts.unshift(acc)
+        }
+        state.currentCompany = acc.company
+      }
+    } else {
+      const { data } = await api.get('/accounts')
+      if (Array.isArray(data)) {
+        state.accounts = data
+      }
     }
   } catch { /* keep local data */ } finally {
     state.loading = false

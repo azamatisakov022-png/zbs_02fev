@@ -14,6 +14,9 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     Optional<Account> findByCompany_Id(Long companyId);
 
+    @Query("SELECT a FROM Account a JOIN FETCH a.company WHERE a.company.inn = :inn")
+    Optional<Account> findByCompanyInn(String inn);
+
     @Query("SELECT a FROM Account a JOIN FETCH a.company WHERE a.balance < 0")
     List<Account> findAccountsWithDebt();
 
