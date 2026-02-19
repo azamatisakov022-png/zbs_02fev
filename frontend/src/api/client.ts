@@ -51,8 +51,8 @@ api.interceptors.response.use(
       }
     }
 
-    // Show toast for non-401 errors
-    if (error.response?.status !== 401) {
+    // Show toast for non-auth errors (401 = not authenticated, 403 = not authorized)
+    if (error.response?.status !== 401 && error.response?.status !== 403) {
       const msg = error.response?.data?.message || error.message || 'Ошибка сервера'
       toastStore.show({ type: 'error', title: 'Ошибка API', message: msg })
     }
