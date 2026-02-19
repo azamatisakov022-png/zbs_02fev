@@ -20,6 +20,14 @@ public class CollectionPointController {
     private final CollectionPointService collectionPointService;
 
     /**
+     * GET /collection-points/public — Публичный реестр пунктов приёма (без авторизации)
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<CollectionPointResponse>> getPublic() {
+        return ResponseEntity.ok(collectionPointService.getAll(null, null));
+    }
+
+    /**
      * GET /collection-points — Реестр пунктов приёма
      */
     @GetMapping

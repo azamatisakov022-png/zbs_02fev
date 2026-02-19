@@ -13,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
@@ -84,6 +85,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of("NOT_FOUND", "Ресурс не найден"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of("BAD_REQUEST", "Некорректный параметр: " + ex.getName()));
     }
 
     @ExceptionHandler(Exception.class)
