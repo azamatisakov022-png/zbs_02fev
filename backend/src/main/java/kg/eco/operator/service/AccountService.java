@@ -9,6 +9,8 @@ public interface AccountService {
 
     List<AccountResponse> getAllAccounts(String search, Boolean hasDebt, Boolean hasPositiveBalance);
 
+    AccountResponse getAccountByInn(String inn);
+
     AccountResponse getAccountByCompanyId(Long companyId);
 
     List<AccountTransactionResponse> getTransactions(Long companyId, String periodFrom, String periodTo);
