@@ -54,18 +54,24 @@ const resetFilters = () => {
   yearFilter.value = ''
 }
 
-// Table columns
+// Table columns — explicit pixel widths to prevent squeezing
 const columns = [
-  { key: 'number', label: '\u2116 \u0434\u0435\u043A\u043B\u0430\u0440\u0430\u0446\u0438\u0438', width: '9%' },
-  { key: 'submittedAt', label: '\u0414\u0430\u0442\u0430 \u043F\u043E\u0434\u0430\u0447\u0438', width: '9%' },
-  { key: 'company', label: '\u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A', width: '15%' },
-  { key: 'inn', label: '\u0418\u041D\u041D', width: '11%' },
-  { key: 'reportingYear', label: '\u041E\u0442\u0447. \u0433\u043E\u0434', width: '6%' },
-  { key: 'totalCharged', label: '\u041D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u043E', width: '10%' },
-  { key: 'totalPaid', label: '\u041E\u043F\u043B\u0430\u0447\u0435\u043D\u043E', width: '10%' },
-  { key: 'balance', label: '\u0421\u0430\u043B\u044C\u0434\u043E', width: '10%' },
-  { key: 'status', label: '\u0421\u0442\u0430\u0442\u0443\u0441', width: '10%' },
+  { key: 'number', label: '\u2116 \u0434\u0435\u043A\u043B\u0430\u0440\u0430\u0446\u0438\u0438', width: '120px' },
+  { key: 'submittedAt', label: '\u0414\u0430\u0442\u0430 \u043F\u043E\u0434\u0430\u0447\u0438', width: '100px' },
+  { key: 'company', label: '\u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A', width: '160px' },
+  { key: 'inn', label: '\u0418\u041D\u041D', width: '130px' },
+  { key: 'reportingYear', label: '\u041E\u0442\u0447. \u0433\u043E\u0434', width: '60px' },
+  { key: 'totalCharged', label: '\u041D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u043E', width: '110px' },
+  { key: 'totalPaid', label: '\u041E\u043F\u043B\u0430\u0447\u0435\u043D\u043E', width: '110px' },
+  { key: 'balance', label: '\u0421\u0430\u043B\u044C\u0434\u043E', width: '110px' },
+  { key: 'status', label: '\u0421\u0442\u0430\u0442\u0443\u0441', width: '150px' },
 ]
+
+// Shorten long status text for the table badge
+const shortStatus = (status: string) => {
+  if (status === 'На рассмотрении') return 'На проверке'
+  return status
+}
 
 const formatBalance = (value: number) => {
   const sign = value > 0 ? '+' : ''
@@ -101,7 +107,7 @@ const formatBalance = (value: number) => {
     />
 
     <!-- Gradient Stat Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-5 border border-yellow-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
@@ -211,6 +217,7 @@ const formatBalance = (value: number) => {
       </div>
 
       <!-- Table -->
+      <div class="declarations-table-wrap">
       <DataTable v-if="!isFilteredEmpty" :columns="columns" :data="filteredDeclarations" :actions="true">
         <template #cell-number="{ value }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
@@ -234,10 +241,10 @@ const formatBalance = (value: number) => {
           <span :class="['font-medium', value < 0 ? 'text-[#ef4444]' : 'text-[#10b981]']">{{ formatBalance(value) }}</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ shortStatus(value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
-          <div class="flex flex-wrap items-center justify-end gap-2">
+          <div class="flex items-center justify-center gap-2">
             <AppButton variant="ghost" size="sm" @click="router.push('/eco-operator/declarations/' + row.id)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -255,6 +262,48 @@ const formatBalance = (value: number) => {
           />
         </template>
       </DataTable>
+      </div>
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+/* ===== Container: horizontal scroll when table > viewport ===== */
+.declarations-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Let table escape the dash-card overflow-hidden */
+.declarations-table-wrap :deep(.dash-card) {
+  overflow: visible;
+}
+
+/* Table: keep fixed layout, enforce min-width so columns never compress */
+.declarations-table-wrap :deep(table) {
+  table-layout: fixed !important;
+  width: 100%;
+  min-width: 1200px;
+}
+
+/* ===== Status column (9th) — padding + center ===== */
+.declarations-table-wrap :deep(thead th:nth-child(9)) {
+  text-align: center;
+}
+.declarations-table-wrap :deep(tbody td:nth-child(9)) {
+  padding-right: 24px !important;
+  text-align: center;
+}
+
+/* ===== Actions column (10th) — override DataTable 100px → 130px ===== */
+.declarations-table-wrap :deep(thead th:nth-child(10)) {
+  width: 130px !important;
+  text-align: center;
+  padding-left: 16px !important;
+}
+.declarations-table-wrap :deep(tbody td:nth-child(10)) {
+  width: 130px !important;
+  text-align: center;
+  padding-left: 16px !important;
+}
+</style>
