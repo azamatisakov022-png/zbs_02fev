@@ -22,7 +22,8 @@ export interface CollectionPoint {
 
 let nextId = 23
 
-const state = reactive<{ points: CollectionPoint[] }>({
+const state = reactive<{ points: CollectionPoint[]; loading: boolean }>({
+  loading: false,
   points: [
     { id: 1, name: 'Пункт приёма №1', region: 'г. Бишкек', district: 'Первомайский', address: 'ул. Киевская, 45', lat: 42.8821, lng: 74.5823, wasteTypes: ['Пластик', 'Бумага', 'Стекло'], workingHours: '09:00-18:00', phone: '+996 555 12-34-56', email: 'punkt1@eco.kg', organization: 'ОсОО «ЭкоПереработка»', status: 'active', notes: '' },
     { id: 2, name: 'Пункт приёма №2', region: 'г. Бишкек', district: 'Свердловский', address: 'ул. Боконбаева, 78', lat: 42.8567, lng: 74.6012, wasteTypes: ['Пластик', 'Металл', 'Электроника'], workingHours: '10:00-19:00', phone: '+996 555 23-45-67', email: 'punkt2@eco.kg', organization: 'ОсОО «ЭкоПереработка»', status: 'active', notes: '' },
@@ -50,12 +51,15 @@ const state = reactive<{ points: CollectionPoint[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/collection-points')
     if (Array.isArray(data)) {
       state.points = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addPoint(data: Omit<CollectionPoint, 'id'>): CollectionPoint {

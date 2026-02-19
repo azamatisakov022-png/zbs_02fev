@@ -8,6 +8,7 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { downloadElementAsPdf } from '../../utils/pdfExport'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,8 +67,13 @@ function handleResubmit() {
   toastStore.show({ type: 'success', title: 'Декларация повторно подана', message: 'Статус изменён на «На рассмотрении».' })
 }
 
-function handleDownloadPdf() {
-  window.print()
+const printAreaRef = ref<HTMLElement | null>(null)
+
+async function handleDownloadPdf() {
+  const el = printAreaRef.value
+  if (!el) return
+  const filename = `declaration-${declaration.value?.number || 'export'}.pdf`
+  await downloadElementAsPdf(el, filename)
 }
 
 function handlePrint() {
@@ -108,9 +114,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
     <!-- Main content -->
     <template v-else>
+      <div ref="printAreaRef">
       <!-- HEADER -->
       <div class="mb-6">
-        <button @click="goBack" class="btn-back mb-4">
+        <button @click="goBack" class="btn-back mb-4 no-print">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Назад
         </button>
@@ -478,6 +485,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Назад
         </button>
+      </div>
       </div>
     </template>
 

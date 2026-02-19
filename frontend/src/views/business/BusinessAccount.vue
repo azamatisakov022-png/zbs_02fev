@@ -9,6 +9,7 @@ import { accountStore } from '../../stores/account'
 import { calculationStore } from '../../stores/calculations'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { downloadElementAsPdf } from '../../utils/pdfExport'
 import QRCode from 'qrcode'
 
 const router = useRouter()
@@ -243,6 +244,12 @@ const generateQR = async () => {
 // Invoice preview
 const showInvoicePreview = ref(false)
 const printInvoice = () => { window.print() }
+const paymentDetailRef = ref<HTMLElement | null>(null)
+const downloadPaymentPdf = async () => {
+  const el = paymentDetailRef.value
+  if (!el) return
+  await downloadElementAsPdf(el, 'payment-detail.pdf')
+}
 </script>
 
 <template>
@@ -709,7 +716,7 @@ const printInvoice = () => { window.print() }
       <Transition name="pd-fade">
         <div v-if="showPaymentDetailModal && paymentDetailData" class="pd-overlay" @click.self="closePaymentDetail">
           <Transition name="pd-scale" appear>
-            <div class="pd-modal">
+            <div ref="paymentDetailRef" class="pd-modal">
               <div class="pd-header">
                 <h2 class="pd-title">Детали оплаты</h2>
                 <button class="pd-close" @click="closePaymentDetail">
@@ -753,7 +760,7 @@ const printInvoice = () => { window.print() }
               </div>
 
               <div class="pd-footer">
-                <button class="pd-btn pd-btn--outline" @click="printInvoice">
+                <button class="pd-btn pd-btn--outline" @click="downloadPaymentPdf">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   Скачать PDF
                 </button>

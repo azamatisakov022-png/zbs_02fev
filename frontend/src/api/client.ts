@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { toastStore } from '../stores/toast'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1',
@@ -48,6 +49,12 @@ api.interceptors.response.use(
         localStorage.removeItem('auth_user')
         window.location.href = '/login'
       }
+    }
+
+    // Show toast for non-401 errors
+    if (error.response?.status !== 401) {
+      const msg = error.response?.data?.message || error.message || 'Ошибка сервера'
+      toastStore.show({ type: 'error', title: 'Ошибка API', message: msg })
     }
 
     return Promise.reject(error)

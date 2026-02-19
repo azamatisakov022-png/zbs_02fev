@@ -37,7 +37,8 @@ export function getDumpStatusLabel(status: DumpStatus): string {
 
 let nextId = 14
 
-const state = reactive<{ dumps: Dump[] }>({
+const state = reactive<{ dumps: Dump[]; loading: boolean }>({
+  loading: false,
   dumps: [
     // 1. EmployeeMap #41 = GIS #401
     {
@@ -253,12 +254,15 @@ const state = reactive<{ dumps: Dump[] }>({
 // ─── Store methods ───────────────────────────────────────────────────────────
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/dumps')
     if (Array.isArray(data)) {
       state.dumps = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addDump(data: Omit<Dump, 'id'>): Dump {

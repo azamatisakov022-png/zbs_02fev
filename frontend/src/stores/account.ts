@@ -59,12 +59,14 @@ let nextTxId = 100
 let nextCorrId = 2
 
 const state = reactive<{
+  loading: boolean
   // Current business user's company key (ОсОО «ТехПром»)
   currentCompany: string
   // All company accounts (for eco-operator view)
   accounts: CompanyAccount[]
   corrections: CorrectionRequest[]
 }>({
+  loading: false,
   currentCompany: 'ОсОО «ТехПром»',
   accounts: [
     {
@@ -176,12 +178,15 @@ const state = reactive<{
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/accounts')
     if (Array.isArray(data)) {
       state.accounts = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 async function fetchCorrections() {
@@ -190,7 +195,7 @@ async function fetchCorrections() {
     if (Array.isArray(data)) {
       state.corrections = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local */ }
 }
 
 // Helper: get current business user's account

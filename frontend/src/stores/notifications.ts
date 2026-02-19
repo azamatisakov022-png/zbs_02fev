@@ -79,7 +79,8 @@ function saveToStorage(notifications: Notification[]) {
 
 const stored = loadFromStorage()
 
-const state = reactive<{ notifications: Notification[] }>({
+const state = reactive<{ notifications: Notification[]; loading: boolean }>({
+  loading: false,
   notifications: stored.length > 0 ? stored : seedNotifications,
 })
 
@@ -128,13 +129,16 @@ function markAllAsRead(role: NotificationRole) {
 }
 
 async function fetchAll(role?: NotificationRole) {
+  state.loading = true
   try {
     const url = role ? `/notifications/by-role/${role}` : '/notifications'
     const { data } = await api.get(url)
     if (Array.isArray(data)) {
       state.notifications = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 export const notificationStore = { state, add, remove, getByRole, getUnreadCount, markAsRead, markAllAsRead, formatRelativeTime, fetchAll }

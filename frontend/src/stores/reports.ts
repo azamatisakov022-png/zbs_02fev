@@ -50,7 +50,8 @@ export interface Report {
 
 let nextId = 6
 
-const state = reactive<{ reports: Report[] }>({
+const state = reactive<{ reports: Report[]; loading: boolean }>({
+  loading: false,
   reports: [
     {
       id: 1,
@@ -174,6 +175,7 @@ const state = reactive<{ reports: Report[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/reports')
     if (Array.isArray(data)) {
@@ -181,7 +183,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.reports = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addReport(data: {

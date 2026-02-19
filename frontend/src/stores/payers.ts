@@ -165,7 +165,8 @@ export const paymentStatusColors: Record<PaymentStatus, string> = {
 
 let nextCommentId = 100
 
-const state = reactive<{ payers: Payer[] }>({
+const state = reactive<{ payers: Payer[]; loading: boolean }>({
+  loading: false,
   payers: [
     {
       id: 1,
@@ -962,6 +963,7 @@ const state = reactive<{ payers: Payer[] }>({
 // ── Store API ──────────────────────────────────────────────
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/payers')
     if (Array.isArray(data)) {
@@ -969,7 +971,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.payers = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function getAll(): Payer[] {
