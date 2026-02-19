@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 export type RefundStatus = 'Новая' | 'На рассмотрении' | 'Одобрена' | 'Отклонена'
 
@@ -65,6 +66,17 @@ const state = reactive<{ refunds: Refund[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/refunds')
+    if (Array.isArray(data)) {
+      state.refunds = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.refunds = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function getRefundById(id: number): Refund | undefined {
   return state.refunds.find(r => r.id === id)
 }
@@ -94,6 +106,7 @@ function createRefund(data: {
     documents: data.documents,
   }
   state.refunds.unshift(refund)
+  api.post('/refunds', data).catch(() => {})
   return refund
 }
 
@@ -102,6 +115,7 @@ function approveRefund(id: number) {
   if (refund && (refund.status === 'На рассмотрении' || refund.status === 'Новая')) {
     refund.status = 'Одобрена'
   }
+  api.post(`/refunds/${id}/approve`).catch(() => {})
 }
 
 function rejectRefund(id: number, reason: string) {
@@ -110,6 +124,7 @@ function rejectRefund(id: number, reason: string) {
     refund.status = 'Отклонена'
     refund.rejectionReason = reason
   }
+  api.post(`/refunds/${id}/reject`, { reason }).catch(() => {})
 }
 
 function getPendingRefundsCount(): number {
@@ -118,6 +133,7 @@ function getPendingRefundsCount(): number {
 
 export const refundStore = {
   state,
+  fetchAll,
   getRefundById,
   createRefund,
   approveRefund,

@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 export interface ProcessingItem {
   id: number
@@ -172,6 +173,17 @@ const state = reactive<{ reports: Report[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/reports')
+    if (Array.isArray(data)) {
+      state.reports = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.reports = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function addReport(data: {
   company: string
   inn: string
@@ -200,6 +212,7 @@ function addReport(data: {
     history: [{ id: Date.now(), action: 'Отчёт создан', date: now.toLocaleDateString('ru-RU'), user: data.company }],
   }
   state.reports.unshift(report)
+  api.post('/reports', data).catch(() => {})
   return report
 }
 
@@ -209,6 +222,7 @@ function submitForReview(id: number) {
     report.status = 'На проверке'
     report.rejectionReason = undefined
   }
+  api.post(`/reports/${id}/submit`).catch(() => {})
 }
 
 function approveReport(id: number, comment?: string) {
@@ -226,6 +240,7 @@ function approveReport(id: number, comment?: string) {
       comment,
     })
   }
+  api.post(`/reports/${id}/approve`, { comment }).catch(() => {})
 }
 
 function rejectReport(id: number, reason: string) {
@@ -244,6 +259,7 @@ function rejectReport(id: number, reason: string) {
       comment: reason,
     })
   }
+  api.post(`/reports/${id}/reject`, { reason }).catch(() => {})
 }
 
 function returnReportForRevision(id: number, comment: string) {
@@ -262,6 +278,7 @@ function returnReportForRevision(id: number, comment: string) {
       comment,
     })
   }
+  api.post(`/reports/${id}/return`, { comment }).catch(() => {})
 }
 
 function getBusinessReports(company: string) {
@@ -274,6 +291,7 @@ function getPendingCount() {
 
 export const reportStore = {
   state,
+  fetchAll,
   addReport,
   submitForReview,
   approveReport,

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { authStore } from '../stores/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -524,17 +525,35 @@ const router = createRouter({
   },
 })
 
-// Simple auth guard (in real app, check actual auth state)
+// Auth guard — check real authentication state
 router.beforeEach((to, _from, next) => {
-  // For now, allow all navigation (auth would be implemented with real backend)
-  // In production, check if user is authenticated and has the correct role
   if (to.meta.requiresAuth) {
-    // Placeholder for auth check
-    // const isAuthenticated = checkAuth()
-    // const userRole = getUserRole()
-    // if (!isAuthenticated) return next('/login')
-    // if (to.meta.role && to.meta.role !== userRole) return next('/login')
+    if (!authStore.isAuthenticated.value) {
+      return next({ path: '/login/business', query: { redirect: to.fullPath } })
+    }
+    // Check role access
+    const requiredRole = to.meta.role as string | undefined
+    const userRole = authStore.userRole.value
+    if (requiredRole && userRole) {
+      // Map backend roles to frontend route roles
+      const roleMap: Record<string, string[]> = {
+        'admin': ['admin'],
+        'employee': ['employee', 'ministry'],
+        'eco-operator': ['eco-operator'],
+        'business': ['business'],
+      }
+      const allowedBackendRoles = roleMap[requiredRole] || [requiredRole]
+      if (!allowedBackendRoles.includes(userRole)) {
+        return next(authStore.getRoleDashboard(userRole))
+      }
+    }
   }
+
+  // Redirect authenticated users away from login pages
+  if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
+    return next(authStore.getRoleDashboard(authStore.userRole.value!))
+  }
+
   next()
 })
 

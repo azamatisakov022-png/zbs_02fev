@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 export type LandfillType = 'sanitary' | 'unauthorized' | 'sorting'
 export type LandfillStatus = 'active' | 'closed' | 'recultivation'
@@ -520,9 +521,19 @@ const state = reactive<{ landfills: Landfill[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/landfills')
+    if (Array.isArray(data)) {
+      state.landfills = data
+    }
+  } catch { /* keep local data */ }
+}
+
 function addLandfill(data: Omit<Landfill, 'id'>): Landfill {
   const landfill: Landfill = { id: nextId++, ...data }
   state.landfills.push(landfill)
+  api.post('/landfills', data).catch(() => {})
   return landfill
 }
 
@@ -531,6 +542,7 @@ function updateLandfill(id: number, updates: Partial<Landfill>) {
   if (idx !== -1) {
     state.landfills[idx] = { ...state.landfills[idx], ...updates }
   }
+  api.put(`/landfills/${id}`, updates).catch(() => {})
 }
 
 function getLandfillById(id: number): Landfill | undefined {
@@ -601,6 +613,7 @@ function getForGisMap() {
 
 export const landfillStore = {
   state,
+  fetchAll,
   addLandfill,
   updateLandfill,
   getLandfillById,

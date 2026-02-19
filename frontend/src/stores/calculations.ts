@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
 
 export type DocumentType = 'gtd' | 'act' | 'invoice_goods' | 'invoice' | 'contract' | 'other'
@@ -373,6 +374,17 @@ const state = reactive<{ calculations: Calculation[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/calculations')
+    if (Array.isArray(data)) {
+      state.calculations = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.calculations = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function addCalculation(data: {
   number: string
   date: string
@@ -412,6 +424,7 @@ function addCalculation(data: {
     status,
   }
   state.calculations.unshift(calc)
+  api.post('/calculations', data).catch(() => {})
   return calc
 }
 
@@ -421,6 +434,7 @@ function submitForReview(id: number) {
     calc.status = 'На проверке'
     calc.rejectionReason = undefined
   }
+  api.post(`/calculations/${id}/submit`).catch(() => {})
 }
 
 function approveCalculation(id: number) {
@@ -428,6 +442,7 @@ function approveCalculation(id: number) {
   if (calc && calc.status === 'На проверке') {
     calc.status = 'Принято'
   }
+  api.post(`/calculations/${id}/approve`).catch(() => {})
 }
 
 function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
@@ -438,6 +453,7 @@ function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
     calc.rejectedAt = new Date().toLocaleDateString('ru-RU')
     calc.rejectedBy = rejectedBy
   }
+  api.post(`/calculations/${id}/reject`, { reason, rejectedBy }).catch(() => {})
 }
 
 function submitPayment(id: number, payment: PaymentData) {
@@ -447,6 +463,7 @@ function submitPayment(id: number, payment: PaymentData) {
     calc.status = 'Оплата на проверке'
     calc.paymentRejectionReason = undefined
   }
+  api.post(`/calculations/${id}/payment`, payment).catch(() => {})
 }
 
 function approvePayment(id: number) {
@@ -455,6 +472,7 @@ function approvePayment(id: number) {
     calc.status = 'Оплачено'
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
+  api.post(`/calculations/${id}/payment/approve`).catch(() => {})
 }
 
 function rejectPayment(id: number, reason: string) {
@@ -463,6 +481,7 @@ function rejectPayment(id: number, reason: string) {
     calc.status = 'Оплата отклонена'
     calc.paymentRejectionReason = reason
   }
+  api.post(`/calculations/${id}/payment/reject`, { reason }).catch(() => {})
 }
 
 function markAsPaid(id: number) {
@@ -471,6 +490,7 @@ function markAsPaid(id: number) {
     calc.status = 'Оплачено'
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
+  api.post(`/calculations/${id}/mark-paid`).catch(() => {})
 }
 
 function resubmitCalculation(id: number) {
@@ -479,6 +499,7 @@ function resubmitCalculation(id: number) {
     calc.status = 'На проверке'
     calc.rejectionReason = undefined
   }
+  api.post(`/calculations/${id}/resubmit`).catch(() => {})
 }
 
 function updateCalculationItems(id: number, items: ProductItem[], totalAmount: number) {
@@ -487,6 +508,7 @@ function updateCalculationItems(id: number, items: ProductItem[], totalAmount: n
     calc.items = items
     calc.totalAmount = totalAmount
   }
+  api.put(`/calculations/${id}/items`, { items, totalAmount }).catch(() => {})
 }
 
 function updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
@@ -494,6 +516,7 @@ function updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
   if (calc) {
     calc.documents = documents
   }
+  api.put(`/calculations/${id}/documents`, { documents }).catch(() => {})
 }
 
 function copyCalculation(sourceId: number): Calculation | undefined {
@@ -548,6 +571,7 @@ function getCalcReviewCount() {
 
 export const calculationStore = {
   state,
+  fetchAll,
   addCalculation,
   submitForReview,
   approveCalculation,

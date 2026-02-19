@@ -1,4 +1,5 @@
 import { reactive, watch } from 'vue'
+import api from '../api/client'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
 export type NotificationRole = 'business' | 'eco-operator' | 'employee' | 'admin'
@@ -94,11 +95,13 @@ function add(notification: { type: NotificationType; title: string; message: str
     createdAt: new Date().toISOString(),
   }
   state.notifications.unshift(n)
+  api.post('/notifications', notification).catch(() => {})
   return n
 }
 
 function remove(id: number) {
   state.notifications = state.notifications.filter(n => n.id !== id)
+  api.delete(`/notifications/${id}`).catch(() => {})
 }
 
 function getByRole(role: NotificationRole) {
@@ -114,12 +117,24 @@ function getUnreadCount(role: NotificationRole) {
 function markAsRead(id: number) {
   const n = state.notifications.find(n => n.id === id)
   if (n) n.read = true
+  api.post(`/notifications/${id}/read`).catch(() => {})
 }
 
 function markAllAsRead(role: NotificationRole) {
   state.notifications.forEach(n => {
     if (n.role === role) n.read = true
   })
+  api.post('/notifications/read-all').catch(() => {})
 }
 
-export const notificationStore = { state, add, remove, getByRole, getUnreadCount, markAsRead, markAllAsRead, formatRelativeTime }
+async function fetchAll(role?: NotificationRole) {
+  try {
+    const url = role ? `/notifications/by-role/${role}` : '/notifications'
+    const { data } = await api.get(url)
+    if (Array.isArray(data)) {
+      state.notifications = data
+    }
+  } catch { /* keep local data */ }
+}
+
+export const notificationStore = { state, add, remove, getByRole, getUnreadCount, markAsRead, markAllAsRead, formatRelativeTime, fetchAll }

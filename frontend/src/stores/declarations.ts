@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 export type DeclarationStatus = 'Черновик' | 'На рассмотрении' | 'Одобрена' | 'Отклонена' | 'На доработке'
 
@@ -308,6 +309,17 @@ const state = reactive<{ declarations: Declaration[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/declarations')
+    if (Array.isArray(data)) {
+      state.declarations = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.declarations = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function getById(id: number): Declaration | undefined {
   return state.declarations.find(d => d.id === id)
 }
@@ -327,6 +339,7 @@ function approveDeclaration(id: number, comment?: string) {
     user: 'Асанов Б.Т.',
     comment: comment || undefined,
   })
+  api.post(`/declarations/${id}/approve`, { comment }).catch(() => {})
 }
 
 function rejectDeclaration(id: number, reason: string) {
@@ -344,6 +357,7 @@ function rejectDeclaration(id: number, reason: string) {
     user: 'Асанов Б.Т.',
     comment: reason,
   })
+  api.post(`/declarations/${id}/reject`, { reason }).catch(() => {})
 }
 
 function returnForRevision(id: number, comment: string) {
@@ -361,6 +375,7 @@ function returnForRevision(id: number, comment: string) {
     user: 'Асанов Б.Т.',
     comment,
   })
+  api.post(`/declarations/${id}/return`, { comment }).catch(() => {})
 }
 
 function resubmitDeclaration(id: number) {
@@ -377,6 +392,7 @@ function resubmitDeclaration(id: number) {
     date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
+  api.post(`/declarations/${id}/resubmit`).catch(() => {})
 }
 
 let nextId = 7
@@ -416,6 +432,7 @@ function addDeclaration(data: {
     }],
   }
   state.declarations.unshift(decl)
+  api.post('/declarations', data).catch(() => {})
   return decl
 }
 
@@ -431,6 +448,7 @@ function submitDraft(id: number) {
     date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
+  api.post(`/declarations/${id}/submit`).catch(() => {})
 }
 
 function getPendingCount() {
@@ -443,6 +461,7 @@ function getByCompany(company: string) {
 
 export const declarationStore = {
   state,
+  fetchAll,
   getById,
   addDeclaration,
   submitDraft,
