@@ -102,7 +102,8 @@ const MPRETK = 'Министерство природных ресурсов, э
 
 let nextId = 9
 
-const state = reactive<{ recyclers: Recycler[] }>({
+const state = reactive<{ recyclers: Recycler[]; loading: boolean }>({
+  loading: false,
   recyclers: [
     {
       id: 1, name: 'ОсОО «ЭкоРесайкл»', fullName: 'Общество с ограниченной ответственностью «ЭкоРесайкл»', opf: 'ОсОО', inn: '02301200910345',
@@ -367,6 +368,7 @@ const state = reactive<{ recyclers: Recycler[] }>({
 // ═══ Functions ═══
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/recyclers')
     if (Array.isArray(data)) {
@@ -374,7 +376,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.recyclers = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addRecycler(data: Omit<Recycler, 'id'>): Recycler {

@@ -79,7 +79,8 @@ export interface Declaration {
 
 let nextHistoryId = 100
 
-const state = reactive<{ declarations: Declaration[] }>({
+const state = reactive<{ declarations: Declaration[]; loading: boolean }>({
+  loading: false,
   declarations: [
     // 1 — На рассмотрении (ТехПром)
     {
@@ -310,6 +311,7 @@ const state = reactive<{ declarations: Declaration[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/declarations')
     if (Array.isArray(data)) {
@@ -317,7 +319,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.declarations = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function getById(id: number): Declaration | undefined {

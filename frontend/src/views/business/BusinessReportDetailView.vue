@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
+import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
@@ -94,8 +95,13 @@ const downloadExcel = () => {
   })
 }
 
-const downloadPdf = () => {
-  window.print()
+const printAreaRef = ref<HTMLElement | null>(null)
+
+const downloadPdf = async () => {
+  const el = printAreaRef.value
+  if (!el) return
+  const filename = `report-${report.value?.number || 'export'}.pdf`
+  await downloadElementAsPdf(el, filename)
 }
 
 const handlePrint = () => {
@@ -145,8 +151,9 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
     </div>
 
     <template v-else>
+      <div ref="printAreaRef">
       <!-- Back link -->
-      <button @click="goBack" class="btn-back mb-4">
+      <button @click="goBack" class="btn-back mb-4 no-print">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         Назад
       </button>
@@ -395,6 +402,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Назад
         </button>
+      </div>
       </div>
     </template>
   </DashboardLayout>

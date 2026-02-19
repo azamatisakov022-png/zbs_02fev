@@ -8,6 +8,7 @@ import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData } fr
 import TnvedCode from '../../components/TnvedCode.vue'
 import { calculatePaymentDeadline, getRemainingDays, formatDateShort } from '../../utils/dateUtils'
 import { generateCalculationExcel } from '../../utils/excelExport'
+import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
@@ -307,6 +308,15 @@ const goBack = () => {
 }
 
 
+const printAreaRef = ref<HTMLElement | null>(null)
+
+const handleDownloadPdf = async () => {
+  const el = printAreaRef.value
+  if (!el) return
+  const filename = `calculation-${calc.value?.number || 'export'}.pdf`
+  await downloadElementAsPdf(el, filename)
+}
+
 const handlePrint = () => {
   window.print()
 }
@@ -452,9 +462,10 @@ function submitPaymentConfirmation() {
     </div>
 
     <template v-else>
+      <div ref="printAreaRef">
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="btn-back mb-4">
+        <button @click="goBack" class="btn-back mb-4 no-print">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           Назад
         </button>
@@ -908,7 +919,7 @@ function submitPaymentConfirmation() {
 
             <!-- На проверке actions -->
             <template v-if="calc.status === 'На проверке'">
-              <button @click="handlePrint()" class="btn-pdf">
+              <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -928,7 +939,7 @@ function submitPaymentConfirmation() {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 Оплатить
               </button>
-              <button @click="handlePrint()" class="btn-pdf">
+              <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -948,7 +959,7 @@ function submitPaymentConfirmation() {
 
             <!-- Оплачено / Оплата на проверке -->
             <template v-if="calc.status === 'Оплачено' || calc.status === 'Оплата на проверке'">
-              <button @click="handlePrint()" class="btn-pdf">
+              <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -963,6 +974,7 @@ function submitPaymentConfirmation() {
             </template>
           </div>
         </template>
+      </div>
       </div>
     </template>
 

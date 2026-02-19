@@ -91,7 +91,8 @@ let nextId = 13
 // Нормативы (Нпер): 2025 — группы 1-4: 0.2, группы 5-24: 0.1
 //                    2026 — группы 1-4: 0.3, группы 5-24: 0.2
 // Формула: Усб = Сус × Мтв/уп × Нпер
-const state = reactive<{ calculations: Calculation[] }>({
+const state = reactive<{ calculations: Calculation[]; loading: boolean }>({
+  loading: false,
   calculations: [
     {
       id: 1,
@@ -375,6 +376,7 @@ const state = reactive<{ calculations: Calculation[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/calculations')
     if (Array.isArray(data)) {
@@ -382,7 +384,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.calculations = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addCalculation(data: {

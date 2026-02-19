@@ -12,6 +12,7 @@ import { reportStore } from '../../stores/reports'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { notificationStore } from '../../stores/notifications'
 import { useRouter } from 'vue-router'
 
@@ -340,7 +341,13 @@ const handleDownloadPdf = (id: number) => {
   router.push({ path: '/business/declarations/' + id, query: { from: 'declarations', print: 'true' } })
 }
 
-const printPage = () => { window.print() }
+const printAreaRef = ref<HTMLElement | null>(null)
+
+const printPage = async () => {
+  const el = printAreaRef.value
+  if (!el) return
+  await downloadElementAsPdf(el, 'declaration-detail.pdf')
+}
 
 const deleteDeclaration = (id: number) => {
   toastStore.show({ type: 'info', title: 'Удаление', message: 'Удаление деклараций будет доступно в следующем обновлении' })
@@ -1053,7 +1060,7 @@ const signDeclaration = (id: number) => {
 
     <!-- SUCCESS VIEW -->
     <template v-else-if="viewMode === 'success'">
-      <div class="max-w-2xl mx-auto text-center py-12">
+      <div ref="printAreaRef" class="max-w-2xl mx-auto text-center py-12">
         <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
           <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />

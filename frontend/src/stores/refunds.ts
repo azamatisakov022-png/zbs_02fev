@@ -30,7 +30,8 @@ export interface Refund {
 
 let nextId = 3
 
-const state = reactive<{ refunds: Refund[] }>({
+const state = reactive<{ refunds: Refund[]; loading: boolean }>({
+  loading: false,
   refunds: [
     {
       id: 1,
@@ -67,6 +68,7 @@ const state = reactive<{ refunds: Refund[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/refunds')
     if (Array.isArray(data)) {
@@ -74,7 +76,9 @@ async function fetchAll() {
     } else if (data?.content && Array.isArray(data.content)) {
       state.refunds = data.content
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function getRefundById(id: number): Refund | undefined {

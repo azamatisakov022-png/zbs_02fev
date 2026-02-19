@@ -75,7 +75,8 @@ export interface Landfill {
 
 let nextId = 10
 
-const state = reactive<{ landfills: Landfill[] }>({
+const state = reactive<{ landfills: Landfill[]; loading: boolean }>({
+  loading: false,
   landfills: [
     {
       id: 1,
@@ -522,12 +523,15 @@ const state = reactive<{ landfills: Landfill[] }>({
 })
 
 async function fetchAll() {
+  state.loading = true
   try {
     const { data } = await api.get('/landfills')
     if (Array.isArray(data)) {
       state.landfills = data
     }
-  } catch { /* keep local data */ }
+  } catch { /* keep local data */ } finally {
+    state.loading = false
+  }
 }
 
 function addLandfill(data: Omit<Landfill, 'id'>): Landfill {
