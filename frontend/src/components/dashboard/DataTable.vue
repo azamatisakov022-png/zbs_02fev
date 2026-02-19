@@ -19,20 +19,20 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
 <template>
   <div class="dash-card overflow-hidden">
     <!-- Desktop: standard table -->
-    <div class="overflow-x-auto hidden md:block">
-      <table class="w-full" role="table">
+    <div class="hidden md:block">
+      <table class="w-full" style="table-layout: fixed" role="table">
         <thead>
           <tr class="bg-[#F8FAFC]" style="border-bottom: 1px solid rgba(0,0,0,0.06)">
             <th
               v-for="col in columns"
               :key="col.key"
-              :style="col.width ? { width: col.width, minWidth: col.width } : {}"
+              :style="col.width ? { width: col.width } : {}"
               class="px-4 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap"
               scope="col"
             >
               {{ col.label }}
             </th>
-            <th v-if="actions" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
+            <th v-if="actions" style="width: 100px" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
               Действия
             </th>
           </tr>

@@ -578,7 +578,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
       </div>
 
       <!-- Summary Cards - Interactive -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div
           @click="scrollToPayments"
           class="bg-white rounded-xl p-5 border border-gray-200 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:border-green-300"

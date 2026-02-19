@@ -29,6 +29,41 @@ const getProductGroupLabel = (value: string) => {
   return productGroups.find(g => g.value === value)?.label || value
 }
 
+// Product groups editing
+const editingProducts = ref(false)
+const editProductGroups = ref<string[]>([])
+
+const allProductsSelected = computed(() => editProductGroups.value.length === productGroups.length)
+
+const startEditingProducts = () => {
+  editProductGroups.value = [...selectedProductGroups.value]
+  editingProducts.value = true
+}
+
+const toggleAllProducts = () => {
+  if (allProductsSelected.value) {
+    editProductGroups.value = []
+  } else {
+    editProductGroups.value = productGroups.map(g => g.value)
+  }
+}
+
+const cancelEditingProducts = () => {
+  editingProducts.value = false
+  editProductGroups.value = []
+}
+
+const savingProducts = ref(false)
+
+const saveProducts = async () => {
+  savingProducts.value = true
+  await new Promise(resolve => setTimeout(resolve, 800))
+  selectedProductGroups.value = [...editProductGroups.value]
+  savingProducts.value = false
+  editingProducts.value = false
+  toastStore.show({ type: 'success', title: 'Виды продукции обновлены' })
+}
+
 const contactData = ref({
   phone: '+996 312 123-456',
   additionalPhone: '+996 555 123-456',
@@ -463,7 +498,7 @@ const toggleTwoFactor = () => {
 
       <!-- Product Groups -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
               <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -475,20 +510,89 @@ const toggleTwoFactor = () => {
               <p class="text-sm text-gray-500">Группы товаров, указанные при регистрации</p>
             </div>
           </div>
+          <button
+            v-if="!editingProducts"
+            @click="startEditingProducts"
+            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Редактировать
+          </button>
         </div>
         <div class="p-6">
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="gv in selectedProductGroups"
-              :key="gv"
-              class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
-            >
-              <svg class="w-3.5 h-3.5 mr-1.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ getProductGroupLabel(gv) }}
-            </span>
-          </div>
+          <!-- View mode: green badges -->
+          <template v-if="!editingProducts">
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="gv in selectedProductGroups"
+                :key="gv"
+                class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+              >
+                <svg class="w-3.5 h-3.5 mr-1.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                {{ getProductGroupLabel(gv) }}
+              </span>
+              <span v-if="selectedProductGroups.length === 0" class="text-sm text-gray-400">Не выбрано</span>
+            </div>
+          </template>
+
+          <!-- Edit mode: checkboxes -->
+          <template v-else>
+            <!-- Select all / Deselect all -->
+            <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+              <span class="text-sm text-gray-500">
+                Выбрано: <span class="font-semibold text-gray-900">{{ editProductGroups.length }}</span> из {{ productGroups.length }}
+              </span>
+              <button
+                @click="toggleAllProducts"
+                class="text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
+              >
+                {{ allProductsSelected ? 'Снять все' : 'Выбрать все' }}
+              </button>
+            </div>
+
+            <!-- Checkboxes grid (2 columns) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <label
+                v-for="group in productGroups"
+                :key="group.value"
+                class="flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                :class="editProductGroups.includes(group.value) ? 'bg-emerald-50' : 'hover:bg-gray-50'"
+              >
+                <input
+                  type="checkbox"
+                  :value="group.value"
+                  v-model="editProductGroups"
+                  class="mt-0.5 w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 flex-shrink-0"
+                />
+                <span class="text-sm text-gray-700 leading-snug">{{ group.label }}</span>
+              </label>
+            </div>
+
+            <!-- Save / Cancel buttons -->
+            <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+              <button
+                @click="cancelEditingProducts"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                @click="saveProducts"
+                :disabled="savingProducts"
+                class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <svg v-if="savingProducts" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {{ savingProducts ? 'Сохранение...' : 'Сохранить' }}
+              </button>
+            </div>
+          </template>
         </div>
       </div>
 

@@ -86,7 +86,9 @@ function recalcRow(row: CalcRow) {
     return
   }
 
-  row.recyclingStandard = group.recyclingStandard
+  // Year-based norm from recycling-norms.ts (e.g. group_4, 2025 → 20%)
+  const normFraction = getNormativeForGroup(row.group, year.value)
+  row.recyclingStandard = Math.round(normFraction * 100)
 
   // Rate = baseRate × subgroup multiplier
   let multiplier = 1
@@ -108,6 +110,13 @@ watch(rows, () => {
     if (r.group) recalcRow(r)
   })
 }, { deep: true })
+
+// Recalculate all rows when year changes (norms differ by year)
+watch(year, () => {
+  rows.value.forEach(r => {
+    if (r.group) recalcRow(r)
+  })
+})
 
 // ─── Validation ───
 function getVolumeError(row: CalcRow): string {

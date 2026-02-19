@@ -189,7 +189,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       </div>
 
       <!-- Rates Tab -->
-      <div v-if="activeTab === 'rates'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="activeTab === 'rates'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>

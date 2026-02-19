@@ -319,13 +319,35 @@ const resetFilters = () => {
   filterStatus.value = ''
 }
 
-// Export / Print handlers
-const handleDownloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
+// Row class for Variant 6 colored left border
+const getRowClass = (row: Record<string, any>) => {
+  switch (row.status) {
+    case 'Принята': case 'Подписана': return 'row-green'
+    case 'На проверке': return 'row-yellow'
+    case 'Отклонена': return 'row-red'
+    case 'Автосформирована': return 'row-blue'
+    default: return 'row-gray'
+  }
 }
 
-const handlePrint = () => {
-  window.print()
+// ⋯ dropdown menu state
+const openMenuId = ref<number | null>(null)
+const toggleMenu = (id: number) => { openMenuId.value = openMenuId.value === id ? null : id }
+const closeMenu = () => { openMenuId.value = null }
+
+// Export / Print handlers
+const handleDownloadPdf = (id: number) => {
+  router.push({ path: '/business/declarations/' + id, query: { from: 'declarations', print: 'true' } })
+}
+
+const printPage = () => { window.print() }
+
+const deleteDeclaration = (id: number) => {
+  toastStore.show({ type: 'info', title: 'Удаление', message: 'Удаление деклараций будет доступно в следующем обновлении' })
+}
+
+const signDeclaration = (id: number) => {
+  toastStore.show({ type: 'info', title: 'Подписание', message: 'Электронное подписание будет доступно в следующем обновлении' })
 }
 </script>
 
@@ -458,7 +480,7 @@ const handlePrint = () => {
         />
       </div>
 
-      <DataTable v-if="!isFilteredEmpty" :columns="columns" :data="filteredDeclarations" :actions="true">
+      <DataTable v-if="!isFilteredEmpty" :columns="columns" :data="filteredDeclarations" :actions="true" :rowClass="getRowClass">
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M5 11.67v16.66A3.33 3.33 0 008.33 31.67h23.34A3.33 3.33 0 0035 28.33V15A3.33 3.33 0 0031.67 11.67H20l-3.33-3.34H8.33A3.33 3.33 0 005 11.67z&quot;/></svg>'"
@@ -469,7 +491,7 @@ const handlePrint = () => {
           />
         </template>
         <template #cell-number="{ value, row }">
-          <button class="font-mono font-medium text-[#2563eb] hover:underline cursor-pointer" @click="router.push('/business/declarations/' + row.id)">{{ value }}</button>
+          <button class="font-mono font-medium text-[#2563eb] hover:underline cursor-pointer" @click="router.push({ path: '/business/declarations/' + row.id, query: { from: 'declarations' } })">{{ value }}</button>
         </template>
         <template #cell-year="{ value }">
           <span>{{ value }} год</span>
@@ -481,34 +503,83 @@ const handlePrint = () => {
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <AppButton variant="ghost" size="sm" @click="router.push('/business/declarations/' + row.id)">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Просмотреть
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Принята'"
-              variant="outline" size="sm"
-              @click="handleDownloadPdf"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Скачать PDF
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Принята'"
-              variant="secondary" size="sm"
-              @click="handlePrint"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Печать
-            </AppButton>
+          <div class="act-wrap">
+            <!-- На проверке: [Просмотреть] -->
+            <template v-if="row.status === 'На проверке'">
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
+            <!-- Принята: [Просмотреть] [⋯ → PDF, Excel] -->
+            <template v-else-if="row.status === 'Принята' || row.status === 'Подписана'">
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item" @click="handleDownloadPdf(row.id); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Скачать PDF
+                  </button>
+                  <button class="act-dropdown__item" @click="toastStore.show({ type: 'info', title: 'Excel', message: 'Экспорт декларации в Excel будет доступен в следующем обновлении' }); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Скачать Excel
+                  </button>
+                </div>
+              </div>
+            </template>
+            <!-- Отклонена: [Исправить (orange)] [Просмотреть] -->
+            <template v-else-if="row.status === 'Отклонена'">
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--filled act-btn--orange">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Исправить
+              </router-link>
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
+            <!-- Черновик: [Редактировать (green)] [Просмотреть] [⋯ → Удалить] -->
+            <template v-else-if="row.status === 'Черновик'">
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--filled act-btn--green">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Редактировать
+              </router-link>
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item act-dropdown__item--red" @click="deleteDeclaration(row.id); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    Удалить
+                  </button>
+                </div>
+              </div>
+            </template>
+            <!-- Автосформирована: [Подписать (green)] [Просмотреть] -->
+            <template v-else-if="row.status === 'Автосформирована'">
+              <button @click="signDeclaration(row.id)" class="act-btn act-btn--filled act-btn--green">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Подписать
+              </button>
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
+            <!-- Fallback -->
+            <template v-else>
+              <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
           </div>
         </template>
       </DataTable>
@@ -579,6 +650,7 @@ const handlePrint = () => {
                   v-model="reportingYear"
                   class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20"
                 >
+                  <option value="2025">2025</option>
                   <option value="2026">2026</option>
                   <option value="2027">2027</option>
                   <option value="2028">2028</option>
@@ -925,7 +997,7 @@ const handlePrint = () => {
           </div>
 
           <!-- Navigation Buttons -->
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
+          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
             <AppButton
               v-if="currentStep > 1"
               variant="secondary"
@@ -1013,7 +1085,7 @@ const handlePrint = () => {
         </p>
 
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
+          <button @click="printPage" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -1044,5 +1116,116 @@ const handlePrint = () => {
   .lg\:ml-72 {
     margin-left: 0 !important;
   }
+}
+
+/* ── Row status stripes (Variant 6) ── */
+:deep(.row-green) { border-left: 4px solid #22c55e !important; }
+:deep(.row-yellow) { border-left: 4px solid #f59e0b !important; }
+:deep(.row-red) { border-left: 4px solid #ef4444 !important; background: #fffbeb !important; }
+:deep(.row-gray) { border-left: 4px solid #d1d5db !important; }
+:deep(.row-blue) { border-left: 4px solid #3b82f6 !important; }
+
+/* ── Action buttons (Variant 6) ── */
+.act-wrap {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.act-btn--filled {
+  color: white;
+  border: none;
+}
+.act-btn--green { background: #22c55e; }
+.act-btn--green:hover { background: #16a34a; box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
+.act-btn--orange { background: #f59e0b; }
+.act-btn--orange:hover { background: #d97706; box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+.act-btn--outline {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.act-btn--outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+/* More menu (⋯) */
+.act-more-wrap {
+  position: relative;
+}
+.act-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.15s;
+}
+.act-more:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+.act-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+  min-width: 170px;
+  padding: 4px;
+  overflow: hidden;
+}
+.act-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #374151;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.act-dropdown__item:hover {
+  background: #f3f4f6;
+}
+.act-dropdown__item--red {
+  color: #ef4444;
+}
+.act-dropdown__item--red:hover {
+  background: #fef2f2;
 }
 </style>

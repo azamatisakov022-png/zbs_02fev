@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { reportStore } from '../../stores/reports'
@@ -7,7 +7,6 @@ import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/p
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { toastStore } from '../../stores/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -96,12 +95,28 @@ const downloadExcel = () => {
 }
 
 const downloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
+  window.print()
+}
+
+const handlePrint = () => {
+  window.print()
 }
 
 const goBack = () => {
-  router.push('/business/reports')
+  const from = route.query.from as string
+  const routes: Record<string, string> = {
+    reports: '/business/reports',
+    account: '/business/account',
+  }
+  router.push(routes[from] || '/business/reports')
 }
+
+onMounted(() => {
+  if (route.query.print === 'true') {
+    nextTick(() => { setTimeout(() => window.print(), 500) })
+  }
+})
+
 
 const fmt = (n: number) => n.toFixed(2)
 const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
@@ -123,18 +138,17 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Отчёт не найден</h2>
       <p class="text-[#64748b] mb-6">Запрошенный отчёт не существует</p>
-      <button @click="goBack" class="px-6 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white">
-        Назад к списку
+      <button @click="goBack" class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
       </button>
     </div>
 
     <template v-else>
       <!-- Back link -->
-      <button @click="goBack" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4 text-sm">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Назад к списку отчётов
+      <button @click="goBack" class="btn-back mb-4">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
       </button>
 
       <!-- Header -->
@@ -369,11 +383,17 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           Скачать PDF
         </button>
         <button
-          @click="goBack"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border border-[#e2e8f0] text-[#64748b] hover:bg-white transition-colors"
+          @click="handlePrint"
+          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border border-[#e2e8f0] text-[#475569] hover:bg-[#f8fafc] transition-colors"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Назад к списку
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+          Печать
+        </button>
+      </div>
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;">
+        <button @click="goBack" class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
       </div>
     </template>
@@ -381,6 +401,25 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 </template>
 
 <style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
 .rd-section {
   background: #F8FAFC;
   border: 1px solid #e2e8f0;
@@ -457,5 +496,16 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 }
 .rd-row--total .rd-td {
   font-weight: 600;
+}
+
+@media print {
+  :deep(.dashboard-layout > aside),
+  :deep(.dashboard-layout > main > header),
+  :deep(.lg\:hidden) {
+    display: none !important;
+  }
+  :deep(.lg\:ml-72) {
+    margin-left: 0 !important;
+  }
 }
 </style>

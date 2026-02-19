@@ -605,7 +605,7 @@ const resetUserFilters = () => {
             <!-- Role history -->
             <div>
               <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">История изменений роли</h4>
-              <div v-if="selectedUser.roleHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden">
+              <div v-if="selectedUser.roleHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-[#f8fafc]">
@@ -629,7 +629,7 @@ const resetUserFilters = () => {
             <!-- Status history -->
             <div>
               <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">История статусов</h4>
-              <div v-if="selectedUser.statusHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden">
+              <div v-if="selectedUser.statusHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="bg-[#f8fafc]">

@@ -645,7 +645,7 @@ const saveDraft = () => {
       </div>
 
       <!-- Report Info Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <p class="text-sm text-gray-500">Дата подачи</p>
           <p class="text-lg font-bold text-gray-900 mt-1">{{ formatDate(selectedReport.submittedDate) }}</p>
@@ -850,7 +850,7 @@ const saveDraft = () => {
             </div>
           </div>
 
-          <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
             <div>
               <p class="text-xs text-gray-500">Объём переработки</p>
               <p class="font-semibold text-gray-900">{{ formatNumber(report.totalVolume) }} тонн</p>
@@ -1154,33 +1154,33 @@ const saveDraft = () => {
           </div>
 
           <!-- Footer -->
-          <div class="px-6 py-4 border-t border-gray-200 flex justify-between">
+          <div class="px-6 py-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 sticky bottom-0 bg-white z-10">
             <button
               v-if="wizardStep > 1"
               @click="prevStep"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors w-full sm:w-auto"
             >
               {{ $t('common.back') }}
             </button>
             <div v-else></div>
-            <div class="flex gap-3">
+            <div class="flex flex-col sm:flex-row gap-3">
               <button
                 @click="saveDraft"
-                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors w-full sm:w-auto text-center"
               >
                 {{ $t('common.saveDraft') }}
               </button>
               <button
                 v-if="wizardStep < 4"
                 @click="nextStep"
-                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
+                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors w-full sm:w-auto text-center"
               >
                 {{ $t('common.next') }}
               </button>
               <button
                 v-else
                 @click="submitReport"
-                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
+                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors w-full sm:w-auto text-center"
               >
                 {{ $t('common.sendReport') }}
               </button>

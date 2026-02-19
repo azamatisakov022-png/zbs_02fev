@@ -289,7 +289,7 @@ const showExportMenu = ref(false)
 
 function doExport(format: string) {
   showExportMenu.value = false
-  toastStore.show({ type: 'info', title: 'Формирование отчёта', message: `Отчёт формируется в формате ${format}` })
+  toastStore.show({ type: 'info', title: 'Экспорт', message: `Экспорт в формате ${format} будет доступен в следующем обновлении` })
 }
 
 // ─── Reports tab ───
@@ -328,7 +328,7 @@ function generateReport() {
 }
 
 function downloadReportFile(_format: string) {
-  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Функция будет реализована с серверной генерацией' })
+  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Экспорт данных будет доступен в следующем обновлении' })
 }
 
 // Mock data for report previews
@@ -806,7 +806,7 @@ function hideBarTooltip() {
 }
 
 function exportTabData(tabName: string) {
-  toastStore.show({ type: 'info', title: 'Выгрузка данных', message: `Раздел «${tabName}» — функция будет реализована с серверной генерацией` })
+  toastStore.show({ type: 'info', title: 'Экспорт', message: `Выгрузка раздела «${tabName}» будет доступна в следующем обновлении` })
 }
 
 // ─── Capacity balance data ───

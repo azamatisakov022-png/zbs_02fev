@@ -104,7 +104,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               {{ period.name }}
             </button>
           </div>
-          <button @click="toastStore.show({ type: 'info', title: 'Экспорт аналитики', message: 'Функция в разработке' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="toastStore.show({ type: 'info', title: 'Экспорт', message: 'Экспорт аналитики будет доступен в следующем обновлении' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>

@@ -133,6 +133,11 @@ function show() {
   grid-template-columns: 1fr 1fr;
   gap: 3px 24px;
 }
+@media (max-width: 640px) {
+  .sg-actions--grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 .sg-action {
   font-size: 13px;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -13,6 +13,16 @@ const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
 
+const goBack = () => {
+  const from = route.query.from as string
+  const routes: Record<string, string> = {
+    declarations: '/business/declarations',
+    account: '/business/account',
+  }
+  router.push(routes[from] || '/business/declarations')
+}
+
+
 const declaration = ref<Declaration | undefined>(undefined)
 const isLoading = ref(true)
 
@@ -20,6 +30,9 @@ onMounted(() => {
   const id = Number(route.params.id)
   declaration.value = declarationStore.getById(id)
   setTimeout(() => { isLoading.value = false }, 300)
+  if (route.query.print === 'true') {
+    nextTick(() => { setTimeout(() => window.print(), 500) })
+  }
 })
 
 function formatCurrency(value: number): string {
@@ -54,11 +67,11 @@ function handleResubmit() {
 }
 
 function handleDownloadPdf() {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция в разработке' })
+  window.print()
 }
 
 function handlePrint() {
-  toastStore.show({ type: 'info', title: 'Печать', message: 'Функция в разработке' })
+  window.print()
 }
 
 // Document preview
@@ -87,23 +100,19 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Декларация не найдена</h2>
       <p class="text-[#64748b] mb-6">Запрашиваемая декларация не существует или была удалена.</p>
-      <AppButton variant="primary" @click="router.push('/business/declarations')">
-        Вернуться к списку
-      </AppButton>
+      <button @click="goBack" class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
+      </button>
     </div>
 
     <!-- Main content -->
     <template v-else>
       <!-- HEADER -->
       <div class="mb-6">
-        <button
-          class="flex items-center gap-1 text-sm text-[#64748b] hover:text-[#1e293b] transition-colors mb-4"
-          @click="router.push('/business/declarations')"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Мои декларации
+        <button @click="goBack" class="btn-back mb-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
         <div class="flex flex-wrap items-center gap-3 mb-1">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Декларация {{ declaration.number }}</h1>
@@ -227,7 +236,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">Сводные данные декларации</h2>
 
         <!-- KPI Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
@@ -411,7 +420,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
                 >Просмотр</button>
                 <button
                   class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
-                  @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })"
+                  @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })"
                 >Скачать</button>
               </div>
             </div>
@@ -450,28 +459,50 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
 
       <!-- Action buttons at bottom -->
-      <div class="flex flex-wrap items-center gap-3 mb-6">
-        <AppButton variant="secondary" @click="router.push('/business/declarations')">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Назад к списку
-        </AppButton>
-        <AppButton v-if="declaration.status === 'Одобрена'" variant="outline" @click="handleDownloadPdf">
+      <div v-if="declaration.status === 'Одобрена'" class="flex flex-wrap items-center gap-3 mb-4">
+        <AppButton variant="outline" @click="handleDownloadPdf">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
           Скачать PDF
         </AppButton>
-        <AppButton v-if="declaration.status === 'Одобрена'" variant="outline" @click="handlePrint">
+        <AppButton variant="outline" @click="handlePrint">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
           Печать
         </AppButton>
       </div>
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;" class="mb-6">
+        <button @click="goBack" class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
+        </button>
+      </div>
     </template>
 
     <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>
 </template>
+
+<style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
+</style>

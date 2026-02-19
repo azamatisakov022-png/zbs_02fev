@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
 import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
@@ -25,7 +25,7 @@ const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(() => { isLoading.value = false })
 
 const showInstruction = ref(false)
 
@@ -486,6 +486,15 @@ const getPercentClass = (percent: number) => {
   return 'text-[#ef4444]'
 }
 
+const getRowClass = (row: Record<string, any>) => {
+  switch (row.status) {
+    case 'Принят': return 'row-green'
+    case 'На проверке': return 'row-yellow'
+    case 'Отклонён': return 'row-red'
+    default: return 'row-gray'
+  }
+}
+
 // Actions on reports
 const resubmitReport = (id: number) => {
   reportStore.submitForReview(id)
@@ -502,9 +511,18 @@ const editDraft = (id: number) => {
   }
 }
 
+// More menu (⋯)
+const openMenuId = ref<number | null>(null)
+const toggleMenu = (id: number) => {
+  openMenuId.value = openMenuId.value === id ? null : id
+}
+const closeMenu = () => {
+  openMenuId.value = null
+}
+
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
+  toastStore.show({ type: 'info', title: 'PDF', message: 'Генерация PDF будет доступна в следующем обновлении' })
 }
 
 const handlePrint = () => {
@@ -615,7 +633,7 @@ const downloadReportExcel = (reportId: number) => {
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История отчётов</h2>
       </div>
 
-      <DataTable :columns="columns" :data="businessReports" :actions="true">
+      <DataTable :columns="columns" :data="businessReports" :actions="true" :rowClass="getRowClass">
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 28.33h10m-10 6.67h10M28.33 35H11.67a3.33 3.33 0 01-3.34-3.33V8.33A3.33 3.33 0 0111.67 5h9.31a1.67 1.67 0 011.18.49l9.02 9.02a1.67 1.67 0 01.49 1.18v15.98A3.33 3.33 0 0128.33 35z&quot;/></svg>'"
@@ -638,62 +656,56 @@ const downloadReportExcel = (reportId: number) => {
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
-          <div class="flex flex-wrap items-center justify-end gap-2">
-            <AppButton variant="ghost" size="sm" @click="router.push('/business/reports/' + row.id)">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Просмотреть
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Черновик'"
-              variant="secondary" size="sm"
-              @click="editDraft(row.id)"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Редактировать
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Отклонён'"
-              variant="secondary" size="sm"
-              @click="resubmitReport(row.id)"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Отправить повторно
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Принят'"
-              variant="outline" size="sm"
-              @click="handleDownloadPdf"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Скачать PDF
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Принят'"
-              variant="primary" size="sm"
-              @click="downloadReportExcel(row.id)"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              Excel
-            </AppButton>
-            <AppButton
-              v-if="row.status === 'Принят'"
-              variant="secondary" size="sm"
-              @click="handlePrint"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              Печать
-            </AppButton>
+          <div class="act-wrap">
+            <!-- Черновик: [Редактировать (outline)] -->
+            <template v-if="row.status === 'Черновик'">
+              <button @click="editDraft(row.id)" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Редактировать
+              </button>
+            </template>
+            <!-- На проверке: [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'На проверке'">
+              <router-link :to="{ path: '/business/reports/' + row.id, query: { from: 'reports' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
+            <!-- Принят: [Просмотреть (outline)] [⋯ → Скачать PDF, Excel, Печать] -->
+            <template v-else-if="row.status === 'Принят'">
+              <router-link :to="{ path: '/business/reports/' + row.id, query: { from: 'reports' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+              <div class="act-more-wrap">
+                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
+                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
+                  <button class="act-dropdown__item" @click="router.push({ path: '/business/reports/' + row.id, query: { from: 'reports', print: 'true' } }); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Скачать PDF
+                  </button>
+                  <button class="act-dropdown__item" @click="downloadReportExcel(row.id); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    Скачать Excel
+                  </button>
+                  <button class="act-dropdown__item" @click="router.push({ path: '/business/reports/' + row.id, query: { from: 'reports', print: 'true' } }); closeMenu()">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    Печать
+                  </button>
+                </div>
+              </div>
+            </template>
+            <!-- Отклонён: [Исправить (filled orange)] [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'Отклонён'">
+              <button @click="editDraft(row.id)" class="act-btn act-btn--filled act-btn--orange">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Исправить
+              </button>
+              <router-link :to="{ path: '/business/reports/' + row.id, query: { from: 'reports' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                Просмотреть
+              </router-link>
+            </template>
           </div>
         </template>
       </DataTable>
@@ -799,6 +811,7 @@ const downloadReportExcel = (reportId: number) => {
                   ]"
                 >
                   <option value="">-- Выберите год --</option>
+                  <option value="2025">2025</option>
                   <option value="2026">2026</option>
                   <option value="2027">2027</option>
                   <option value="2028">2028</option>
@@ -1046,7 +1059,7 @@ const downloadReportExcel = (reportId: number) => {
                     </svg>
                     <span class="text-xs font-semibold text-[#64748b] uppercase tracking-wide">Итог по позиции</span>
                   </div>
-                  <div class="grid grid-cols-3 gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <p class="text-[11px] text-[#94a3b8] mb-0.5">Выполнение норматива</p>
                       <p class="text-lg font-bold" :style="{ color: getFulfillmentColor(getItemFulfillmentPercent(item)) }">
@@ -1100,7 +1113,7 @@ const downloadReportExcel = (reportId: number) => {
                 <h3 class="text-base font-semibold text-[#1e293b]">Сводка по отчёту</h3>
               </div>
 
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <!-- KPI 1: Декларировано -->
                 <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
                   <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
@@ -1371,54 +1384,45 @@ const downloadReportExcel = (reportId: number) => {
           </div>
 
           <!-- Navigation Buttons -->
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
-            <AppButton
-              v-if="currentStep > 1"
-              variant="secondary"
-              @click="prevStep"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-              </svg>
-              Назад
-            </AppButton>
-            <div v-else></div>
+          <div class="wizard-footer">
+            <div>
+              <button
+                v-if="currentStep > 1"
+                class="wiz-btn-back"
+                @click="prevStep"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Назад
+              </button>
+            </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
-              <AppButton
+            <div class="wizard-footer__right">
+              <button
                 v-if="currentStep === 4"
-                variant="secondary"
+                class="wiz-btn-outline"
                 @click="saveDraft"
               >
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
                 Сохранить черновик
-              </AppButton>
+              </button>
 
-              <AppButton
+              <button
                 v-if="currentStep < 4"
-                variant="primary"
+                class="wiz-btn-primary"
                 :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)"
                 @click="nextStep"
               >
                 Далее
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </AppButton>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+              </button>
 
-              <AppButton
+              <button
                 v-if="currentStep === 4"
-                variant="primary"
+                class="wiz-btn-primary"
                 :disabled="formSubmitted && hasErrors"
                 @click="submitReport"
               >
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
                 Подписать и отправить
-              </AppButton>
+              </button>
             </div>
           </div>
         </div>
@@ -1459,7 +1463,7 @@ const downloadReportExcel = (reportId: number) => {
         </p>
 
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
+          <button @click="handlePrint" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -1509,5 +1513,180 @@ const downloadReportExcel = (reportId: number) => {
 .vld-input--error {
   border-color: #EF4444 !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ── Row status stripes (Variant 6) ── */
+:deep(.row-green) { border-left: 4px solid #22c55e !important; }
+:deep(.row-yellow) { border-left: 4px solid #f59e0b !important; }
+:deep(.row-red) { border-left: 4px solid #ef4444 !important; background: #fffbeb !important; }
+:deep(.row-gray) { border-left: 4px solid #d1d5db !important; }
+
+/* ── Action buttons (Variant 6) ── */
+.act-wrap {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.act-btn--filled {
+  color: white;
+  border: none;
+}
+.act-btn--orange { background: #f59e0b; }
+.act-btn--orange:hover { background: #d97706; box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+.act-btn--outline {
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.act-btn--outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+/* More menu (⋯) */
+.act-more-wrap {
+  position: relative;
+}
+.act-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.15s;
+}
+.act-more:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+.act-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 10;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+  min-width: 170px;
+  padding: 4px;
+  overflow: hidden;
+}
+.act-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #374151;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.act-dropdown__item:hover {
+  background: #f3f4f6;
+}
+
+/* ── Wizard footer buttons ── */
+.wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+.wizard-footer__right {
+  display: flex;
+  gap: 10px;
+}
+.wiz-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wiz-btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
+.wiz-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wiz-btn-outline:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+.wiz-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #10b981;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.wiz-btn-primary:hover {
+  background: #059669;
+}
+.wiz-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

@@ -109,11 +109,15 @@ const downloadExcel = () => {
 }
 
 const downloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
+  window.print()
 }
 
 const goBack = () => {
-  router.push('/eco-operator/incoming-reports')
+  const from = route.query.from as string
+  const routes: Record<string, string> = {
+    'incoming-reports': '/eco-operator/incoming-reports',
+  }
+  router.push(routes[from] || '/eco-operator/incoming-reports')
 }
 
 const fmt = (n: number) => n.toFixed(2)
@@ -136,18 +140,17 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Отчёт не найден</h2>
       <p class="text-[#64748b] mb-6">Запрошенный отчёт не существует</p>
-      <button @click="goBack" class="px-6 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white">
-        {{ $t('common.back') }}
+      <button @click="goBack" class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
       </button>
     </div>
 
     <template v-else>
       <!-- Back link -->
-      <button @click="goBack" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4 text-sm">
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        {{ $t('common.back') }}
+      <button @click="goBack" class="btn-back mb-4">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
       </button>
 
       <!-- Header -->
@@ -213,7 +216,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
 
       <!-- Summary cards -->
-      <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
           <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
           <p class="text-xl font-bold text-[#2563eb]">{{ report.totalDeclared }} т</p>
@@ -442,12 +445,11 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           Скачать PDF
         </button>
-        <button
-          @click="goBack"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border border-[#e2e8f0] text-[#64748b] hover:bg-white transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          {{ $t('common.back') }}
+      </div>
+      <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;">
+        <button @click="goBack" class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
       </div>
     </template>
@@ -455,6 +457,25 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 </template>
 
 <style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
 .rd-section {
   background: #F8FAFC;
   border: 1px solid #e2e8f0;

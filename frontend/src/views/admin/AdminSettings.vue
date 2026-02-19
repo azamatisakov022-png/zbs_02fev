@@ -385,7 +385,7 @@ const executeRestore = () => {
                 </div>
               </div>
 
-              <div class="grid grid-cols-3 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Язык интерфейса</label>
                   <select
@@ -451,7 +451,7 @@ const executeRestore = () => {
             <h2 class="text-lg font-bold text-gray-900 mb-6">Настройки безопасности</h2>
 
             <div class="space-y-6">
-              <div class="grid grid-cols-3 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Таймаут сессии (минуты)</label>
                   <input
@@ -771,7 +771,7 @@ const executeRestore = () => {
                   </button>
                 </div>
 
-                <div class="grid grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Частота</label>
                     <select
@@ -825,6 +825,7 @@ const executeRestore = () => {
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 class="text-lg font-bold text-gray-900 mb-4">Последние резервные копии</h2>
 
+              <div class="overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-gray-50">
                   <tr>
@@ -864,6 +865,7 @@ const executeRestore = () => {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
@@ -936,7 +938,7 @@ const executeRestore = () => {
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 class="text-lg font-bold text-gray-900 mb-6">Информация о системе</h2>
 
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 <div class="p-4 bg-gray-50 rounded-xl">
                   <p class="text-sm text-gray-500">Версия</p>
                   <p class="text-xl font-bold text-gray-900">{{ systemInfo.version }}</p>
