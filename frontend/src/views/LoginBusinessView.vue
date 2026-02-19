@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { authStore } from '../stores/auth'
 
 const router = useRouter()
-const route = useRoute()
 
 const isEsiLoading = ref(false)
 const loginForm = ref({
@@ -15,10 +14,10 @@ const loginError = ref('')
 
 const handleEsiLogin = async () => {
   isEsiLoading.value = true
-  // Simulate OAuth redirect + callback (2 sec delay)
   await new Promise(resolve => setTimeout(resolve, 2000))
   isEsiLoading.value = false
-  router.push('/business')
+  // ESI Tunduk — not implemented yet, redirect to home
+  router.push('/')
 }
 
 const handlePasswordLogin = async () => {
@@ -30,8 +29,8 @@ const handlePasswordLogin = async () => {
 
   try {
     const user = await authStore.login(loginForm.value.inn, loginForm.value.password)
-    const redirect = (route.query.redirect as string) || authStore.getRoleDashboard(user.role)
-    router.push(redirect)
+    const dashboard = authStore.getRoleDashboard(user.role)
+    await router.push(dashboard)
   } catch (err: any) {
     loginError.value = err.message || 'Ошибка авторизации'
   }
