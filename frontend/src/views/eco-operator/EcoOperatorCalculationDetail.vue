@@ -118,7 +118,14 @@ const rejectCalc = () => {
   setTimeout(() => { showToast.value = false }, 3000)
 }
 
-const goBack = () => router.push('/eco-operator/calculations')
+const goBack = () => {
+  const from = route.query.from as string
+  const routes: Record<string, string> = {
+    'incoming-calculations': '/eco-operator/calculations',
+    accounts: '/eco-operator/accounts',
+  }
+  router.push(routes[from] || '/eco-operator/calculations')
+}
 
 const downloadFile = (name: string) => {
   toastStore.show({ type: 'info', title: 'Скачивание файла', message: name })
@@ -139,7 +146,10 @@ const downloadExcel = () => {
     <!-- Not Found -->
     <div v-if="!calc" class="text-center py-16">
       <p class="text-lg text-[#64748b] mb-4">Расчёт не найден</p>
-      <button @click="goBack" class="px-6 py-2 bg-[#2563eb] text-white rounded-lg hover:bg-[#1d4ed8]">{{ $t('common.back') }}</button>
+      <button @click="goBack" class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
+      </button>
     </div>
 
     <template v-else>
@@ -152,9 +162,9 @@ const downloadExcel = () => {
           </div>
           <p class="text-[#64748b]">Дата подачи: {{ calc.date }}</p>
         </div>
-        <button @click="goBack" class="inline-flex items-center gap-2 px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          {{ $t('common.back') }}
+        <button @click="goBack" class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
       </div>
 
@@ -334,8 +344,9 @@ const downloadExcel = () => {
 
       <!-- Sticky Action Bar -->
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-6 lg:-mx-8 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <button @click="goBack" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-          {{ $t('common.back') }}
+        <button @click="goBack" class="btn-back">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
                 <button @click="downloadExcel" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
@@ -401,6 +412,25 @@ const downloadExcel = () => {
 </template>
 
 <style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
 .toast-enter-active { transition: all 0.3s ease-out; }
 .toast-leave-active { transition: all 0.3s ease-in; }
 .toast-enter-from { opacity: 0; transform: translateY(-20px); }

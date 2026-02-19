@@ -268,7 +268,7 @@ const openDetails = (wt: WasteType) => {
 
       <!-- Stats Banner -->
       <div class="rounded-2xl p-6 text-white" style="background: linear-gradient(135deg, #115E59, #0D9488);">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p class="text-teal-200 text-sm">Видов отходов</p>
             <p class="text-3xl font-bold mt-1">{{ stats.totalTypes }}</p>

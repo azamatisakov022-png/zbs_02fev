@@ -262,9 +262,10 @@ const coordsText = computed(() => {
       <p class="text-xl text-gray-500 mb-4">Полигон не найден</p>
       <button
         @click="router.push('/ministry/landfills')"
-        class="text-teal-600 hover:text-teal-700 font-medium"
+        class="btn-back"
       >
-        &larr; Вернуться к реестру
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
       </button>
     </div>
 
@@ -274,12 +275,10 @@ const coordsText = computed(() => {
       <div class="mb-6">
         <button
           @click="router.push('/ministry/landfills')"
-          class="inline-flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700 font-medium mb-4 transition-colors"
+          class="btn-back"
         >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Назад к реестру
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{ landfill.name }}</h1>
@@ -720,5 +719,24 @@ const coordsText = computed(() => {
 :deep(.custom-marker) {
   background: transparent !important;
   border: none !important;
+}
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
 }
 </style>

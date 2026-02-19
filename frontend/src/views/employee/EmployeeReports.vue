@@ -403,7 +403,7 @@ const exportToExcel = () => {
 }
 
 const exportToPdf = () => {
-  toastStore.show({ type: 'info', title: 'Экспорт в PDF', message: 'Функция будет реализована с серверной генерацией' })
+  window.print()
 }
 
 const formatNumber = (num: number) => num.toLocaleString('ru-RU')

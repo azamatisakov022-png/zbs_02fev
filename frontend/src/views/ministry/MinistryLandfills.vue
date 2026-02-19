@@ -343,7 +343,7 @@ const resetAllFilters = () => {
       />
 
       <!-- ==================== STATS ==================== -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total -->
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <div class="flex items-center gap-3">

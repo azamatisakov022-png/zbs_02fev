@@ -199,7 +199,7 @@ function fmtM(n: number): string {
 
 // ─── Export stub ───
 function exportReport() {
-  toastStore.show({ type: 'info', title: 'Выгрузка отчёта', message: 'Функция в разработке' })
+  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Выгрузка отчёта будет доступна в следующем обновлении' })
 }
 </script>
 
@@ -270,7 +270,7 @@ function exportReport() {
     </div>
 
     <template v-if="isLoading">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <SkeletonLoader v-for="i in 4" :key="i" variant="card" />
       </div>
       <SkeletonLoader variant="table" />
@@ -280,7 +280,7 @@ function exportReport() {
       <!-- ═══════════ TAB 1: GENERAL SUMMARY ═══════════ -->
       <template v-if="activeTab === 'summary'">
         <!-- KPI Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <!-- Recyclers -->
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 border border-green-200 shadow-sm">
             <div class="flex items-center gap-2 mb-2">
@@ -370,7 +370,7 @@ function exportReport() {
                 </div>
                 <p class="text-xs text-[#94a3b8] mt-1.5">Бишкек (89%), Чуйская (83%), г. Ош (81%)</p>
               </div>
-              <div class="grid grid-cols-3 gap-3 pt-2 border-t border-[#f1f5f9]">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[#f1f5f9]">
                 <div class="text-center">
                   <p class="text-lg font-bold text-green-600">6</p>
                   <p class="text-xs text-[#64748b]">Норма (&lt;60%)</p>
@@ -418,7 +418,7 @@ function exportReport() {
       <!-- ═══════════ TAB 2: RECYCLING & NORMATIVES ═══════════ -->
       <template v-if="activeTab === 'recycling'">
         <!-- KPI Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
             <p class="text-xs text-green-700 mb-1">Переработчиков активных</p>
             <p class="text-3xl font-bold text-green-900">{{ totalRecyclers }}</p>

@@ -7,7 +7,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { productGroups, productSubgroups, getSubgroupLabel, type ProductSubgroup } from '../../data/product-groups'
-// recyclingStandard now comes from product group, not year-based norms
+import { getNormativeForGroup } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
@@ -27,7 +27,7 @@ const { roleTitle, menuItems } = useBusinessMenu()
 const router = useRouter()
 
 const viewCalculation = (id: number) => {
-  router.push(`/business/calculations/${id}`)
+  router.push({ path: `/business/calculations/${id}`, query: { from: 'calculations' } })
 }
 const mockAction = (action: string) => {
   toastStore.show({ type: 'info', title: action })
@@ -211,7 +211,10 @@ const updateItemRate = (item: ProductItem) => {
 
   let multiplier = 1
   item.tnvedCode = group.code
-  item.recyclingStandard = group.recyclingStandard
+  // Year-based norm from recycling-norms.ts
+  const selectedYear = parseInt(calculationYear.value) || 2026
+  const normFraction = getNormativeForGroup(item.group, selectedYear)
+  item.recyclingStandard = Math.round(normFraction * 100)
 
   if (item.subgroup) {
     const subgroups = productSubgroups[item.group]
@@ -433,7 +436,7 @@ const backToList = () => {
 }
 
 const createDeclaration = () => {
-  toastStore.show({ type: 'info', title: 'Создание декларации на основе расчёта', message: 'Функция в разработке' })
+  toastStore.show({ type: 'info', title: 'Декларация', message: 'Автоматическое создание декларации на основе расчёта будет доступно в следующем обновлении' })
 }
 
 // Form validation
@@ -587,7 +590,7 @@ const handleStep2Calculate = () => {
 
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })
+  toastStore.show({ type: 'info', title: 'PDF', message: 'Генерация PDF будет доступна в следующем обновлении' })
 }
 
 const handlePrint = () => {
@@ -602,6 +605,15 @@ watch(productItems, () => {
     }
   })
 }, { deep: true })
+
+// Recalculate norms when year changes
+watch(calculationYear, () => {
+  productItems.value.forEach(item => {
+    if (item.group) {
+      updateItemRate(item)
+    }
+  })
+})
 
 // Table data for history
 const columns = [
@@ -777,7 +789,7 @@ const copyAndFixCalculation = (sourceId: number) => {
   const copy = calculationStore.copyCalculation(sourceId)
   if (copy) {
     toastStore.show({ type: 'success', title: 'Создана копия расчёта', message: 'Внесите исправления и отправьте повторно.' })
-    router.push('/business/calculations/' + copy.id)
+    router.push({ path: '/business/calculations/' + copy.id, query: { from: 'calculations' } })
   }
 }
 
@@ -993,7 +1005,7 @@ const downloadReceipt = () => {
 
       <template v-if="!isLoading">
       <!-- Stats -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <p class="text-sm text-[#64748b] mb-1">Всего расчётов</p>
           <p class="text-2xl font-bold text-[#1e293b]">12</p>
@@ -1089,7 +1101,7 @@ const downloadReceipt = () => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 Отправить
               </button>
-              <router-link :to="'/business/calculations/' + row.id + '?edit=true'" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 Редактировать
               </router-link>
@@ -1105,7 +1117,7 @@ const downloadReceipt = () => {
             </template>
             <!-- На проверке: [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'На проверке'">
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
@@ -1116,14 +1128,14 @@ const downloadReceipt = () => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
               </button>
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
-                  <button class="act-dropdown__item" @click="mockAction('Скачивание PDF расчёта ' + row.number); closeMenu()">
+                  <button class="act-dropdown__item" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } }); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Скачать PDF
                   </button>
@@ -1136,14 +1148,14 @@ const downloadReceipt = () => {
             </template>
             <!-- Оплачено: [Просмотреть (outline)] [⋯ → PDF, Excel] -->
             <template v-else-if="row.status === 'Оплачено'">
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
-                  <button class="act-dropdown__item" @click="mockAction('Скачивание PDF расчёта ' + row.number); closeMenu()">
+                  <button class="act-dropdown__item" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } }); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Скачать PDF
                   </button>
@@ -1156,18 +1168,18 @@ const downloadReceipt = () => {
             </template>
             <!-- Отклонено: [Исправить (filled orange)] [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'Отклонено'">
-              <router-link :to="'/business/calculations/' + row.id + '?edit=true'" class="act-btn act-btn--filled act-btn--orange">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 Исправить
               </router-link>
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
             </template>
             <!-- Оплата на проверке: [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'Оплата на проверке'">
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
@@ -1178,7 +1190,7 @@ const downloadReceipt = () => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 Подтвердить оплату
               </button>
-              <router-link :to="'/business/calculations/' + row.id" class="act-btn act-btn--outline">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 Просмотреть
               </router-link>
@@ -1908,7 +1920,7 @@ const downloadReceipt = () => {
           </div>
 
           <!-- Navigation Buttons -->
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
+          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
             <button
               v-if="currentStep > 1"
               @click="prevStep"
@@ -2063,7 +2075,10 @@ const downloadReceipt = () => {
               <label class="block text-sm font-medium text-[#1e293b] mb-2">Дата оплаты *</label>
               <input
                 v-model="paymentForm.paymentDate"
-                type="date"
+                type="text"
+                placeholder="дд.мм.гггг"
+                onfocus="this.type='date'"
+                onblur="if(!this.value)this.type='text'"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>

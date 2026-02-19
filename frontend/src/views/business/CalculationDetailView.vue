@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore, type ProductItem, type AttachedDocument, type DocumentType, type PaymentData, documentTypeLabels } from '../../stores/calculations'
@@ -113,7 +113,7 @@ function saveAsDraft() {
   calculationStore.updateCalculationItems(calc.value.id, editItems.value.map(i => ({ ...i })), editTotalAmount.value)
   calculationStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
   isEditing.value = false
-  if (route.query.edit) router.replace({ path: route.path })
+  if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
   toastStore.show({ type: 'success', title: 'Черновик сохранён' })
 }
 
@@ -123,7 +123,7 @@ function saveAndSubmit() {
   calculationStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
   calculationStore.submitForReview(calc.value.id)
   isEditing.value = false
-  if (route.query.edit) router.replace({ path: route.path })
+  if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
   toastStore.show({ type: 'success', title: 'Расчёт отправлен на проверку' })
 }
 
@@ -197,6 +197,9 @@ function changeDocType(doc: AttachedDocument, type: DocumentType) {
 onMounted(() => {
   if (route.query.edit === 'true' && calc.value && (calc.value.status === 'Черновик' || calc.value.status === 'Отклонено')) {
     startEditing()
+  }
+  if (route.query.print === 'true') {
+    nextTick(() => { setTimeout(() => window.print(), 500) })
   }
 })
 
@@ -293,7 +296,19 @@ const reconciliation = computed(() => {
 const canEdit = computed(() => calc.value && (calc.value.status === 'Черновик' || calc.value.status === 'Отклонено'))
 
 const goBack = () => {
-  router.push('/business/calculator')
+  const from = route.query.from as string
+  const routes: Record<string, string> = {
+    account: '/business/account',
+    calculations: '/business/calculator',
+    declarations: '/business/declarations',
+    documents: '/business/documents',
+  }
+  router.push(routes[from] || '/business/calculator')
+}
+
+
+const handlePrint = () => {
+  window.print()
 }
 
 const mockAction = (action: string) => {
@@ -430,17 +445,18 @@ function submitPaymentConfirmation() {
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">Расчёт не найден</h2>
       <p class="text-[#64748b] mb-6">Расчёт с указанным номером не существует</p>
-      <button @click="goBack" class="btn-action btn-action-primary">Назад к списку</button>
+      <button @click="goBack" class="btn-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Назад
+      </button>
     </div>
 
     <template v-else>
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4 transition-colors">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Назад к списку
+        <button @click="goBack" class="btn-back mb-4">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Назад
         </button>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] font-mono">{{ calc.number }}</h1>
@@ -868,11 +884,9 @@ function submitPaymentConfirmation() {
 
         <!-- View mode buttons -->
         <template v-else>
-          <button @click="goBack" class="btn-action btn-action-ghost text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Назад к списку
+          <button @click="goBack" class="btn-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Назад
           </button>
 
           <div class="flex flex-wrap items-center gap-2">
@@ -894,7 +908,7 @@ function submitPaymentConfirmation() {
 
             <!-- На проверке actions -->
             <template v-if="calc.status === 'На проверке'">
-              <button @click="mockAction('Скачивание PDF')" class="btn-pdf">
+              <button @click="handlePrint()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -914,7 +928,7 @@ function submitPaymentConfirmation() {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 Оплатить
               </button>
-              <button @click="mockAction('Скачивание PDF')" class="btn-pdf">
+              <button @click="handlePrint()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -934,7 +948,7 @@ function submitPaymentConfirmation() {
 
             <!-- Оплачено / Оплата на проверке -->
             <template v-if="calc.status === 'Оплачено' || calc.status === 'Оплата на проверке'">
-              <button @click="mockAction('Скачивание PDF')" class="btn-pdf">
+              <button @click="handlePrint()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Скачать PDF
               </button>
@@ -942,7 +956,7 @@ function submitPaymentConfirmation() {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 Скачать Excel
               </button>
-              <button @click="mockAction('Печать расчёта')" class="btn-print">
+              <button @click="handlePrint()" class="btn-print">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 Печать
               </button>
@@ -1005,7 +1019,7 @@ function submitPaymentConfirmation() {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="pay-label">Дата оплаты *</label>
-                  <input v-model="paymentForm.paymentDate" type="date" class="pay-input" />
+                  <input v-model="paymentForm.paymentDate" type="text" placeholder="дд.мм.гггг" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
                 </div>
                 <div>
                   <label class="pay-label">Банк плательщика *</label>
@@ -1078,6 +1092,25 @@ function submitPaymentConfirmation() {
 </template>
 
 <style scoped>
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-back:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #9ca3af;
+}
 .btn-pdf,
 .btn-print {
   display: inline-flex;

@@ -2,45 +2,41 @@
 import { ref } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { UTILIZATION_RATES_2025, getRatePerKg } from '../../data/rates'
+import { UTILIZATION_RATES_2025, getRateByGroup } from '../../data/rates'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const currentYear = 2026
 const years = [2025, 2026, 2027, 2028, 2029, 2030]
 
-const activeTab = ref<'goods' | 'packaging' | 'rates'>('goods')
+const activeTab = ref<'norms' | 'rates'>('norms')
 
-// Norms data for goods
-const goodsNorms = [
-  { id: 1, category: 'Стиральные машины', rates: { 2025: 10, 2026: 15, 2027: 20, 2028: 25, 2029: 30, 2030: 35 } },
-  { id: 2, category: 'Холодильники и морозильники', rates: { 2025: 10, 2026: 15, 2027: 20, 2028: 25, 2029: 30, 2030: 35 } },
-  { id: 3, category: 'Электрические плиты', rates: { 2025: 10, 2026: 15, 2027: 20, 2028: 25, 2029: 30, 2030: 35 } },
-  { id: 4, category: 'Посудомоечные машины', rates: { 2025: 10, 2026: 15, 2027: 20, 2028: 25, 2029: 30, 2030: 35 } },
-  { id: 5, category: 'Телевизоры', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 6, category: 'Компьютеры и ноутбуки', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 7, category: 'Мониторы', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 8, category: 'Принтеры и сканеры', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 9, category: 'Мобильные телефоны', rates: { 2025: 20, 2026: 25, 2027: 30, 2028: 35, 2029: 40, 2030: 45 } },
-  { id: 10, category: 'Электрические лампы', rates: { 2025: 25, 2026: 30, 2027: 35, 2028: 40, 2029: 45, 2030: 50 } },
-  { id: 11, category: 'Пневматические шины', rates: { 2025: 20, 2026: 25, 2027: 30, 2028: 35, 2029: 40, 2030: 45 } },
-  { id: 12, category: 'Аккумуляторы', rates: { 2025: 30, 2026: 35, 2027: 40, 2028: 45, 2029: 50, 2030: 55 } },
-  { id: 13, category: 'Батарейки', rates: { 2025: 25, 2026: 30, 2027: 35, 2028: 40, 2029: 45, 2030: 50 } },
-  { id: 14, category: 'Строит. материалы (пластик)', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 15, category: 'Строит. материалы (металл)', rates: { 2025: 25, 2026: 30, 2027: 35, 2028: 40, 2029: 45, 2030: 50 } },
-  { id: 16, category: 'Мебель', rates: { 2025: 10, 2026: 15, 2027: 20, 2028: 25, 2029: 30, 2030: 35 } },
-  { id: 17, category: 'Текстильные изделия', rates: { 2025: 5, 2026: 10, 2027: 15, 2028: 20, 2029: 25, 2030: 30 } },
-  { id: 18, category: 'Обувь', rates: { 2025: 5, 2026: 10, 2027: 15, 2028: 20, 2029: 25, 2030: 30 } },
-]
-
-// Norms data for packaging
-const packagingNorms = [
-  { id: 1, category: 'Пластиковая упаковка', rates: { 2025: 20, 2026: 25, 2027: 30, 2028: 35, 2029: 40, 2030: 45 } },
-  { id: 2, category: 'Стеклянная упаковка', rates: { 2025: 40, 2026: 45, 2027: 50, 2028: 55, 2029: 60, 2030: 65 } },
-  { id: 3, category: 'Металлическая упаковка', rates: { 2025: 35, 2026: 40, 2027: 45, 2028: 50, 2029: 55, 2030: 60 } },
-  { id: 4, category: 'Бумажная упаковка', rates: { 2025: 45, 2026: 50, 2027: 55, 2028: 60, 2029: 65, 2030: 70 } },
-  { id: 5, category: 'Комбинированная упаковка', rates: { 2025: 15, 2026: 20, 2027: 25, 2028: 30, 2029: 35, 2030: 40 } },
-  { id: 6, category: 'Деревянная упаковка', rates: { 2025: 50, 2026: 55, 2027: 60, 2028: 65, 2029: 70, 2030: 75 } },
+// Unified 24-group norms data (ПКМ КР №322)
+const norms = [
+  { id: 1,  category: 'Изделия из гофрированной бумаги/картона',                          rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
+  { id: 2,  category: 'Изделия из негофрированной бумаги/картона',                         rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
+  { id: 3,  category: 'Масла',                                                             rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
+  { id: 4,  category: 'Шины, покрышки и камеры резиновые',                                 rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
+  { id: 5,  category: 'Изделия из резины (за исключением шин)',                             rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 6,  category: 'Изделия пластмассовые упаковочные',                                 rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 7,  category: 'Изделия пластмассовые прочие',                                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 8,  category: 'Стекло полое',                                                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 9,  category: 'Компьютеры и периферийное оборудование, офисное оборудование',       rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 10, category: 'Мониторы, приемники телевизионные',                                  rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 11, category: 'Элементы первичные и батареи первичных элементов',                   rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 12, category: 'Аккумуляторы свинцовые',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 13, category: 'Батареи аккумуляторные',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 14, category: 'Оборудование электрическое осветительное',                           rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 15, category: 'Техника бытовая крупная',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 16, category: 'Техника бытовая мелкая, инструмент ручной',                          rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 17, category: 'Оборудование холодильное и вентиляционное',                          rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 18, category: 'Фильтры для двигателей внутреннего сгорания',                        rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 19, category: 'Упаковка из полимерных материалов, не содержащих галогены',           rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 20, category: 'Упаковка из полимерных материалов, содержащих галоген',               rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 21, category: 'Упаковка из комбинированных материалов',                             rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 22, category: 'Упаковка из гофрированного картона',                                 rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 23, category: 'Упаковка из бумаги и негофрированного картона',                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
+  { id: 24, category: 'Упаковка стеклянная',                                                rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
 ]
 
 // Utility fee rates by 24 product groups (РОП)
@@ -57,74 +53,72 @@ interface FeeRateGroup {
 }
 
 // Ставки импортируются из единого источника data/rates.ts (ПКМ КР №730)
-// rate = UTILIZATION_RATES_2025[groupId] / 1000 (конвертация сом/т → сом/кг)
 const feeRateGroups: FeeRateGroup[] = [
   {
     groupLetter: 'А',
     groupTitle: 'Бумага и картон',
     items: [
-      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRatePerKg(1), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRatePerKg(2), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRateByGroup(1), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRateByGroup(2), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Б',
     groupTitle: 'Масла, шины и резина',
     items: [
-      { id: 3, name: 'Масла', rate: getRatePerKg(3), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRatePerKg(4), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRatePerKg(5), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 3, name: 'Масла', rate: getRateByGroup(3), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRateByGroup(4), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRateByGroup(5), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'В',
     groupTitle: 'Пластмассы и стекло',
     items: [
-      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRatePerKg(6), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRatePerKg(7), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 8, name: 'Стекло полое', rate: getRatePerKg(8), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRateByGroup(6), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRateByGroup(7), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 8, name: 'Стекло полое', rate: getRateByGroup(8), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Г',
     groupTitle: 'Электроника и оборудование',
     items: [
-      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRatePerKg(9), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRatePerKg(10), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 11, name: 'Элементы первичные и батареи', rate: getRatePerKg(11), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRatePerKg(12), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 13, name: 'Батареи аккумуляторные', rate: getRatePerKg(13), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRatePerKg(14), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRateByGroup(9), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRateByGroup(10), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 11, name: 'Элементы первичные и батареи', rate: getRateByGroup(11), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRateByGroup(12), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 13, name: 'Батареи аккумуляторные', rate: getRateByGroup(13), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRateByGroup(14), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Д',
     groupTitle: 'Бытовая техника и фильтры',
     items: [
-      { id: 15, name: 'Техника бытовая крупная', rate: getRatePerKg(15), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRatePerKg(16), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRatePerKg(17), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRatePerKg(18), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 15, name: 'Техника бытовая крупная', rate: getRateByGroup(15), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRateByGroup(16), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRateByGroup(17), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRateByGroup(18), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Е',
     groupTitle: 'Упаковка',
     items: [
-      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRatePerKg(19), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRatePerKg(20), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRatePerKg(21), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRatePerKg(22), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRatePerKg(23), unit: 'сом/кг', effectiveDate: '01.01.2025' },
-      { id: 24, name: 'Упаковка стеклянная', rate: getRatePerKg(24), unit: 'сом/кг', effectiveDate: '01.01.2025' },
+      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRateByGroup(19), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRateByGroup(20), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRateByGroup(21), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRateByGroup(22), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRateByGroup(23), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 24, name: 'Упаковка стеклянная', rate: getRateByGroup(24), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
     ],
   },
 ]
 
 const getRateColorClass = (rate: number) => {
-  if (rate >= 50) return 'text-red-600'
+  if (rate >= 60) return 'text-red-600'
   if (rate >= 30) return 'text-orange-600'
-  if (rate >= 20) return 'text-yellow-600'
   return 'text-green-600'
 }
 </script>
@@ -140,7 +134,7 @@ const getRateColorClass = (rate: number) => {
       <!-- Header -->
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Нормативы и ставки</h1>
-        <p class="text-gray-600 mt-1">Нормативы утилизации и ставки утилизационного сбора по категориям товаров и упаковки</p>
+        <p class="text-gray-600 mt-1">Нормативы утилизации и ставки утилизационного сбора по 24 группам товаров (ПКМ КР №322)</p>
       </div>
 
       <!-- CTA Banner -->
@@ -177,26 +171,15 @@ const getRateColorClass = (rate: number) => {
       <!-- Tabs -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-1 inline-flex">
         <button
-          @click="activeTab = 'goods'"
+          @click="activeTab = 'norms'"
           :class="[
             'px-5 py-2.5 rounded-lg font-medium transition-colors text-sm',
-            activeTab === 'goods'
+            activeTab === 'norms'
               ? 'bg-[#0e888d] text-white'
               : 'text-gray-600 hover:bg-gray-100'
           ]"
         >
-          Нормативы: Товары
-        </button>
-        <button
-          @click="activeTab = 'packaging'"
-          :class="[
-            'px-5 py-2.5 rounded-lg font-medium transition-colors text-sm',
-            activeTab === 'packaging'
-              ? 'bg-[#0e888d] text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          ]"
-        >
-          Нормативы: Упаковка
+          Нормативы утилизации
         </button>
         <button
           @click="activeTab = 'rates'"
@@ -211,17 +194,18 @@ const getRateColorClass = (rate: number) => {
         </button>
       </div>
 
-      <!-- Table: Goods norms -->
-      <div v-if="activeTab === 'goods'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <!-- Table: Unified 24-group norms -->
+      <div v-if="activeTab === 'norms'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="text-lg font-semibold text-gray-900">Нормативы переработки для товаров (2025–2030)</h3>
+          <h3 class="text-lg font-semibold text-gray-900">Нормативы переработки отходов от использования товаров (2025–2030)</h3>
           <p class="text-sm text-gray-500 mt-1">Минимальный процент товаров, который должен быть переработан от общего объёма</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full min-w-[700px]">
             <thead>
               <tr class="bg-[#0e888d] text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold">Категория товара</th>
+                <th class="px-3 py-4 text-center text-sm font-semibold w-12">№</th>
+                <th class="px-4 py-4 text-left text-sm font-semibold">Категория товара</th>
                 <th
                   v-for="year in years"
                   :key="year"
@@ -235,58 +219,13 @@ const getRateColorClass = (rate: number) => {
             </thead>
             <tbody>
               <tr
-                v-for="(item, index) in goodsNorms"
+                v-for="(item, index) in norms"
                 :key="item.id"
                 :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
                 class="hover:bg-[#0e888d]/5 transition-colors"
               >
-                <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ item.category }}</td>
-                <td
-                  v-for="year in years"
-                  :key="year"
-                  class="px-4 py-3 text-center"
-                  :class="year === currentYear ? 'bg-[#0e888d]/10 font-bold' : ''"
-                >
-                  <span :class="getRateColorClass(item.rates[year])" class="font-semibold">
-                    {{ item.rates[year] }}%
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Table: Packaging norms -->
-      <div v-if="activeTab === 'packaging'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="text-lg font-semibold text-gray-900">Нормативы переработки для упаковки (2025–2030)</h3>
-          <p class="text-sm text-gray-500 mt-1">Минимальный процент упаковки, который должен быть переработан</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full min-w-[700px]">
-            <thead>
-              <tr class="bg-[#0e888d] text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold">Категория упаковки</th>
-                <th
-                  v-for="year in years"
-                  :key="year"
-                  class="px-4 py-4 text-center text-sm font-semibold"
-                  :class="year === currentYear ? 'bg-[#0b6d71] ring-2 ring-white/50' : ''"
-                >
-                  {{ year }}
-                  <span v-if="year === currentYear" class="block text-xs font-normal opacity-80">текущий</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(item, index) in packagingNorms"
-                :key="item.id"
-                :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
-                class="hover:bg-[#0e888d]/5 transition-colors"
-              >
-                <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ item.category }}</td>
+                <td class="px-3 py-3 text-center text-sm text-gray-500 font-mono">{{ item.id }}</td>
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.category }}</td>
                 <td
                   v-for="year in years"
                   :key="year"
@@ -339,7 +278,7 @@ const getRateColorClass = (rate: number) => {
                 >
                   <td class="px-6 py-3 text-sm text-gray-500 font-mono">{{ item.id }}</td>
                   <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ item.name }}</td>
-                  <td class="px-6 py-3 text-sm font-bold text-right text-[#0e888d]">{{ item.rate.toFixed(2) }}</td>
+                  <td class="px-6 py-3 text-sm font-bold text-right text-[#0e888d]">{{ item.rate.toLocaleString() }}</td>
                   <td class="px-6 py-3 text-sm text-gray-500 text-center">{{ item.unit }}</td>
                   <td class="px-6 py-3 text-sm text-gray-500 text-center">{{ item.effectiveDate }}</td>
                 </tr>
@@ -365,8 +304,8 @@ const getRateColorClass = (rate: number) => {
         </div>
       </div>
 
-      <!-- Example Calculation Block (shown for goods/packaging tabs) -->
-      <template v-if="activeTab !== 'rates'">
+      <!-- Example Calculation Block (shown for norms tab) -->
+      <template v-if="activeTab === 'norms'">
         <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-amber-200 bg-amber-100/50">
             <div class="flex items-center gap-3">
@@ -377,7 +316,7 @@ const getRateColorClass = (rate: number) => {
               </div>
               <div>
                 <h3 class="text-lg font-semibold text-gray-900">Пример расчёта утилизационного сбора</h3>
-                <p class="text-sm text-gray-600">Импорт холодильников</p>
+                <p class="text-sm text-gray-600">Импорт шин (группа №4)</p>
               </div>
             </div>
           </div>
@@ -387,15 +326,15 @@ const getRateColorClass = (rate: number) => {
                 <h4 class="font-semibold text-gray-900 mb-4">Исходные данные:</h4>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
                   <span class="text-gray-600">Категория:</span>
-                  <span class="font-medium text-gray-900">Холодильники и морозильники (№2)</span>
+                  <span class="font-medium text-gray-900">Шины, покрышки и камеры резиновые (№4)</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
                   <span class="text-gray-600">Масса партии:</span>
-                  <span class="font-medium text-gray-900">2,5 тонны</span>
+                  <span class="font-medium text-gray-900">5 тонн</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
                   <span class="text-gray-600">Год расчёта:</span>
-                  <span class="font-medium text-gray-900">2025</span>
+                  <span class="font-medium text-gray-900">2026</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
                   <span class="text-gray-600">Операция:</span>
@@ -403,15 +342,15 @@ const getRateColorClass = (rate: number) => {
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
                   <span class="text-gray-600">Ставка (С<sub>ус</sub>):</span>
-                  <span class="font-medium text-gray-900">18 000 сом/тонна</span>
+                  <span class="font-medium text-gray-900">12 345 сом/тонна</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Норматив переработки (2025):</span>
-                  <span class="font-medium text-[#0e888d]">10%</span>
+                  <span class="text-gray-600">Норматив переработки (2026):</span>
+                  <span class="font-medium text-[#0e888d]">30%</span>
                 </div>
                 <div class="flex justify-between py-2">
                   <span class="text-gray-600">Коэффициент (Н<sub>пер</sub>):</span>
-                  <span class="font-medium text-gray-900">1 − 0,10 = <strong>0,90</strong></span>
+                  <span class="font-medium text-gray-900">1 − 0,30 = <strong>0,70</strong></span>
                 </div>
               </div>
               <div class="bg-white rounded-xl p-5 border border-amber-200">
@@ -423,11 +362,11 @@ const getRateColorClass = (rate: number) => {
                   </div>
                   <div class="p-4 bg-[#0e888d]/10 rounded-lg font-mono text-sm">
                     <p class="text-gray-600 mb-2">Подставляем значения:</p>
-                    <p class="text-gray-900">У<sub>сб</sub> = 18 000 × 2,5 × 0,90</p>
+                    <p class="text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
                   </div>
                   <div class="p-4 bg-[#0e888d] text-white rounded-lg text-center">
                     <p class="text-sm opacity-80 mb-1">Итого к оплате:</p>
-                    <p class="text-2xl font-bold">40 500 сом</p>
+                    <p class="text-2xl font-bold">43 207,50 сом</p>
                   </div>
                 </div>
               </div>
@@ -447,7 +386,7 @@ const getRateColorClass = (rate: number) => {
             <p class="text-sm text-gray-600 mt-1">
               Значение Н<sub>пер</sub> для расчёта = 1 − (норматив в процентах / 100).
               <br/>
-              <span class="text-gray-500">Например, для пластиковой упаковки в 2025 году: Н<sub>пер</sub> = 1 − 0,20 = <strong>0,80</strong></span>
+              <span class="text-gray-500">Например, для шин в 2026 году: Н<sub>пер</sub> = 1 − 0,30 = <strong>0,70</strong></span>
             </p>
           </div>
         </div>
@@ -475,7 +414,7 @@ const getRateColorClass = (rate: number) => {
           </div>
           <h4 class="font-semibold text-gray-900 mb-1">Ежегодный рост</h4>
           <p class="text-sm text-gray-600">
-            Нормативы увеличиваются ежегодно на 5% согласно плану достижения целевых показателей
+            Нормативы увеличиваются ежегодно согласно плану достижения целевых показателей к 2030 году (80%)
           </p>
         </div>
 

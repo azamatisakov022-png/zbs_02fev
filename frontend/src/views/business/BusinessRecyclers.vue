@@ -151,7 +151,7 @@ const getStars = (rating: number) => {
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div class="bg-white/10 rounded-xl p-4">
             <p class="text-3xl font-bold">{{ stats.total }}</p>
             <p class="text-emerald-100 text-sm">Переработчиков</p>

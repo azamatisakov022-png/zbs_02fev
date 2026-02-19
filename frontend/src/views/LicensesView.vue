@@ -66,7 +66,7 @@ const handleView = (_license: License) => {
 
     <!-- Statistics cards -->
     <div class="container-main">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-[30px] pb-8 lg:pb-[40px]">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-[30px] pb-8 lg:pb-[40px]">
         <!-- Total -->
         <div class="bg-white border-2 border-[#e5e5e5] rounded-[30px] p-6 text-center">
           <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.total }}</div>

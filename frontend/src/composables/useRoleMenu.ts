@@ -16,8 +16,7 @@ export function useBusinessMenu() {
     { id: 'calculator', label: t('nav.business.calculator'), icon: icons.calculator, route: '/business/calculator' },
     { id: 'reports', label: t('nav.business.reports'), icon: icons.report, route: '/business/reports' },
     { id: 'declarations', label: t('nav.business.declarations'), icon: icons.document, route: '/business/declarations' },
-    { id: 'payments', label: t('nav.business.payments'), icon: icons.payment, route: '/business/payments' },
-    { id: 'documents', label: t('nav.business.documents'), icon: icons.folder, route: '/business/documents' },
+{ id: 'documents', label: t('nav.business.documents'), icon: icons.folder, route: '/business/documents' },
     { id: 'normatives', label: t('nav.business.normatives'), icon: icons.registries, route: '/business/normatives' },
     { id: 'profile', label: t('nav.business.profile'), icon: icons.building, route: '/business/profile' },
   ])

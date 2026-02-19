@@ -1061,7 +1061,7 @@ const getCapacityGroupLabel = (value: string) => {
           </div>
           <div class="p-6">
             <!-- KPI row -->
-            <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div class="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
                 <p class="text-xs text-[#059669] font-medium mb-1">Общая мощность</p>
                 <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalCapacity(matchedRecycler) }} т/год</p>

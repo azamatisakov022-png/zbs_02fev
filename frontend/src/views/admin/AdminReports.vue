@@ -114,7 +114,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     </div>
 
     <!-- Stats -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]"><p class="text-sm text-[#64748b] mb-1">Всего отчётов</p><p class="text-2xl font-bold text-[#1e293b]">{{ reports.length }}</p></div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]"><p class="text-sm text-[#64748b] mb-1">Принято</p><p class="text-2xl font-bold text-[#10b981]">{{ reports.filter(r => r.status === 'Принят').length }}</p></div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]"><p class="text-sm text-[#64748b] mb-1">На проверке</p><p class="text-2xl font-bold text-[#f59e0b]">{{ reports.filter(r => r.status === 'На проверке').length }}</p></div>

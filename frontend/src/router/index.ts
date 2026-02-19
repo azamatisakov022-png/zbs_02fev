@@ -231,9 +231,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/business/payments',
-    name: 'business-payments',
-    component: () => import('../views/business/BusinessPayments.vue'),
-    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'Платежи' },
+    redirect: '/business/account',
   },
   {
     path: '/business/documents',

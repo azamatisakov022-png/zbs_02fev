@@ -185,7 +185,7 @@ const openDetails = (wt: WasteType) => {
 
       <!-- Stats Banner -->
       <div class="rounded-2xl p-6 text-white" style="background: linear-gradient(135deg, #115E59, #0D9488);">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <div>
             <p class="text-teal-200 text-sm">Видов отходов</p>
             <p class="text-3xl font-bold mt-1">{{ stats.totalTypes }}</p>
@@ -397,7 +397,7 @@ const openDetails = (wt: WasteType) => {
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Функция в разработке' })" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
+              <button @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Редактирование классификатора будет доступно в следующем обновлении' })" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
                 Редактировать
               </button>
               <button @click="showDetailsModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">

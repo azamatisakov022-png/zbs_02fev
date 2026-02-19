@@ -210,6 +210,10 @@ const openLicenseDetails = (license: License) => {
   showLicenseModal.value = true
 }
 
+const handlePrint = () => {
+  window.print()
+}
+
 const handleFileDrop = (event: DragEvent) => {
   event.preventDefault()
   const files = event.dataTransfer?.files
@@ -369,7 +373,7 @@ const submitUpload = () => {
               <AppBadge :variant="getStatusBadgeVariant(getStatusText(license.status))">{{ getStatusText(license.status) }}</AppBadge>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
               <div>
                 <p class="text-xs text-gray-500">Дата выдачи</p>
                 <p class="text-sm font-medium text-gray-900">{{ formatDate(license.issueDate) }}</p>
@@ -414,7 +418,7 @@ const submitUpload = () => {
       </div>
 
       <!-- Documents Tab -->
-      <div v-if="activeTab === 'documents'" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div v-if="activeTab === 'documents'" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -456,13 +460,13 @@ const submitUpload = () => {
                     </svg>
                     {{ $t('common.view') }}
                   </AppButton>
-                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })">
+                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     {{ $t('common.download') }}
                   </AppButton>
-                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'warning', title: 'Удаление документа', message: '«' + doc.name + '» — функция в разработке' })">
+                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'info', title: 'Удаление', message: 'Удаление документов будет доступно после подключения хранилища' })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -539,7 +543,7 @@ const submitUpload = () => {
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <AppButton variant="primary" class="flex-1" @click="toastStore.show({ type: 'info', title: 'Скачивание PDF лицензии', message: '«' + selectedLicense.number + '»' })">
+              <AppButton variant="primary" class="flex-1" @click="handlePrint">
                 {{ $t('common.download') }} {{ $t('common.pdf') }}
               </AppButton>
               <AppButton variant="secondary" class="flex-1" @click="showLicenseModal = false">

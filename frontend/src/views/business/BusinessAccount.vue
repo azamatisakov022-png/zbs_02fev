@@ -17,7 +17,7 @@ const { roleTitle, menuItems } = useBusinessMenu()
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
-// ── Summary from calculationStore ──
+// ── BLOCK 1: Summary from calculationStore ──
 const companyName = 'ОсОО «ТехПром»'
 
 const approvedCalcs = computed(() =>
@@ -32,26 +32,65 @@ const totalPaid = computed(() =>
 )
 const accountBalance = computed(() => totalPaid.value - totalCharged.value)
 
+const lastPaymentDate = computed(() => {
+  const paidCalcs = calculationStore.getBusinessCalculations(companyName)
+    .filter(c => c.status === 'Оплачено' && c.paidAt)
+  if (!paidCalcs.length) return '—'
+  const sorted = [...paidCalcs].sort((a, b) => {
+    const [da, ma, ya] = (a.paidAt || '').split('.')
+    const [db, mb, yb] = (b.paidAt || '').split('.')
+    return new Date(+yb, +mb - 1, +db).getTime() - new Date(+ya, +ma - 1, +da).getTime()
+  })
+  return sorted[0]?.paidAt || '—'
+})
+
 const unpaidCalcs = computed(() =>
   calculationStore.getBusinessCalculations(companyName).filter(c => c.status === 'Принято')
 )
 const totalUnpaid = computed(() => unpaidCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
 
-// ── Operations history from accountStore ──
+// ── BLOCK 3: Payment methods (collapsible) ──
+const showPaymentMethods = ref(false)
+
+// ── BLOCK 4: Operations history from accountStore ──
 const transactions = computed(() => accountStore.getTransactions())
 
 const filterType = ref<'all' | 'charge' | 'payment'>('all')
+const filterPeriod = ref<'all' | 'month' | 'quarter' | 'year'>('all')
+
 const filteredTransactions = computed(() => {
-  if (filterType.value === 'all') return transactions.value
-  return transactions.value.filter(t => t.type === filterType.value)
+  let result = transactions.value
+
+  if (filterType.value !== 'all') {
+    result = result.filter(t => t.type === filterType.value)
+  }
+
+  if (filterPeriod.value !== 'all') {
+    const now = new Date()
+    result = result.filter(t => {
+      const [d, m, y] = t.date.split('.')
+      const txDate = new Date(+y, +m - 1, +d)
+      if (filterPeriod.value === 'month') {
+        return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear()
+      } else if (filterPeriod.value === 'quarter') {
+        const txQ = Math.floor(txDate.getMonth() / 3)
+        const nowQ = Math.floor(now.getMonth() / 3)
+        return txQ === nowQ && txDate.getFullYear() === now.getFullYear()
+      } else {
+        return txDate.getFullYear() === now.getFullYear()
+      }
+    })
+  }
+
+  return result
 })
 
 const columns = [
-  { key: 'date', label: 'Дата', width: '10%' },
-  { key: 'type', label: 'Тип', width: '12%' },
-  { key: 'description', label: 'Описание', width: '36%' },
-  { key: 'amount', label: 'Сумма', width: '18%' },
-  { key: 'balance', label: 'Баланс', width: '14%' },
+  { key: 'date', label: 'Дата', width: '100px' },
+  { key: 'type', label: 'Тип', width: '120px' },
+  { key: 'description', label: 'Описание' },
+  { key: 'amount', label: 'Сумма', width: '130px' },
+  { key: 'balance', label: 'Баланс', width: '130px' },
 ]
 
 const tableData = computed(() =>
@@ -72,7 +111,54 @@ const tableData = computed(() =>
 
 const formatAmount = (n: number) => n.toLocaleString('ru-RU') + ' сом'
 
-// ── Payment modal ──
+// ── Payment detail modal (for viewing past payments) ──
+const showPaymentDetailModal = ref(false)
+const paymentDetailData = ref<{
+  calcNumber: string
+  calcId: number
+  date: string
+  amount: number
+  status: string
+  paymentOrderNumber: string
+  bank: string
+  fileName: string | null
+} | null>(null)
+
+const openPaymentDetail = (row: any) => {
+  if (row.type !== 'payment') return
+  const calc = calculationStore.getCalculationById(row.calculationId)
+  paymentDetailData.value = {
+    calcNumber: row.calculationNumber,
+    calcId: row.calculationId,
+    date: row.date,
+    amount: row.paymentAmount,
+    status: calc?.status === 'Оплачено' ? 'Оплачен' : 'Оплата на проверке',
+    paymentOrderNumber: calc?.payment?.paymentOrderNumber || '—',
+    bank: calc?.payment?.payerBank || '—',
+    fileName: calc?.payment?.fileName || null,
+  }
+  showPaymentDetailModal.value = true
+}
+
+const closePaymentDetail = () => {
+  showPaymentDetailModal.value = false
+  paymentDetailData.value = null
+}
+
+const goToCalcFromDetail = (calcId: number) => {
+  closePaymentDetail()
+  router.push({ path: `/business/calculations/${calcId}`, query: { from: 'account' } })
+}
+
+const handleRowAction = (row: any) => {
+  if (row.type === 'payment') {
+    openPaymentDetail(row)
+  } else {
+    router.push({ path: `/business/calculations/${row.calculationId}`, query: { from: 'account' } })
+  }
+}
+
+// ── Payment modal (for making new payments from unpaid invoices) ──
 const showPaymentModal = ref(false)
 const payingCalcId = ref<number | null>(null)
 const payingCalc = computed(() => payingCalcId.value ? calculationStore.getCalculationById(payingCalcId.value) : null)
@@ -135,7 +221,6 @@ const removePaymentFile = () => {
 const submitPaymentConfirmation = () => {
   if (!payingCalc.value || !paymentFile.value) return
   const c = payingCalc.value
-  // Change status to Оплата на проверке
   const calc = calculationStore.getCalculationById(c.id)
   if (calc) {
     ;(calc as any).status = 'Оплата на проверке'
@@ -174,8 +259,8 @@ const printInvoice = () => { window.print() }
     </template>
 
     <template v-if="!isLoading">
-      <!-- BLOCK 1: Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <!-- BLOCK 1: Summary Cards (4 in a row) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Начислено -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
           <div class="flex items-center gap-3 mb-3">
@@ -198,20 +283,31 @@ const printInvoice = () => { window.print() }
           <p class="text-2xl font-bold text-green-600">{{ formatAmount(totalPaid) }}</p>
           <p class="text-xs text-[#94a3b8] mt-1">подтверждено</p>
         </div>
-        <!-- Баланс -->
+        <!-- Задолженность / Переплата -->
         <div :class="['rounded-2xl p-5 shadow-sm border', accountBalance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
           <div class="flex items-center gap-3 mb-3">
             <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', accountBalance >= 0 ? 'bg-green-200' : 'bg-red-200']">
               <svg :class="['w-5 h-5', accountBalance >= 0 ? 'text-green-700' : 'text-red-700']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <p class="text-sm text-[#64748b]">Баланс</p>
+            <p class="text-sm text-[#64748b]">{{ accountBalance >= 0 ? 'Переплата' : 'Задолженность' }}</p>
           </div>
           <p :class="['text-2xl font-bold', accountBalance >= 0 ? 'text-green-700' : 'text-red-700']">{{ formatAmount(Math.abs(accountBalance)) }}</p>
-          <p :class="['text-xs mt-1', accountBalance >= 0 ? 'text-green-600' : 'text-red-600']">{{ accountBalance >= 0 ? 'Переплата' : 'Задолженность' }}</p>
+          <p :class="['text-xs mt-1', accountBalance >= 0 ? 'text-green-600' : 'text-red-600']">{{ accountBalance >= 0 ? 'баланс положительный' : 'требуется оплата' }}</p>
+        </div>
+        <!-- Последний платёж -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </div>
+            <p class="text-sm text-[#64748b]">Последний платёж</p>
+          </div>
+          <p class="text-2xl font-bold text-[#1e293b]">{{ lastPaymentDate }}</p>
+          <p class="text-xs text-[#94a3b8] mt-1">дата оплаты</p>
         </div>
       </div>
 
-      <!-- BLOCK 3: Unpaid Invoices -->
+      <!-- BLOCK 2: Unpaid Invoices -->
       <template v-if="unpaidCalcs.length > 0">
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
           <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -227,7 +323,8 @@ const printInvoice = () => { window.print() }
           <div class="px-6 py-4 border-b border-[#e2e8f0]">
             <h2 class="text-lg font-semibold text-[#1e293b]">Неоплаченные счета</h2>
           </div>
-          <div class="overflow-x-auto">
+          <!-- Desktop table -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-sm">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em]">
@@ -241,7 +338,7 @@ const printInvoice = () => { window.print() }
               <tbody>
                 <tr v-for="c in unpaidCalcs" :key="c.id" class="border-b border-[#f1f5f9]" style="box-shadow: inset 4px 0 0 #f59e0b">
                   <td class="px-4 py-3">
-                    <router-link :to="'/business/calculations/' + c.id" class="font-mono font-medium text-blue-600 hover:underline">{{ c.number }}</router-link>
+                    <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline">{{ c.number }}</router-link>
                   </td>
                   <td class="px-4 py-3 text-[#64748b]">{{ c.period }}</td>
                   <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ c.totalAmount.toLocaleString('ru-RU') }} сом</td>
@@ -256,23 +353,109 @@ const printInvoice = () => { window.print() }
               </tbody>
             </table>
           </div>
+          <!-- Mobile cards -->
+          <div class="md:hidden">
+            <div v-for="c in unpaidCalcs" :key="'m-' + c.id" class="p-4 border-b border-[#f1f5f9]" style="border-left: 4px solid #f59e0b">
+              <div class="flex justify-between items-start mb-2">
+                <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline text-sm">{{ c.number }}</router-link>
+                <span class="text-xs text-[#64748b]">{{ c.date }}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div><span class="text-[#94a3b8] text-xs">Период</span><br>{{ c.period }}</div>
+                <div><span class="text-[#94a3b8] text-xs">Сумма</span><br><strong class="text-[#1e293b]">{{ c.totalAmount.toLocaleString('ru-RU') }} сом</strong></div>
+              </div>
+              <button @click="openPayment(c.id)" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#22c55e] text-white rounded-lg text-sm font-medium hover:bg-[#16a34a] transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                Оплатить
+              </button>
+            </div>
+          </div>
         </div>
       </template>
 
-      <!-- BLOCK 2: Operations History -->
+      <!-- BLOCK 3: Payment Methods (collapsible, default collapsed) -->
+      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6 overflow-hidden">
+        <button @click="showPaymentMethods = !showPaymentMethods" class="w-full px-6 py-4 flex items-center justify-between hover:bg-[#f8fafc] transition-colors">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+              <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+            </div>
+            <h2 class="text-base font-semibold text-[#1e293b]">Способы оплаты</h2>
+          </div>
+          <svg :class="['w-5 h-5 text-[#94a3b8] transition-transform duration-200', showPaymentMethods ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+        </button>
+        <Transition name="collapse">
+          <div v-if="showPaymentMethods" class="px-6 pb-5 border-t border-[#e2e8f0]">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+              <!-- Банковская карта -->
+              <div class="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                </div>
+                <div>
+                  <p class="font-medium text-[#9ca3af] text-sm">Банковская карта</p>
+                  <p class="text-xs text-[#d1d5db]">Visa, MasterCard, Элкарт</p>
+                  <p class="text-xs text-amber-600 mt-1">Скоро (Q2 2026)</p>
+                </div>
+              </div>
+              <!-- QR-код -->
+              <div class="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                </div>
+                <div>
+                  <p class="font-medium text-[#1e293b] text-sm">QR-код</p>
+                  <p class="text-xs text-[#64748b]">MBANK, O!Деньги, Элсом</p>
+                  <p class="text-xs text-amber-600 mt-1">В процессе подключения</p>
+                </div>
+              </div>
+              <!-- Банковский перевод -->
+              <div class="flex items-start gap-3 p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                </div>
+                <div>
+                  <p class="font-medium text-[#1e293b] text-sm">Банковский перевод</p>
+                  <p class="text-xs text-[#64748b]">По реквизитам в любом банке</p>
+                  <div class="mt-2 text-xs text-[#64748b] space-y-0.5">
+                    <p><span class="text-[#94a3b8]">Получатель:</span> {{ bankDetails.recipient }}</p>
+                    <p><span class="text-[#94a3b8]">ИНН:</span> <span class="font-mono">{{ bankDetails.inn }}</span></p>
+                    <p><span class="text-[#94a3b8]">Банк:</span> {{ bankDetails.bank }}</p>
+                    <p><span class="text-[#94a3b8]">Р/с:</span> <span class="font-mono">{{ bankDetails.account }}</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- BLOCK 4: Operations History -->
       <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 class="text-lg font-semibold text-[#1e293b]">История операций</h2>
-        <div class="flex gap-2">
-          <button
-            v-for="opt in [{ v: 'all', l: 'Все' }, { v: 'charge', l: 'Начисления' }, { v: 'payment', l: 'Оплата' }]"
-            :key="opt.v"
-            @click="filterType = opt.v as any"
-            :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterType === opt.v ? 'bg-[#1e293b] text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]']"
-          >{{ opt.l }}</button>
+        <div class="flex flex-wrap gap-2">
+          <!-- Period filter -->
+          <div class="flex gap-1 mr-2">
+            <button
+              v-for="opt in [{ v: 'all', l: 'Всё время' }, { v: 'month', l: 'Месяц' }, { v: 'quarter', l: 'Квартал' }, { v: 'year', l: 'Год' }]"
+              :key="opt.v"
+              @click="filterPeriod = opt.v as any"
+              :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterPeriod === opt.v ? 'bg-blue-600 text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]']"
+            >{{ opt.l }}</button>
+          </div>
+          <!-- Type filter -->
+          <div class="flex gap-1">
+            <button
+              v-for="opt in [{ v: 'all', l: 'Все' }, { v: 'charge', l: 'Начисления' }, { v: 'payment', l: 'Оплаты' }]"
+              :key="opt.v"
+              @click="filterType = opt.v as any"
+              :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterType === opt.v ? 'bg-[#1e293b] text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]']"
+            >{{ opt.l }}</button>
+          </div>
         </div>
       </div>
 
-      <DataTable :columns="columns" :data="tableData" :actions="false">
+      <DataTable :columns="columns" :data="tableData" :actions="true">
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M20 13.33v5m0 0v5m0-5h5m-5 0h-5M35 20a15 15 0 11-30 0 15 15 0 0130 0z&quot;/></svg>'"
@@ -292,10 +475,10 @@ const printInvoice = () => { window.print() }
           </span>
         </template>
         <template #cell-description="{ row }">
-          <div class="text-sm text-[#374151]">
+          <div class="text-sm text-[#374151] truncate">
             {{ row.description }}
             <router-link
-              :to="'/business/calculations/' + row.calculationId"
+              :to="{ path: '/business/calculations/' + row.calculationId, query: { from: 'account' } }"
               class="ml-1 font-mono text-xs text-blue-600 hover:underline"
             >{{ row.calculationNumber }}</router-link>
           </div>
@@ -310,10 +493,19 @@ const printInvoice = () => { window.print() }
             {{ value.toLocaleString('ru-RU') }} сом
           </span>
         </template>
+        <template #actions="{ row }">
+          <button
+            @click="handleRowAction(row)"
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+            {{ row.type === 'payment' ? 'Детали' : 'Открыть' }}
+          </button>
+        </template>
       </DataTable>
     </template>
 
-    <!-- Payment Modal -->
+    <!-- Payment Modal (for making new payments) -->
     <Teleport to="body">
       <div v-if="showPaymentModal && payingCalc" class="pm-overlay" @click.self="closePayment">
         <div class="pm-modal">
@@ -511,6 +703,67 @@ const printInvoice = () => { window.print() }
         </div>
       </div>
     </Teleport>
+
+    <!-- Payment Detail Modal (for viewing past payment details) -->
+    <Teleport to="body">
+      <Transition name="pd-fade">
+        <div v-if="showPaymentDetailModal && paymentDetailData" class="pd-overlay" @click.self="closePaymentDetail">
+          <Transition name="pd-scale" appear>
+            <div class="pd-modal">
+              <div class="pd-header">
+                <h2 class="pd-title">Детали оплаты</h2>
+                <button class="pd-close" @click="closePaymentDetail">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div class="pd-grid">
+                <div class="pd-field">
+                  <span class="pd-label">Номер ПП</span>
+                  <span class="pd-value font-mono">{{ paymentDetailData.paymentOrderNumber }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Дата оплаты</span>
+                  <span class="pd-value">{{ paymentDetailData.date }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Банк</span>
+                  <span class="pd-value">{{ paymentDetailData.bank }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Сумма</span>
+                  <span class="pd-value pd-value--bold">{{ paymentDetailData.amount.toLocaleString('ru-RU') }} сом</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Статус</span>
+                  <span class="pd-badge">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                    {{ paymentDetailData.status }}
+                  </span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Связанный расчёт</span>
+                  <button class="pd-link" @click="goToCalcFromDetail(paymentDetailData.calcId)">{{ paymentDetailData.calcNumber }}</button>
+                </div>
+              </div>
+
+              <div v-if="paymentDetailData.fileName" class="pd-file">
+                <svg class="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="text-sm text-[#374151]">{{ paymentDetailData.fileName }}</span>
+              </div>
+
+              <div class="pd-footer">
+                <button class="pd-btn pd-btn--outline" @click="printInvoice">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Скачать PDF
+                </button>
+                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">Закрыть</button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
   </DashboardLayout>
 </template>
 
@@ -660,6 +913,198 @@ const printInvoice = () => { window.print() }
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   border-radius: 10px;
+}
+
+/* ── Payment Detail modal ── */
+.pd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.pd-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  max-width: 560px;
+  width: 100%;
+}
+.pd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.pd-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.pd-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pd-close:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.pd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 640px) {
+  .pd-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pd-label {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.pd-value {
+  font-size: 14px;
+  color: #1e293b;
+}
+.pd-value--bold {
+  font-weight: 700;
+  color: #16a34a;
+}
+.pd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 10px;
+  border-radius: 20px;
+  width: fit-content;
+}
+.pd-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+}
+.pd-link:hover {
+  color: #2563eb;
+}
+.pd-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.pd-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+.pd-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+.pd-btn--outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+.pd-btn--outline:hover {
+  background: #f8fafc;
+}
+.pd-btn--secondary {
+  background: #f1f5f9;
+  color: #374151;
+}
+.pd-btn--secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Animations */
+.pd-fade-enter-active,
+.pd-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.pd-fade-enter-from,
+.pd-fade-leave-to {
+  opacity: 0;
+}
+.pd-scale-enter-active {
+  transition: all 0.2s ease;
+}
+.pd-scale-leave-active {
+  transition: all 0.15s ease;
+}
+.pd-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.pd-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Collapse transition */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.collapse-enter-to,
+.collapse-leave-from {
+  opacity: 1;
+  max-height: 500px;
 }
 
 /* Print styles */

@@ -209,7 +209,7 @@ const resetFilters = () => {
     />
 
     <!-- Gradient Stat Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-5 border border-yellow-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
@@ -323,7 +323,7 @@ const resetFilters = () => {
       </template>
       <template #actions="{ row }">
         <div class="flex flex-wrap items-center justify-end gap-2">
-          <AppButton variant="ghost" size="sm" @click="router.push('/eco-operator/reports/' + row.id)">
+          <AppButton variant="ghost" size="sm" @click="router.push({ path: '/eco-operator/reports/' + row.id, query: { from: 'incoming-reports' } })">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -407,7 +407,7 @@ const resetFilters = () => {
             </div>
 
             <!-- Processing Summary Cards -->
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
                 <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
                 <p class="text-xl font-bold text-[#2563eb]">{{ selectedReport.totalDeclared }} т</p>
@@ -493,7 +493,7 @@ const resetFilters = () => {
                     <p class="text-sm font-medium text-[#1e293b]">{{ file.name }}</p>
                     <p class="text-xs text-[#64748b]">{{ file.size }}</p>
                   </div>
-                  <button @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Функция в разработке' })" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
+                  <button @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
                 </div>
               </div>
             </div>

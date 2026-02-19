@@ -258,7 +258,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">Сводные данные декларации</h2>
 
         <!-- KPI Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <!-- Расчётов за год -->
           <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
             <div class="flex items-center gap-3 mb-3">
@@ -446,7 +446,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
                 >Просмотр</button>
                 <button
                   class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
-                  @click="toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })"
+                  @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })"
                 >Скачать</button>
               </div>
             </div>

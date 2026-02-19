@@ -662,7 +662,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               <!-- Permissions -->
               <div>
                 <label class="block text-sm font-medium text-[#415861] mb-3">Права доступа по модулям</label>
-                <div class="border border-[#e2e8f0] rounded-xl overflow-hidden">
+                <div class="border border-[#e2e8f0] rounded-xl overflow-hidden overflow-x-auto">
                   <table class="w-full">
                     <thead>
                       <tr class="bg-[#f8fafc]">

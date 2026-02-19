@@ -1,5 +1,8 @@
+<!-- DEPRECATED: функционал перенесён в BusinessAccount.vue -->
+<!-- Роут /business/payments теперь редиректит на /business/account -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -9,7 +12,11 @@ import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
+const router = useRouter()
+
 const { roleTitle, menuItems } = useBusinessMenu()
+
+const handlePrint = () => { window.print() }
 
 // Loading state
 const isLoading = ref(true)
@@ -154,12 +161,41 @@ const columns = [
   { key: 'status', label: 'Статус', width: '10%' },
 ]
 
-const paymentHistory = ref([
-  { id: 1, number: 'ПЛ-2026-0156', type: 'Утилизационный сбор', period: 'Q4 2025', amount: '45 200 сом', paidAt: '18.01.2026', status: 'Оплачен' },
-  { id: 2, number: 'ПЛ-2025-0892', type: 'Утилизационный сбор', period: 'Q3 2025', amount: '38 750 сом', paidAt: '12.10.2025', status: 'Оплачен' },
-  { id: 3, number: 'ПЛ-2025-0567', type: 'Утилизационный сбор', period: 'Q2 2025', amount: '41 300 сом', paidAt: '08.07.2025', status: 'Оплачен' },
-  { id: 4, number: 'ПЛ-2025-0234', type: 'Утилизационный сбор', period: 'Q1 2025', amount: '35 800 сом', paidAt: '15.04.2025', status: 'Оплачен' },
+interface PaymentRecord {
+  id: number
+  number: string
+  type: string
+  period: string
+  amount: string
+  paidAt: string
+  status: string
+  calcNumber?: string
+  calcId?: number
+  paymentOrderNumber?: string
+  bank?: string
+  fileName?: string
+}
+
+const paymentHistory = ref<PaymentRecord[]>([
+  { id: 1, number: 'ПЛ-2026-0156', type: 'Утилизационный сбор', period: 'Q4 2025', amount: '45 200 сом', paidAt: '18.01.2026', status: 'Оплачен', calcNumber: 'РС-2026-015', calcId: 3, paymentOrderNumber: 'ПП-00412', bank: 'Оптима Банк', fileName: 'платёжное_поручение_0412.pdf' },
+  { id: 2, number: 'ПЛ-2025-0892', type: 'Утилизационный сбор', period: 'Q3 2025', amount: '38 750 сом', paidAt: '12.10.2025', status: 'Оплачен', calcNumber: 'РС-2025-087', calcId: 2, paymentOrderNumber: 'ПП-00389', bank: 'Оптима Банк' },
+  { id: 3, number: 'ПЛ-2025-0567', type: 'Утилизационный сбор', period: 'Q2 2025', amount: '41 300 сом', paidAt: '08.07.2025', status: 'Оплачен', calcNumber: 'РС-2025-054', calcId: 1, bank: 'РСК Банк' },
+  { id: 4, number: 'ПЛ-2025-0234', type: 'Утилизационный сбор', period: 'Q1 2025', amount: '35 800 сом', paidAt: '15.04.2025', status: 'Оплачен', calcNumber: 'РС-2025-021', calcId: 1 },
 ])
+
+// Payment detail modal
+const selectedPayment = ref<PaymentRecord | null>(null)
+
+const openPaymentDetail = (row: PaymentRecord) => {
+  selectedPayment.value = row
+}
+const closePaymentDetail = () => {
+  selectedPayment.value = null
+}
+const goToCalculation = (calcId: number) => {
+  closePaymentDetail()
+  router.push(`/business/calculations/${calcId}`)
+}
 
 </script>
 
@@ -225,7 +261,7 @@ const paymentHistory = ref([
 
       <template v-if="!isLoading">
       <!-- Stats -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
           <p class="text-sm text-[#64748b] mb-1">Всего платежей</p>
           <p class="text-2xl font-bold text-[#1e293b]">16</p>
@@ -281,11 +317,11 @@ const paymentHistory = ref([
         <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge></template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <AppButton variant="ghost" size="sm" @click="toastStore.show({ type: 'info', title: 'Детали платежа', message: row.number })">
+            <AppButton variant="ghost" size="sm" @click="openPaymentDetail(row)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               Просмотреть
             </AppButton>
-            <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание PDF', message: 'Функция будет доступна в следующей версии' })">
+            <AppButton variant="outline" size="sm" @click="handlePrint()">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               Скачать PDF
             </AppButton>
@@ -434,7 +470,7 @@ const paymentHistory = ref([
                   <div class="pt-2 border-t border-[#e2e8f0]"><span class="text-[#64748b]">Назначение:</span><p class="font-medium text-[#1e293b] mt-1">{{ bankRequisites.purpose }}</p></div>
                 </div>
               </div>
-              <button @click="toastStore.show({ type: 'info', title: 'Скачивание квитанции', message: 'Функция будет доступна в следующей версии' })" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#8b5cf6] text-[#8b5cf6] rounded-xl hover:bg-purple-50 transition-colors">
+              <button @click="toastStore.show({ type: 'info', title: 'Квитанция', message: 'Скачивание квитанции будет доступно в следующем обновлении' })" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#8b5cf6] text-[#8b5cf6] rounded-xl hover:bg-purple-50 transition-colors">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Скачать квитанцию
               </button>
@@ -461,7 +497,7 @@ const paymentHistory = ref([
           </div>
 
           <!-- Navigation -->
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
+          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
             <AppButton v-if="currentStep > 1" variant="secondary" @click="prevStep">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>Назад
             </AppButton>
@@ -508,7 +544,7 @@ const paymentHistory = ref([
         </div>
         <p class="text-[#64748b] mb-8">Квитанция отправлена на email</p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button @click="toastStore.show({ type: 'info', title: 'Скачивание квитанции', message: 'Функция будет доступна в следующей версии' })" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
+          <button @click="toastStore.show({ type: 'info', title: 'Квитанция', message: 'Скачивание квитанции будет доступно в следующем обновлении' })" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Скачать квитанцию
           </button>
           <button @click="backToList" class="flex items-center justify-center gap-2 px-6 py-3 bg-[#8b5cf6] text-white rounded-xl font-medium hover:bg-[#7c3aed] transition-colors">
@@ -517,6 +553,78 @@ const paymentHistory = ref([
         </div>
       </div>
     </template>
+    <!-- Payment Detail Modal -->
+    <Teleport to="body">
+      <Transition name="pd-fade">
+        <div v-if="selectedPayment" class="pd-overlay" @click.self="closePaymentDetail">
+          <Transition name="pd-scale" appear>
+            <div class="pd-modal">
+              <!-- Header -->
+              <div class="pd-header">
+                <h2 class="pd-title">Платёж {{ selectedPayment.number }}</h2>
+                <button class="pd-close" @click="closePaymentDetail">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <!-- Info grid -->
+              <div class="pd-grid">
+                <div class="pd-field">
+                  <span class="pd-label">Тип платежа</span>
+                  <span class="pd-value">{{ selectedPayment.type }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Период</span>
+                  <span class="pd-value">{{ selectedPayment.period }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Сумма</span>
+                  <span class="pd-value pd-value--bold">{{ selectedPayment.amount }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Дата оплаты</span>
+                  <span class="pd-value">{{ selectedPayment.paidAt }}</span>
+                </div>
+                <div class="pd-field">
+                  <span class="pd-label">Статус</span>
+                  <span class="pd-badge">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                    {{ selectedPayment.status }}
+                  </span>
+                </div>
+                <div class="pd-field" v-if="selectedPayment.calcNumber">
+                  <span class="pd-label">Связанный расчёт</span>
+                  <button class="pd-link" @click="goToCalculation(selectedPayment.calcId!)">{{ selectedPayment.calcNumber }}</button>
+                </div>
+                <div class="pd-field" v-if="selectedPayment.paymentOrderNumber">
+                  <span class="pd-label">Номер ПП</span>
+                  <span class="pd-value font-mono">{{ selectedPayment.paymentOrderNumber }}</span>
+                </div>
+                <div class="pd-field" v-if="selectedPayment.bank">
+                  <span class="pd-label">Банк</span>
+                  <span class="pd-value">{{ selectedPayment.bank }}</span>
+                </div>
+              </div>
+
+              <!-- Attached file -->
+              <div v-if="selectedPayment.fileName" class="pd-file">
+                <svg class="w-5 h-5 text-[#8b5cf6] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="text-sm text-[#374151]">{{ selectedPayment.fileName }}</span>
+              </div>
+
+              <!-- Footer -->
+              <div class="pd-footer">
+                <button class="pd-btn pd-btn--outline" @click="handlePrint()">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Скачать PDF
+                </button>
+                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">Закрыть</button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
   </DashboardLayout>
 </template>
 
@@ -530,5 +638,178 @@ const paymentHistory = ref([
   .lg\:ml-72 {
     margin-left: 0 !important;
   }
+}
+
+/* Payment Detail Modal */
+.pd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.pd-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  max-width: 560px;
+  width: 100%;
+}
+.pd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.pd-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.pd-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pd-close:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+.pd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 640px) {
+  .pd-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pd-label {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+.pd-value {
+  font-size: 14px;
+  color: #1e293b;
+}
+.pd-value--bold {
+  font-weight: 700;
+  color: #8b5cf6;
+}
+.pd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 10px;
+  border-radius: 20px;
+  width: fit-content;
+}
+.pd-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8b5cf6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 3px;
+}
+.pd-link:hover {
+  color: #7c3aed;
+}
+.pd-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.pd-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+.pd-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+.pd-btn--outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #374151;
+}
+.pd-btn--outline:hover {
+  background: #f8fafc;
+}
+.pd-btn--secondary {
+  background: #f1f5f9;
+  color: #374151;
+}
+.pd-btn--secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Animations */
+.pd-fade-enter-active,
+.pd-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.pd-fade-enter-from,
+.pd-fade-leave-to {
+  opacity: 0;
+}
+.pd-scale-enter-active {
+  transition: all 0.2s ease;
+}
+.pd-scale-leave-active {
+  transition: all 0.15s ease;
+}
+.pd-scale-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.pd-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

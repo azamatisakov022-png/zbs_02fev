@@ -33,66 +33,32 @@ interface WasteCategory {
   label: string
 }
 
-interface WasteGroup {
-  id: string
-  letter: string
-  title: string
-  items: WasteCategory[]
-}
-
-const wasteGroups: WasteGroup[] = [
-  {
-    id: 'a',
-    letter: 'А',
-    title: 'Упаковка',
-    items: [
-      { value: 'a1', label: '1. Упаковка из пластмасс (ПЭТ, полиэтилен, полипропилен)' },
-      { value: 'a2', label: '2. Упаковка из бумаги и картона' },
-      { value: 'a3', label: '3. Упаковка из комбинированных материалов (тетрапак)' },
-      { value: 'a4', label: '4. Упаковка из стекла' },
-      { value: 'a5', label: '5. Упаковка из металла (алюминий, жесть)' },
-      { value: 'a6', label: '6. Упаковка из дерева' },
-      { value: 'a7', label: '7. Пластиковые пакеты и мешки' },
-    ],
-  },
-  {
-    id: 'b',
-    letter: 'Б',
-    title: 'Автотранспортные товары',
-    items: [
-      { value: 'b8', label: '8. Шины и покрышки пневматические' },
-      { value: 'b9', label: '9. Аккумуляторы свинцовые (автотранспорт)' },
-      { value: 'b10', label: '10. Аккумуляторы для электромобилей' },
-      { value: 'b11', label: '11. Масла моторные отработанные' },
-      { value: 'b12', label: '12. Масла трансмиссионные и гидравлические' },
-      { value: 'b13', label: '13. Фильтры масляные и топливные' },
-      { value: 'b14', label: '14. Антифризы и тормозные жидкости' },
-    ],
-  },
-  {
-    id: 'v',
-    letter: 'В',
-    title: 'Электроника и электрооборудование',
-    items: [
-      { value: 'v15', label: '15. Крупногабаритное электрооборудование (холодильники, стиральные машины)' },
-      { value: 'v16', label: '16. Среднегабаритное электрооборудование (микроволновки, пылесосы)' },
-      { value: 'v17', label: '17. Мелкогабаритное электрооборудование (фены, утюги, тостеры)' },
-      { value: 'v18', label: '18. IT и телекоммуникационное оборудование (компьютеры, телефоны, планшеты)' },
-      { value: 'v19', label: '19. Элементы питания (батарейки)' },
-      { value: 'v20', label: '20. Ртутьсодержащие изделия (лампы, термометры)' },
-    ],
-  },
-  {
-    id: 'g',
-    letter: 'Г',
-    title: 'Прочие товары',
-    items: [
-      { value: 'g21', label: '21. Текстиль и одежда' },
-      { value: 'g22', label: '22. Мебель' },
-      { value: 'g23', label: '23. Нефтепродукты и смазочные материалы' },
-      { value: 'g24', label: '24. Строительные материалы и отходы' },
-    ],
-  },
+// 24 группы продукции по ПКМ КР №322 — плоский список
+const wasteItems: WasteCategory[] = [
+  { value: 'g1', label: '1. Изделия из гофрированной бумаги/картона' },
+  { value: 'g2', label: '2. Изделия из негофрированной бумаги/картона' },
+  { value: 'g3', label: '3. Масла' },
+  { value: 'g4', label: '4. Шины, покрышки и камеры резиновые' },
+  { value: 'g5', label: '5. Изделия из резины (за исключением шин)' },
+  { value: 'g6', label: '6. Изделия пластмассовые упаковочные' },
+  { value: 'g7', label: '7. Изделия пластмассовые прочие' },
+  { value: 'g8', label: '8. Стекло полое' },
+  { value: 'g9', label: '9. Компьютеры и периферийное оборудование, офисное оборудование' },
+  { value: 'g10', label: '10. Мониторы, приемники телевизионные' },
+  { value: 'g11', label: '11. Элементы первичные и батареи первичных элементов' },
+  { value: 'g12', label: '12. Аккумуляторы свинцовые' },
+  { value: 'g13', label: '13. Батареи аккумуляторные' },
+  { value: 'g14', label: '14. Оборудование электрическое осветительное' },
+  { value: 'g15', label: '15. Техника бытовая крупная' },
+  { value: 'g16', label: '16. Техника бытовая мелкая, инструмент ручной' },
+  { value: 'g17', label: '17. Оборудование холодильное и вентиляционное' },
+  { value: 'g18', label: '18. Фильтры для двигателей внутреннего сгорания' },
+  { value: 'g19', label: '19. Упаковка из полимерных материалов, не содержащих галогены' },
+  { value: 'g20', label: '20. Упаковка из полимерных материалов, содержащих галоген' },
+  { value: 'g21', label: '21. Упаковка из комбинированных материалов' },
+  { value: 'g22', label: '22. Упаковка из гофрированного картона' },
+  { value: 'g23', label: '23. Упаковка из бумаги и негофрированного картона' },
+  { value: 'g24', label: '24. Упаковка стеклянная' },
 ]
 
 const esiFormErrors = reactive<Record<string, string>>({})
@@ -113,24 +79,14 @@ const toggleWasteCategory = (value: string) => {
   }
 }
 
-const isGroupAllSelected = (group: WasteGroup): boolean => {
-  return group.items.every(item => esiForm.wasteCategories.includes(item.value))
-}
+const allWasteSelected = computed(() => esiForm.wasteCategories.length === wasteItems.length)
 
-const toggleGroupAll = (group: WasteGroup) => {
-  if (isGroupAllSelected(group)) {
-    // Deselect all in group
-    for (const item of group.items) {
-      const idx = esiForm.wasteCategories.indexOf(item.value)
-      if (idx !== -1) esiForm.wasteCategories.splice(idx, 1)
-    }
+const toggleAllWaste = () => {
+  if (allWasteSelected.value) {
+    esiForm.wasteCategories.splice(0)
   } else {
-    // Select all in group
-    for (const item of group.items) {
-      if (!esiForm.wasteCategories.includes(item.value)) {
-        esiForm.wasteCategories.push(item.value)
-      }
-    }
+    esiForm.wasteCategories.splice(0)
+    esiForm.wasteCategories.push(...wasteItems.map(i => i.value))
   }
 }
 
@@ -575,12 +531,10 @@ const setManualCapacityValue = (groupValue: string, value: string) => {
 }
 
 const getWasteCategoryLabel = (value: string): string => {
-  for (const group of wasteGroups) {
-    const item = group.items.find(i => i.value === value)
-    if (item) {
-      const match = item.label.match(/^\d+\.\s*(.+)$/)
-      return match ? match[1] : item.label
-    }
+  const item = wasteItems.find(i => i.value === value)
+  if (item) {
+    const match = item.label.match(/^\d+\.\s*(.+)$/)
+    return match ? match[1] : item.label
   }
   return value
 }
@@ -778,48 +732,43 @@ const goHome = () => {
               <label class="block text-sm font-medium text-[#1e293b] mb-1">Категории товаров (группы отходов) *</label>
               <p class="text-xs text-[#64748b] mb-4">Согласно постановлению КМ КР №322. Выберите все применимые категории.</p>
 
-              <div class="space-y-5">
-                <div v-for="group in wasteGroups" :key="group.id" class="border border-[#e2e8f0] rounded-2xl overflow-hidden">
-                  <!-- Group header -->
-                  <div class="flex items-center justify-between px-4 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8]">
-                    <div class="flex items-center gap-2">
-                      <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#0e888d] text-white text-xs font-bold">{{ group.letter }}</span>
-                      <span class="font-semibold text-[#0e888d] text-sm">ГРУППА {{ group.letter }} — {{ group.title }}</span>
-                    </div>
-                    <button
-                      type="button"
-                      @click="toggleGroupAll(group)"
-                      :class="[
-                        'text-xs font-medium px-3 py-1 rounded-lg transition-colors',
-                        isGroupAllSelected(group)
-                          ? 'bg-[#0e888d] text-white hover:bg-[#0a6b6f]'
-                          : 'bg-white text-[#0e888d] border border-[#0e888d] hover:bg-[#f0fdfa]'
-                      ]"
-                    >
-                      {{ isGroupAllSelected(group) ? 'Снять все' : 'Выбрать все' }}
-                    </button>
-                  </div>
-                  <!-- Group items -->
-                  <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <label
-                      v-for="item in group.items"
-                      :key="item.value"
-                      :class="[
-                        'flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                        esiForm.wasteCategories.includes(item.value)
-                          ? 'border-[#0e888d] bg-[#f0fdfa]'
-                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
-                      ]"
-                    >
-                      <input
-                        type="checkbox"
-                        :checked="esiForm.wasteCategories.includes(item.value)"
-                        @change="toggleWasteCategory(item.value)"
-                        class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
-                      />
-                      <span class="text-sm text-[#1e293b] leading-snug">{{ item.label }}</span>
-                    </label>
-                  </div>
+              <div class="border border-[#e2e8f0] rounded-2xl overflow-hidden">
+                <!-- Header with "Выбрать все" -->
+                <div class="flex items-center justify-between px-4 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8]">
+                  <span class="font-semibold text-[#0e888d] text-sm">24 группы продукции (ПКМ КР №322)</span>
+                  <button
+                    type="button"
+                    @click="toggleAllWaste"
+                    :class="[
+                      'text-xs font-medium px-3 py-1 rounded-lg transition-colors',
+                      allWasteSelected
+                        ? 'bg-[#0e888d] text-white hover:bg-[#0a6b6f]'
+                        : 'bg-white text-[#0e888d] border border-[#0e888d] hover:bg-[#f0fdfa]'
+                    ]"
+                  >
+                    {{ allWasteSelected ? 'Снять все' : 'Выбрать все' }}
+                  </button>
+                </div>
+                <!-- Flat list in 2 columns -->
+                <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <label
+                    v-for="item in wasteItems"
+                    :key="item.value"
+                    :class="[
+                      'flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                      esiForm.wasteCategories.includes(item.value)
+                        ? 'border-[#0e888d] bg-[#f0fdfa]'
+                        : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                    ]"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="esiForm.wasteCategories.includes(item.value)"
+                      @change="toggleWasteCategory(item.value)"
+                      class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                    />
+                    <span class="text-sm text-[#1e293b] leading-snug">{{ item.label }}</span>
+                  </label>
                 </div>
               </div>
 
@@ -1777,7 +1726,7 @@ const goHome = () => {
             </div>
 
             <!-- Navigation Buttons -->
-            <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col sm:flex-row justify-between gap-4">
+            <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
               <button
                 v-if="currentStep > 1"
                 @click="prevStep"

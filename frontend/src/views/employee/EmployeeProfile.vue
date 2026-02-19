@@ -359,7 +359,7 @@ const changePassword = async () => {
                   </div>
                 </div>
               </div>
-              <button @click="toastStore.show({ type: 'info', title: 'Журнал активности', message: 'Функция в разработке' })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
+              <button @click="toastStore.show({ type: 'info', title: 'Журнал', message: 'Полный журнал активности будет доступен в следующем обновлении' })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
                 Показать все
               </button>
             </div>

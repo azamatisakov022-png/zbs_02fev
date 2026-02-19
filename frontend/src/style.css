@@ -539,3 +539,195 @@ body {
     min-height: 250px;
   }
 }
+
+/* ═══════════════════════════════════════
+   Mobile: Action buttons
+   ═══════════════════════════════════════ */
+.act-wrap {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .act-wrap {
+    gap: 4px;
+  }
+  .act-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: ⋯ dropdown → bottom-sheet
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .act-dropdown {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 50vh !important;
+    z-index: 1000 !important;
+    min-width: auto !important;
+    padding: 8px !important;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.15) !important;
+    animation: slideUp 0.2s ease-out;
+  }
+  .act-dropdown__item {
+    padding: 14px 16px !important;
+    font-size: 15px !important;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Tables horizontal scroll
+   ═══════════════════════════════════════ */
+.table-scroll-mobile {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Wizard footer (Назад / Далее)
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .wizard-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+    padding: 12px 16px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
+  .wizard-footer > div,
+  .wizard-footer__right {
+    width: 100%;
+  }
+  .wizard-footer__right {
+    flex-direction: column;
+  }
+  .wiz-btn-back,
+  .wiz-btn-outline,
+  .wiz-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Form inputs (prevent iOS zoom)
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Modals → responsive
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Modal overlays: tighter padding on mobile */
+  .modal-overlay {
+    padding: 8px !important;
+  }
+  /* Large modals: full-screen on mobile */
+  .modal-fullscreen-mobile {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Detail pages — grids & cards
+   ═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Reset min-width on cards/badges that cause overflow */
+  .pd-badge, .info-badge, .status-badge {
+    min-width: 0 !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Filters, search & tabs
+   ═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Tab navigation: tighter gaps, scrollable if many tabs */
+  .border-b > .flex {
+    gap: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .border-b > .flex > button {
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  /* Filter select elements: smaller min-width */
+  select {
+    min-width: 0 !important;
+  }
+}
+
+/* ═══════════════════════════════════════
+   Mobile: Typography & breadcrumbs
+   ═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Hide breadcrumb navigation on mobile — saves vertical space */
+  nav[aria-label="Breadcrumb"] {
+    display: none;
+  }
+  /* Page titles without responsive classes: cap at 20px */
+  h1 {
+    font-size: clamp(1.125rem, 5vw, 1.5rem);
+  }
+  /* Stat numbers: slightly smaller on mobile */
+  h2 {
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
+  }
+}
+
+/* ═══════════════════════════════════════
+   Print Styles — hide UI chrome
+   ═══════════════════════════════════════ */
+@media print {
+  .sidebar, nav, .header, .breadcrumb,
+  .btn-back, .btn-primary, .btn-outline, .btn-warning,
+  .dots-menu, .toast-container, .notification-container,
+  footer, .page-actions, .actions-row, .filter-bar,
+  .stepper, .banner, .guide-block, .summary-cards,
+  .wiz-btn-back, .wiz-btn-outline, .wiz-btn-primary,
+  .act-more-wrap, .act-btn, .wizard-footer,
+  .btn-pdf, .btn-print, .btn-excel, .pd-footer {
+    display: none !important;
+  }
+  .main-content, .page-content, .content-area {
+    margin: 0 !important;
+    padding: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  * { box-shadow: none !important; }
+  table { border-collapse: collapse !important; }
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  .badge {
+    border: 1px solid #999 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+  h1, h2 { font-size: 16px !important; margin-bottom: 8px !important; }
+  a[href]::after { content: none !important; }
+}

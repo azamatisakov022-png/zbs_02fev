@@ -51,7 +51,7 @@ function handleDownload() {
     >
       <div
         class="bg-white rounded-xl shadow-2xl flex flex-col"
-        style="width: 80%; max-width: 900px; height: 85%; max-height: 760px;"
+        style="width: 95%; max-width: 900px; height: 85%; max-height: 760px;"
         @click.stop
       >
         <!-- Header -->

@@ -93,7 +93,7 @@ const resetFilters = () => {
     />
 
     <!-- Gradient Stat Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-5 border border-yellow-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
