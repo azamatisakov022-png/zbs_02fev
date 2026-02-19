@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -960,6 +961,17 @@ const state = reactive<{ payers: Payer[] }>({
 
 // ── Store API ──────────────────────────────────────────────
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/payers')
+    if (Array.isArray(data)) {
+      state.payers = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.payers = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function getAll(): Payer[] {
   return state.payers
 }
@@ -1002,6 +1014,7 @@ function addComment(payerId: number, author: string, text: string): void {
       text,
     })
   }
+  api.post(`/payers/${payerId}/comments`, { author, text }).catch(() => {})
 }
 
 let nextDocId = 100
@@ -1017,6 +1030,7 @@ function addDocument(payerId: number, name: string, type: string, size: string):
       uploadedAt: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     })
   }
+  api.post(`/payers/${payerId}/documents`, { name, type, size }).catch(() => {})
 }
 
 export function formatMoney(value: number): string {
@@ -1025,6 +1039,7 @@ export function formatMoney(value: number): string {
 
 export const payerStore = {
   state,
+  fetchAll,
   getAll,
   getById,
   getTotal,

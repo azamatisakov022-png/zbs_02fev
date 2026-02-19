@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { authStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 
 const isEsiLoading = ref(false)
 const loginForm = ref({
@@ -19,14 +21,20 @@ const handleEsiLogin = async () => {
   router.push('/business')
 }
 
-const handlePasswordLogin = () => {
+const handlePasswordLogin = async () => {
   loginError.value = ''
   if (!loginForm.value.inn.trim() || !loginForm.value.password.trim()) {
     loginError.value = 'Заполните все поля'
     return
   }
-  // Mock login — just redirect
-  router.push('/business')
+
+  try {
+    const user = await authStore.login(loginForm.value.inn, loginForm.value.password)
+    const redirect = (route.query.redirect as string) || authStore.getRoleDashboard(user.role)
+    router.push(redirect)
+  } catch (err: any) {
+    loginError.value = err.message || 'Ошибка авторизации'
+  }
 }
 
 const goBack = () => {
@@ -48,11 +56,11 @@ const goBack = () => {
           </svg>
         </button>
         <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase">
-          Вход для Плательщика
+          Вход в систему
         </h1>
       </div>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] ml-14">
-        Импортёры и производители
+        Авторизация по ИНН и паролю
       </p>
     </div>
 
@@ -103,6 +111,7 @@ const goBack = () => {
                 maxlength="14"
                 placeholder="12345678901234"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 font-mono"
+                @keyup.enter="handlePasswordLogin"
               />
             </div>
 
@@ -113,6 +122,7 @@ const goBack = () => {
                 type="password"
                 placeholder="Введите пароль"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                @keyup.enter="handlePasswordLogin"
               />
             </div>
 
@@ -120,9 +130,10 @@ const goBack = () => {
 
             <button
               @click="handlePasswordLogin"
-              class="w-full px-6 py-3 bg-[#415861] hover:bg-[#2d3e45] text-white rounded-xl font-medium transition-colors"
+              :disabled="authStore.state.loading"
+              class="w-full px-6 py-3 bg-[#415861] hover:bg-[#2d3e45] text-white rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Войти
+              {{ authStore.state.loading ? 'Вход...' : 'Войти' }}
             </button>
           </div>
 

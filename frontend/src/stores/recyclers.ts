@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 // ═══ Types ═══
 
@@ -365,9 +366,21 @@ const state = reactive<{ recyclers: Recycler[] }>({
 
 // ═══ Functions ═══
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/recyclers')
+    if (Array.isArray(data)) {
+      state.recyclers = data
+    } else if (data?.content && Array.isArray(data.content)) {
+      state.recyclers = data.content
+    }
+  } catch { /* keep local data */ }
+}
+
 function addRecycler(data: Omit<Recycler, 'id'>): Recycler {
   const recycler: Recycler = { id: nextId++, ...data }
   state.recyclers.push(recycler)
+  api.post('/recyclers', data).catch(() => {})
   return recycler
 }
 
@@ -378,6 +391,7 @@ function updateRecycler(id: number, updates: Partial<Recycler>) {
     const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
     state.recyclers[idx] = { ...state.recyclers[idx], ...updates, updatedAt: dateStr }
   }
+  api.put(`/recyclers/${id}`, updates).catch(() => {})
 }
 
 function toggleStatus(id: number) {
@@ -387,6 +401,7 @@ function toggleStatus(id: number) {
     const now = new Date()
     recycler.updatedAt = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
+  api.post(`/recyclers/${id}/toggle-status`).catch(() => {})
 }
 
 function getActiveRecyclers(): Recycler[] {
@@ -468,6 +483,7 @@ function getInspectionStatusLabel(status: InspectionStatus): string {
 
 export const recyclerStore = {
   state,
+  fetchAll,
   addRecycler,
   updateRecycler,
   toggleStatus,

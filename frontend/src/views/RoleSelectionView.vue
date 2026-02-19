@@ -37,15 +37,9 @@ const roles: Role[] = [
   }
 ]
 
-const handleRoleSelect = (role: Role) => {
-  // Navigate to the corresponding dashboard (business goes to login page)
-  const roleRoutes: Record<string, string> = {
-    'admin': '/admin',
-    'business': '/login/business',
-    'employee': '/employee',
-    'eco-operator': '/eco-operator'
-  }
-  router.push(roleRoutes[role.id] || '/login')
+const handleRoleSelect = (_role: Role) => {
+  // All roles go through the same login page
+  router.push('/login/business')
 }
 
 const goBack = () => {

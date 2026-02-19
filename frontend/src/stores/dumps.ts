@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -251,9 +252,19 @@ const state = reactive<{ dumps: Dump[] }>({
 
 // ─── Store methods ───────────────────────────────────────────────────────────
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/dumps')
+    if (Array.isArray(data)) {
+      state.dumps = data
+    }
+  } catch { /* keep local data */ }
+}
+
 function addDump(data: Omit<Dump, 'id'>): Dump {
   const dump: Dump = { id: nextId++, ...data }
   state.dumps.push(dump)
+  api.post('/dumps', data).catch(() => {})
   return dump
 }
 
@@ -262,6 +273,7 @@ function updateDump(id: number, updates: Partial<Dump>) {
   if (idx !== -1) {
     state.dumps[idx] = { ...state.dumps[idx], ...updates }
   }
+  api.put(`/dumps/${id}`, updates).catch(() => {})
 }
 
 function deleteDump(id: number) {
@@ -269,6 +281,7 @@ function deleteDump(id: number) {
   if (idx !== -1) {
     state.dumps.splice(idx, 1)
   }
+  api.delete(`/dumps/${id}`).catch(() => {})
 }
 
 function getDumpById(id: number): Dump | undefined {
@@ -291,6 +304,7 @@ function getByStatus(status: DumpStatus): Dump[] {
 
 export const dumpStore = {
   state,
+  fetchAll,
   addDump,
   updateDump,
   deleteDump,

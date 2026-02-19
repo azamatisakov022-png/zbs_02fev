@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import api from '../api/client'
 
 export type CollectionPointStatus = 'active' | 'paused' | 'closed'
 
@@ -48,9 +49,19 @@ const state = reactive<{ points: CollectionPoint[] }>({
   ],
 })
 
+async function fetchAll() {
+  try {
+    const { data } = await api.get('/collection-points')
+    if (Array.isArray(data)) {
+      state.points = data
+    }
+  } catch { /* keep local data */ }
+}
+
 function addPoint(data: Omit<CollectionPoint, 'id'>): CollectionPoint {
   const point: CollectionPoint = { id: nextId++, ...data }
   state.points.push(point)
+  api.post('/collection-points', data).catch(() => {})
   return point
 }
 
@@ -59,6 +70,7 @@ function updatePoint(id: number, updates: Partial<CollectionPoint>) {
   if (idx !== -1) {
     state.points[idx] = { ...state.points[idx], ...updates }
   }
+  api.put(`/collection-points/${id}`, updates).catch(() => {})
 }
 
 function deletePoint(id: number) {
@@ -66,6 +78,7 @@ function deletePoint(id: number) {
   if (idx !== -1) {
     state.points.splice(idx, 1)
   }
+  api.delete(`/collection-points/${id}`).catch(() => {})
 }
 
 function getPointById(id: number): CollectionPoint | undefined {
@@ -98,6 +111,7 @@ function getForGisMap() {
 
 export const collectionPointStore = {
   state,
+  fetchAll,
   addPoint,
   updatePoint,
   deletePoint,
