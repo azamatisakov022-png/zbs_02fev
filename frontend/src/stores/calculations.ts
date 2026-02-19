@@ -375,14 +375,84 @@ const state = reactive<{ calculations: Calculation[]; loading: boolean }>({
   ],
 })
 
+// Backend status → Frontend display status
+const backendStatusToFrontend: Record<string, CalculationStatus> = {
+  draft: 'Черновик',
+  submitted: 'На проверке',
+  under_review: 'На проверке',
+  approved: 'Принято',
+  rejected: 'Отклонено',
+  paid: 'Оплачено',
+  partially_paid: 'Оплата на проверке',
+}
+
+function mapBackendItem(i: any): ProductItem {
+  const weight = parseFloat(i.weight) || parseFloat(i.quantity) || 0
+  const norm = parseFloat(i.recyclingNorm) || 0
+  const rate = parseFloat(i.rate) || 0
+  const volToRecycle = weight * norm / 100
+  return {
+    id: i.id,
+    group: i.productGroup || '',
+    subgroup: i.productSubgroup || '',
+    gskpCode: i.gskpCode || '',
+    tnvedCode: i.tnvedCode || '',
+    volume: String(weight),
+    recyclingStandard: norm,
+    volumeToRecycle: volToRecycle,
+    transferredToRecycling: '0',
+    exportedFromKR: '',
+    taxableVolume: volToRecycle,
+    rate: rate,
+    amount: parseFloat(i.amount) || 0,
+  }
+}
+
+function mapBackendCalc(c: any): Calculation {
+  const status = backendStatusToFrontend[c.status] || 'Черновик'
+  return {
+    id: c.id,
+    number: c.number || '',
+    date: c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '',
+    company: c.companyName || '',
+    inn: c.companyInn || '',
+    period: c.quarter ? `Q${c.quarter} ${c.period || ''}` : c.period || '',
+    quarter: c.quarter ? `Q${c.quarter}` : 'Q1',
+    year: c.period || '',
+    items: (c.items || []).map(mapBackendItem),
+    totalAmount: parseFloat(c.totalAmount) || 0,
+    status,
+    rejectionReason: status === 'Отклонено' ? c.reviewComment : undefined,
+    rejectedBy: status === 'Отклонено' ? c.reviewedBy : undefined,
+    rejectedAt: status === 'Отклонено' && c.reviewedAt
+      ? new Date(c.reviewedAt).toLocaleDateString('ru-RU')
+      : undefined,
+    documents: (c.documents || []).map((d: any) => ({
+      id: d.id,
+      fileName: d.name || d.fileName || '',
+      fileSize: d.size || d.fileSize || 0,
+      fileType: d.type || d.fileType || '',
+      docType: (d.docType || 'other') as DocumentType,
+      dataUrl: '',
+    })),
+  }
+}
+
 async function fetchAll() {
   state.loading = true
   try {
     const { data } = await api.get('/calculations')
+    let backendCalcs: any[] = []
     if (Array.isArray(data)) {
-      state.calculations = data
+      backendCalcs = data
+    } else if (data?.data && Array.isArray(data.data)) {
+      backendCalcs = data.data
     } else if (data?.content && Array.isArray(data.content)) {
-      state.calculations = data.content
+      backendCalcs = data.content
+    }
+    if (backendCalcs.length > 0) {
+      const mapped = backendCalcs.map(mapBackendCalc)
+      state.calculations = mapped
     }
   } catch { /* keep local data */ } finally {
     state.loading = false
@@ -428,7 +498,40 @@ function addCalculation(data: {
     status,
   }
   state.calculations.unshift(calc)
-  api.post('/calculations', data).catch(() => {})
+
+  // Map to backend CalculationCreateRequest format
+  const backendRequest = {
+    period: data.year,
+    quarter: data.quarter.replace('Q', ''),
+    documentType: 'INVOICE',
+    documentNumber: data.number,
+    documentDate: new Date().toISOString().split('T')[0],
+    items: data.items.filter(i => i.group && parseFloat(i.volume) > 0).map(i => ({
+      productGroup: i.group,
+      productSubgroup: i.subgroup || undefined,
+      tnvedCode: i.tnvedCode || undefined,
+      gskpCode: i.gskpCode || undefined,
+      productName: i.subgroup || i.group,
+      quantity: parseFloat(i.volume) || 1,
+      unit: 'TON',
+      weight: parseFloat(i.volume) || 1,
+      rate: i.rate,
+      recyclingNorm: i.recyclingStandard,
+    })),
+  }
+
+  api.post('/calculations', backendRequest).then(resp => {
+    if (resp.data?.id) {
+      // Sync local calc with backend ID and number
+      calc.id = resp.data.id
+      calc.number = resp.data.number || calc.number
+      // If submitting immediately, trigger submit on backend
+      if (status === 'На проверке') {
+        api.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
+      }
+    }
+  }).catch(() => {})
+
   return calc
 }
 

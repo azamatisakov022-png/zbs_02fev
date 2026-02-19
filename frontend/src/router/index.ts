@@ -549,9 +549,9 @@ router.beforeEach((to, _from, next) => {
     }
   }
 
-  // Redirect authenticated users away from login pages
+  // Auto-logout when navigating to login pages (allow account/role switching)
   if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
-    return next(authStore.getRoleDashboard(authStore.userRole.value!))
+    authStore.logout()
   }
 
   next()
