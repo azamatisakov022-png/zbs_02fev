@@ -73,7 +73,8 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/esi/callback',
     name: 'esi-callback',
-    redirect: '/business',
+    // ESI callback — role determined after OAuth, default to home; login flow handles redirect
+    redirect: '/',
   },
 
   // Admin routes
@@ -527,6 +528,11 @@ const router = createRouter({
 
 // Auth guard — check real authentication state
 router.beforeEach((to, _from, next) => {
+  // Auto-logout when navigating to login pages (allow account/role switching)
+  if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
+    authStore.logout()
+  }
+
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated.value) {
       return next({ path: '/login', query: { redirect: to.fullPath } })
@@ -535,7 +541,6 @@ router.beforeEach((to, _from, next) => {
     const requiredRole = to.meta.role as string | undefined
     const userRole = authStore.userRole.value
     if (requiredRole && userRole) {
-      // Map backend roles to frontend route roles
       const roleMap: Record<string, string[]> = {
         'admin': ['admin'],
         'employee': ['employee', 'ministry'],
@@ -547,11 +552,6 @@ router.beforeEach((to, _from, next) => {
         return next(authStore.getRoleDashboard(userRole))
       }
     }
-  }
-
-  // Auto-logout when navigating to login pages (allow account/role switching)
-  if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
-    authStore.logout()
   }
 
   next()
