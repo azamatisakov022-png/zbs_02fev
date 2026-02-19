@@ -5,6 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { authStore } from '../../stores/auth'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useEmployeeMenu()
@@ -381,7 +382,7 @@ const changePassword = async () => {
                 </div>
               </div>
             </div>
-            <button @click="router.push('/login')" class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+            <button @click="authStore.logout(); router.push('/login')" class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
               Выйти из системы
             </button>
           </div>
