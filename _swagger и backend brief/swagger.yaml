@@ -1,0 +1,4105 @@
+openapi: 3.0.3
+info:
+  title: АИС «ГП Эко Оператор» — API
+  description: |
+    Автоматизированная информационная система управления утилизационными сборами
+    и обращения с отходами в Кыргызской Республике.
+
+    ## Роли пользователей
+    - **Business** — Плательщик утилизационного сбора (импортёр/производитель)
+    - **Eco-Operator** — Эко Оператор (сбор и администрирование утильсбора)
+    - **Ministry (МПРЭТН)** — Министерство природных ресурсов
+    - **Admin** — Системный администратор
+    - **Employee** — Сотрудник Эко Оператора
+
+    ## Нормативная база
+    - ПКМ №730 — Ставки утилизационного сбора
+    - ПКМ №322 — Порядок взимания утилизационного сбора
+    - ПКМ №563 — Нормативы переработки
+
+    ## Технический стек
+    - Frontend: Vue 3 + Pinia + TypeScript
+    - API: REST JSON
+    - Авторизация: Bearer JWT
+
+  version: 1.0.0
+  contact:
+    name: ГП «Эко Оператор»
+    email: support@eco-operator.kg
+  license:
+    name: Proprietary
+    url: https://eco-operator.kg/license
+
+servers:
+  - url: https://api.eco-operator.kg/v1
+    description: Production
+  - url: https://staging-api.eco-operator.kg/v1
+    description: Staging
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Аутентификация и авторизация
+  - name: Calculations
+    description: Расчёты утилизационного сбора (12 stores, 17 actions)
+  - name: Declarations
+    description: Годовые декларации плательщиков (6 stores, 9 actions)
+  - name: Reports
+    description: Отчёты о переработке (5 stores, 7 actions)
+  - name: Accounts
+    description: Лицевые счета и корректировки (7 счетов, 21 action)
+  - name: Payers
+    description: Реестр плательщиков (16 stores, 11 actions)
+  - name: Recyclers
+    description: Реестр переработчиков (8 stores, 18 actions)
+  - name: Refunds
+    description: Заявки на возврат (2 stores, 5 actions)
+  - name: Notifications
+    description: Уведомления (20 stores, 7 actions)
+  - name: Dumps
+    description: Несанкционированные свалки (13 stores, 7 actions)
+  - name: CollectionPoints
+    description: Пункты приёма отходов (22 stores, 7 actions)
+  - name: Landfills
+    description: Полигоны ТБО (9 stores, 13 actions)
+  - name: GIS
+    description: ГИС-карта объектов инфраструктуры
+  - name: Analytics
+    description: Аналитика и отчётность
+  - name: Admin
+    description: Администрирование системы
+
+# ═══════════════════════════════════════
+# SECURITY
+# ═══════════════════════════════════════
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен, получаемый через /auth/login
+
+  # ═══════════════════════════════════════
+  # SCHEMAS (на базе 38 интерфейсов + 22 типов)
+  # ═══════════════════════════════════════
+  schemas:
+
+    # ─── AUTH ───
+    LoginRequest:
+      type: object
+      required: [inn, password]
+      properties:
+        inn:
+          type: string
+          example: "02312200210134"
+          description: ИНН организации
+        password:
+          type: string
+          format: password
+      
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT Bearer token
+        refreshToken:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        expiresAt:
+          type: string
+          format: date-time
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        inn:
+          type: string
+        companyName:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    UserRole:
+      type: string
+      enum: [business, eco-operator, ministry, admin, employee, guest]
+
+    # ─── CALCULATIONS (calculations.ts) ───
+    DocumentType:
+      type: string
+      enum: [gtd, invoice, contract, act, other]
+      description: |
+        Тип документа:
+        - gtd — Грузовая таможенная декларация
+        - invoice — Счёт-фактура
+        - contract — Договор
+        - act — Акт
+        - other — Прочее
+
+    CalculationStatus:
+      type: string
+      enum: [draft, submitted, under_review, approved, rejected, paid, partially_paid]
+      description: |
+        Статус расчёта:
+        - draft — Черновик
+        - submitted — Подан на рассмотрение
+        - under_review — На рассмотрении
+        - approved — Одобрен
+        - rejected — Отклонён
+        - paid — Оплачен
+        - partially_paid — Частично оплачен
+
+    AttachedDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: "ГТД-2024-001234.pdf"
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        url:
+          type: string
+          format: uri
+        size:
+          type: integer
+          description: Размер файла в байтах
+        uploadedAt:
+          type: string
+          format: date-time
+
+    ProductItem:
+      type: object
+      required: [productGroup, tnvedCode, quantity, unit, rate]
+      properties:
+        id:
+          type: integer
+        productGroup:
+          type: string
+          example: "Шины и покрышки"
+          description: Группа продукции по ПКМ №730
+        productSubgroup:
+          type: string
+          example: "Шины для легковых автомобилей"
+        tnvedCode:
+          type: string
+          example: "4011100000"
+          description: Код ТН ВЭД
+        gskpCode:
+          type: string
+          description: Код ГСКП
+        productName:
+          type: string
+          example: "Шины пневматические резиновые новые"
+        quantity:
+          type: number
+          format: double
+          example: 1500
+          description: Количество (Гр.6)
+        unit:
+          type: string
+          example: "кг"
+          description: Единица измерения (Гр.7)
+        weight:
+          type: number
+          format: double
+          description: Масса нетто, кг (Гр.8)
+        rate:
+          type: number
+          format: double
+          example: 15.0
+          description: Ставка утильсбора, сом/кг по ПКМ №730 (Гр.9)
+        amount:
+          type: number
+          format: double
+          example: 22500.0
+          description: Сумма утильсбора = Гр.8 × Гр.9 (Гр.10)
+        recyclingNorm:
+          type: number
+          format: double
+          example: 10.0
+          description: Норматив переработки, % по ПКМ №563
+
+    PaymentData:
+      type: object
+      properties:
+        id:
+          type: integer
+        paymentNumber:
+          type: string
+          example: "ПП-2024-0001"
+        amount:
+          type: number
+          format: double
+        paymentDate:
+          type: string
+          format: date
+        paymentMethod:
+          type: string
+          enum: [bank_transfer, online, cash]
+        status:
+          type: string
+          enum: [pending, confirmed, rejected]
+        documentUrl:
+          type: string
+          format: uri
+          description: Скан платёжного поручения
+
+    Calculation:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+          example: "РС-2024-000012"
+          description: Номер расчёта
+        companyId:
+          type: integer
+        companyName:
+          type: string
+          example: 'ОсОО "Бишкек Трейд"'
+        companyInn:
+          type: string
+          example: "02312200210134"
+        period:
+          type: string
+          example: "Январь 2024"
+          description: Отчётный период
+        quarter:
+          type: string
+          example: "Q1-2024"
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        documentNumber:
+          type: string
+          example: "ГТД-10709/040124/0001234"
+        documentDate:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductItem'
+          description: Позиции расчёта (товары)
+        totalAmount:
+          type: number
+          format: double
+          example: 2126425.0
+          description: Итого сумма утильсбора
+        status:
+          $ref: '#/components/schemas/CalculationStatus'
+        payment:
+          $ref: '#/components/schemas/PaymentData'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachedDocument'
+        reviewComment:
+          type: string
+          description: Комментарий при одобрении/отклонении
+        reviewedBy:
+          type: string
+          description: ФИО проверяющего
+        reviewedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CalculationCreateRequest:
+      type: object
+      required: [period, documentType, documentNumber, documentDate, items]
+      properties:
+        period:
+          type: string
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        documentNumber:
+          type: string
+        documentDate:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductItem'
+
+    # ─── DECLARATIONS (declarations.ts) ───
+    DeclarationStatus:
+      type: string
+      enum: [draft, submitted, under_review, approved, rejected, revision_requested]
+
+    DeclarationCalcItem:
+      type: object
+      properties:
+        calculationId:
+          type: integer
+        number:
+          type: string
+        period:
+          type: string
+        amount:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/CalculationStatus'
+
+    DeclarationReportItem:
+      type: object
+      properties:
+        reportId:
+          type: integer
+        recyclerName:
+          type: string
+        period:
+          type: string
+        volume:
+          type: number
+          format: double
+          description: Объём переработки, тонн
+        offsetAmount:
+          type: number
+          format: double
+          description: Сумма зачёта
+
+    DeclarationPayment:
+      type: object
+      properties:
+        totalCharged:
+          type: number
+          format: double
+          description: Начислено за год
+        totalPaid:
+          type: number
+          format: double
+          description: Оплачено за год
+        totalOffset:
+          type: number
+          format: double
+          description: Зачтено через переработку
+        balance:
+          type: number
+          format: double
+          description: Остаток (положительный = переплата)
+
+    DeclarationDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        url:
+          type: string
+          format: uri
+
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+          example: "Подана на рассмотрение"
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        comment:
+          type: string
+
+    Declaration:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+          example: "ДЕК-2024-000006"
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        companyInn:
+          type: string
+        year:
+          type: integer
+          example: 2024
+        calculations:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeclarationCalcItem'
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeclarationReportItem'
+        payment:
+          $ref: '#/components/schemas/DeclarationPayment'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeclarationDocument'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+        status:
+          $ref: '#/components/schemas/DeclarationStatus'
+        submittedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── REPORTS (reports.ts) ───
+    ReportStatus:
+      type: string
+      enum: [draft, submitted, under_review, approved, rejected, revision_requested]
+
+    ProcessingItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        wasteGroup:
+          type: string
+          example: "Шины и покрышки"
+        wasteCode:
+          type: string
+        volumeReceived:
+          type: number
+          format: double
+          description: Принято, тонн
+        volumeProcessed:
+          type: number
+          format: double
+          description: Переработано, тонн
+        recyclingPercent:
+          type: number
+          format: double
+          description: "% переработки"
+        recyclingNorm:
+          type: number
+          format: double
+          description: Норматив по ПКМ №563, %
+        technology:
+          type: string
+          description: Технология переработки
+
+    UploadedFile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        size:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+
+    ReportHistoryEntry:
+      type: object
+      properties:
+        action:
+          type: string
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        comment:
+          type: string
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+          example: "ОТЧ-2024-000005"
+        recyclerId:
+          type: integer
+        recyclerName:
+          type: string
+        period:
+          type: string
+          example: "Q1-2024"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessingItem'
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedFile'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportHistoryEntry'
+        status:
+          $ref: '#/components/schemas/ReportStatus'
+        submittedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── ACCOUNTS (account.ts) ───
+    TransactionType:
+      type: string
+      enum: [charge, payment, offset, refund, correction, penalty]
+      description: |
+        - charge — Начисление утильсбора
+        - payment — Оплата
+        - offset — Зачёт через переработку
+        - refund — Возврат
+        - correction — Корректировка
+        - penalty — Пеня
+
+    AccountTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        description:
+          type: string
+          example: "Начисление по расчёту РС-2024-000012"
+        debit:
+          type: number
+          format: double
+          description: Дебет (начислено)
+        credit:
+          type: number
+          format: double
+          description: Кредит (оплачено/зачтено)
+        balance:
+          type: number
+          format: double
+          description: Сальдо
+        referenceId:
+          type: integer
+          description: ID связанного документа (расчёт, платёж и т.д.)
+        referenceType:
+          type: string
+          enum: [calculation, payment, report, refund, correction]
+
+    CorrectionItem:
+      type: object
+      properties:
+        calculationId:
+          type: integer
+        originalAmount:
+          type: number
+          format: double
+        correctedAmount:
+          type: number
+          format: double
+        reason:
+          type: string
+
+    CorrectionRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrectionItem'
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CompanyAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        companyInn:
+          type: string
+        balance:
+          type: number
+          format: double
+          description: Текущее сальдо (отрицательное = задолженность)
+        totalCharged:
+          type: number
+          format: double
+          description: Всего начислено
+        totalPaid:
+          type: number
+          format: double
+          description: Всего оплачено
+        totalOffset:
+          type: number
+          format: double
+          description: Всего зачтено через переработку
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountTransaction'
+        lastUpdated:
+          type: string
+          format: date-time
+
+    # ─── PAYERS (payers.ts) ───
+    PayerCategory:
+      type: string
+      enum: [importer, producer, importer_producer]
+      description: "Категория: Импортёр / Производитель / Импортёр-Производитель"
+
+    PayerSubcategory:
+      type: string
+      enum: [large, medium, small, micro]
+
+    ReportingStatus:
+      type: string
+      enum: [active, overdue, suspended]
+
+    SettlementStatus:
+      type: string
+      enum: [settled, debt, overpaid]
+
+    SystemStatus:
+      type: string
+      enum: [active, suspended, blocked]
+
+    PaymentStatus:
+      type: string
+      enum: [paid, partially_paid, unpaid, overdue]
+
+    PayerDeclaration:
+      type: object
+      properties:
+        year:
+          type: integer
+        status:
+          $ref: '#/components/schemas/DeclarationStatus'
+        totalAmount:
+          type: number
+          format: double
+
+    PayerPayment:
+      type: object
+      properties:
+        id:
+          type: integer
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        action:
+          type: string
+        user:
+          type: string
+        date:
+          type: string
+          format: date-time
+        details:
+          type: string
+
+    PayerComment:
+      type: object
+      properties:
+        id:
+          type: integer
+        author:
+          type: string
+        text:
+          type: string
+        date:
+          type: string
+          format: date-time
+
+    PayerDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        url:
+          type: string
+          format: uri
+
+    Payer:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyName:
+          type: string
+          example: 'ОсОО "Бишкек Трейд"'
+        inn:
+          type: string
+          example: "02312200210134"
+        legalForm:
+          type: string
+          example: "ОсОО"
+          description: Организационно-правовая форма
+        category:
+          $ref: '#/components/schemas/PayerCategory'
+        subcategory:
+          $ref: '#/components/schemas/PayerSubcategory'
+        productGroups:
+          type: array
+          items:
+            type: string
+          description: Группы продукции (до 24 групп)
+        region:
+          type: string
+          example: "г. Бишкек"
+        address:
+          type: string
+        director:
+          type: string
+          description: ФИО руководителя
+        contactPerson:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        registrationDate:
+          type: string
+          format: date
+        reportingStatus:
+          $ref: '#/components/schemas/ReportingStatus'
+        settlementStatus:
+          $ref: '#/components/schemas/SettlementStatus'
+        systemStatus:
+          $ref: '#/components/schemas/SystemStatus'
+        paymentStatus:
+          $ref: '#/components/schemas/PaymentStatus'
+        declarations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayerDeclaration'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayerPayment'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayerDocument'
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayerComment'
+        auditLog:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEntry'
+
+    # ─── RECYCLERS (recyclers.ts) ───
+    RecyclerStatus:
+      type: string
+      enum: [active, suspended, excluded]
+      description: "Статус в реестре: Активен / Приостановлен / Исключён"
+
+    InspectionStatus:
+      type: string
+      enum: [compliant, violations_found, reinspection_required, not_inspected]
+      description: |
+        По ТЗ п.84:
+        - compliant — Соответствует требованиям
+        - violations_found — Выявлены нарушения
+        - reinspection_required — Требуется повторная проверка
+        - not_inspected — Не проверен
+
+    RecyclerCapacity:
+      type: object
+      required: [wasteGroup, monthlyCapacity]
+      properties:
+        wasteGroup:
+          type: string
+          example: "Шины и покрышки"
+        wasteCode:
+          type: string
+        monthlyCapacity:
+          type: number
+          format: double
+          description: Мощность переработки, тонн/месяц (ТЗ п.78)
+        annualCapacity:
+          type: number
+          format: double
+        currentLoad:
+          type: number
+          format: double
+          description: Текущая загрузка, тонн/месяц
+        loadPercent:
+          type: number
+          format: double
+          description: "% загрузки мощностей"
+        technology:
+          type: string
+          description: Технология переработки (ТЗ п.79)
+
+    RecyclerDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [license, eco_passport, certificate, inspection_act, other]
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date
+
+    Recycler:
+      type: object
+      description: "Переработчик — по ТЗ поля №66-93"
+      properties:
+        id:
+          type: integer
+          description: "ТЗ п.66 — Порядковый номер"
+        companyName:
+          type: string
+          description: "ТЗ п.67 — Полное наименование"
+        legalForm:
+          type: string
+          description: "ТЗ п.68 — Организационно-правовая форма"
+        inn:
+          type: string
+          description: "ТЗ п.69 — ИНН"
+        region:
+          type: string
+          description: "ТЗ п.70 — Регион"
+        address:
+          type: string
+          description: "ТЗ п.70 — Адрес площадки"
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        director:
+          type: string
+          description: "ТЗ п.71 — Руководитель (ФИО)"
+        directorPosition:
+          type: string
+          description: "ТЗ п.71 — Должность руководителя"
+        contactPerson:
+          type: string
+          description: "ТЗ п.72 — Контактное лицо (ФИО)"
+        contactPosition:
+          type: string
+          description: "ТЗ п.72 — Должность контактного лица"
+        phone:
+          type: string
+          description: "ТЗ п.72 — Телефон"
+        email:
+          type: string
+          format: email
+          description: "ТЗ п.72 — Email"
+        licenseNumber:
+          type: string
+          description: "ТЗ п.73 — Номер лицензии"
+        licenseDate:
+          type: string
+          format: date
+          description: "ТЗ п.73 — Дата выдачи лицензии"
+        licenseExpiry:
+          type: string
+          format: date
+          description: "ТЗ п.74 — Срок действия"
+        licenseIssuer:
+          type: string
+          description: "ТЗ п.75 — Орган, выдавший лицензию"
+        ecoPassportNumber:
+          type: string
+          description: "ТЗ п.76 — Номер экологического паспорта"
+        ecoPassportDate:
+          type: string
+          format: date
+          description: "ТЗ п.76 — Дата выдачи"
+        capacities:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecyclerCapacity'
+          description: "ТЗ п.77-78 — Виды отходов + мощности"
+        technologies:
+          type: array
+          items:
+            type: string
+          description: "ТЗ п.79 — Технологии переработки"
+        equipment:
+          type: string
+          description: "ТЗ п.80 — Наличие оборудования"
+        territoryArea:
+          type: number
+          format: double
+          description: "ТЗ п.81 — Площадь территории, м²"
+        employeesCount:
+          type: integer
+          description: "ТЗ п.82 — Количество сотрудников"
+        certifications:
+          type: array
+          items:
+            type: string
+          description: "ТЗ п.83 — Сертификаты качества"
+        inspectionStatus:
+          $ref: '#/components/schemas/InspectionStatus'
+          description: "ТЗ п.84"
+        lastInspectionDate:
+          type: string
+          format: date
+          description: "ТЗ п.85"
+        inspectionRemarks:
+          type: string
+          description: "ТЗ п.86"
+        nextInspectionDate:
+          type: string
+          format: date
+          description: "ТЗ п.87"
+        volumeCurrentYear:
+          type: number
+          format: double
+          description: "ТЗ п.88 — Объём переработки текущий год, тонн"
+        volumePreviousYear:
+          type: number
+          format: double
+          description: "ТЗ п.89 — Объём переработки прошлый год, тонн"
+        status:
+          $ref: '#/components/schemas/RecyclerStatus'
+          description: "ТЗ п.90"
+        suspensionReason:
+          type: string
+          description: "ТЗ п.91"
+        lastUpdated:
+          type: string
+          format: date-time
+          description: "ТЗ п.92"
+        notes:
+          type: string
+          description: "ТЗ п.93"
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecyclerDocument'
+
+    # ─── REFUNDS (refunds.ts) ───
+    RefundStatus:
+      type: string
+      enum: [pending, approved, rejected, processed]
+
+    RefundItem:
+      type: object
+      properties:
+        calculationId:
+          type: integer
+        amount:
+          type: number
+          format: double
+        reason:
+          type: string
+          enum: [export, recycling, overpayment, error]
+
+    Refund:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+          example: "ВОЗ-2024-000002"
+        companyId:
+          type: integer
+        companyName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefundItem'
+        totalAmount:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/RefundStatus'
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── NOTIFICATIONS (notifications.ts) ───
+    NotificationType:
+      type: string
+      enum: [info, warning, success, error, deadline, status_change]
+
+    NotificationRole:
+      type: string
+      enum: [business, eco-operator, employee, admin, all]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          example: "Расчёт одобрен"
+        message:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        role:
+          $ref: '#/components/schemas/NotificationRole'
+        isRead:
+          type: boolean
+        referenceId:
+          type: integer
+        referenceType:
+          type: string
+          enum: [calculation, declaration, report, refund, inspection]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── DUMPS (dumps.ts) ───
+    DumpStatus:
+      type: string
+      enum: [active, under_cleanup, cleaned, monitoring]
+
+    Dump:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: "Свалка у реки Ала-Арча"
+        region:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        area:
+          type: number
+          format: double
+          description: Площадь, м²
+        estimatedVolume:
+          type: number
+          format: double
+          description: Примерный объём отходов, тонн
+        wasteTypes:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/DumpStatus'
+        discoveredDate:
+          type: string
+          format: date
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        notes:
+          type: string
+
+    # ─── COLLECTION POINTS (collectionPoints.ts) ───
+    CollectionPointStatus:
+      type: string
+      enum: [active, inactive, planned]
+
+    CollectionPoint:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: "Пункт приёма «Экосбор» №12"
+        region:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        wasteTypes:
+          type: array
+          items:
+            type: string
+          description: Виды принимаемых отходов
+        operatingHours:
+          type: string
+          example: "Пн-Сб 09:00-18:00"
+        contactPhone:
+          type: string
+        operator:
+          type: string
+          description: Оператор пункта
+        status:
+          $ref: '#/components/schemas/CollectionPointStatus'
+
+    # ─── LANDFILLS (landfills.ts) ───
+    LandfillType:
+      type: string
+      enum: [municipal, industrial, hazardous, mixed]
+
+    LandfillStatus:
+      type: string
+      enum: [active, closed, planned, recultivation]
+
+    WasteAcceptance:
+      type: object
+      properties:
+        wasteType:
+          type: string
+        monthlyVolume:
+          type: number
+          format: double
+        annualVolume:
+          type: number
+          format: double
+
+    LandfillInfrastructure:
+      type: object
+      properties:
+        hasWeighStation:
+          type: boolean
+        hasFencing:
+          type: boolean
+        hasAccessRoad:
+          type: boolean
+        hasWaterMonitoring:
+          type: boolean
+        hasGasCollection:
+          type: boolean
+        hasLeachateSystem:
+          type: boolean
+
+    LandfillEquipment:
+      type: object
+      properties:
+        bulldozers:
+          type: integer
+        compactors:
+          type: integer
+        excavators:
+          type: integer
+        trucks:
+          type: integer
+
+    MorphologicalComposition:
+      type: object
+      properties:
+        organic:
+          type: number
+          format: double
+          description: "%"
+        paper:
+          type: number
+          format: double
+        plastic:
+          type: number
+          format: double
+        glass:
+          type: number
+          format: double
+        metal:
+          type: number
+          format: double
+        textile:
+          type: number
+          format: double
+        other:
+          type: number
+          format: double
+
+    Landfill:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: "Полигон ТБО «Бишкек»"
+        type:
+          $ref: '#/components/schemas/LandfillType'
+        region:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        area:
+          type: number
+          format: double
+          description: Площадь, га
+        designCapacity:
+          type: number
+          format: double
+          description: Проектная ёмкость, тонн
+        currentVolume:
+          type: number
+          format: double
+          description: Текущий объём, тонн
+        fillPercent:
+          type: number
+          format: double
+          description: "% заполненности"
+        yearOpened:
+          type: integer
+        status:
+          $ref: '#/components/schemas/LandfillStatus'
+        operator:
+          type: string
+        wasteAcceptance:
+          type: array
+          items:
+            $ref: '#/components/schemas/WasteAcceptance'
+        infrastructure:
+          $ref: '#/components/schemas/LandfillInfrastructure'
+        equipment:
+          $ref: '#/components/schemas/LandfillEquipment'
+        morphology:
+          $ref: '#/components/schemas/MorphologicalComposition'
+
+    # ─── GIS ───
+    GisObject:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [recycler, landfill, dump, collection_point, warehouse]
+        name:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        region:
+          type: string
+        status:
+          type: string
+        details:
+          type: object
+          description: Детали зависят от типа объекта
+
+    # ─── ANALYTICS ───
+    AnalyticsSummary:
+      type: object
+      properties:
+        totalPayers:
+          type: integer
+        activePayers:
+          type: integer
+        totalCharged:
+          type: number
+          format: double
+        totalCollected:
+          type: number
+          format: double
+        collectionRate:
+          type: number
+          format: double
+          description: "% собираемости"
+        totalRecycled:
+          type: number
+          format: double
+          description: Объём переработки, тонн
+        recyclingRate:
+          type: number
+          format: double
+          description: "% переработки"
+        pendingCalculations:
+          type: integer
+        pendingDeclarations:
+          type: integer
+
+    # ─── COMMON ───
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "ИНН должен содержать 14 цифр"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+  # ─── PARAMETERS ───
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    PageSizeParam:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        default: 20
+    SearchParam:
+      name: search
+      in: query
+      description: Поиск по ИНН, названию компании
+      schema:
+        type: string
+    RegionParam:
+      name: region
+      in: query
+      description: Фильтр по региону
+      schema:
+        type: string
+    StatusParam:
+      name: status
+      in: query
+      description: Фильтр по статусу
+      schema:
+        type: string
+    PeriodFromParam:
+      name: periodFrom
+      in: query
+      schema:
+        type: string
+        format: date
+    PeriodToParam:
+      name: periodTo
+      in: query
+      schema:
+        type: string
+        format: date
+    ProductGroupParam:
+      name: productGroup
+      in: query
+      description: Фильтр по группе продукции
+      schema:
+        type: string
+
+# ═══════════════════════════════════════
+# PATHS (92 роута → REST API эндпоинты)
+# ═══════════════════════════════════════
+paths:
+
+  # ━━━ AUTH ━━━
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход в систему
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Неверный ИНН или пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация плательщика
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inn, companyName, legalForm, email, password]
+              properties:
+                inn:
+                  type: string
+                companyName:
+                  type: string
+                legalForm:
+                  type: string
+                category:
+                  $ref: '#/components/schemas/PayerCategory'
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        '201':
+          description: Регистрация успешна
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '409':
+          description: ИНН уже зарегистрирован
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Обновление JWT токена
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Новый токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Текущий профиль пользователя
+      responses:
+        '200':
+          description: Профиль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  # ━━━ CALCULATIONS (17 actions) ━━━
+  /calculations:
+    get:
+      tags: [Calculations]
+      summary: Список расчётов
+      description: |
+        Для Плательщика — его расчёты.
+        Для Эко Оператора — все расчёты на рассмотрении.
+        Поддерживает пагинацию, фильтрацию, поиск.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+        - $ref: '#/components/parameters/ProductGroupParam'
+      responses:
+        '200':
+          description: Список расчётов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Calculation'
+    post:
+      tags: [Calculations]
+      summary: Создать расчёт (addCalculation)
+      description: Создание нового расчёта утилизационного сбора в статусе "Черновик"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationCreateRequest'
+      responses:
+        '201':
+          description: Расчёт создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /calculations/{id}:
+    get:
+      tags: [Calculations]
+      summary: Получить расчёт по ID (getCalculationById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Расчёт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+        '404':
+          description: Расчёт не найден
+    put:
+      tags: [Calculations]
+      summary: Обновить расчёт
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationCreateRequest'
+      responses:
+        '200':
+          description: Расчёт обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+
+  /calculations/{id}/submit:
+    post:
+      tags: [Calculations]
+      summary: Подать расчёт на рассмотрение (submitForReview)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Расчёт подан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+
+  /calculations/{id}/approve:
+    post:
+      tags: [Calculations]
+      summary: Одобрить расчёт (approveCalculation)
+      description: Только для роли eco-operator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Расчёт одобрен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+
+  /calculations/{id}/reject:
+    post:
+      tags: [Calculations]
+      summary: Отклонить расчёт (rejectCalculation)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: string
+                  description: Причина отклонения (обязательно)
+      responses:
+        '200':
+          description: Расчёт отклонён
+
+  /calculations/{id}/resubmit:
+    post:
+      tags: [Calculations]
+      summary: Повторная подача после доработки (resubmitCalculation)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Расчёт повторно подан
+
+  /calculations/{id}/payment:
+    post:
+      tags: [Calculations]
+      summary: Добавить платёж (submitPayment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                paymentDate:
+                  type: string
+                  format: date
+                paymentDocument:
+                  type: string
+                  format: binary
+                  description: Скан платёжного поручения
+      responses:
+        '200':
+          description: Платёж добавлен
+
+  /calculations/{id}/payment/approve:
+    post:
+      tags: [Calculations]
+      summary: Подтвердить платёж (approvePayment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Платёж подтверждён
+
+  /calculations/{id}/payment/reject:
+    post:
+      tags: [Calculations]
+      summary: Отклонить платёж (rejectPayment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Платёж отклонён
+
+  /calculations/{id}/mark-paid:
+    post:
+      tags: [Calculations]
+      summary: Отметить как оплаченный (markAsPaid)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Расчёт оплачен
+
+  /calculations/{id}/copy:
+    post:
+      tags: [Calculations]
+      summary: Копировать расчёт (copyCalculation)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Копия создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Calculation'
+
+  /calculations/{id}/documents:
+    put:
+      tags: [Calculations]
+      summary: Обновить документы расчёта (updateCalculationDocuments)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Документы обновлены
+
+  /calculations/{id}/items:
+    put:
+      tags: [Calculations]
+      summary: Обновить позиции расчёта (updateCalculationItems)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProductItem'
+      responses:
+        '200':
+          description: Позиции обновлены
+
+  /calculations/pending-count:
+    get:
+      tags: [Calculations]
+      summary: Количество расчётов на рассмотрении (getPendingCount)
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /calculations/review-count:
+    get:
+      tags: [Calculations]
+      summary: Количество расчётов для проверки (getCalcReviewCount)
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /calculations/by-company/{companyId}:
+    get:
+      tags: [Calculations]
+      summary: Расчёты компании (getBusinessCalculations)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список расчётов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Calculation'
+
+  # ━━━ DECLARATIONS (9 actions) ━━━
+  /declarations:
+    get:
+      tags: [Declarations]
+      summary: Список деклараций
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - name: year
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список деклараций
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Declaration'
+    post:
+      tags: [Declarations]
+      summary: Создать декларацию (addDeclaration)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [year]
+              properties:
+                year:
+                  type: integer
+      responses:
+        '201':
+          description: Декларация создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Declaration'
+
+  /declarations/{id}:
+    get:
+      tags: [Declarations]
+      summary: Получить декларацию по ID (getById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Декларация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Declaration'
+
+  /declarations/{id}/submit-draft:
+    post:
+      tags: [Declarations]
+      summary: Сохранить черновик (submitDraft)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Черновик сохранён
+
+  /declarations/{id}/submit:
+    post:
+      tags: [Declarations]
+      summary: Подать декларацию (submitDraft → submitted)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Декларация подана
+
+  /declarations/{id}/approve:
+    post:
+      tags: [Declarations]
+      summary: Одобрить декларацию (approveDeclaration)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Декларация одобрена
+
+  /declarations/{id}/reject:
+    post:
+      tags: [Declarations]
+      summary: Отклонить декларацию (rejectDeclaration)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Декларация отклонена
+
+  /declarations/{id}/return:
+    post:
+      tags: [Declarations]
+      summary: Вернуть на доработку (returnForRevision)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Возвращена на доработку
+
+  /declarations/{id}/resubmit:
+    post:
+      tags: [Declarations]
+      summary: Повторная подача (resubmitDeclaration)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Декларация повторно подана
+
+  /declarations/pending-count:
+    get:
+      tags: [Declarations]
+      summary: Количество деклараций на рассмотрении (getPendingCount)
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /declarations/by-company/{companyId}:
+    get:
+      tags: [Declarations]
+      summary: Декларации компании (getByCompany)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Declaration'
+
+  # ━━━ REPORTS (7 actions) ━━━
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Список отчётов о переработке
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/StatusParam'
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+      responses:
+        '200':
+          description: Список отчётов
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Report'
+    post:
+      tags: [Reports]
+      summary: Создать отчёт (addReport)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recyclerId, period, items]
+              properties:
+                recyclerId:
+                  type: integer
+                period:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ProcessingItem'
+      responses:
+        '201':
+          description: Отчёт создан
+
+  /reports/{id}/submit:
+    post:
+      tags: [Reports]
+      summary: Подать отчёт (submitForReview)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Отчёт подан
+
+  /reports/{id}/approve:
+    post:
+      tags: [Reports]
+      summary: Одобрить отчёт (approveReport)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Отчёт одобрен
+
+  /reports/{id}/reject:
+    post:
+      tags: [Reports]
+      summary: Отклонить отчёт (rejectReport)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Отчёт отклонён
+
+  /reports/{id}/return:
+    post:
+      tags: [Reports]
+      summary: Вернуть на доработку (returnReportForRevision)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Возвращён на доработку
+
+  /reports/by-company/{companyId}:
+    get:
+      tags: [Reports]
+      summary: Отчёты компании (getBusinessReports)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Report'
+
+  /reports/pending-count:
+    get:
+      tags: [Reports]
+      summary: Количество отчётов на рассмотрении (getPendingCount)
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  # ━━━ ACCOUNTS (21 actions) ━━━
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: Все лицевые счета (getAllAccounts)
+      parameters:
+        - $ref: '#/components/parameters/SearchParam'
+        - name: hasDebt
+          in: query
+          schema:
+            type: boolean
+          description: Только с задолженностью
+        - name: hasPositiveBalance
+          in: query
+          schema:
+            type: boolean
+          description: Только с переплатой
+      responses:
+        '200':
+          description: Список лицевых счетов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompanyAccount'
+
+  /accounts/{companyId}:
+    get:
+      tags: [Accounts]
+      summary: Лицевой счёт компании (getAccountById)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Лицевой счёт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyAccount'
+
+  /accounts/{companyId}/transactions:
+    get:
+      tags: [Accounts]
+      summary: Транзакции лицевого счёта (getTransactions)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+      responses:
+        '200':
+          description: Список транзакций
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountTransaction'
+
+  /accounts/{companyId}/charge:
+    post:
+      tags: [Accounts]
+      summary: Начисление утильсбора (addCharge)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, calculationId]
+              properties:
+                amount:
+                  type: number
+                calculationId:
+                  type: integer
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Начислено
+
+  /accounts/{companyId}/payment:
+    post:
+      tags: [Accounts]
+      summary: Зачисление оплаты (addPayment)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                paymentDate:
+                  type: string
+                  format: date
+                documentNumber:
+                  type: string
+      responses:
+        '200':
+          description: Оплата зачислена
+
+  /accounts/{companyId}/offset:
+    post:
+      tags: [Accounts]
+      summary: Зачёт через переработку (addOffset)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, reportId]
+              properties:
+                amount:
+                  type: number
+                reportId:
+                  type: integer
+      responses:
+        '200':
+          description: Зачтено
+
+  /accounts/{companyId}/refund:
+    post:
+      tags: [Accounts]
+      summary: Запрос на возврат (requestRefund)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, reason]
+              properties:
+                amount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Заявка создана
+
+  /accounts/{companyId}/corrections:
+    post:
+      tags: [Accounts]
+      summary: Создать корректировку (addCorrection)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CorrectionItem'
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Корректировка создана
+
+  /accounts/corrections/{id}/submit:
+    post:
+      tags: [Accounts]
+      summary: Подать корректировку (submitCorrection)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Подана
+
+  /accounts/corrections/{id}/approve:
+    post:
+      tags: [Accounts]
+      summary: Одобрить корректировку (approveCorrection)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Одобрена
+
+  /accounts/corrections/{id}/reject:
+    post:
+      tags: [Accounts]
+      summary: Отклонить корректировку (rejectCorrection)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Отклонена
+
+  /accounts/corrections/pending-count:
+    get:
+      tags: [Accounts]
+      summary: Количество корректировок на рассмотрении
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /accounts/{companyId}/reconciliation/{calculationId}:
+    get:
+      tags: [Accounts]
+      summary: Сверка платежей по расчёту (getReconciliationForCalculation)
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: calculationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Данные сверки
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  charged:
+                    type: number
+                  paid:
+                    type: number
+                  offset:
+                    type: number
+                  balance:
+                    type: number
+
+  /accounts/summary:
+    get:
+      tags: [Accounts]
+      summary: Общая сводка по всем лицевым счетам
+      responses:
+        '200':
+          description: Сводка
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalAccounts:
+                    type: integer
+                  accountsWithDebt:
+                    type: integer
+                  accountsWithPositiveBalance:
+                    type: integer
+                  totalMonthlyIncome:
+                    type: number
+
+  # ━━━ PAYERS (11 actions) ━━━
+  /payers:
+    get:
+      tags: [Payers]
+      summary: Реестр плательщиков (getAll)
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/RegionParam'
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/PayerCategory'
+        - name: systemStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/SystemStatus'
+        - name: settlementStatus
+          in: query
+          schema:
+            $ref: '#/components/schemas/SettlementStatus'
+      responses:
+        '200':
+          description: Реестр плательщиков
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Payer'
+
+  /payers/{id}:
+    get:
+      tags: [Payers]
+      summary: Карточка плательщика (getById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карточка плательщика
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payer'
+
+  /payers/{id}/comments:
+    post:
+      tags: [Payers]
+      summary: Добавить комментарий (addComment)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+      responses:
+        '201':
+          description: Комментарий добавлен
+
+  /payers/{id}/documents:
+    post:
+      tags: [Payers]
+      summary: Прикрепить документ (addDocument)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                type:
+                  type: string
+      responses:
+        '201':
+          description: Документ прикреплён
+
+  /payers/stats:
+    get:
+      tags: [Payers]
+      summary: Статистика по плательщикам
+      responses:
+        '200':
+          description: Статистика
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  active:
+                    type: integer
+                  suspended:
+                    type: integer
+                  withDebt:
+                    type: integer
+                  totalCharged:
+                    type: number
+                  totalPaid:
+                    type: number
+
+  # ━━━ RECYCLERS (18 actions) ━━━
+  /recyclers:
+    get:
+      tags: [Recyclers]
+      summary: Реестр переработчиков
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/RegionParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/RecyclerStatus'
+        - name: wasteGroup
+          in: query
+          description: Фильтр по виду отходов
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Реестр переработчиков
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Recycler'
+    post:
+      tags: [Recyclers]
+      summary: Добавить переработчика (addRecycler)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recycler'
+      responses:
+        '201':
+          description: Переработчик добавлен
+
+  /recyclers/{id}:
+    get:
+      tags: [Recyclers]
+      summary: Карточка переработчика (getRecyclerById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Переработчик
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recycler'
+    put:
+      tags: [Recyclers]
+      summary: Обновить данные (updateRecycler)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recycler'
+      responses:
+        '200':
+          description: Обновлён
+
+  /recyclers/{id}/toggle-status:
+    post:
+      tags: [Recyclers]
+      summary: Переключить статус (toggleStatus)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/RecyclerStatus'
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Статус изменён
+
+  /recyclers/active:
+    get:
+      tags: [Recyclers]
+      summary: Только активные переработчики (getActiveRecyclers)
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recycler'
+
+  /recyclers/by-group/{wasteGroup}:
+    get:
+      tags: [Recyclers]
+      summary: Переработчики по группе отходов (getActiveRecyclersByGroup)
+      parameters:
+        - name: wasteGroup
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recycler'
+
+  /recyclers/stats:
+    get:
+      tags: [Recyclers]
+      summary: Статистика переработчиков (getCounts)
+      responses:
+        '200':
+          description: Сводка
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  active:
+                    type: integer
+                  suspended:
+                    type: integer
+                  totalCapacity:
+                    type: number
+                    description: Общая мощность, тонн/месяц
+                  totalLoad:
+                    type: number
+                    description: Общая загрузка, тонн/месяц
+                  loadPercent:
+                    type: number
+
+  /recyclers/capacity/{wasteGroup}:
+    get:
+      tags: [Recyclers]
+      summary: Мощности по группе отходов (getCapacityForGroup)
+      parameters:
+        - name: wasteGroup
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Мощности
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCapacity:
+                    type: number
+                  currentLoad:
+                    type: number
+                  freeCapacity:
+                    type: number
+                  loadPercent:
+                    type: number
+
+  # ━━━ REFUNDS (5 actions) ━━━
+  /refunds:
+    get:
+      tags: [Refunds]
+      summary: Список заявок на возврат
+      parameters:
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: Заявки
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Refund'
+    post:
+      tags: [Refunds]
+      summary: Создать заявку на возврат (createRefund)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RefundItem'
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Заявка создана
+
+  /refunds/{id}:
+    get:
+      tags: [Refunds]
+      summary: Заявка по ID (getRefundById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Заявка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Refund'
+
+  /refunds/{id}/approve:
+    post:
+      tags: [Refunds]
+      summary: Одобрить возврат (approveRefund)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Одобрено
+
+  /refunds/{id}/reject:
+    post:
+      tags: [Refunds]
+      summary: Отклонить возврат (rejectRefund)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Отклонено
+
+  /refunds/pending-count:
+    get:
+      tags: [Refunds]
+      summary: Количество заявок на рассмотрении
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  # ━━━ NOTIFICATIONS (7 actions) ━━━
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Уведомления текущего пользователя
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Список уведомлений
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+    post:
+      tags: [Notifications]
+      summary: Создать уведомление (add) — для системы/админа
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, message, type, role]
+              properties:
+                title:
+                  type: string
+                message:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/NotificationType'
+                role:
+                  $ref: '#/components/schemas/NotificationRole'
+      responses:
+        '201':
+          description: Создано
+
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Пометить как прочитанное (markAsRead)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Прочитано
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Прочитать все (markAllAsRead)
+      responses:
+        '200':
+          description: Все прочитаны
+
+  /notifications/{id}:
+    delete:
+      tags: [Notifications]
+      summary: Удалить уведомление (remove)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалено
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Количество непрочитанных (getUnreadCount)
+      responses:
+        '200':
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /notifications/by-role/{role}:
+    get:
+      tags: [Notifications]
+      summary: Уведомления по роли (getByRole)
+      parameters:
+        - name: role
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/NotificationRole'
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  # ━━━ DUMPS (7 actions) ━━━
+  /dumps:
+    get:
+      tags: [Dumps]
+      summary: Реестр несанкционированных свалок
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DumpStatus'
+      responses:
+        '200':
+          description: Список свалок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dump'
+    post:
+      tags: [Dumps]
+      summary: Добавить свалку (addDump)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dump'
+      responses:
+        '201':
+          description: Свалка добавлена
+
+  /dumps/{id}:
+    get:
+      tags: [Dumps]
+      summary: Свалка по ID (getDumpById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Свалка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dump'
+    put:
+      tags: [Dumps]
+      summary: Обновить свалку (updateDump)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dump'
+      responses:
+        '200':
+          description: Обновлена
+    delete:
+      tags: [Dumps]
+      summary: Удалить свалку (deleteDump)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалена
+
+  /dumps/by-region/{region}:
+    get:
+      tags: [Dumps]
+      summary: Свалки по региону (getByRegion)
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dump'
+
+  /dumps/by-status/{status}:
+    get:
+      tags: [Dumps]
+      summary: Свалки по статусу (getByStatus)
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/DumpStatus'
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dump'
+
+  # ━━━ COLLECTION POINTS (7 actions) ━━━
+  /collection-points:
+    get:
+      tags: [CollectionPoints]
+      summary: Реестр пунктов приёма
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CollectionPointStatus'
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPoint'
+    post:
+      tags: [CollectionPoints]
+      summary: Добавить пункт приёма (addPoint)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionPoint'
+      responses:
+        '201':
+          description: Пункт добавлен
+
+  /collection-points/{id}:
+    get:
+      tags: [CollectionPoints]
+      summary: Пункт по ID (getPointById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Пункт
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPoint'
+    put:
+      tags: [CollectionPoints]
+      summary: Обновить пункт (updatePoint)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionPoint'
+      responses:
+        '200':
+          description: Обновлён
+    delete:
+      tags: [CollectionPoints]
+      summary: Удалить пункт (deletePoint)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Удалён
+
+  /collection-points/by-region/{region}:
+    get:
+      tags: [CollectionPoints]
+      summary: Пункты по региону (getPointsByRegion)
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPoint'
+
+  /collection-points/active:
+    get:
+      tags: [CollectionPoints]
+      summary: Активные пункты (getActivePoints)
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPoint'
+
+  # ━━━ LANDFILLS (13 actions) ━━━
+  /landfills:
+    get:
+      tags: [Landfills]
+      summary: Реестр полигонов ТБО
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/LandfillType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/LandfillStatus'
+      responses:
+        '200':
+          description: Список полигонов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+    post:
+      tags: [Landfills]
+      summary: Добавить полигон (addLandfill)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Landfill'
+      responses:
+        '201':
+          description: Полигон добавлен
+
+  /landfills/{id}:
+    get:
+      tags: [Landfills]
+      summary: Полигон по ID (getLandfillById)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Полигон
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Landfill'
+    put:
+      tags: [Landfills]
+      summary: Обновить полигон (updateLandfill)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Landfill'
+      responses:
+        '200':
+          description: Обновлён
+
+  /landfills/active:
+    get:
+      tags: [Landfills]
+      summary: Активные полигоны (getActiveLandfills)
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+
+  /landfills/by-region/{region}:
+    get:
+      tags: [Landfills]
+      summary: Полигоны по региону (getLandfillsByRegion)
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+
+  /landfills/by-type/{type}:
+    get:
+      tags: [Landfills]
+      summary: Полигоны по типу (getLandfillsByType)
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/LandfillType'
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+
+  /landfills/by-status/{status}:
+    get:
+      tags: [Landfills]
+      summary: Полигоны по статусу (getLandfillsByStatus)
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/LandfillStatus'
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+
+  /landfills/stats:
+    get:
+      tags: [Landfills]
+      summary: Статистика полигонов
+      responses:
+        '200':
+          description: Сводка
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalDesignCapacity:
+                    type: number
+                    description: Общая проектная ёмкость
+                  totalCurrentVolume:
+                    type: number
+                    description: Общий текущий объём
+                  averageFillLevel:
+                    type: number
+                    description: Средний % заполненности
+                  overfilledCount:
+                    type: integer
+                    description: Количество переполненных
+
+  # ━━━ GIS ━━━
+  /gis/objects:
+    get:
+      tags: [GIS]
+      summary: Все объекты для ГИС-карты
+      description: |
+        Возвращает объекты 5 типов: переработчики, полигоны, свалки, пункты приёма, склады.
+        Поддерживает фильтрацию по типу, региону и статусу.
+      parameters:
+        - name: type
+          in: query
+          description: Тип объекта
+          schema:
+            type: string
+            enum: [recycler, landfill, dump, collection_point, warehouse]
+        - $ref: '#/components/parameters/RegionParam'
+        - $ref: '#/components/parameters/StatusParam'
+      responses:
+        '200':
+          description: Объекты для карты
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GisObject'
+
+  # ━━━ ANALYTICS ━━━
+  /analytics/summary:
+    get:
+      tags: [Analytics]
+      summary: Общая аналитика системы
+      parameters:
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+        - $ref: '#/components/parameters/RegionParam'
+      responses:
+        '200':
+          description: Сводная аналитика
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsSummary'
+
+  /analytics/income:
+    get:
+      tags: [Analytics]
+      summary: Динамика поступлений
+      parameters:
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [month, quarter, year]
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+      responses:
+        '200':
+          description: Данные для графика
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    period:
+                      type: string
+                    charged:
+                      type: number
+                    collected:
+                      type: number
+                    refunded:
+                      type: number
+
+  /analytics/recycling:
+    get:
+      tags: [Analytics]
+      summary: Аналитика переработки
+      parameters:
+        - $ref: '#/components/parameters/ProductGroupParam'
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+      responses:
+        '200':
+          description: Данные переработки
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    wasteGroup:
+                      type: string
+                    volumeReceived:
+                      type: number
+                    volumeProcessed:
+                      type: number
+                    recyclingPercent:
+                      type: number
+                    norm:
+                      type: number
+
+  /analytics/regions:
+    get:
+      tags: [Analytics]
+      summary: Аналитика по регионам
+      responses:
+        '200':
+          description: Данные по регионам
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    region:
+                      type: string
+                    payersCount:
+                      type: integer
+                    recyclersCount:
+                      type: integer
+                    landfillsCount:
+                      type: integer
+                    dumpsCount:
+                      type: integer
+                    totalWaste:
+                      type: number
+                    totalRecycled:
+                      type: number
+
+  /analytics/export:
+    get:
+      tags: [Analytics]
+      summary: Выгрузка отчёта (Excel)
+      description: |
+        Формирование отчёта по формам ПКМ №730 и ПКМ №563.
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, pdf]
+        - name: reportType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [pkm730, pkm563, summary, payers, recyclers]
+        - $ref: '#/components/parameters/PeriodFromParam'
+        - $ref: '#/components/parameters/PeriodToParam'
+      responses:
+        '200':
+          description: Файл отчёта
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # ━━━ ADMIN ━━━
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Список пользователей системы
+      responses:
+        '200':
+          description: Пользователи
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserProfile'
+
+  /admin/notification-templates:
+    get:
+      tags: [Admin]
+      summary: Шаблоны уведомлений (12 шаблонов)
+      responses:
+        '200':
+          description: Список шаблонов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+                    subject:
+                      type: string
+                    bodyTemplate:
+                      type: string
+                    channel:
+                      type: string
+                      enum: [internal, email, sms]
+                    triggerEvent:
+                      type: string
+                    isActive:
+                      type: boolean
+    post:
+      tags: [Admin]
+      summary: Создать шаблон уведомления
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                subject:
+                  type: string
+                bodyTemplate:
+                  type: string
+                channel:
+                  type: string
+                triggerEvent:
+                  type: string
+      responses:
+        '201':
+          description: Шаблон создан
+
+  /admin/rates:
+    get:
+      tags: [Admin]
+      summary: Ставки утилизационного сбора по ПКМ №730
+      responses:
+        '200':
+          description: Ставки
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    productGroup:
+                      type: string
+                    productSubgroup:
+                      type: string
+                    unit:
+                      type: string
+                    rate:
+                      type: number
+                      description: Ставка, сом/единица
+    put:
+      tags: [Admin]
+      summary: Обновить ставки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  productGroup:
+                    type: string
+                  rate:
+                    type: number
+      responses:
+        '200':
+          description: Ставки обновлены
+
+  /admin/recycling-norms:
+    get:
+      tags: [Admin]
+      summary: Нормативы переработки по ПКМ №563
+      responses:
+        '200':
+          description: Нормативы
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    wasteGroup:
+                      type: string
+                    year:
+                      type: integer
+                    normPercent:
+                      type: number
+
+  /admin/settings:
+    get:
+      tags: [Admin]
+      summary: Системные настройки
+      responses:
+        '200':
+          description: Настройки
+    put:
+      tags: [Admin]
+      summary: Обновить настройки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Обновлены
+
+  # ━━━ PUBLIC (12 роутов) ━━━
+  /public/calculator:
+    post:
+      tags: [Analytics]
+      summary: Публичный калькулятор РОП
+      security: []
+      description: Расчёт утилизационного сбора без авторизации
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productGroup:
+                        type: string
+                      weight:
+                        type: number
+              
+      responses:
+        '200':
+          description: Результат расчёта
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        productGroup:
+                          type: string
+                        weight:
+                          type: number
+                        rate:
+                          type: number
+                        amount:
+                          type: number
+                  totalAmount:
+                    type: number
+
+  /public/recyclers:
+    get:
+      tags: [Recyclers]
+      summary: Публичный реестр переработчиков
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+        - name: wasteGroup
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Публичный список переработчиков
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    companyName:
+                      type: string
+                    region:
+                      type: string
+                    wasteTypes:
+                      type: array
+                      items:
+                        type: string
+                    status:
+                      $ref: '#/components/schemas/RecyclerStatus'
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
+
+  /public/landfills:
+    get:
+      tags: [Landfills]
+      summary: Публичный реестр полигонов
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+      responses:
+        '200':
+          description: Публичный список полигонов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Landfill'
+
+  /public/collection-points:
+    get:
+      tags: [CollectionPoints]
+      summary: Публичный реестр пунктов приёма
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/RegionParam'
+      responses:
+        '200':
+          description: Публичный список пунктов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPoint'
+
+  /public/rates:
+    get:
+      tags: [Analytics]
+      summary: Публичные ставки утилизационного сбора
+      security: []
+      responses:
+        '200':
+          description: Ставки по ПКМ №730
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    productGroup:
+                      type: string
+                    unit:
+                      type: string
+                    rate:
+                      type: number
+
+  /public/faq:
+    get:
+      tags: [Analytics]
+      summary: FAQ — Часто задаваемые вопросы
+      security: []
+      responses:
+        '200':
+          description: Список вопросов и ответов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    question:
+                      type: string
+                    answer:
+                      type: string
+                    category:
+                      type: string
