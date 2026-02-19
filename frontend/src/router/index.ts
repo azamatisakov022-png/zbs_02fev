@@ -529,7 +529,7 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated.value) {
-      return next({ path: '/login/business', query: { redirect: to.fullPath } })
+      return next({ path: '/login', query: { redirect: to.fullPath } })
     }
     // Check role access
     const requiredRole = to.meta.role as string | undefined
