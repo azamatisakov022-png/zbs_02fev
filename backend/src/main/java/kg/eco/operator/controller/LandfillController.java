@@ -21,6 +21,14 @@ public class LandfillController {
     private final LandfillService landfillService;
 
     /**
+     * GET /landfills/public — Публичный реестр полигонов (без авторизации)
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<LandfillResponse>> getPublic() {
+        return ResponseEntity.ok(landfillService.getAll(null, null, null));
+    }
+
+    /**
      * GET /landfills — Реестр полигонов ТБО
      */
     @GetMapping

@@ -20,6 +20,14 @@ public class DumpController {
     private final DumpService dumpService;
 
     /**
+     * GET /dumps/public — Публичный реестр свалок (без авторизации)
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<DumpResponse>> getPublic() {
+        return ResponseEntity.ok(dumpService.getAll(null, null));
+    }
+
+    /**
      * GET /dumps — Реестр несанкционированных свалок
      */
     @GetMapping
