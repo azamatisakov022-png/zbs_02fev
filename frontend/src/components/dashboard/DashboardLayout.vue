@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getLocale, setLocale } from '../../i18n'
+import { authStore } from '../../stores/auth'
 import NotificationBell from './NotificationBell.vue'
 import BreadcrumbNav from './BreadcrumbNav.vue'
 
@@ -48,6 +49,7 @@ const navigateTo = (itemRoute: string) => {
 }
 
 const handleLogout = () => {
+  authStore.logout()
   router.push('/login')
 }
 
