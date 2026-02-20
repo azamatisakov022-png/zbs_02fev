@@ -16,6 +16,7 @@ import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.CalculationRepository;
 import kg.eco.operator.repository.RefundRepository;
 import kg.eco.operator.repository.UserRepository;
+import kg.eco.operator.event.RefundStatusEvent;
 import kg.eco.operator.service.RefundService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -114,6 +115,7 @@ public class RefundServiceImpl implements RefundService {
 
         refund.setStatus(RefundStatus.APPROVED);
         refund = refundRepository.save(refund);
+        publishRefundEvent(refund, "pending", "approved", null);
 
         return refundMapper.toResponse(refund);
     }
@@ -128,10 +130,12 @@ public class RefundServiceImpl implements RefundService {
         }
 
         refund.setStatus(RefundStatus.REJECTED);
-        if (request != null && request.getReason() != null) {
-            refund.setComment(request.getReason());
+        String reason = request != null ? request.getReason() : null;
+        if (reason != null) {
+            refund.setComment(reason);
         }
         refund = refundRepository.save(refund);
+        publishRefundEvent(refund, "pending", "rejected", reason);
 
         return refundMapper.toResponse(refund);
     }
@@ -147,6 +151,18 @@ public class RefundServiceImpl implements RefundService {
     private Refund findRefundById(Long id) {
         return refundRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Заявка на возврат не найдена: " + id));
+    }
+
+    private void publishRefundEvent(Refund refund, String oldStatus, String newStatus, String comment) {
+        Long userId = null;
+        if (refund.getCompany() != null) {
+            userId = userRepository.findFirstByCompany_Id(refund.getCompany().getId())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+        eventPublisher.publishEvent(new RefundStatusEvent(
+                refund.getId(), refund.getNumber(), userId,
+                oldStatus, newStatus, comment));
     }
 
     private String generateNumber() {

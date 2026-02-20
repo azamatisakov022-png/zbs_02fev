@@ -1,10 +1,12 @@
 package kg.eco.operator.event;
 
 import kg.eco.operator.entity.Notification;
+import kg.eco.operator.entity.Recycler;
 import kg.eco.operator.entity.User;
 import kg.eco.operator.entity.enums.NotificationType;
 import kg.eco.operator.entity.enums.RoleEnum;
 import kg.eco.operator.repository.NotificationRepository;
+import kg.eco.operator.repository.RecyclerRepository;
 import kg.eco.operator.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ public class NotificationEventListener {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final RecyclerRepository recyclerRepository;
 
     @Async
     @EventListener
@@ -117,6 +120,62 @@ public class NotificationEventListener {
             Optional<User> user = userRepository.findById(event.getUserId());
             user.ifPresent(u -> createNotification(title, message, type, u, null,
                     event.getRefundId(), "refund"));
+        }
+    }
+
+    @Async
+    @EventListener
+    @Transactional
+    public void handleReportStatus(ReportStatusEvent event) {
+        log.info("Обработка события изменения статуса отчёта: {} -> {}",
+                event.getReportNumber(), event.getNewStatus());
+
+        String title;
+        String message;
+        NotificationType type;
+
+        switch (event.getNewStatus()) {
+            case "submitted" -> {
+                title = "Новый отчёт на рассмотрении";
+                message = "Отчёт " + event.getReportNumber() + " подан на рассмотрение.";
+                type = NotificationType.INFO;
+                // Notify eco-operator
+                createNotification(title, message, type, null, RoleEnum.ECO_OPERATOR,
+                        event.getReportId(), "report");
+                return;
+            }
+            case "approved" -> {
+                title = "Отчёт принят";
+                message = "Отчёт " + event.getReportNumber() + " принят.";
+                type = NotificationType.SUCCESS;
+            }
+            case "rejected" -> {
+                title = "Отчёт отклонён";
+                message = "Отчёт " + event.getReportNumber() + " отклонён."
+                        + (event.getComment() != null ? " Причина: " + event.getComment() : "");
+                type = NotificationType.WARNING;
+            }
+            case "revision_requested" -> {
+                title = "Отчёт возвращён на доработку";
+                message = "Отчёт " + event.getReportNumber() + " возвращён на доработку."
+                        + (event.getComment() != null ? " Комментарий: " + event.getComment() : "");
+                type = NotificationType.WARNING;
+            }
+            default -> {
+                title = "Статус отчёта изменён";
+                message = "Статус отчёта " + event.getReportNumber()
+                        + " изменён на: " + event.getNewStatus();
+                type = NotificationType.STATUS_CHANGE;
+            }
+        }
+
+        // Notify the recycler/business user who owns the report
+        if (event.getRecyclerId() != null) {
+            recyclerRepository.findById(event.getRecyclerId()).ifPresent(recycler -> {
+                userRepository.findByInn(recycler.getInn()).ifPresent(user ->
+                        createNotification(title, message, type, user, null,
+                                event.getReportId(), "report"));
+            });
         }
     }
 

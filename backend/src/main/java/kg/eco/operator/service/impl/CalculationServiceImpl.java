@@ -11,9 +11,11 @@ import kg.eco.operator.entity.enums.*;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.*;
+import kg.eco.operator.event.CalculationStatusEvent;
 import kg.eco.operator.service.CalculationService;
 import kg.eco.operator.util.CalculationUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +42,7 @@ public class CalculationServiceImpl implements CalculationService {
     private final PaymentRepository paymentRepository;
     private final DocumentRepository documentRepository;
     private final CalculationMapper calculationMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ─── LIST ───
 
@@ -205,6 +208,7 @@ public class CalculationServiceImpl implements CalculationService {
         calc.setStatus(CalculationStatus.SUBMITTED);
         calc.setSubmittedAt(LocalDateTime.now());
         calc = calculationRepository.save(calc);
+        publishCalcEvent(calc, "draft", "submitted", null);
         return toFullResponse(calc);
     }
 
@@ -223,6 +227,7 @@ public class CalculationServiceImpl implements CalculationService {
         calc.setReviewedBy(null);
         calc.setReviewedAt(null);
         calc = calculationRepository.save(calc);
+        publishCalcEvent(calc, "rejected", "submitted", null);
         return toFullResponse(calc);
     }
 
@@ -244,6 +249,7 @@ public class CalculationServiceImpl implements CalculationService {
         }
 
         calc = calculationRepository.save(calc);
+        publishCalcEvent(calc, "submitted", "approved", request != null ? request.getComment() : null);
         return toFullResponse(calc);
     }
 
@@ -267,6 +273,7 @@ public class CalculationServiceImpl implements CalculationService {
         calc.setReviewedAt(LocalDateTime.now());
 
         calc = calculationRepository.save(calc);
+        publishCalcEvent(calc, "submitted", "rejected", request.getComment());
         return toFullResponse(calc);
     }
 
@@ -313,6 +320,7 @@ public class CalculationServiceImpl implements CalculationService {
             calc.setStatus(CalculationStatus.PARTIALLY_PAID);
         }
         calculationRepository.save(calc);
+        publishCalcEvent(calc, "approved", "payment_confirmed", null);
 
         return toFullResponse(calc);
     }
@@ -325,6 +333,8 @@ public class CalculationServiceImpl implements CalculationService {
 
         payment.setStatus(PaymentConfirmationStatus.REJECTED);
         paymentRepository.save(payment);
+        publishCalcEvent(calc, "approved", "payment_rejected",
+                request != null ? request.getComment() : null);
 
         return toFullResponse(calc);
     }
@@ -337,6 +347,7 @@ public class CalculationServiceImpl implements CalculationService {
 
         calc.setStatus(CalculationStatus.PAID);
         calc = calculationRepository.save(calc);
+        publishCalcEvent(calc, "approved", "payment_confirmed", null);
         return toFullResponse(calc);
     }
 
@@ -512,6 +523,19 @@ public class CalculationServiceImpl implements CalculationService {
                 .filter(p -> p.getCalculation() != null && p.getCalculation().getId().equals(calc.getId()))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Платёж не найден для расчёта " + calc.getNumber()));
+    }
+
+    private void publishCalcEvent(Calculation calc, String oldStatus, String newStatus, String comment) {
+        Long userId = null;
+        if (calc.getCompany() != null) {
+            userId = userRepository.findFirstByCompany_Id(calc.getCompany().getId())
+                    .map(User::getId)
+                    .orElse(null);
+        }
+        eventPublisher.publishEvent(new CalculationStatusEvent(
+                calc.getId(), calc.getNumber(),
+                calc.getCompany() != null ? calc.getCompany().getId() : null,
+                userId, oldStatus, newStatus, comment));
     }
 
     private CalculationResponse toFullResponse(Calculation calc) {
