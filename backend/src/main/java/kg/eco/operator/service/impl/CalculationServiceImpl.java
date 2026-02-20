@@ -535,7 +535,9 @@ public class CalculationServiceImpl implements CalculationService {
         eventPublisher.publishEvent(new CalculationStatusEvent(
                 calc.getId(), calc.getNumber(),
                 calc.getCompany() != null ? calc.getCompany().getId() : null,
-                userId, oldStatus, newStatus, comment));
+                userId, oldStatus, newStatus, comment,
+                calc.getCompany() != null ? calc.getCompany().getCompanyName() : null,
+                calc.getTotalAmount()));
     }
 
     private CalculationResponse toFullResponse(Calculation calc) {
