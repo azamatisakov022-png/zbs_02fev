@@ -21,7 +21,7 @@ public class Report {
     private String number;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recycler_id", nullable = false)
+    @JoinColumn(name = "recycler_id")
     private Recycler recycler;
 
     @Column(length = 20)

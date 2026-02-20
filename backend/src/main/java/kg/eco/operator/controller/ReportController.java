@@ -1,13 +1,16 @@
 package kg.eco.operator.controller;
 
+import kg.eco.operator.dto.request.ReportCreateRequest;
 import kg.eco.operator.dto.request.ReviewRequest;
 import kg.eco.operator.dto.response.PaginatedResponse;
 import kg.eco.operator.dto.response.ReportResponse;
 import kg.eco.operator.dto.response.SuccessResponse;
 import kg.eco.operator.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,6 +28,17 @@ public class ReportController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
         return ResponseEntity.ok(reportService.getReports(page, pageSize));
+    }
+
+    /**
+     * POST /reports — Создать отчёт о переработке
+     */
+    @PostMapping
+    public ResponseEntity<ReportResponse> create(
+            Authentication auth,
+            @RequestBody ReportCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(reportService.create(auth.getName(), request));
     }
 
     /**

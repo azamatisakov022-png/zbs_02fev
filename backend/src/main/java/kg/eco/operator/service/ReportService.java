@@ -1,12 +1,15 @@
 package kg.eco.operator.service;
 
+import kg.eco.operator.dto.request.ReportCreateRequest;
 import kg.eco.operator.dto.response.PaginatedResponse;
 import kg.eco.operator.dto.response.ReportResponse;
+import kg.eco.operator.entity.Recycler;
 import kg.eco.operator.entity.Report;
 import kg.eco.operator.entity.ReportItem;
 import kg.eco.operator.entity.enums.ReportStatus;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
+import kg.eco.operator.repository.RecyclerRepository;
 import kg.eco.operator.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +27,7 @@ import java.util.List;
 public class ReportService {
 
     private final ReportRepository reportRepository;
+    private final RecyclerRepository recyclerRepository;
 
     public PaginatedResponse<ReportResponse> getReports(int page, int pageSize) {
         Page<Report> reportPage = reportRepository.findAll(
@@ -36,6 +41,42 @@ public class ReportService {
     public ReportResponse getById(Long id) {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Отчёт с ID " + id + " не найден"));
+        return toResponse(report);
+    }
+
+    @Transactional
+    public ReportResponse create(String userInn, ReportCreateRequest request) {
+        // Try to find recycler by user INN or request INN
+        Recycler recycler = recyclerRepository.findByInn(userInn).orElse(null);
+        if (recycler == null && request.getInn() != null) {
+            recycler = recyclerRepository.findByInn(request.getInn()).orElse(null);
+        }
+
+        // Generate report number
+        long count = reportRepository.count();
+        String number = "РП-" + LocalDateTime.now().getYear() + "-" + String.format("%03d", count + 1);
+
+        Report report = new Report();
+        report.setNumber(number);
+        report.setRecycler(recycler);
+        report.setPeriod(request.getYear());
+        report.setStatus(ReportStatus.DRAFT);
+        report = reportRepository.save(report);
+
+        // Create items
+        if (request.getItems() != null) {
+            for (ReportCreateRequest.ReportItemRequest itemReq : request.getItems()) {
+                ReportItem item = new ReportItem();
+                item.setReport(report);
+                item.setWasteGroup(itemReq.getWasteType() != null ? itemReq.getWasteType() : "");
+                item.setWasteCode(itemReq.getWasteCode());
+                item.setVolumeReceived(parseBigDecimal(itemReq.getDeclared()));
+                item.setVolumeProcessed(parseBigDecimal(itemReq.getProcessed()));
+                report.getItems().add(item);
+            }
+            report = reportRepository.save(report);
+        }
+
         return toResponse(report);
     }
 
@@ -90,6 +131,15 @@ public class ReportService {
     public long getPendingCount() {
         return reportRepository.findByStatus(ReportStatus.SUBMITTED, PageRequest.of(0, 1))
                 .getTotalElements();
+    }
+
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isBlank()) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(value.replace(",", ".").trim());
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
     }
 
     private ReportResponse toResponse(Report report) {
