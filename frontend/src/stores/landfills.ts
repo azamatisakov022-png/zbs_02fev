@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 export type LandfillType = 'sanitary' | 'unauthorized' | 'sorting'
 export type LandfillStatus = 'active' | 'closed' | 'recultivation'
@@ -95,7 +95,7 @@ async function fetchAll() {
 function addLandfill(data: Omit<Landfill, 'id'>): Landfill {
   const landfill: Landfill = { id: nextId++, ...data }
   state.landfills.push(landfill)
-  api.post('/landfills', data).catch(() => {})
+  silentApi.post('/landfills', data).catch(() => {})
   return landfill
 }
 
@@ -104,7 +104,7 @@ function updateLandfill(id: number, updates: Partial<Landfill>) {
   if (idx !== -1) {
     state.landfills[idx] = { ...state.landfills[idx], ...updates }
   }
-  api.put(`/landfills/${id}`, updates).catch(() => {})
+  silentApi.put(`/landfills/${id}`, updates).catch(() => {})
 }
 
 function getLandfillById(id: number): Landfill | undefined {

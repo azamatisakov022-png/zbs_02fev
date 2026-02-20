@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 // ═══ Types ═══
 
@@ -124,7 +124,7 @@ async function fetchAll() {
 function addRecycler(data: Omit<Recycler, 'id'>): Recycler {
   const recycler: Recycler = { id: nextId++, ...data }
   state.recyclers.push(recycler)
-  api.post('/recyclers', data).catch(() => {})
+  silentApi.post('/recyclers', data).catch(() => {})
   return recycler
 }
 
@@ -135,7 +135,7 @@ function updateRecycler(id: number, updates: Partial<Recycler>) {
     const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
     state.recyclers[idx] = { ...state.recyclers[idx], ...updates, updatedAt: dateStr }
   }
-  api.put(`/recyclers/${id}`, updates).catch(() => {})
+  silentApi.put(`/recyclers/${id}`, updates).catch(() => {})
 }
 
 function toggleStatus(id: number) {
@@ -145,7 +145,7 @@ function toggleStatus(id: number) {
     const now = new Date()
     recycler.updatedAt = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
-  api.post(`/recyclers/${id}/toggle-status`).catch(() => {})
+  silentApi.post(`/recyclers/${id}/toggle-status`).catch(() => {})
 }
 
 function getActiveRecyclers(): Recycler[] {
