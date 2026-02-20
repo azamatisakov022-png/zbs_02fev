@@ -149,6 +149,10 @@ function addReport(data: {
     if (resp.data?.id) {
       report.id = resp.data.id
       report.number = resp.data.number || report.number
+      // If submitting immediately, trigger submit on backend
+      if (status === 'На проверке') {
+        silentApi.post(`/reports/${resp.data.id}/submit`).catch(() => {})
+      }
     }
   }).catch(() => {})
   return report
