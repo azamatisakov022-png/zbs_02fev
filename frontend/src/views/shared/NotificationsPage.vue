@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { notificationStore, type NotificationRole } from '../../stores/notifications'
+import { notificationStore, type Notification, type NotificationRole } from '../../stores/notifications'
 import { useBusinessMenu, useEcoOperatorMenu, useEmployeeMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const props = defineProps<{
   role: NotificationRole
@@ -41,6 +43,50 @@ function handleMarkRead(id: number) {
 function handleDeleteAllRead() {
   const readIds = notificationStore.getByRole(props.role).filter(n => n.read).map(n => n.id)
   readIds.forEach(id => notificationStore.remove(id))
+}
+
+const referenceRoutes: Record<string, Record<string, string>> = {
+  business: {
+    calculation: '/business/calculations',
+    report: '/business/reports',
+    declaration: '/business/declarations',
+    refund: '/business/refunds',
+  },
+  'eco-operator': {
+    calculation: '/eco-operator/calculations',
+    report: '/eco-operator/reports',
+    declaration: '/eco-operator/declarations',
+    refund: '/eco-operator/refunds',
+  },
+  employee: {
+    calculation: '/employee/calculations',
+    report: '/employee/reports',
+    declaration: '/employee/declarations',
+    refund: '/employee/refunds',
+  },
+  admin: {
+    calculation: '/admin/calculations',
+    report: '/admin/reports',
+    declaration: '/admin/declarations',
+    refund: '/admin/refunds',
+  },
+}
+
+function getNotificationLink(n: Notification): string | null {
+  if (n.link) return n.link
+  if (n.referenceId && n.referenceType) {
+    const basePath = referenceRoutes[props.role]?.[n.referenceType]
+    if (basePath) return `${basePath}/${n.referenceId}`
+  }
+  return null
+}
+
+function handleNavigate(n: Notification) {
+  const link = getNotificationLink(n)
+  if (link) {
+    notificationStore.markAsRead(n.id)
+    router.push(link)
+  }
 }
 
 const typeConfig: Record<string, { color: string; bg: string; icon: string; label: string }> = {
@@ -146,12 +192,11 @@ const typeConfig: Record<string, { color: string; bg: string; icon: string; labe
             </div>
 
             <!-- Link button -->
-            <router-link
-              v-if="n.link"
-              :to="n.link"
-              @click.stop
+            <button
+              v-if="getNotificationLink(n)"
+              @click.stop="handleNavigate(n)"
               class="self-center px-3 py-1.5 text-xs font-medium text-[#0e888d] bg-[#f0fdfa] rounded-lg hover:bg-[#ccfbf1] transition-colors flex-shrink-0"
-            >Перейти</router-link>
+            >Перейти</button>
           </div>
         </TransitionGroup>
       </div>

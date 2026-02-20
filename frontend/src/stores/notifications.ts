@@ -13,6 +13,8 @@ export interface Notification {
   createdAt: string
   read: boolean
   link?: string
+  referenceId?: number
+  referenceType?: string
 }
 
 function formatRelativeTime(isoString: string): string {
@@ -43,6 +45,8 @@ function mapBackendNotification(n: any): Notification {
     role: (n.role || 'business') as NotificationRole,
     createdAt: n.createdAt || new Date().toISOString(),
     read: n.isRead ?? n.read ?? false,
+    referenceId: n.referenceId ?? undefined,
+    referenceType: n.referenceType ?? undefined,
   }
 }
 
