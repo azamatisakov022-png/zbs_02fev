@@ -148,7 +148,8 @@ public class ReportService {
         eventPublisher.publishEvent(new ReportStatusEvent(
                 report.getId(), report.getNumber(),
                 report.getRecycler() != null ? report.getRecycler().getId() : null,
-                oldStatus, newStatus, comment));
+                oldStatus, newStatus, comment,
+                report.getRecycler() != null ? report.getRecycler().getCompanyName() : null));
     }
 
     private BigDecimal parseBigDecimal(String value) {
