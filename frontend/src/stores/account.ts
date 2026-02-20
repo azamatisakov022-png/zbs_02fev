@@ -56,8 +56,8 @@ export interface CompanyAccount {
   transactions: AccountTransaction[]
 }
 
-let nextTxId = 100
-let nextCorrId = 2
+let nextTxId = 1
+let nextCorrId = 1
 
 const state = reactive<{
   loading: boolean
@@ -68,114 +68,9 @@ const state = reactive<{
   corrections: CorrectionRequest[]
 }>({
   loading: false,
-  currentCompany: 'ОсОО «ТехПром»',
-  accounts: [
-    {
-      id: 1,
-      company: 'ОсОО «ТехПром»',
-      inn: '01234567890123',
-      balance: 0,
-      status: 'Активен',
-      transactions: [
-        { id: 1, date: '18.01.2026', type: 'charge', calculationId: 1, calculationNumber: 'РС-2026-015', description: 'Начисление утилизационного сбора', chargeAmount: 3472, paymentAmount: 0, offsetAmount: 0, balance: -3472 },
-        { id: 2, date: '25.01.2026', type: 'payment', calculationId: 1, calculationNumber: 'РС-2026-015', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 3472, offsetAmount: 0, balance: 0 },
-        { id: 3, date: '12.10.2025', type: 'charge', calculationId: 5, calculationNumber: 'РС-2025-089', description: 'Начисление утилизационного сбора', chargeAmount: 8221, paymentAmount: 0, offsetAmount: 0, balance: -8221 },
-        { id: 4, date: '10.02.2026', type: 'charge', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Начисление утилизационного сбора', chargeAmount: 252180, paymentAmount: 0, offsetAmount: 0, balance: -260401 },
-        { id: 5, date: '10.02.2026', type: 'payment', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 252180, offsetAmount: 0, balance: -8221 },
-        { id: 6, date: '25.02.2026', type: 'correction', calculationId: 7, calculationNumber: 'РС-2026-379', description: 'Корректировка: переработка 10 т + вывоз 5 т', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: 117869 },
-        { id: 7, date: '15.03.2026', type: 'charge', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Начисление утилизационного сбора', chargeAmount: 126090, paymentAmount: 0, offsetAmount: 0, balance: -8221 },
-        { id: 8, date: '15.03.2026', type: 'offset', calculationId: 8, calculationNumber: 'РС-2026-385', description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: 126090, balance: -8221 },
-      ],
-    },
-    {
-      id: 2,
-      company: 'ОАО «СтройМаркет»',
-      inn: '09876543210987',
-      balance: -87390,
-      status: 'Активен',
-      transactions: [
-        { id: 10, date: '05.01.2026', type: 'charge', calculationId: 20, calculationNumber: 'РС-2026-101', description: 'Начисление утилизационного сбора', chargeAmount: 345000, paymentAmount: 0, offsetAmount: 0, balance: -345000 },
-        { id: 11, date: '12.01.2026', type: 'payment', calculationId: 20, calculationNumber: 'РС-2026-101', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 345000, offsetAmount: 0, balance: 0 },
-        { id: 12, date: '22.01.2026', type: 'charge', calculationId: 21, calculationNumber: 'РС-2026-118', description: 'Начисление утилизационного сбора', chargeAmount: 87390, paymentAmount: 0, offsetAmount: 0, balance: -87390 },
-      ],
-    },
-    {
-      id: 3,
-      company: 'ОсОО «ПищеПром»',
-      inn: '05432109876543',
-      balance: 0,
-      status: 'Активен',
-      transactions: [
-        { id: 20, date: '10.01.2026', type: 'charge', calculationId: 30, calculationNumber: 'РС-2026-042', description: 'Начисление утилизационного сбора', chargeAmount: 178500, paymentAmount: 0, offsetAmount: 0, balance: -178500 },
-        { id: 21, date: '18.01.2026', type: 'payment', calculationId: 30, calculationNumber: 'РС-2026-042', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 178500, offsetAmount: 0, balance: 0 },
-        { id: 22, date: '30.01.2026', type: 'charge', calculationId: 31, calculationNumber: 'РС-2026-067', description: 'Начисление утилизационного сбора', chargeAmount: 94200, paymentAmount: 0, offsetAmount: 0, balance: -94200 },
-        { id: 23, date: '30.01.2026', type: 'payment', calculationId: 31, calculationNumber: 'РС-2026-067', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 94200, offsetAmount: 0, balance: 0 },
-      ],
-    },
-    {
-      id: 4,
-      company: 'ИП Асанов К.Т.',
-      inn: '11223344556677',
-      balance: -33650,
-      status: 'Активен',
-      transactions: [
-        { id: 30, date: '15.01.2026', type: 'charge', calculationId: 40, calculationNumber: 'РС-2026-055', description: 'Начисление утилизационного сбора', chargeAmount: 33650, paymentAmount: 0, offsetAmount: 0, balance: -33650 },
-      ],
-    },
-    {
-      id: 5,
-      company: 'ОсОО «ЭкоТранс»',
-      inn: '07654321098765',
-      balance: 45200,
-      status: 'Активен',
-      transactions: [
-        { id: 40, date: '20.01.2026', type: 'charge', calculationId: 50, calculationNumber: 'РС-2026-078', description: 'Начисление утилизационного сбора', chargeAmount: 210000, paymentAmount: 0, offsetAmount: 0, balance: -210000 },
-        { id: 41, date: '25.01.2026', type: 'payment', calculationId: 50, calculationNumber: 'РС-2026-078', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 210000, offsetAmount: 0, balance: 0 },
-        { id: 42, date: '06.02.2026', type: 'correction', calculationId: 50, calculationNumber: 'РС-2026-078', description: 'Корректировка: переработка 8 т', chargeAmount: 0, paymentAmount: 0, offsetAmount: 45200, balance: 45200 },
-      ],
-    },
-    {
-      id: 6,
-      company: 'ОсОО «КыргызИмпорт»',
-      inn: '03216549870321',
-      balance: 15000,
-      status: 'Активен',
-      transactions: [
-        { id: 50, date: '08.01.2026', type: 'charge', calculationId: 60, calculationNumber: 'РС-2026-033', description: 'Начисление утилизационного сбора', chargeAmount: 520000, paymentAmount: 0, offsetAmount: 0, balance: -520000 },
-        { id: 51, date: '10.01.2026', type: 'payment', calculationId: 60, calculationNumber: 'РС-2026-033', description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: 535000, offsetAmount: 0, balance: 15000 },
-        { id: 52, date: '01.02.2026', type: 'charge', calculationId: 61, calculationNumber: 'РС-2026-089', description: 'Начисление утилизационного сбора', chargeAmount: 15000, paymentAmount: 0, offsetAmount: 0, balance: 0 },
-        { id: 53, date: '01.02.2026', type: 'offset', calculationId: 61, calculationNumber: 'РС-2026-089', description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: 15000, balance: 0 },
-        { id: 54, date: '15.02.2026', type: 'correction', calculationId: 60, calculationNumber: 'РС-2026-033', description: 'Корректировка: вывоз 3 т', chargeAmount: 0, paymentAmount: 0, offsetAmount: 15000, balance: 15000 },
-      ],
-    },
-    {
-      id: 7,
-      company: 'ОсОО «АзияТрейд»',
-      inn: '06543210987654',
-      balance: -600512,
-      status: 'Заблокирован',
-      transactions: [
-        { id: 60, date: '03.01.2026', type: 'charge', calculationId: 70, calculationNumber: 'РС-2026-012', description: 'Начисление утилизационного сбора', chargeAmount: 600512, paymentAmount: 0, offsetAmount: 0, balance: -600512 },
-      ],
-    },
-  ],
-  corrections: [
-    {
-      id: 1,
-      date: '24.02.2026',
-      calculationId: 7,
-      calculationNumber: 'РС-2026-379',
-      company: 'ОсОО «ТехПром»',
-      items: [
-        { group: 'group_6', subgroup: 'g6_bottles_small', volume: 500, recyclingStandard: 20, volumeToRecycle: 100, previousTransferred: 5, previousExported: 0, additionalTransferred: 10, additionalExported: 0, oldTaxableVolume: 95, newTaxableVolume: 85, rate: 9418, difference: 94180 },
-        { group: 'group_1', subgroup: 'g1_corrugated_boxes', volume: 200, recyclingStandard: 30, volumeToRecycle: 60, previousTransferred: 8, previousExported: 2, additionalTransferred: 0, additionalExported: 5, oldTaxableVolume: 50, newTaxableVolume: 45, rate: 4793, difference: 23965 },
-      ],
-      totalCorrectionAmount: 126090,
-      action: 'balance',
-      status: 'Одобрена',
-      documents: ['договор_переработка_пластик.pdf', 'ГТД_вывоз_картон.pdf'],
-    },
-  ],
+  currentCompany: '',
+  accounts: [],
+  corrections: [],
 })
 
 async function fetchAll() {

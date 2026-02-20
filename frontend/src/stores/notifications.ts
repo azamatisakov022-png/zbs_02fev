@@ -29,40 +29,6 @@ function formatRelativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString('ru-RU')
 }
 
-function ago(hours: number): string {
-  return new Date(Date.now() - hours * 3600000).toISOString()
-}
-
-const seedNotifications: Notification[] = [
-  // Business
-  { id: 1, type: 'success', title: 'Расчёт РС-2026-015 принят', message: 'Ваш расчёт утилизационного сбора за Q4 2025 принят и ожидает оплаты.', createdAt: ago(2), read: false, role: 'business', link: '/business/calculations/1' },
-  { id: 2, type: 'warning', title: 'Срок подачи декларации за Q1', message: 'Срок подачи декларации за I квартал 2026 года — до 20 апреля 2026 г.', createdAt: ago(5), read: false, role: 'business' },
-  { id: 3, type: 'success', title: 'Платёж подтверждён', message: 'Платёж ПП-00412 на сумму 6 322 сом подтверждён.', createdAt: ago(24), read: true, role: 'business', link: '/business/payments' },
-  { id: 4, type: 'error', title: 'Расчёт РС-2026-024 отклонён', message: 'Неверно указана масса товаров в группе 6. Исправьте и отправьте повторно.', createdAt: ago(48), read: true, role: 'business' },
-  { id: 5, type: 'info', title: 'Обновление нормативов', message: 'С 1 января 2026 года вступают в силу новые нормативы переработки.', createdAt: ago(72), read: true, role: 'business' },
-
-  // Eco-Operator
-  { id: 6, type: 'info', title: 'Новый расчёт от ОАО «СтройМаркет»', message: 'Расчёт РС-2026-018 на сумму 9 583 сом ожидает проверки.', createdAt: ago(1), read: false, role: 'eco-operator', link: '/eco-operator/calculations/2' },
-  { id: 7, type: 'error', title: 'Отчёт №45 отклонён', message: 'Отчёт ОсОО «ПищеПром» отклонён: процент переработки ниже норматива.', createdAt: ago(3), read: false, role: 'eco-operator' },
-  { id: 8, type: 'success', title: 'Оплата подтверждена', message: 'Платёж ОсОО «ТехПром» на сумму 6 322 сом успешно подтверждён.', createdAt: ago(6), read: false, role: 'eco-operator' },
-  { id: 9, type: 'warning', title: 'Новый отчёт о переработке', message: 'ОАО «СтройМаркет» подал отчёт РП-2026-019 на проверку.', createdAt: ago(24), read: true, role: 'eco-operator', link: '/eco-operator/incoming-reports' },
-  { id: 10, type: 'info', title: 'Расчёт от ОсОО «ПищеПром»', message: 'Новый расчёт РС-2026-021 на сумму 3 309 сом поступил на проверку.', createdAt: ago(48), read: true, role: 'eco-operator', link: '/eco-operator/calculations/3' },
-
-  // Employee
-  { id: 11, type: 'warning', title: 'Лицензия ОсОО «ТекстильРесайкл» истекает', message: 'Лицензия на переработку истекает через 30 дней. Требуется уведомление организации.', createdAt: ago(0.5), read: false, role: 'employee', link: '/employee/licenses' },
-  { id: 12, type: 'info', title: 'Новая заявка на регистрацию', message: 'ОсОО «НовоТрейд» подал заявку на регистрацию плательщика РОП.', createdAt: ago(2), read: false, role: 'employee' },
-  { id: 13, type: 'success', title: 'Лицензия выдана', message: 'Лицензия ОсОО «ЭкоСервис» на переработку отходов одобрена и выдана.', createdAt: ago(4), read: false, role: 'employee', link: '/employee/licenses' },
-  { id: 14, type: 'info', title: 'Обновление реестра', message: 'В реестр переработчиков добавлено 3 новые организации за эту неделю.', createdAt: ago(24), read: true, role: 'employee' },
-  { id: 15, type: 'warning', title: 'Просроченные заявки', message: '5 заявок ожидают рассмотрения более 7 дней.', createdAt: ago(24), read: true, role: 'employee' },
-
-  // Admin
-  { id: 16, type: 'error', title: 'Ошибка интеграции с ЕСИ', message: 'Сервис аутентификации ЕСИ недоступен. Последняя проверка: 10:45.', createdAt: ago(0.25), read: false, role: 'admin' },
-  { id: 17, type: 'info', title: 'Новый пользователь зарегистрирован', message: 'ОсОО «НовоТрейд» (ИНН: 07654321098765) завершил регистрацию.', createdAt: ago(1), read: false, role: 'admin' },
-  { id: 18, type: 'success', title: 'Резервное копирование выполнено', message: 'Автоматическое резервное копирование базы данных завершено успешно.', createdAt: ago(3), read: false, role: 'admin' },
-  { id: 19, type: 'warning', title: 'Высокая нагрузка на сервер', message: 'Загрузка CPU превысила 85% в течение последних 15 минут.', createdAt: ago(5), read: true, role: 'admin' },
-  { id: 20, type: 'info', title: 'Обновление системы', message: 'Запланировано техническое обслуживание на 15 февраля 2026 г., 02:00-04:00.', createdAt: ago(24), read: true, role: 'admin' },
-]
-
 function loadFromStorage(): Notification[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -81,7 +47,7 @@ const stored = loadFromStorage()
 
 const state = reactive<{ notifications: Notification[]; loading: boolean }>({
   loading: false,
-  notifications: stored.length > 0 ? stored : seedNotifications,
+  notifications: stored.length > 0 ? stored : [],
 })
 
 watch(() => state.notifications, () => saveToStorage(state.notifications), { deep: true })

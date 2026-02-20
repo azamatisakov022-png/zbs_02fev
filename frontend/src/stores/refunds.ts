@@ -28,43 +28,11 @@ export interface Refund {
   rejectionReason?: string
 }
 
-let nextId = 3
+let nextId = 1
 
 const state = reactive<{ refunds: Refund[]; loading: boolean }>({
   loading: false,
-  refunds: [
-    {
-      id: 1,
-      number: 'ВЗ-2026-001',
-      date: '05.02.2026',
-      calculationId: 1,
-      calculationNumber: 'РС-2026-015',
-      company: 'ОсОО «ТехПром»',
-      inn: '01234567890123',
-      items: [
-        { group: 'group_6', subgroup: 'g6_bottles_small', mass: '3.5', paidAmount: 3296, exportedMass: '0.8', refundAmount: 1507, rate: 9418 },
-        { group: 'group_1', subgroup: 'g1_corrugated_boxes', mass: '2.1', paidAmount: 2013, exportedMass: '0.5', refundAmount: 479, rate: 4793 },
-      ],
-      totalRefund: 1986,
-      status: 'На рассмотрении',
-      documents: ['GTD_export_001.pdf', 'invoice_export_001.pdf'],
-    },
-    {
-      id: 2,
-      number: 'ВЗ-2026-002',
-      date: '28.01.2026',
-      calculationId: 1,
-      calculationNumber: 'РС-2026-015',
-      company: 'ОсОО «ТехПром»',
-      inn: '01234567890123',
-      items: [
-        { group: 'group_8', subgroup: 'g8_bottles_clear', mass: '2.4', paidAmount: 1013, exportedMass: '0.3', refundAmount: 253, rate: 4219 },
-      ],
-      totalRefund: 253,
-      status: 'Одобрена',
-      documents: ['GTD_export_002.pdf', 'transport_doc_002.pdf', 'invoice_002.pdf'],
-    },
-  ],
+  refunds: [],
 })
 
 async function fetchAll() {
