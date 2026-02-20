@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 export interface ProcessingItem {
   id: number
@@ -97,7 +97,12 @@ function addReport(data: {
     history: [{ id: Date.now(), action: 'Отчёт создан', date: now.toLocaleDateString('ru-RU'), user: data.company }],
   }
   state.reports.unshift(report)
-  api.post('/reports', data).catch(() => {})
+  silentApi.post('/reports', data).then(resp => {
+    if (resp.data?.id) {
+      report.id = resp.data.id
+      report.number = resp.data.number || report.number
+    }
+  }).catch(() => {})
   return report
 }
 
@@ -107,7 +112,7 @@ function submitForReview(id: number) {
     report.status = 'На проверке'
     report.rejectionReason = undefined
   }
-  api.post(`/reports/${id}/submit`).catch(() => {})
+  silentApi.post(`/reports/${id}/submit`).catch(() => {})
 }
 
 function approveReport(id: number, comment?: string) {
@@ -125,7 +130,7 @@ function approveReport(id: number, comment?: string) {
       comment,
     })
   }
-  api.post(`/reports/${id}/approve`, { comment }).catch(() => {})
+  silentApi.post(`/reports/${id}/approve`, { comment }).catch(() => {})
 }
 
 function rejectReport(id: number, reason: string) {
@@ -144,7 +149,7 @@ function rejectReport(id: number, reason: string) {
       comment: reason,
     })
   }
-  api.post(`/reports/${id}/reject`, { reason }).catch(() => {})
+  silentApi.post(`/reports/${id}/reject`, { reason }).catch(() => {})
 }
 
 function returnReportForRevision(id: number, comment: string) {
@@ -163,7 +168,7 @@ function returnReportForRevision(id: number, comment: string) {
       comment,
     })
   }
-  api.post(`/reports/${id}/return`, { comment }).catch(() => {})
+  silentApi.post(`/reports/${id}/return`, { comment }).catch(() => {})
 }
 
 function getBusinessReports(company: string) {

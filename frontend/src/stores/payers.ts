@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -226,7 +226,7 @@ function addComment(payerId: number, author: string, text: string): void {
       text,
     })
   }
-  api.post(`/payers/${payerId}/comments`, { author, text }).catch(() => {})
+  silentApi.post(`/payers/${payerId}/comments`, { author, text }).catch(() => {})
 }
 
 let nextDocId = 1
@@ -242,7 +242,7 @@ function addDocument(payerId: number, name: string, type: string, size: string):
       uploadedAt: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     })
   }
-  api.post(`/payers/${payerId}/documents`, { name, type, size }).catch(() => {})
+  silentApi.post(`/payers/${payerId}/documents`, { name, type, size }).catch(() => {})
 }
 
 export function formatMoney(value: number): string {

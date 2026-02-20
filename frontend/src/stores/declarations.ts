@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 export type DeclarationStatus = 'Черновик' | 'На рассмотрении' | 'Одобрена' | 'Отклонена' | 'На доработке'
 
@@ -117,7 +117,7 @@ function approveDeclaration(id: number, comment?: string) {
     user: 'Асанов Б.Т.',
     comment: comment || undefined,
   })
-  api.post(`/declarations/${id}/approve`, { comment }).catch(() => {})
+  silentApi.post(`/declarations/${id}/approve`, { comment }).catch(() => {})
 }
 
 function rejectDeclaration(id: number, reason: string) {
@@ -135,7 +135,7 @@ function rejectDeclaration(id: number, reason: string) {
     user: 'Асанов Б.Т.',
     comment: reason,
   })
-  api.post(`/declarations/${id}/reject`, { reason }).catch(() => {})
+  silentApi.post(`/declarations/${id}/reject`, { reason }).catch(() => {})
 }
 
 function returnForRevision(id: number, comment: string) {
@@ -153,7 +153,7 @@ function returnForRevision(id: number, comment: string) {
     user: 'Асанов Б.Т.',
     comment,
   })
-  api.post(`/declarations/${id}/return`, { comment }).catch(() => {})
+  silentApi.post(`/declarations/${id}/return`, { comment }).catch(() => {})
 }
 
 function resubmitDeclaration(id: number) {
@@ -170,7 +170,7 @@ function resubmitDeclaration(id: number) {
     date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
-  api.post(`/declarations/${id}/resubmit`).catch(() => {})
+  silentApi.post(`/declarations/${id}/resubmit`).catch(() => {})
 }
 
 let nextId = 1
@@ -210,7 +210,7 @@ function addDeclaration(data: {
     }],
   }
   state.declarations.unshift(decl)
-  api.post('/declarations', data).catch(() => {})
+  silentApi.post('/declarations', data).catch(() => {})
   return decl
 }
 
@@ -226,7 +226,7 @@ function submitDraft(id: number) {
     date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
-  api.post(`/declarations/${id}/submit`).catch(() => {})
+  silentApi.post(`/declarations/${id}/submit`).catch(() => {})
 }
 
 function getPendingCount() {

@@ -8,14 +8,25 @@ const api = axios.create({
   },
 })
 
-// Request interceptor: attach JWT token
-api.interceptors.request.use((config) => {
+// Silent API instance — same config but never shows error toasts
+const silentApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// Request interceptor: attach JWT token (both instances)
+function attachToken(config: any) {
   const token = localStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
-})
+}
+
+api.interceptors.request.use(attachToken)
+silentApi.interceptors.request.use(attachToken)
 
 // Response interceptor: handle 401
 api.interceptors.response.use(
@@ -51,7 +62,7 @@ api.interceptors.response.use(
       }
     }
 
-    // Show toast for non-auth errors (401 = not authenticated, 403 = not authorized)
+    // Show toast for non-auth errors
     if (error.response?.status !== 401 && error.response?.status !== 403) {
       const msg = error.response?.data?.message || error.message || 'Ошибка сервера'
       toastStore.show({ type: 'error', title: 'Ошибка API', message: msg })
@@ -61,4 +72,11 @@ api.interceptors.response.use(
   },
 )
 
+// Silent instance — no toasts, just reject
+silentApi.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error),
+)
+
 export default api
+export { silentApi }

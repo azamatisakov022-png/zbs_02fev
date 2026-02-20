@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '../api/client'
+import api, { silentApi } from '../api/client'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -59,7 +59,7 @@ async function fetchAll() {
 function addDump(data: Omit<Dump, 'id'>): Dump {
   const dump: Dump = { id: nextId++, ...data }
   state.dumps.push(dump)
-  api.post('/dumps', data).catch(() => {})
+  silentApi.post('/dumps', data).catch(() => {})
   return dump
 }
 
@@ -68,7 +68,7 @@ function updateDump(id: number, updates: Partial<Dump>) {
   if (idx !== -1) {
     state.dumps[idx] = { ...state.dumps[idx], ...updates }
   }
-  api.put(`/dumps/${id}`, updates).catch(() => {})
+  silentApi.put(`/dumps/${id}`, updates).catch(() => {})
 }
 
 function deleteDump(id: number) {
@@ -76,7 +76,7 @@ function deleteDump(id: number) {
   if (idx !== -1) {
     state.dumps.splice(idx, 1)
   }
-  api.delete(`/dumps/${id}`).catch(() => {})
+  silentApi.delete(`/dumps/${id}`).catch(() => {})
 }
 
 function getDumpById(id: number): Dump | undefined {
