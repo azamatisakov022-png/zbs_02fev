@@ -21,7 +21,10 @@ const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(async () => {
+  await reportStore.fetchAll()
+  isLoading.value = false
+})
 
 const columns = [
   { key: 'number', label: 'Номер', width: '9%' },

@@ -24,6 +24,9 @@ public class Report {
     @JoinColumn(name = "recycler_id")
     private Recycler recycler;
 
+    @Column(name = "submitter_inn", length = 14)
+    private String submitterInn;
+
     @Column(length = 20)
     private String period;
 

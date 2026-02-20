@@ -19,6 +19,7 @@ public class ReportResponse {
     private String number;
     private String period;
     private String status;
+    private String submitterInn;
     private String recyclerName;
     private Long recyclerId;
     private LocalDateTime submittedAt;

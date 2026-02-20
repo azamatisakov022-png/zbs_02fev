@@ -25,7 +25,10 @@ const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
-onMounted(() => { isLoading.value = false })
+onMounted(async () => {
+  await reportStore.fetchAll()
+  isLoading.value = false
+})
 
 const showInstruction = ref(false)
 

@@ -191,6 +191,14 @@ public class NotificationEventListener {
 
     private void notifyReportOwner(ReportStatusEvent event, String title, String message,
                                     NotificationType type) {
+        // Try by submitter INN first (business users)
+        if (event.getSubmitterInn() != null) {
+            userRepository.findByInn(event.getSubmitterInn()).ifPresent(user ->
+                    createNotification(title, message, type, user, null,
+                            event.getReportId(), "report"));
+            return;
+        }
+        // Fallback: find by recycler
         if (event.getRecyclerId() != null) {
             recyclerRepository.findById(event.getRecyclerId()).ifPresent(recycler ->
                     userRepository.findByInn(recycler.getInn()).ifPresent(user ->
