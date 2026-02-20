@@ -7,11 +7,13 @@ import kg.eco.operator.entity.Recycler;
 import kg.eco.operator.entity.Report;
 import kg.eco.operator.entity.ReportItem;
 import kg.eco.operator.entity.enums.ReportStatus;
+import kg.eco.operator.event.ReportStatusEvent;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.RecyclerRepository;
 import kg.eco.operator.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -28,6 +30,7 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final RecyclerRepository recyclerRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public PaginatedResponse<ReportResponse> getReports(int page, int pageSize) {
         Page<Report> reportPage = reportRepository.findAll(
@@ -89,7 +92,9 @@ public class ReportService {
         }
         report.setStatus(ReportStatus.SUBMITTED);
         report.setSubmittedAt(LocalDateTime.now());
-        return toResponse(reportRepository.save(report));
+        report = reportRepository.save(report);
+        publishReportEvent(report, "draft", "submitted", null);
+        return toResponse(report);
     }
 
     @Transactional
@@ -100,7 +105,9 @@ public class ReportService {
             throw new BusinessLogicException("Одобрить можно только отчёт на рассмотрении");
         }
         report.setStatus(ReportStatus.APPROVED);
-        return toResponse(reportRepository.save(report));
+        report = reportRepository.save(report);
+        publishReportEvent(report, "submitted", "approved", comment);
+        return toResponse(report);
     }
 
     @Transactional
@@ -114,7 +121,9 @@ public class ReportService {
             throw new BusinessLogicException("Причина отклонения обязательна");
         }
         report.setStatus(ReportStatus.REJECTED);
-        return toResponse(reportRepository.save(report));
+        report = reportRepository.save(report);
+        publishReportEvent(report, "submitted", "rejected", reason);
+        return toResponse(report);
     }
 
     @Transactional
@@ -125,12 +134,21 @@ public class ReportService {
             throw new BusinessLogicException("Вернуть на доработку можно только отчёт на рассмотрении");
         }
         report.setStatus(ReportStatus.REVISION_REQUESTED);
-        return toResponse(reportRepository.save(report));
+        report = reportRepository.save(report);
+        publishReportEvent(report, "submitted", "revision_requested", comment);
+        return toResponse(report);
     }
 
     public long getPendingCount() {
         return reportRepository.findByStatus(ReportStatus.SUBMITTED, PageRequest.of(0, 1))
                 .getTotalElements();
+    }
+
+    private void publishReportEvent(Report report, String oldStatus, String newStatus, String comment) {
+        eventPublisher.publishEvent(new ReportStatusEvent(
+                report.getId(), report.getNumber(),
+                report.getRecycler() != null ? report.getRecycler().getId() : null,
+                oldStatus, newStatus, comment));
     }
 
     private BigDecimal parseBigDecimal(String value) {
