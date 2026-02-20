@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { notificationStore, type NotificationRole } from '../../stores/notifications'
+import { useRouter } from 'vue-router'
+import { notificationStore, type Notification, type NotificationRole } from '../../stores/notifications'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const props = defineProps<{
   role: NotificationRole
@@ -48,6 +50,51 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+const referenceRoutes: Record<string, Record<string, string>> = {
+  business: {
+    calculation: '/business/calculations',
+    report: '/business/reports',
+    declaration: '/business/declarations',
+    refund: '/business/refunds',
+  },
+  'eco-operator': {
+    calculation: '/eco-operator/calculations',
+    report: '/eco-operator/reports',
+    declaration: '/eco-operator/declarations',
+    refund: '/eco-operator/refunds',
+  },
+  employee: {
+    calculation: '/employee/calculations',
+    report: '/employee/reports',
+    declaration: '/employee/declarations',
+    refund: '/employee/refunds',
+  },
+  admin: {
+    calculation: '/admin/calculations',
+    report: '/admin/reports',
+    declaration: '/admin/declarations',
+    refund: '/admin/refunds',
+  },
+}
+
+function getNotificationLink(n: Notification): string | null {
+  if (n.link) return n.link
+  if (n.referenceId && n.referenceType) {
+    const basePath = referenceRoutes[props.role]?.[n.referenceType]
+    if (basePath) return `${basePath}/${n.referenceId}`
+  }
+  return null
+}
+
+function handleNavigate(n: Notification) {
+  const link = getNotificationLink(n)
+  if (link) {
+    notificationStore.markAsRead(n.id)
+    isOpen.value = false
+    router.push(link)
+  }
+}
 
 const typeConfig = {
   info: { color: '#2563eb', bg: '#eff6ff', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -132,7 +179,14 @@ const typeConfig = {
                 <span v-if="!n.read" class="w-2 h-2 rounded-full bg-[#0e888d] flex-shrink-0 mt-1"></span>
               </div>
               <p class="text-xs text-[#64748b] mt-1 line-clamp-2">{{ n.message }}</p>
-              <p class="text-[11px] text-[#94a3b8] mt-1">{{ notificationStore.formatRelativeTime(n.createdAt) }}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <p class="text-[11px] text-[#94a3b8]">{{ notificationStore.formatRelativeTime(n.createdAt) }}</p>
+                <button
+                  v-if="getNotificationLink(n)"
+                  @click.stop="handleNavigate(n)"
+                  class="text-[11px] text-[#0e888d] hover:text-[#0a6d71] font-medium transition-colors"
+                >Перейти &rarr;</button>
+              </div>
             </div>
           </div>
         </div>
