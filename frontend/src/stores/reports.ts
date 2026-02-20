@@ -223,8 +223,8 @@ function returnReportForRevision(id: number, comment: string) {
   silentApi.post(`/reports/${id}/return`, { comment }).catch(() => {})
 }
 
-function getBusinessReports(company: string) {
-  return state.reports.filter(r => r.company === company)
+function getBusinessReports(_company?: string) {
+  return state.reports
 }
 
 function getPendingCount() {
