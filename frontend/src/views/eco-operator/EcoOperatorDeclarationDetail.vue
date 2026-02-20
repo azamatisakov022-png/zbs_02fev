@@ -83,7 +83,7 @@ function handleApprove() {
   notificationStore.add({
     type: 'success',
     title: 'Декларация принята',
-    message: 'Ваша декларация была успешно принята.',
+    message: 'Ваша декларация принята.',
     role: 'business'
   })
   showApproveModal.value = false
@@ -99,9 +99,9 @@ function handleReject() {
   declarationStore.rejectDeclaration(declaration.value.id, rejectReason.value.trim())
   declaration.value = declarationStore.getById(declaration.value.id)
   notificationStore.add({
-    type: 'error',
+    type: 'warning',
     title: 'Декларация отклонена',
-    message: 'Декларация отклонена. Проверьте замечания и подайте повторно.',
+    message: `Ваша декларация отклонена. Причина: ${rejectReason.value.trim()}`,
     role: 'business'
   })
   showRejectModal.value = false

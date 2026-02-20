@@ -210,10 +210,16 @@ const submitDeclaration = () => {
   }, 'На рассмотрении')
   notificationStore.add({
     type: 'info',
-    title: 'Новая декларация',
-    message: 'Получена новая декларация на проверку.',
+    title: 'Новая входящая декларация',
+    message: `Поступила декларация от ${companyData.name}. Требуется проверка.`,
     role: 'eco-operator',
     link: '/eco-operator/incoming-declarations'
+  })
+  notificationStore.add({
+    type: 'success',
+    title: 'Декларация отправлена',
+    message: 'Ваша декларация отправлена на проверку.',
+    role: 'business'
   })
   submittedDeclaration.value = { number: decl.number, date: decl.submittedAt }
   viewMode.value = 'success'

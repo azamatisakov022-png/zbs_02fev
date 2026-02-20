@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getLocale, setLocale } from '../../i18n'
 import { authStore } from '../../stores/auth'
+import { notificationStore } from '../../stores/notifications'
 import NotificationBell from './NotificationBell.vue'
 import BreadcrumbNav from './BreadcrumbNav.vue'
 
@@ -49,9 +50,14 @@ const navigateTo = (itemRoute: string) => {
 }
 
 const handleLogout = () => {
+  notificationStore.clear()
   authStore.logout()
   router.push('/login')
 }
+
+onMounted(() => {
+  notificationStore.fetchAll()
+})
 
 const toggleSidebar = () => {
   sidebarOpen.value = !sidebarOpen.value

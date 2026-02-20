@@ -252,10 +252,16 @@ const submitReport = () => {
   }, 'На проверке')
   notificationStore.add({
     type: 'info',
-    title: 'Новый отчёт о переработке',
-    message: 'Получен новый отчёт о переработке на проверку.',
+    title: 'Новый входящий отчёт',
+    message: `Поступил отчёт о переработке от ${companyData.name}. Требуется проверка.`,
     role: 'eco-operator',
     link: '/eco-operator/incoming-reports'
+  })
+  notificationStore.add({
+    type: 'success',
+    title: 'Отчёт отправлен',
+    message: 'Ваш отчёт о переработке отправлен на проверку.',
+    role: 'business'
   })
   submittedReport.value = {
     number: report.number,

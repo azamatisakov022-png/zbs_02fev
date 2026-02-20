@@ -754,8 +754,8 @@ const submitForReview = () => {
       calculationStore.addCalculation(calcData, 'На проверке')
       notificationStore.add({
         type: 'info',
-        title: 'Новый расчёт создан',
-        message: 'Расчёт утилизационного сбора отправлен на проверку.',
+        title: 'Новый входящий расчёт',
+        message: `Поступил расчёт утилизационного сбора от ${companyData.name}. Требуется проверка.`,
         role: 'eco-operator'
       })
       notificationStore.add({
