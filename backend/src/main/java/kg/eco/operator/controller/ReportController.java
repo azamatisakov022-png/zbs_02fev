@@ -4,7 +4,6 @@ import kg.eco.operator.dto.request.ReportCreateRequest;
 import kg.eco.operator.dto.request.ReviewRequest;
 import kg.eco.operator.dto.response.PaginatedResponse;
 import kg.eco.operator.dto.response.ReportResponse;
-import kg.eco.operator.dto.response.SuccessResponse;
 import kg.eco.operator.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,12 +20,18 @@ public class ReportController {
     private final ReportService reportService;
 
     /**
-     * GET /reports — Список отчётов о переработке (пагинация)
+     * GET /reports — Список отчётов (для эко-оператора — все, для плательщика — свои)
      */
     @GetMapping
     public ResponseEntity<PaginatedResponse<ReportResponse>> list(
+            Authentication auth,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
+        boolean isBusiness = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_BUSINESS"));
+        if (isBusiness) {
+            return ResponseEntity.ok(reportService.getMyReports(auth.getName(), page, pageSize));
+        }
         return ResponseEntity.ok(reportService.getReports(page, pageSize));
     }
 

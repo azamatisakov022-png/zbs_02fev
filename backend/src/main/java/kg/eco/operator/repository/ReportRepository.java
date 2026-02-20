@@ -14,4 +14,5 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     Page<Report> findByRecycler_Id(Long recyclerId, Pageable pageable);
     Page<Report> findByStatus(ReportStatus status, Pageable pageable);
     Optional<Report> findByNumber(String number);
+    Page<Report> findBySubmitterInn(String submitterInn, Pageable pageable);
 }

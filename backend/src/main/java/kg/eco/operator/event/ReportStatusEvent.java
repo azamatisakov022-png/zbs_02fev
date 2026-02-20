@@ -14,4 +14,5 @@ public class ReportStatusEvent {
     private final String newStatus;
     private final String comment;
     private final String companyName;
+    private final String submitterInn;
 }

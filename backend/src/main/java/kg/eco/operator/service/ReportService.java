@@ -41,6 +41,15 @@ public class ReportService {
         return PaginatedResponse.of(reportPage, data);
     }
 
+    public PaginatedResponse<ReportResponse> getMyReports(String userInn, int page, int pageSize) {
+        Page<Report> reportPage = reportRepository.findBySubmitterInn(userInn,
+                PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<ReportResponse> data = reportPage.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+        return PaginatedResponse.of(reportPage, data);
+    }
+
     public ReportResponse getById(Long id) {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Отчёт с ID " + id + " не найден"));
@@ -62,6 +71,7 @@ public class ReportService {
         Report report = new Report();
         report.setNumber(number);
         report.setRecycler(recycler);
+        report.setSubmitterInn(userInn);
         report.setPeriod(request.getYear());
         report.setStatus(ReportStatus.DRAFT);
         report = reportRepository.save(report);
@@ -149,7 +159,8 @@ public class ReportService {
                 report.getId(), report.getNumber(),
                 report.getRecycler() != null ? report.getRecycler().getId() : null,
                 oldStatus, newStatus, comment,
-                report.getRecycler() != null ? report.getRecycler().getCompanyName() : null));
+                report.getRecycler() != null ? report.getRecycler().getCompanyName() : null,
+                report.getSubmitterInn()));
     }
 
     private BigDecimal parseBigDecimal(String value) {
@@ -170,6 +181,7 @@ public class ReportService {
                 .number(report.getNumber())
                 .period(report.getPeriod())
                 .status(report.getStatus().name().toLowerCase())
+                .submitterInn(report.getSubmitterInn())
                 .recyclerName(report.getRecycler() != null ? report.getRecycler().getCompanyName() : null)
                 .recyclerId(report.getRecycler() != null ? report.getRecycler().getId() : null)
                 .submittedAt(report.getSubmittedAt())

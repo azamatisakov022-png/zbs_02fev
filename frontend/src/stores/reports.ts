@@ -48,21 +48,69 @@ export interface Report {
   history: ReportHistoryEntry[]
 }
 
-let nextId = 1
+let nextId = 100000
 
 const state = reactive<{ reports: Report[]; loading: boolean }>({
   loading: false,
   reports: [],
 })
 
+const backendStatusMap: Record<string, ReportStatus> = {
+  draft: 'Черновик',
+  submitted: 'На проверке',
+  approved: 'Принят',
+  rejected: 'Отклонён',
+  revision_requested: 'На доработке',
+}
+
+function mapBackendReport(r: any): Report {
+  const items: ProcessingItem[] = (r.items || []).map((it: any, idx: number) => ({
+    id: it.id || idx + 1,
+    wasteType: it.wasteGroup || '',
+    wasteCode: it.wasteCode || '',
+    declared: it.volumeReceived != null ? String(it.volumeReceived) : '',
+    processed: it.volumeProcessed != null ? String(it.volumeProcessed) : '',
+    recycler: '',
+    contractNumber: '',
+    contractDate: '',
+  }))
+  const totalDeclared = items.reduce((s, i) => s + (parseFloat(i.declared) || 0), 0)
+  const totalProcessed = items.reduce((s, i) => s + (parseFloat(i.processed) || 0), 0)
+  return {
+    id: r.id,
+    number: r.number || '',
+    date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU') : '',
+    company: r.recyclerName || '',
+    inn: r.submitterInn || '',
+    year: r.period || '',
+    items,
+    files: [],
+    totalDeclared,
+    totalProcessed,
+    processingPercent: totalDeclared > 0 ? Math.round((totalProcessed / totalDeclared) * 100) : 0,
+    status: backendStatusMap[r.status] || r.status || 'Черновик',
+    history: [],
+  }
+}
+
 async function fetchAll() {
   state.loading = true
   try {
     const { data } = await api.get('/reports')
+    let backendReports: any[] = []
     if (Array.isArray(data)) {
-      state.reports = data
+      backendReports = data
+    } else if (data?.data && Array.isArray(data.data)) {
+      backendReports = data.data
     } else if (data?.content && Array.isArray(data.content)) {
-      state.reports = data.content
+      backendReports = data.content
+    }
+    if (backendReports.length > 0) {
+      const mapped = backendReports.map(mapBackendReport)
+      // Merge: keep local reports (high IDs) that aren't on backend
+      const backendIds = new Set(mapped.map(r => r.id))
+      const localOnly = state.reports.filter(r => r.id >= 100000 && !backendIds.has(r.id))
+      state.reports = [...mapped, ...localOnly]
     }
   } catch { /* keep local data */ } finally {
     state.loading = false
