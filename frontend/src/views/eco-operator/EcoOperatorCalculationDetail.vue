@@ -88,8 +88,8 @@ const approveCalc = () => {
   calculationStore.approveCalculation(calc.value.id)
   notificationStore.add({
     type: 'success',
-    title: `Расчёт ${calc.value.number} принят`,
-    message: 'Ваш расчёт утилизационного сбора принят и ожидает оплаты.',
+    title: 'Расчёт одобрен',
+    message: `Ваш расчёт ${calc.value.number} одобрен.`,
     role: 'business',
     link: `/business/calculations/${calc.value.id}`
   })
@@ -107,9 +107,9 @@ const rejectCalc = () => {
   if (!calc.value || rejectionReason.value.trim().length < 10) return
   calculationStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
   notificationStore.add({
-    type: 'error',
-    title: `Расчёт ${calc.value.number} отклонён`,
-    message: rejectionReason.value.trim() || 'Расчёт отклонён. Исправьте и отправьте повторно.',
+    type: 'warning',
+    title: 'Расчёт отклонён',
+    message: `Ваш расчёт ${calc.value.number} отклонён. Причина: ${rejectionReason.value.trim()}`,
     role: 'business'
   })
   showRejectModal.value = false

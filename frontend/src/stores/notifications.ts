@@ -27,12 +27,24 @@ function formatRelativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString('ru-RU')
 }
 
-let nextId = 1
+let nextId = 100000
 
 const state = reactive<{ notifications: Notification[]; loading: boolean }>({
   loading: false,
   notifications: [],
 })
+
+function mapBackendNotification(n: any): Notification {
+  return {
+    id: n.id,
+    type: ((n.type || 'info').toLowerCase()) as NotificationType,
+    title: n.title || '',
+    message: n.message || '',
+    role: (n.role || 'business') as NotificationRole,
+    createdAt: n.createdAt || new Date().toISOString(),
+    read: n.isRead ?? n.read ?? false,
+  }
+}
 
 function add(notification: { type: NotificationType; title: string; message: string; role: NotificationRole; link?: string }): Notification {
   const n: Notification = {
@@ -48,6 +60,11 @@ function add(notification: { type: NotificationType; title: string; message: str
 function remove(id: number) {
   state.notifications = state.notifications.filter(n => n.id !== id)
   silentApi.delete(`/notifications/${id}`).catch(() => {})
+}
+
+function clear() {
+  state.notifications = []
+  nextId = 100000
 }
 
 function getByRole(role: NotificationRole) {
@@ -73,18 +90,20 @@ function markAllAsRead(role: NotificationRole) {
   silentApi.post('/notifications/read-all').catch(() => {})
 }
 
-async function fetchAll(role?: NotificationRole) {
+async function fetchAll() {
   state.loading = true
   try {
-    const url = role ? `/notifications/by-role/${role}` : '/notifications'
-    const { data } = await api.get(url)
+    const { data } = await api.get('/notifications')
     if (Array.isArray(data)) {
-      state.notifications = data
-      nextId = Math.max(0, ...data.map((n: any) => n.id || 0)) + 1
+      const backendNotifications = data.map(mapBackendNotification)
+      // Merge: backend notifications replace, keep local-only ones (id >= 100000)
+      const localOnly = state.notifications.filter(n => n.id >= 100000)
+      state.notifications = [...backendNotifications, ...localOnly]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
-  } catch { /* keep empty */ } finally {
+  } catch { /* silent */ } finally {
     state.loading = false
   }
 }
 
-export const notificationStore = { state, add, remove, getByRole, getUnreadCount, markAsRead, markAllAsRead, formatRelativeTime, fetchAll }
+export const notificationStore = { state, add, remove, clear, getByRole, getUnreadCount, markAsRead, markAllAsRead, formatRelativeTime, fetchAll }

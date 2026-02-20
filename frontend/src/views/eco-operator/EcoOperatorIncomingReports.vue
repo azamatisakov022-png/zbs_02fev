@@ -130,8 +130,8 @@ const confirmApprove = () => {
     reportStore.approveReport(selectedReport.value.id, approveComment.value.trim() || undefined)
     notificationStore.add({
       type: 'success',
-      title: 'Отчёт о переработке принят',
-      message: 'Ваш отчёт о переработке был принят.',
+      title: 'Отчёт принят',
+      message: `Ваш отчёт ${selectedReport.value.number} принят.`,
       role: 'business'
     })
     showApproveConfirm.value = false
@@ -158,9 +158,9 @@ const rejectReport = () => {
   if (selectedReport.value && rejectionReason.value.trim().length >= 10) {
     reportStore.rejectReport(selectedReport.value.id, rejectionReason.value.trim())
     notificationStore.add({
-      type: 'error',
-      title: 'Отчёт о переработке отклонён',
-      message: 'Отчёт отклонён. Проверьте замечания.',
+      type: 'warning',
+      title: 'Отчёт отклонён',
+      message: `Ваш отчёт ${selectedReport.value.number} отклонён. Причина: ${rejectionReason.value.trim()}`,
       role: 'business'
     })
     showRejectForm.value = false

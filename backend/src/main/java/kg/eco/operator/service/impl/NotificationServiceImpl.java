@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -31,15 +33,39 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<NotificationResponse> getAll(String userInn, Boolean unreadOnly) {
         User user = findUserByInn(userInn);
+        String userRole = roleToString(user.getRole());
 
-        List<Notification> notifications;
+        // User-specific notifications
+        List<Notification> userNotifications;
         if (Boolean.TRUE.equals(unreadOnly)) {
-            notifications = notificationRepository.findByUser_IdAndIsReadFalseOrderByCreatedAtDesc(user.getId());
+            userNotifications = notificationRepository.findByUser_IdAndIsReadFalseOrderByCreatedAtDesc(user.getId());
         } else {
-            notifications = notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
+            userNotifications = notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
         }
 
-        return notificationMapper.toResponseList(notifications);
+        // Role-targeted notifications (e.g., ECO_OPERATOR sees all role-based notifications)
+        List<Notification> roleNotifications = List.of();
+        if (user.getRole() != null) {
+            roleNotifications = notificationRepository.findByTargetRoleOrderByCreatedAtDesc(user.getRole());
+            if (Boolean.TRUE.equals(unreadOnly)) {
+                roleNotifications = roleNotifications.stream()
+                        .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+                        .toList();
+            }
+        }
+
+        // Merge and sort by createdAt desc
+        List<Notification> all = new ArrayList<>(userNotifications);
+        all.addAll(roleNotifications);
+        all.sort(Comparator.comparing(Notification::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+
+        List<NotificationResponse> responses = notificationMapper.toResponseList(all);
+        // Set role for user-specific notifications (where targetRole is null)
+        responses.forEach(r -> {
+            if (r.getRole() == null) r.setRole(userRole);
+        });
+
+        return responses;
     }
 
     @Override
@@ -79,6 +105,15 @@ public class NotificationServiceImpl implements NotificationService {
     public SuccessResponse markAllAsRead(String userInn) {
         User user = findUserByInn(userInn);
         notificationRepository.markAllAsReadByUserId(user.getId());
+        // Also mark role-targeted notifications as read
+        if (user.getRole() != null) {
+            notificationRepository.findByTargetRoleOrderByCreatedAtDesc(user.getRole()).stream()
+                    .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+                    .forEach(n -> {
+                        n.setIsRead(true);
+                        notificationRepository.save(n);
+                    });
+        }
         return SuccessResponse.ok("Все прочитаны");
     }
 
@@ -95,8 +130,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public CountResponse getUnreadCount(String userInn) {
         User user = findUserByInn(userInn);
-        long count = notificationRepository.countByUser_IdAndIsReadFalse(user.getId());
-        return new CountResponse(count);
+        long userCount = notificationRepository.countByUser_IdAndIsReadFalse(user.getId());
+        long roleCount = 0;
+        if (user.getRole() != null) {
+            roleCount = notificationRepository.findByTargetRoleOrderByCreatedAtDesc(user.getRole()).stream()
+                    .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+                    .count();
+        }
+        return new CountResponse(userCount + roleCount);
     }
 
     @Override
@@ -116,6 +157,14 @@ public class NotificationServiceImpl implements NotificationService {
     private User findUserByInn(String inn) {
         return userRepository.findByInn(inn)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+    }
+
+    private String roleToString(RoleEnum role) {
+        if (role == null) return null;
+        return switch (role) {
+            case ECO_OPERATOR -> "eco-operator";
+            default -> role.name().toLowerCase();
+        };
     }
 
     private RoleEnum mapRole(String role) {
