@@ -1,0 +1,86 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#0e888d',
+        accent: '#fea629',
+        'text-main': '#415861',
+        'text-muted': '#70868f',
+        'text-secondary': '#70868f',
+        'bg-light': '#f8fafc',
+        'bg-card': '#fafafa',
+        'bg-neutral': '#f3f4f5',
+        'bg-table': '#e8f0f2',
+        'border-card': '#f5f5f5',
+        'border-input': '#ebebeb',
+        divider: '#e3e3e3',
+        success: {
+          DEFAULT: '#0e888d',
+          bg: 'rgba(14, 136, 141, 0.2)',
+          light: '#ccefe9',
+        },
+        warning: {
+          DEFAULT: '#fea629',
+          bg: 'rgba(254, 166, 41, 0.2)',
+          light: '#fff1d1',
+        },
+        error: {
+          DEFAULT: '#ff5652',
+          bg: 'rgba(255, 86, 82, 0.2)',
+          light: '#ffdddc',
+        },
+        muted: {
+          bg: 'rgba(112, 134, 143, 0.2)',
+        },
+      },
+      fontSize: {
+        'display':    ['50px', { lineHeight: '1.2', fontWeight: '700' }],
+        'h1':         ['40px', { lineHeight: '1.25', fontWeight: '500' }],
+        'h2':         ['30px', { lineHeight: '1.3', fontWeight: '700' }],
+        'h3':         ['28px', { lineHeight: '1.3', fontWeight: '500' }],
+        'h4':         ['26px', { lineHeight: '1.35', fontWeight: '500' }],
+        'h5':         ['24px', { lineHeight: '1.35', fontWeight: '500' }],
+        'h6':         ['22px', { lineHeight: '1.4', fontWeight: '500' }],
+        'body-lg':    ['20px', { lineHeight: '1.5', fontWeight: '500' }],
+        'body':       ['18px', { lineHeight: '1.5', fontWeight: '500' }],
+        'body-sm':    ['16px', { lineHeight: '1.5', fontWeight: '500' }],
+        'caption':    ['14px', { lineHeight: '1.5', fontWeight: '500' }],
+        'caption-sm': ['12px', { lineHeight: '1.5', fontWeight: '500' }],
+        'stat':       ['70px', { lineHeight: '1.1', fontWeight: '700' }],
+      },
+      fontFamily: {
+        sans: ['Avenir Next', 'Avenir', 'Nunito', 'system-ui', 'sans-serif'],
+      },
+      spacing: {
+        '2.5': '10px',
+        '4.5': '18px',
+        '5.5': '22px',
+        '6.5': '25px',
+        '7.5': '30px',
+        '10.5': '42px',
+        '15': '60px',
+        '16.5': '66px',
+        '25': '100px',
+        '37.5': '150px',
+      },
+      boxShadow: {
+        card: '2px 5px 20px 0px rgba(0, 0, 0, 0.03)',
+        hero: '0px 25px 30px 0px rgba(0, 0, 0, 0.25)',
+      },
+      borderRadius: {
+        'xl': '12px',
+        '2xl': '16px',
+        '3xl': '20px',
+        '4xl': '25px',
+        '5xl': '30px',
+        '6xl': '50px',
+      },
+    },
+  },
+  plugins: [],
+}

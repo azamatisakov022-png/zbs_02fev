@@ -1,0 +1,160 @@
+.about-page {
+  @apply mb-[100px];
+}
+
+.header-section {
+  @apply pt-20 pb-16;
+}
+
+.header-content {
+  @apply flex flex-col items-center text-center max-w-[700px] mx-auto mb-[70px];
+}
+
+.main-title {
+  @apply text-[32px] font-bold mb-4 uppercase;
+}
+
+.subtitle {
+  @apply text-h5 text-text-main leading-normal;
+}
+
+.cards-grid {
+  @apply flex flex-wrap gap-7.5 justify-center items-stretch;
+}
+
+/* Card Styles */
+.info-card {
+  @apply flex-1 max-w-[606px] bg-white rounded-5xl border border-border-card
+         shadow-card relative flex flex-col items-center pt-[34px] pb-[45px];
+}
+
+.accent-bar-top {
+  @apply absolute top-0 w-[160px] h-[5px] bg-primary rounded-b-[5px];
+}
+
+.accent-bar-bottom {
+  @apply absolute bottom-0 w-[160px] h-[5px] bg-text-main rounded-t-[5px];
+}
+
+.illustration-container {
+  @apply h-[220px] flex items-center justify-center mb-10;
+}
+
+.illustration-container img {
+  @apply max-h-full;
+}
+
+/* Text Styles */
+.card-content {
+  @apply flex flex-col gap-6.5 items-center text-center w-full;
+}
+
+.card-title {
+  @apply text-h5 font-semibold text-text-main uppercase tracking-wide;
+}
+
+.card-description {
+  @apply text-caption text-text-main leading-relaxed max-w-[340px];
+}
+
+.functions-list {
+  @apply text-caption text-text-main leading-loose list-disc text-left inline-block pl-5;
+}
+
+.functions-list li {
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Tablet (≤1024px) ── */
+@media (max-width: 1024px) {
+  .about-page {
+    margin-bottom: 60px;
+  }
+
+  .header-section {
+    padding-top: 48px;
+    padding-bottom: 32px;
+  }
+
+  .header-content {
+    margin-bottom: 40px;
+  }
+
+  .main-title {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+  }
+
+  .info-card {
+    max-width: 100%;
+  }
+
+  .illustration-container {
+    height: 180px;
+    margin-bottom: 24px;
+  }
+}
+
+/* ── Mobile (≤768px) ── */
+@media (max-width: 768px) {
+  .about-page {
+    margin-bottom: 40px;
+  }
+
+  .header-section {
+    padding-top: 32px;
+    padding-bottom: 20px;
+  }
+
+  .header-content {
+    margin-bottom: 24px;
+    max-width: 100%;
+  }
+
+  .main-title {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+  }
+
+  .cards-grid {
+    @apply flex-col gap-5;
+  }
+
+  .info-card {
+    max-width: 100%;
+    padding-top: 24px;
+    padding-bottom: 32px;
+    border-radius: 20px;
+  }
+
+  .illustration-container {
+    height: 150px;
+    margin-bottom: 20px;
+  }
+
+  .card-content {
+    gap: 16px;
+    padding: 0 20px;
+  }
+
+  .card-title {
+    font-size: 18px;
+  }
+
+  .card-description {
+    font-size: 13px;
+    max-width: 100%;
+  }
+
+  .functions-list {
+    font-size: 13px;
+  }
+}
