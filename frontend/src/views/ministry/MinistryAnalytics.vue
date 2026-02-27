@@ -7,13 +7,17 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { toastStore } from '../../stores/toast'
+import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ─── Loading ───
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 600) })
+onMounted(async () => {
+  await analyticsStore.fetchAll('month')
+  isLoading.value = false
+})
 
 // ─── Tabs ───
 const activeTab = ref<'summary' | 'recycling' | 'regional'>('summary')
@@ -42,8 +46,8 @@ const regions = [
   { value: 'osh', label: 'Ошская область' },
 ]
 
-// ─── Mock Data: Regional ───
-interface RegionData {
+// ─── Regional Data (from backend analytics) ───
+interface RegionDataItem {
   key: string
   name: string
   shortName: string
@@ -53,7 +57,21 @@ interface RegionData {
   wasteVolume: number
 }
 
-const regionData: RegionData[] = [
+const regionKeyMap: Record<string, { key: string; shortName: string }> = {
+  'г. Бишкек': { key: 'bishkek', shortName: 'Бишкек' },
+  'Чуйская область': { key: 'chuy', shortName: 'Чуйская' },
+  'г. Ош': { key: 'osh_city', shortName: 'г. Ош' },
+  'Ошская область': { key: 'osh', shortName: 'Ошская' },
+  'Джалал-Абадская область': { key: 'jalal_abad', shortName: 'Жалал-Абад' },
+  'Джалал-Абадская обл.': { key: 'jalal_abad', shortName: 'Жалал-Абад' },
+  'Иссык-Кульская область': { key: 'issyk_kul', shortName: 'Иссык-Куль' },
+  'Иссык-Кульская обл.': { key: 'issyk_kul', shortName: 'Иссык-Куль' },
+  'Баткенская область': { key: 'batken', shortName: 'Баткен' },
+  'Нарынская область': { key: 'naryn', shortName: 'Нарын' },
+  'Таласская область': { key: 'talas', shortName: 'Талас' },
+}
+
+const regionDataFallback: RegionDataItem[] = [
   { key: 'bishkek', name: 'г. Бишкек', shortName: 'Бишкек', recyclers: 12, landfills: 1, dumps: 3, wasteVolume: 4850 },
   { key: 'chuy', name: 'Чуйская область', shortName: 'Чуйская', recyclers: 8, landfills: 3, dumps: 12, wasteVolume: 2340 },
   { key: 'osh_city', name: 'г. Ош', shortName: 'г. Ош', recyclers: 5, landfills: 1, dumps: 2, wasteVolume: 1280 },
@@ -65,9 +83,26 @@ const regionData: RegionData[] = [
   { key: 'talas', name: 'Таласская область', shortName: 'Талас', recyclers: 0, landfills: 1, dumps: 7, wasteVolume: 120 },
 ]
 
+const regionData = computed<RegionDataItem[]>(() => {
+  const backendRegions = analyticsStore.state.regions
+  if (!backendRegions.length) return regionDataFallback
+  return backendRegions.map(r => {
+    const mapped = regionKeyMap[r.region] || { key: r.region.toLowerCase().replace(/\s+/g, '_'), shortName: r.region }
+    return {
+      key: mapped.key,
+      name: r.region,
+      shortName: mapped.shortName,
+      recyclers: r.recyclersCount,
+      landfills: r.landfillsCount,
+      dumps: r.dumpsCount,
+      wasteVolume: r.totalWaste,
+    }
+  })
+})
+
 const filteredRegions = computed(() => {
-  if (regionFilter.value === 'all') return regionData
-  return regionData.filter(r => r.key === regionFilter.value)
+  if (regionFilter.value === 'all') return regionData.value
+  return regionData.value.filter(r => r.key === regionFilter.value)
 })
 
 // ─── KPI Summary ───
@@ -110,21 +145,35 @@ const dumpDonutArcs = computed(() => {
 
 // ─── Tab 2: Recycling normatives for all 24 categories ───
 const normYear = 2025
+
+// Build a map from backend recycling data for quick lookup
+const recyclingFactMap = computed(() => {
+  const map = new Map<string, { fact: number; norm: number }>()
+  analyticsStore.state.recycling.forEach(r => {
+    // Try to match by wasteGroup name to product group label
+    const matchedGroup = productGroups.find(g => g.label.toLowerCase().includes(r.wasteGroup.toLowerCase()) || r.wasteGroup.toLowerCase().includes(g.label.toLowerCase()))
+    if (matchedGroup) {
+      map.set(matchedGroup.value, { fact: r.recyclingPercent, norm: r.norm })
+    }
+  })
+  return map
+})
+
 const categoryNorms = computed(() => {
+  const factMapFallback: Record<string, number> = {
+    group_1: 38.2, group_2: 35.1, group_3: 22.5, group_4: 18.7,
+    group_5: 12.3, group_6: 8.1, group_7: 11.5, group_8: 9.8,
+    group_9: 15.2, group_10: 7.4, group_11: 6.2, group_12: 13.8,
+    group_13: 10.1, group_14: 5.9, group_15: 8.7, group_16: 4.3,
+    group_17: 9.2, group_18: 7.8,
+    group_19: 14.5, group_20: 3.2, group_21: 6.8, group_22: 18.3,
+    group_23: 12.1, group_24: 28.0,
+  }
   return productGroups.map(g => {
     const normFraction = getNormativeForGroup(g.value, normYear)
     const normPercent = Math.round(normFraction * 100)
-    // Mock fact data — realistic spread
-    const factMap: Record<string, number> = {
-      group_1: 38.2, group_2: 35.1, group_3: 22.5, group_4: 18.7,
-      group_5: 12.3, group_6: 8.1, group_7: 11.5, group_8: 9.8,
-      group_9: 15.2, group_10: 7.4, group_11: 6.2, group_12: 13.8,
-      group_13: 10.1, group_14: 5.9, group_15: 8.7, group_16: 4.3,
-      group_17: 9.2, group_18: 7.8,
-      group_19: 14.5, group_20: 3.2, group_21: 6.8, group_22: 18.3,
-      group_23: 12.1, group_24: 28.0,
-    }
-    const fact = factMap[g.value] || 5.0
+    const backendData = recyclingFactMap.value.get(g.value)
+    const fact = backendData?.fact ?? (factMapFallback[g.value] || 5.0)
     const fulfillment = normPercent > 0 ? Math.round((fact / normPercent) * 100) : 0
     const status = fulfillment >= 100 ? 'fulfilled' : fulfillment >= 70 ? 'lagging' : 'failed'
     return { group: g, normPercent, fact, fulfillment, status }

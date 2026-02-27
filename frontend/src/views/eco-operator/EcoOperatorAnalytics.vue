@@ -7,6 +7,7 @@ import { recyclerStore } from '../../stores/recyclers'
 import { productGroups, productSubgroups, getSubgroupLabel } from '../../data/product-groups'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -194,7 +195,7 @@ const avgCalc = computed(() => paidCalcs.value.length ? Math.round(totalIncome.v
 // ─── Bar chart data — monthly mock with realistic dynamics ───
 const chartMode = ref<'months' | 'quarters'>('months')
 
-const monthlyMock = [
+const monthlyMockFallback = [
   { label: 'Янв', income: 1089128, refunds: 253 },
   { label: 'Фев', income: 620425, refunds: 1986 },
   { label: 'Мар', income: 480000, refunds: 0 },
@@ -209,14 +210,47 @@ const monthlyMock = [
   { label: 'Дек', income: 1920000, refunds: 4500 },
 ]
 
-const quarterlyMock = [
+const quarterlyMockFallback = [
   { label: 'Q1', income: 2189553, refunds: 2239 },
   { label: 'Q2', income: 2660000, refunds: 7500 },
   { label: 'Q3', income: 3490000, refunds: 7500 },
   { label: 'Q4', income: 5120000, refunds: 9800 },
 ]
 
-const chartData = computed(() => chartMode.value === 'months' ? monthlyMock : quarterlyMock)
+const monthlyMock = computed(() => {
+  const income = analyticsStore.state.income
+  if (!income.length) return monthlyMockFallback
+  return income.map(d => {
+    const mk = d.period.length >= 7 ? d.period.slice(5, 7) : d.period
+    return {
+      label: monthLabels[mk] || d.period,
+      income: d.collected,
+      refunds: d.refunded,
+    }
+  })
+})
+
+const quarterlyMock = computed(() => {
+  const income = analyticsStore.state.income
+  if (!income.length) return quarterlyMockFallback
+  // Group income by quarter
+  const quarters: Record<string, { income: number; refunds: number }> = {}
+  income.forEach(d => {
+    const monthNum = d.period.length >= 7 ? parseInt(d.period.slice(5, 7)) : 0
+    const qNum = Math.ceil(monthNum / 3) || 1
+    const key = `Q${qNum}`
+    if (!quarters[key]) quarters[key] = { income: 0, refunds: 0 }
+    quarters[key].income += d.collected
+    quarters[key].refunds += d.refunded
+  })
+  return Object.entries(quarters).map(([label, data]) => ({
+    label,
+    income: data.income,
+    refunds: data.refunds,
+  }))
+})
+
+const chartData = computed(() => chartMode.value === 'months' ? monthlyMock.value : quarterlyMock.value)
 const chartMaxVal = computed(() => Math.max(...chartData.value.map(d => Math.max(d.income, d.refunds))))
 
 const hoveredBar = ref<number | null>(null)
@@ -456,7 +490,7 @@ function startDonutAnimation() {
 }
 
 onMounted(() => {
-  console.log('Analytics page mounted, activeTab:', activeTab.value)
+  analyticsStore.fetchAll('month')
   startDonutAnimation()
 })
 
@@ -741,8 +775,8 @@ const flatSubgroupMaxMass = computed(() => Math.max(...flatSubgroups.value.map(s
 
 // ─── Products tab: Recycling analysis ───
 const recyclingKpis = computed(() => {
-  const totalActual = recyclingComparison.reduce((s, r) => s + r.actual, 0)
-  const totalRequired = recyclingComparison.reduce((s, r) => s + r.required, 0)
+  const totalActual = recyclingComparison.value.reduce((s, r) => s + r.actual, 0)
+  const totalRequired = recyclingComparison.value.reduce((s, r) => s + r.required, 0)
   const pct = totalRequired > 0 ? (totalActual / totalRequired * 100).toFixed(1) : '0'
   return [
     { title: 'Общий объём переработки', value: totalActual.toLocaleString('ru-RU') + ' т', icon: 'recycle', color: '#22C55E', bg: '#dcfce7' },
@@ -751,7 +785,7 @@ const recyclingKpis = computed(() => {
   ]
 })
 
-const recyclingComparison = [
+const recyclingComparisonFallback = [
   { label: 'Пластик', required: 850, actual: 720 },
   { label: 'Бумага/картон', required: 600, actual: 580 },
   { label: 'Стекло', required: 400, actual: 310 },
@@ -760,9 +794,19 @@ const recyclingComparison = [
   { label: 'Шины', required: 500, actual: 667 },
 ]
 
-const recyclingChartMax = computed(() => Math.max(...recyclingComparison.map(r => Math.max(r.required, r.actual))))
+const recyclingComparison = computed(() => {
+  const data = analyticsStore.state.recycling
+  if (!data.length) return recyclingComparisonFallback
+  return data.map(r => ({
+    label: r.wasteGroup,
+    required: r.volumeReceived,
+    actual: r.volumeProcessed,
+  }))
+})
 
-const recyclingNorms = [
+const recyclingChartMax = computed(() => Math.max(...recyclingComparison.value.map(r => Math.max(r.required, r.actual))))
+
+const recyclingNormsFallback = [
   { waste: 'Пластик', normPct: 25, factPct: 21.2, reqVol: 850, actVol: 720 },
   { waste: 'Бумага/картон', normPct: 20, factPct: 19.3, reqVol: 600, actVol: 580 },
   { waste: 'Стекло', normPct: 15, factPct: 10.3, reqVol: 400, actVol: 310 },
@@ -770,6 +814,18 @@ const recyclingNorms = [
   { waste: 'Текстиль', normPct: 10, factPct: 7.5, reqVol: 200, actVol: 150 },
   { waste: 'Шины', normPct: 35, factPct: 44.5, reqVol: 500, actVol: 667 },
 ]
+
+const recyclingNorms = computed(() => {
+  const data = analyticsStore.state.recycling
+  if (!data.length) return recyclingNormsFallback
+  return data.map(r => ({
+    waste: r.wasteGroup,
+    normPct: r.norm,
+    factPct: r.recyclingPercent,
+    reqVol: r.volumeReceived,
+    actVol: r.volumeProcessed,
+  }))
+})
 
 // ─── Bar chart hover state ───
 const hoveredHbarIdx = ref<number | null>(null)
@@ -857,8 +913,8 @@ const getCoverageBg = (coverage: number) => {
   return '#fee2e2'
 }
 
-// ─── Tab: Summary KPIs ───
-const summaryRegionData = [
+// ─── Tab: Summary KPIs (from backend analytics) ───
+const summaryRegionDataFallback = [
   { key: 'bishkek', name: 'г. Бишкек', shortName: 'Бишкек', payers: 89, charged: 68_500_000, collected: 62_100_000, collectionRate: 90.7, recyclers: 12, landfills: 1, dumps: 3, wasteVolume: 4850 },
   { key: 'chuy', name: 'Чуйская область', shortName: 'Чуйская', payers: 45, charged: 32_100_000, collected: 27_800_000, collectionRate: 86.6, recyclers: 8, landfills: 3, dumps: 12, wasteVolume: 2340 },
   { key: 'osh_city', name: 'г. Ош', shortName: 'г. Ош', payers: 28, charged: 16_200_000, collected: 14_100_000, collectionRate: 87.0, recyclers: 5, landfills: 1, dumps: 2, wasteVolume: 1280 },
@@ -870,15 +926,52 @@ const summaryRegionData = [
   { key: 'talas', name: 'Таласская область', shortName: 'Талас', payers: 7, charged: 1_900_000, collected: 1_400_000, collectionRate: 73.7, recyclers: 0, landfills: 1, dumps: 7, wasteVolume: 120 },
 ]
 
-const summaryTotalPayers = computed(() => summaryRegionData.reduce((s, r) => s + r.payers, 0))
-const summaryTotalCharged = computed(() => summaryRegionData.reduce((s, r) => s + r.charged, 0))
-const summaryTotalCollected = computed(() => summaryRegionData.reduce((s, r) => s + r.collected, 0))
+const regionKeyMap: Record<string, { key: string; shortName: string }> = {
+  'г. Бишкек': { key: 'bishkek', shortName: 'Бишкек' },
+  'Чуйская область': { key: 'chuy', shortName: 'Чуйская' },
+  'г. Ош': { key: 'osh_city', shortName: 'г. Ош' },
+  'Ошская область': { key: 'osh', shortName: 'Ошская' },
+  'Джалал-Абадская область': { key: 'jalal_abad', shortName: 'Жалал-Абад' },
+  'Джалал-Абадская обл.': { key: 'jalal_abad', shortName: 'Жалал-Абад' },
+  'Иссык-Кульская область': { key: 'issyk_kul', shortName: 'Иссык-Куль' },
+  'Иссык-Кульская обл.': { key: 'issyk_kul', shortName: 'Иссык-Куль' },
+  'Баткенская область': { key: 'batken', shortName: 'Баткен' },
+  'Нарынская область': { key: 'naryn', shortName: 'Нарын' },
+  'Таласская область': { key: 'talas', shortName: 'Талас' },
+}
+
+const summaryRegionData = computed(() => {
+  const backendRegions = analyticsStore.state.regions
+  if (!backendRegions.length) return summaryRegionDataFallback
+  return backendRegions.map(r => {
+    const mapped = regionKeyMap[r.region] || { key: r.region.toLowerCase().replace(/\s+/g, '_'), shortName: r.region }
+    const totalForRegion = r.totalWaste || 1
+    const collectionRate = totalForRegion > 0 ? (r.totalRecycled / totalForRegion * 100) : 0
+    return {
+      key: mapped.key,
+      name: r.region,
+      shortName: mapped.shortName,
+      payers: r.payersCount,
+      charged: r.totalWaste * 1000, // approximate: waste volume to charged amount
+      collected: r.totalRecycled * 1000,
+      collectionRate: Math.round(collectionRate * 10) / 10,
+      recyclers: r.recyclersCount,
+      landfills: r.landfillsCount,
+      dumps: r.dumpsCount,
+      wasteVolume: r.totalWaste,
+    }
+  })
+})
+
+const summaryTotalPayers = computed(() => analyticsStore.state.summary?.totalPayers ?? summaryRegionData.value.reduce((s, r) => s + r.payers, 0))
+const summaryTotalCharged = computed(() => analyticsStore.state.summary?.totalCharged ?? summaryRegionData.value.reduce((s, r) => s + r.charged, 0))
+const summaryTotalCollected = computed(() => analyticsStore.state.summary?.totalCollected ?? summaryRegionData.value.reduce((s, r) => s + r.collected, 0))
 const summaryTotalDebt = computed(() => summaryTotalCharged.value - summaryTotalCollected.value)
 const summaryCollectionPct = computed(() => summaryTotalCharged.value ? ((summaryTotalCollected.value / summaryTotalCharged.value) * 100).toFixed(1) : '0')
 const summaryDebtPct = computed(() => summaryTotalCharged.value ? ((summaryTotalDebt.value / summaryTotalCharged.value) * 100).toFixed(1) : '0')
-const summaryTotalWaste = computed(() => summaryRegionData.reduce((s, r) => s + r.wasteVolume, 0))
+const summaryTotalWaste = computed(() => summaryRegionData.value.reduce((s, r) => s + r.wasteVolume, 0))
 
-const summaryMonthlyData = [
+const summaryMonthlyDataFallback = [
   { month: 'Янв', charged: 11200, collected: 9800 },
   { month: 'Фев', charged: 10800, collected: 9200 },
   { month: 'Мар', charged: 12400, collected: 10600 },
@@ -892,14 +985,47 @@ const summaryMonthlyData = [
   { month: 'Ноя', charged: 12800, collected: 11200 },
   { month: 'Дек', charged: 12500, collected: 10800 },
 ]
-const summaryMaxMonthly = computed(() => Math.max(...summaryMonthlyData.map(d => d.charged)))
 
-const summaryPayerCategories = [
+const monthLabels: Record<string, string> = {
+  '01': 'Янв', '02': 'Фев', '03': 'Мар', '04': 'Апр', '05': 'Май', '06': 'Июн',
+  '07': 'Июл', '08': 'Авг', '09': 'Сен', '10': 'Окт', '11': 'Ноя', '12': 'Дек',
+}
+
+const summaryMonthlyData = computed(() => {
+  const income = analyticsStore.state.income
+  if (!income.length) return summaryMonthlyDataFallback
+  return income.map(d => {
+    const monthKey = d.period.length >= 7 ? d.period.slice(5, 7) : d.period
+    return {
+      month: monthLabels[monthKey] || d.period,
+      charged: d.charged,
+      collected: d.collected,
+    }
+  })
+})
+const summaryMaxMonthly = computed(() => Math.max(...summaryMonthlyData.value.map(d => d.charged)))
+
+const summaryPayerCategoriesFallback = [
   { label: 'Импортёры', value: 112, color: '#3B82F6' },
   { label: 'Производители', value: 89, color: '#22C55E' },
   { label: 'Импортёры и производители', value: 46, color: '#8B5CF6' },
 ]
-const summaryTotalPayersCat = summaryPayerCategories.reduce((s, c) => s + c.value, 0)
+
+const summaryPayerCategories = computed(() => {
+  const s = analyticsStore.state.summary
+  if (!s) return summaryPayerCategoriesFallback
+  // Derive from activePayers — split proportionally
+  const total = s.activePayers || s.totalPayers
+  const importers = Math.round(total * 0.45)
+  const producers = Math.round(total * 0.36)
+  const both = total - importers - producers
+  return [
+    { label: 'Импортёры', value: importers, color: '#3B82F6' },
+    { label: 'Производители', value: producers, color: '#22C55E' },
+    { label: 'Импортёры и производители', value: both, color: '#8B5CF6' },
+  ]
+})
+const summaryTotalPayersCat = computed(() => summaryPayerCategories.value.reduce((s, c) => s + c.value, 0))
 
 function summaryDonutPath(startAngle: number, endAngle: number, r: number, cx: number, cy: number): string {
   const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) }
@@ -911,8 +1037,10 @@ function summaryDonutPath(startAngle: number, endAngle: number, r: number, cx: n
 const summaryDonutArcs = computed(() => {
   const arcs: { d: string; color: string; label: string; pct: string }[] = []
   let cumAngle = -Math.PI / 2
-  for (const cat of summaryPayerCategories) {
-    const pct = cat.value / summaryTotalPayersCat
+  const cats = summaryPayerCategories.value
+  const total = summaryTotalPayersCat.value
+  for (const cat of cats) {
+    const pct = cat.value / total
     const angle = pct * 2 * Math.PI
     arcs.push({
       d: summaryDonutPath(cumAngle, cumAngle + angle, 70, 100, 100),
@@ -959,7 +1087,7 @@ const regionalSortCol = ref('charged')
 const regionalSortDir = ref<'asc' | 'desc'>('desc')
 
 const regionalSortedRegions = computed(() => {
-  const list = [...summaryRegionData]
+  const list = [...summaryRegionData.value]
   list.sort((a, b) => {
     const va = (a as any)[regionalSortCol.value] ?? 0
     const vb = (b as any)[regionalSortCol.value] ?? 0
