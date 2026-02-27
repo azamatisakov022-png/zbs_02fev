@@ -50,6 +50,18 @@ public class ReportController {
     }
 
     /**
+     * GET /reports/my — Мои отчёты (для плательщика)
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('BUSINESS')")
+    public ResponseEntity<PaginatedResponse<ReportResponse>> my(
+            Authentication auth,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return ResponseEntity.ok(reportService.getMyReports(auth.getName(), page, pageSize));
+    }
+
+    /**
      * GET /reports/{id} — Отчёт по ID
      */
     @GetMapping("/{id}")

@@ -56,6 +56,19 @@ public class CalculationController {
     }
 
     /**
+     * GET /calculations/my — Мои расчёты (для плательщика)
+     */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('BUSINESS')")
+    public ResponseEntity<PaginatedResponse<CalculationResponse>> my(
+            Authentication auth,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
+        return ResponseEntity.ok(calculationService.getCalculations(
+                auth.getName(), page, pageSize, null, null, null, null, null));
+    }
+
+    /**
      * GET /calculations/{id} — Получить расчёт по ID
      */
     @GetMapping("/{id}")
