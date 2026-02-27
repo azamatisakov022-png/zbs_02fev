@@ -443,6 +443,16 @@ public class CalculationServiceImpl implements CalculationService {
                 CalculationStatus.SUBMITTED, CalculationStatus.UNDER_REVIEW));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CalculationResponse> getByCompany(Long companyId) {
+        Page<Calculation> page = calculationRepository.findByCompany_Id(companyId,
+                PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return page.getContent().stream()
+                .map(this::toFullResponse)
+                .toList();
+    }
+
     // ════════════════════════════════════
     //  PRIVATE HELPERS
     // ════════════════════════════════════

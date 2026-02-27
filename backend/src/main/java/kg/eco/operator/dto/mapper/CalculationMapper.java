@@ -42,6 +42,11 @@ public interface CalculationMapper {
     // ─── Enum mapping helpers ───
 
     default String mapEnum(Enum<?> value) {
-        return value != null ? value.name().toLowerCase() : null;
+        if (value == null) return null;
+        try {
+            return (String) value.getClass().getMethod("getValue").invoke(value);
+        } catch (Exception e) {
+            return value.name().toLowerCase();
+        }
     }
 }

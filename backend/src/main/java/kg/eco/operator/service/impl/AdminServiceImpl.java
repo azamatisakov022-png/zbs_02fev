@@ -142,9 +142,6 @@ public class AdminServiceImpl implements AdminService {
 
     private String mapRole(kg.eco.operator.entity.enums.RoleEnum role) {
         if (role == null) return null;
-        return switch (role) {
-            case ECO_OPERATOR -> "eco-operator";
-            default -> role.name().toLowerCase();
-        };
+        return role.getValue();
     }
 }

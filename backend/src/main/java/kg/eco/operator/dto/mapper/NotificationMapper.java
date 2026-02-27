@@ -16,14 +16,16 @@ public interface NotificationMapper {
     List<NotificationResponse> toResponseList(List<Notification> notifications);
 
     default String mapEnum(Enum<?> value) {
-        return value != null ? value.name().toLowerCase() : null;
+        if (value == null) return null;
+        try {
+            return (String) value.getClass().getMethod("getValue").invoke(value);
+        } catch (Exception e) {
+            return value.name().toLowerCase();
+        }
     }
 
     default String mapTargetRole(Notification notification) {
         if (notification.getTargetRole() == null) return null;
-        return switch (notification.getTargetRole()) {
-            case ECO_OPERATOR -> "eco-operator";
-            default -> notification.getTargetRole().name().toLowerCase();
-        };
+        return mapEnum(notification.getTargetRole());
     }
 }

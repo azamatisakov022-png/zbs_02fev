@@ -161,10 +161,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private String roleToString(RoleEnum role) {
         if (role == null) return null;
-        return switch (role) {
-            case ECO_OPERATOR -> "eco-operator";
-            default -> role.name().toLowerCase();
-        };
+        return role.getValue();
     }
 
     private RoleEnum mapRole(String role) {

@@ -2,6 +2,7 @@ package kg.eco.operator.controller;
 
 import kg.eco.operator.dto.request.ReportCreateRequest;
 import kg.eco.operator.dto.request.ReviewRequest;
+import kg.eco.operator.dto.response.CountResponse;
 import kg.eco.operator.dto.response.PaginatedResponse;
 import kg.eco.operator.dto.response.ReportResponse;
 import kg.eco.operator.service.ReportService;
@@ -11,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/reports")
@@ -94,5 +97,21 @@ public class ReportController {
             @PathVariable Long id,
             @RequestBody ReviewRequest request) {
         return ResponseEntity.ok(reportService.returnForRevision(id, request.getComment()));
+    }
+
+    /**
+     * GET /reports/by-company/{companyId} — Отчёты компании
+     */
+    @GetMapping("/by-company/{companyId}")
+    public ResponseEntity<List<ReportResponse>> getByCompany(@PathVariable Long companyId) {
+        return ResponseEntity.ok(reportService.getByCompany(companyId));
+    }
+
+    /**
+     * GET /reports/pending-count — Количество отчётов на рассмотрении
+     */
+    @GetMapping("/pending-count")
+    public ResponseEntity<CountResponse> getPendingCount() {
+        return ResponseEntity.ok(new CountResponse(reportService.getPendingCount()));
     }
 }

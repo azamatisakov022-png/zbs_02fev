@@ -155,6 +155,15 @@ public class ReportService {
                 .getTotalElements();
     }
 
+    public List<ReportResponse> getByCompany(Long companyId) {
+        // Find all reports, filtering is done across all reports for the company
+        Page<Report> reports = reportRepository.findAll(
+                PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return reports.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     private void publishReportEvent(Report report, String oldStatus, String newStatus, String comment) {
         eventPublisher.publishEvent(new ReportStatusEvent(
                 report.getId(), report.getNumber(),
@@ -181,7 +190,7 @@ public class ReportService {
                 .id(report.getId())
                 .number(report.getNumber())
                 .period(report.getPeriod())
-                .status(report.getStatus().name().toLowerCase())
+                .status(report.getStatus().getValue())
                 .submitterInn(report.getSubmitterInn())
                 .recyclerName(report.getRecycler() != null ? report.getRecycler().getCompanyName() : null)
                 .recyclerId(report.getRecycler() != null ? report.getRecycler().getId() : null)

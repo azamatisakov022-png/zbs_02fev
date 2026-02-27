@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/calculations")
 @RequiredArgsConstructor
@@ -233,5 +235,13 @@ public class CalculationController {
     @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<CountResponse> reviewCount() {
         return ResponseEntity.ok(new CountResponse(calculationService.getReviewCount()));
+    }
+
+    /**
+     * GET /calculations/by-company/{companyId} — Расчёты компании
+     */
+    @GetMapping("/by-company/{companyId}")
+    public ResponseEntity<List<CalculationResponse>> getByCompany(@PathVariable Long companyId) {
+        return ResponseEntity.ok(calculationService.getByCompany(companyId));
     }
 }

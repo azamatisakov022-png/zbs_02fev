@@ -168,12 +168,6 @@ public class AuthServiceImpl implements AuthService {
      * Swagger uses: business, eco-operator, ministry, admin, employee
      */
     private String mapRoleToSwagger(RoleEnum role) {
-        return switch (role) {
-            case BUSINESS -> "business";
-            case ECO_OPERATOR -> "eco-operator";
-            case MINISTRY -> "ministry";
-            case ADMIN -> "admin";
-            case EMPLOYEE -> "employee";
-        };
+        return role.getValue();
     }
 }

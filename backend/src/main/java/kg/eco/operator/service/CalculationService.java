@@ -5,6 +5,8 @@ import kg.eco.operator.dto.response.CalculationResponse;
 import kg.eco.operator.dto.response.PaginatedResponse;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public interface CalculationService {
 
     PaginatedResponse<CalculationResponse> getCalculations(
@@ -44,4 +46,6 @@ public interface CalculationService {
     long getPendingCount(String inn);
 
     long getReviewCount();
+
+    List<CalculationResponse> getByCompany(Long companyId);
 }
