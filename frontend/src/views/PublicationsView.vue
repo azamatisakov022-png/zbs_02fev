@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
+
+function goToDecomposition() {
+  router.push('/publications/decomposition')
+}
 
 interface Publication {
   id: number
@@ -81,16 +88,30 @@ const handleClick = (_publication: Publication) => {
   <div class="py-10 lg:py-[60px]">
     <!-- Page header -->
     <div class="container-main">
-      <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[12px]">
+      <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-6 lg:mb-8">
         {{ $t('publications.title') }}
       </h1>
-      <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] pb-8 lg:pb-[60px]">
-        {{ $t('publications.subtitle') }}
-      </p>
+
     </div>
 
-    <!-- Publications grid -->
     <div class="container-main">
+      <!-- Promo banner -->
+      <div class="promo-banner" @click="goToDecomposition">
+        <span class="promo-badge">{{ $t('publications.bannerBadge') }}</span>
+        <div class="promo-icon-box">
+          <span class="promo-icon">♻️</span>
+        </div>
+        <div class="promo-content">
+          <h3 class="promo-title">
+            {{ $t('publications.bannerTitleStart') }} <span class="promo-title-accent">{{ $t('publications.bannerTitleAccent') }}</span>
+          </h3>
+          <p class="promo-desc">{{ $t('publications.bannerDescription') }}</p>
+        </div>
+        <button class="promo-btn" @click.stop="goToDecomposition">
+          {{ $t('publications.bannerButton') }} →
+        </button>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-[30px]">
         <article
           v-for="publication in publications"
@@ -117,6 +138,109 @@ const handleClick = (_publication: Publication) => {
 </template>
 
 <style scoped>
+/* Promo banner */
+.promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #fef9c3 100%);
+  border-radius: 16px;
+  padding: 28px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.promo-banner:hover {
+  border-color: #10b981;
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+}
+.promo-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #10b981;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.promo-icon-box {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+}
+.promo-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+.promo-content {
+  flex: 1;
+  min-width: 0;
+}
+.promo-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #111827;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.promo-title-accent {
+  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.promo-desc {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+.promo-btn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: #10b981;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.promo-btn:hover {
+  background: #059669;
+}
+
+@media (max-width: 767px) {
+  .promo-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+    gap: 16px;
+  }
+  .promo-btn {
+    width: 100%;
+  }
+  .promo-title {
+    font-size: 19px;
+  }
+}
+
+/* Publication cards */
 .publication-card {
   background: #fafafa;
   border-radius: 30px;
