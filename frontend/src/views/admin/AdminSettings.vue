@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
 // Settings tabs
 const activeTab = ref('general')
-const tabs = [
-  { id: 'general', label: 'Общие', icon: '⚙️' },
-  { id: 'security', label: 'Безопасность', icon: '🔒' },
-  { id: 'email', label: 'Email уведомления', icon: '📧' },
-  { id: 'integrations', label: 'Интеграции', icon: '🔗' },
-  { id: 'backup', label: 'Резервные копии', icon: '💾' },
-  { id: 'maintenance', label: 'Обслуживание', icon: '🔧' },
-]
+const tabs = computed(() => [
+  { id: 'general', label: t('adminSettings.tabs.general'), icon: '⚙️' },
+  { id: 'security', label: t('adminSettings.tabs.security'), icon: '🔒' },
+  { id: 'email', label: t('adminSettings.tabs.email'), icon: '📧' },
+  { id: 'integrations', label: t('adminSettings.tabs.integrations'), icon: '🔗' },
+  { id: 'backup', label: t('adminSettings.tabs.backup'), icon: '💾' },
+  { id: 'maintenance', label: t('adminSettings.tabs.maintenance'), icon: '🔧' },
+])
 
 // General settings
 const generalSettings = ref({
@@ -69,13 +71,18 @@ const notificationSettings = ref({
 })
 
 // Integration settings
-const integrations = ref([
-  { id: 'tunduk', name: 'Түндүк', status: 'active', lastSync: '2025-02-03 14:00', description: 'Интеграция с системой электронного взаимодействия «Түндүк»' },
-  { id: 'nbkr', name: 'НБКР (курсы валют)', status: 'active', lastSync: '2025-02-03 09:00', description: 'Национальный банк Кыргызской Республики, автоматическое получение курсов валют' },
-  { id: 'esf', name: 'ЭСФ', status: 'active', lastSync: '2025-02-03 12:30', description: 'Электронные счета-фактуры (СТС КР)' },
-  { id: 'stat', name: 'Нацстатком КР', status: 'inactive', lastSync: '2025-01-15 10:00', description: 'Национальный статистический комитет Кыргызской Республики' },
-  { id: 'payment', name: 'ЭЛСОМ / MBank', status: 'active', lastSync: '2025-02-03 13:45', description: 'Платёжные системы Кыргызстана' },
+const integrationsData = ref([
+  { id: 'tunduk', nameKey: 'Түндүк', status: 'active', lastSync: '2025-02-03 14:00', descKey: 'adminSettings.integrations.tundukDesc' },
+  { id: 'nbkr', nameKey: 'adminSettings.nbkrName', status: 'active', lastSync: '2025-02-03 09:00', descKey: 'adminSettings.integrations.nbkrDesc' },
+  { id: 'esf', nameKey: 'adminSettings.esfName', status: 'active', lastSync: '2025-02-03 12:30', descKey: 'adminSettings.integrations.esfDesc' },
+  { id: 'stat', nameKey: 'adminSettings.statName', status: 'inactive', lastSync: '2025-01-15 10:00', descKey: 'adminSettings.integrations.statDesc' },
+  { id: 'payment', nameKey: 'adminSettings.paymentName', status: 'active', lastSync: '2025-02-03 13:45', descKey: 'adminSettings.integrations.paymentDesc' },
 ])
+const integrations = computed(() => integrationsData.value.map(item => ({
+  ...item,
+  name: item.nameKey === 'Түндүк' ? 'Түндүк' : t(item.nameKey),
+  description: t(item.descKey),
+})))
 
 // Backup settings
 const backupSettings = ref({
@@ -99,7 +106,7 @@ const recentBackups = ref([
 // Maintenance mode
 const maintenanceMode = ref({
   enabled: false,
-  message: 'Система находится на техническом обслуживании. Пожалуйста, повторите попытку позже.',
+  message: t('adminSettings.defaultMaintenanceMessage'),
   allowAdmins: true,
   scheduledStart: '',
   scheduledEnd: '',
@@ -114,7 +121,7 @@ const systemInfo = ref({
   diskUsage: '45%',
   memoryUsage: '62%',
   cpuUsage: '28%',
-  uptime: '15 дней 7 часов',
+  uptime: t('adminSettings.uptimeValue'),
 })
 
 const isSaving = ref(false)
@@ -127,11 +134,11 @@ const saveSettings = () => {
 }
 
 const testEmailConnection = () => {
-  toastStore.show({ type: 'success', title: 'Тестовое письмо отправлено' })
+  toastStore.show({ type: 'success', title: t('adminSettings.email.testEmailSent') })
 }
 
 const createBackup = () => {
-  toastStore.show({ type: 'info', title: 'Резервное копирование', message: 'Создание резервной копии...' })
+  toastStore.show({ type: 'info', title: t('adminSettings.backup.backupToastTitle'), message: t('adminSettings.backup.backupToastMessage') })
 }
 
 const getIntegrationStatusColor = (status: string) => {
@@ -160,10 +167,10 @@ const toggleIntegrationStatus = () => {
   if (!selectedIntegration.value) return
   integrationSaving.value = true
   setTimeout(() => {
-    const idx = integrations.value.findIndex(i => i.id === selectedIntegration.value!.id)
+    const idx = integrationsData.value.findIndex(i => i.id === selectedIntegration.value!.id)
     if (idx !== -1) {
-      integrations.value[idx].status = selectedIntegration.value!.status === 'active' ? 'inactive' : 'active'
-      selectedIntegration.value!.status = integrations.value[idx].status
+      integrationsData.value[idx].status = selectedIntegration.value!.status === 'active' ? 'inactive' : 'active'
+      selectedIntegration.value!.status = integrationsData.value[idx].status
     }
     integrationSaving.value = false
   }, 800)
@@ -173,11 +180,11 @@ const syncIntegration = () => {
   if (!selectedIntegration.value) return
   integrationSaving.value = true
   setTimeout(() => {
-    const idx = integrations.value.findIndex(i => i.id === selectedIntegration.value!.id)
+    const idx = integrationsData.value.findIndex(i => i.id === selectedIntegration.value!.id)
     if (idx !== -1) {
       const now = new Date()
       const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
-      integrations.value[idx].lastSync = ts
+      integrationsData.value[idx].lastSync = ts
       selectedIntegration.value!.lastSync = ts
     }
     integrationSaving.value = false
@@ -195,8 +202,8 @@ const confirmResult = ref('')
 
 const openClearCache = () => {
   confirmAction.value = 'cache'
-  confirmTitle.value = 'Очистить кэш'
-  confirmMessage.value = 'Будет очищен кэш приложения, шаблонов и маршрутов. Первые запросы после очистки могут выполняться медленнее.'
+  confirmTitle.value = t('adminSettings.maintenance.clearCacheTitle')
+  confirmMessage.value = t('adminSettings.maintenance.clearCacheMessage')
   confirmDone.value = false
   confirmResult.value = ''
   showConfirmModal.value = true
@@ -204,8 +211,8 @@ const openClearCache = () => {
 
 const openRestartQueues = () => {
   confirmAction.value = 'queues'
-  confirmTitle.value = 'Перезапустить очереди'
-  confirmMessage.value = 'Все задачи в очередях будут перезапущены. Выполняющиеся задачи будут прерваны и запущены заново.'
+  confirmTitle.value = t('adminSettings.maintenance.restartQueuesTitle')
+  confirmMessage.value = t('adminSettings.maintenance.restartQueuesMessage')
   confirmDone.value = false
   confirmResult.value = ''
   showConfirmModal.value = true
@@ -217,9 +224,9 @@ const executeConfirmAction = () => {
     confirmProcessing.value = false
     confirmDone.value = true
     if (confirmAction.value === 'cache') {
-      confirmResult.value = 'Кэш успешно очищен. Удалено 156 МБ кэшированных данных.'
+      confirmResult.value = t('adminSettings.maintenance.cacheCleared')
     } else {
-      confirmResult.value = 'Очереди перезапущены. 3 воркера запущены, 12 задач в очереди.'
+      confirmResult.value = t('adminSettings.maintenance.queuesRestarted')
     }
   }, 1500)
 }
@@ -239,10 +246,10 @@ const checkUpdates = () => {
       hasUpdate: true,
       version: '2.6.0',
       changes: [
-        'Улучшена производительность формирования отчётов',
-        'Добавлена поддержка массового импорта деклараций',
-        'Исправлена ошибка при расчёте утильсбора для категории "Электроника"',
-        'Обновлены зависимости безопасности',
+        t('adminSettings.maintenance.updateChange1'),
+        t('adminSettings.maintenance.updateChange2'),
+        t('adminSettings.maintenance.updateChange3'),
+        t('adminSettings.maintenance.updateChange4'),
       ]
     }
   }, 2000)
@@ -250,7 +257,7 @@ const checkUpdates = () => {
 
 // Backup download/restore
 const downloadBackup = (backup: typeof recentBackups.value[0]) => {
-  const blob = new Blob([`Резервная копия #${backup.id}\nДата: ${backup.date}\nРазмер: ${backup.size}\nТип: ${backup.type}\n\n[Имитация файла резервной копии]`], { type: 'application/octet-stream' })
+  const blob = new Blob([`Backup #${backup.id}\nDate: ${backup.date}\nSize: ${backup.size}\nType: ${backup.type}`], { type: 'application/octet-stream' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -290,8 +297,8 @@ const executeRestore = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Настройки системы</h1>
-          <p class="text-gray-600 mt-1">Конфигурация и параметры системы</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('adminSettings.pageTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('adminSettings.pageSubtitle') }}</p>
         </div>
         <button
           @click="saveSettings"
@@ -305,7 +312,7 @@ const executeRestore = () => {
           <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          {{ isSaving ? 'Сохранение...' : 'Сохранить изменения' }}
+          {{ isSaving ? $t('adminSettings.saving') : $t('adminSettings.saveChanges') }}
         </button>
       </div>
 
@@ -334,12 +341,12 @@ const executeRestore = () => {
         <div class="flex-1">
           <!-- General Settings -->
           <div v-if="activeTab === 'general'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-6">Общие настройки</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.general.title') }}</h2>
 
             <div class="space-y-6">
               <div class="grid grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Название системы</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.systemName') }}</label>
                   <input
                     v-model="generalSettings.systemName"
                     type="text"
@@ -347,7 +354,7 @@ const executeRestore = () => {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Часовой пояс</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.timezone') }}</label>
                   <select
                     v-model="generalSettings.timezone"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
@@ -358,7 +365,7 @@ const executeRestore = () => {
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Описание системы</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.systemDescription') }}</label>
                 <textarea
                   v-model="generalSettings.systemDescription"
                   rows="2"
@@ -368,7 +375,7 @@ const executeRestore = () => {
 
               <div class="grid grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Email поддержки</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.supportEmail') }}</label>
                   <input
                     v-model="generalSettings.supportEmail"
                     type="email"
@@ -376,7 +383,7 @@ const executeRestore = () => {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Телефон поддержки</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.supportPhone') }}</label>
                   <input
                     v-model="generalSettings.supportPhone"
                     type="tel"
@@ -387,18 +394,18 @@ const executeRestore = () => {
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Язык интерфейса</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.interfaceLanguage') }}</label>
                   <select
                     v-model="generalSettings.language"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
                   >
-                    <option value="ru">Русский</option>
-                    <option value="ky">Кыргызча</option>
-                    <option value="en">English</option>
+                    <option value="ru">{{ $t('adminSettings.general.langRu') }}</option>
+                    <option value="ky">{{ $t('adminSettings.general.langKy') }}</option>
+                    <option value="en">{{ $t('adminSettings.general.langEn') }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Формат даты</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.dateFormat') }}</label>
                   <select
                     v-model="generalSettings.dateFormat"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
@@ -409,21 +416,21 @@ const executeRestore = () => {
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Валюта</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.currency') }}</label>
                   <select
                     v-model="generalSettings.currency"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
                   >
-                    <option value="KGS">Сом (с)</option>
-                    <option value="USD">Доллар США ($)</option>
-                    <option value="EUR">Евро (€)</option>
+                    <option value="KGS">{{ $t('adminSettings.general.currencyKGS') }}</option>
+                    <option value="USD">{{ $t('adminSettings.general.currencyUSD') }}</option>
+                    <option value="EUR">{{ $t('adminSettings.general.currencyEUR') }}</option>
                   </select>
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Срок подачи деклараций (день месяца)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.declarationDeadline') }}</label>
                   <input
                     v-model="generalSettings.declarationDeadline"
                     type="number"
@@ -433,7 +440,7 @@ const executeRestore = () => {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Срок подачи отчётов (день месяца)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.general.reportDeadline') }}</label>
                   <input
                     v-model="generalSettings.reportDeadline"
                     type="number"
@@ -448,12 +455,12 @@ const executeRestore = () => {
 
           <!-- Security Settings -->
           <div v-if="activeTab === 'security'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-6">Настройки безопасности</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.security.title') }}</h2>
 
             <div class="space-y-6">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Таймаут сессии (минуты)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.sessionTimeout') }}</label>
                   <input
                     v-model="securitySettings.sessionTimeout"
                     type="number"
@@ -461,7 +468,7 @@ const executeRestore = () => {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Макс. попыток входа</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.maxLoginAttempts') }}</label>
                   <input
                     v-model="securitySettings.maxLoginAttempts"
                     type="number"
@@ -469,7 +476,7 @@ const executeRestore = () => {
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Блокировка (минуты)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.lockoutDuration') }}</label>
                   <input
                     v-model="securitySettings.lockoutDuration"
                     type="number"
@@ -479,10 +486,10 @@ const executeRestore = () => {
               </div>
 
               <div class="border-t border-gray-200 pt-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Требования к паролю</h3>
+                <h3 class="font-semibold text-gray-900 mb-4">{{ $t('adminSettings.security.passwordRequirements') }}</h3>
                 <div class="grid grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Минимальная длина</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.minLength') }}</label>
                     <input
                       v-model="securitySettings.passwordMinLength"
                       type="number"
@@ -490,7 +497,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Срок действия (дни)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.passwordExpiry') }}</label>
                     <input
                       v-model="securitySettings.passwordExpiry"
                       type="number"
@@ -506,7 +513,7 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Требовать заглавные буквы</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.security.requireUppercase') }}</span>
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
                     <input
@@ -514,7 +521,7 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Требовать цифры</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.security.requireNumbers') }}</span>
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
                     <input
@@ -522,7 +529,7 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Требовать спецсимволы</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.security.requireSpecialChars') }}</span>
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
                     <input
@@ -530,20 +537,20 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Обязательная двухфакторная аутентификация</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.security.require2FA') }}</span>
                   </label>
                 </div>
               </div>
 
               <div class="border-t border-gray-200 pt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Белый список IP (по одному на строку)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.security.ipWhitelist') }}</label>
                 <textarea
                   v-model="securitySettings.ipWhitelist"
                   rows="3"
                   placeholder="192.168.1.0/24&#10;10.0.0.0/8"
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 font-mono text-sm"
                 ></textarea>
-                <p class="text-xs text-gray-500 mt-1">Оставьте пустым для разрешения всех IP</p>
+                <p class="text-xs text-gray-500 mt-1">{{ $t('adminSettings.security.ipWhitelistHint') }}</p>
               </div>
             </div>
           </div>
@@ -551,12 +558,12 @@ const executeRestore = () => {
           <!-- Email Settings -->
           <div v-if="activeTab === 'email'" class="space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 class="text-lg font-bold text-gray-900 mb-6">Настройки SMTP</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.email.smtpTitle') }}</h2>
 
               <div class="space-y-6">
                 <div class="grid grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">SMTP сервер</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.smtpServer') }}</label>
                     <input
                       v-model="emailSettings.smtpHost"
                       type="text"
@@ -564,7 +571,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Порт</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.port') }}</label>
                     <input
                       v-model="emailSettings.smtpPort"
                       type="number"
@@ -575,7 +582,7 @@ const executeRestore = () => {
 
                 <div class="grid grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Имя пользователя</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.username') }}</label>
                     <input
                       v-model="emailSettings.smtpUser"
                       type="text"
@@ -583,7 +590,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Пароль</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.password') }}</label>
                     <input
                       v-model="emailSettings.smtpPassword"
                       type="password"
@@ -594,7 +601,7 @@ const executeRestore = () => {
 
                 <div class="grid grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Имя отправителя</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.senderName') }}</label>
                     <input
                       v-model="emailSettings.senderName"
                       type="text"
@@ -602,7 +609,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email отправителя</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.email.senderEmail') }}</label>
                     <input
                       v-model="emailSettings.senderEmail"
                       type="email"
@@ -618,20 +625,20 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Использовать TLS</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.email.useTLS') }}</span>
                   </label>
                   <button
                     @click="testEmailConnection"
                     class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   >
-                    Тестовое письмо
+                    {{ $t('adminSettings.email.testEmail') }}
                   </button>
                 </div>
               </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 class="text-lg font-bold text-gray-900 mb-6">Уведомления по email</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.email.notificationsTitle') }}</h2>
 
               <div class="grid grid-cols-2 gap-4">
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
@@ -640,7 +647,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Новые декларации</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.newDeclarations') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -648,7 +655,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Одобренные декларации</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.approvedDeclarations') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -656,7 +663,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Отклонённые декларации</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.rejectedDeclarations') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -664,7 +671,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Напоминания об отчётах</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.reportReminders') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -672,7 +679,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Поступления платежей</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.paymentReceived') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -680,7 +687,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Системные уведомления</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.systemAlerts') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -688,7 +695,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Ежедневная сводка</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.dailyDigest') }}</span>
                 </label>
                 <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer">
                   <input
@@ -696,7 +703,7 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Еженедельный отчёт</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.email.weeklyReport') }}</span>
                 </label>
               </div>
             </div>
@@ -704,7 +711,7 @@ const executeRestore = () => {
 
           <!-- Integrations -->
           <div v-if="activeTab === 'integrations'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-6">Внешние интеграции</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.integrations.title') }}</h2>
 
             <div class="space-y-4">
               <div
@@ -719,15 +726,15 @@ const executeRestore = () => {
                   <div>
                     <h3 class="font-semibold text-gray-900">{{ integration.name }}</h3>
                     <p class="text-sm text-gray-500">{{ integration.description }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Последняя синхронизация: {{ integration.lastSync }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ $t('adminSettings.integrations.lastSync') }}: {{ integration.lastSync }}</p>
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
                   <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(integration.status)]">
-                    {{ integration.status === 'active' ? 'Активно' : 'Отключено' }}
+                    {{ integration.status === 'active' ? $t('adminSettings.integrations.statusActive') : $t('adminSettings.integrations.statusInactive') }}
                   </span>
                   <button @click="openIntegrationModal(integration)" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors">
-                    Настроить
+                    {{ $t('adminSettings.integrations.configure') }}
                   </button>
                 </div>
               </div>
@@ -738,7 +745,7 @@ const executeRestore = () => {
           <div v-if="activeTab === 'backup'" class="space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div class="flex items-center justify-between mb-6">
-                <h2 class="text-lg font-bold text-gray-900">Резервное копирование</h2>
+                <h2 class="text-lg font-bold text-gray-900">{{ $t('adminSettings.backup.title') }}</h2>
                 <button
                   @click="createBackup"
                   class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors flex items-center gap-2"
@@ -746,14 +753,14 @@ const executeRestore = () => {
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
-                  Создать копию
+                  {{ $t('adminSettings.backup.createBackup') }}
                 </button>
               </div>
 
               <div class="space-y-6">
                 <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                   <div class="flex items-center gap-3">
-                    <span class="text-gray-700 font-medium">Автоматическое резервное копирование</span>
+                    <span class="text-gray-700 font-medium">{{ $t('adminSettings.backup.autoBackup') }}</span>
                   </div>
                   <button
                     @click="backupSettings.autoBackup = !backupSettings.autoBackup"
@@ -773,18 +780,18 @@ const executeRestore = () => {
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Частота</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.backup.frequency') }}</label>
                     <select
                       v-model="backupSettings.backupFrequency"
                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
                     >
-                      <option value="hourly">Каждый час</option>
-                      <option value="daily">Ежедневно</option>
-                      <option value="weekly">Еженедельно</option>
+                      <option value="hourly">{{ $t('adminSettings.backup.frequencyHourly') }}</option>
+                      <option value="daily">{{ $t('adminSettings.backup.frequencyDaily') }}</option>
+                      <option value="weekly">{{ $t('adminSettings.backup.frequencyWeekly') }}</option>
                     </select>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Время</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.backup.time') }}</label>
                     <input
                       v-model="backupSettings.backupTime"
                       type="time"
@@ -792,7 +799,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Хранить (дней)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.backup.retentionDays') }}</label>
                     <input
                       v-model="backupSettings.retentionDays"
                       type="number"
@@ -808,7 +815,7 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Включать файлы</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.backup.includeFiles') }}</span>
                   </label>
                   <label class="flex items-center gap-3 cursor-pointer">
                     <input
@@ -816,24 +823,24 @@ const executeRestore = () => {
                       type="checkbox"
                       class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                     />
-                    <span class="text-gray-700">Сжатие</span>
+                    <span class="text-gray-700">{{ $t('adminSettings.backup.compression') }}</span>
                   </label>
                 </div>
               </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 class="text-lg font-bold text-gray-900 mb-4">Последние резервные копии</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('adminSettings.backup.recentTitle') }}</h2>
 
               <div class="overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Размер</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSettings.backup.tableDate') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSettings.backup.tableSize') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSettings.backup.tableType') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSettings.backup.tableStatus') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSettings.backup.tableActions') }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -842,7 +849,7 @@ const executeRestore = () => {
                     <td class="px-4 py-3 text-sm text-gray-600">{{ backup.size }}</td>
                     <td class="px-4 py-3 text-center">
                       <span :class="['text-xs px-2 py-1 rounded-full', backup.type === 'auto' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700']">
-                        {{ backup.type === 'auto' ? 'Авто' : 'Вручную' }}
+                        {{ backup.type === 'auto' ? $t('adminSettings.backup.typeAuto') : $t('adminSettings.backup.typeManual') }}
                       </span>
                     </td>
                     <td class="px-4 py-3 text-center">
@@ -850,12 +857,12 @@ const executeRestore = () => {
                     </td>
                     <td class="px-4 py-3 text-center">
                       <div class="flex items-center justify-center gap-2">
-                        <button @click="downloadBackup(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Скачать">
+                        <button @click="downloadBackup(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" :title="$t('adminSettings.backup.download')">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
                         </button>
-                        <button @click="openRestoreConfirm(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" title="Восстановить">
+                        <button @click="openRestoreConfirm(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" :title="$t('adminSettings.backup.restore')">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
@@ -872,13 +879,13 @@ const executeRestore = () => {
           <!-- Maintenance -->
           <div v-if="activeTab === 'maintenance'" class="space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 class="text-lg font-bold text-gray-900 mb-6">Режим обслуживания</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.maintenance.title') }}</h2>
 
               <div class="space-y-6">
                 <div class="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <div>
-                    <p class="font-medium text-amber-800">Режим обслуживания</p>
-                    <p class="text-sm text-amber-600">При включении пользователи не смогут войти в систему</p>
+                    <p class="font-medium text-amber-800">{{ $t('adminSettings.maintenance.maintenanceMode') }}</p>
+                    <p class="text-sm text-amber-600">{{ $t('adminSettings.maintenance.maintenanceModeHint') }}</p>
                   </div>
                   <button
                     @click="maintenanceMode.enabled = !maintenanceMode.enabled"
@@ -897,7 +904,7 @@ const executeRestore = () => {
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Сообщение для пользователей</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.maintenance.userMessage') }}</label>
                   <textarea
                     v-model="maintenanceMode.message"
                     rows="3"
@@ -911,12 +918,12 @@ const executeRestore = () => {
                     type="checkbox"
                     class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
                   />
-                  <span class="text-gray-700">Разрешить вход администраторам</span>
+                  <span class="text-gray-700">{{ $t('adminSettings.maintenance.allowAdmins') }}</span>
                 </label>
 
                 <div class="grid grid-cols-2 gap-6">
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Начало обслуживания</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.maintenance.scheduledStart') }}</label>
                     <input
                       v-model="maintenanceMode.scheduledStart"
                       type="datetime-local"
@@ -924,7 +931,7 @@ const executeRestore = () => {
                     />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Окончание обслуживания</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('adminSettings.maintenance.scheduledEnd') }}</label>
                     <input
                       v-model="maintenanceMode.scheduledEnd"
                       type="datetime-local"
@@ -936,16 +943,16 @@ const executeRestore = () => {
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 class="text-lg font-bold text-gray-900 mb-6">Информация о системе</h2>
+              <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.maintenance.systemInfoTitle') }}</h2>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 <div class="p-4 bg-gray-50 rounded-xl">
-                  <p class="text-sm text-gray-500">Версия</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.version') }}</p>
                   <p class="text-xl font-bold text-gray-900">{{ systemInfo.version }}</p>
                   <p class="text-xs text-gray-400">{{ systemInfo.buildDate }}</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl">
-                  <p class="text-sm text-gray-500">Аптайм</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.uptime') }}</p>
                   <p class="text-xl font-bold text-green-600">{{ systemInfo.uptime }}</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl">
@@ -953,7 +960,7 @@ const executeRestore = () => {
                   <p class="text-xl font-bold text-gray-900">{{ systemInfo.cpuUsage }}</p>
                 </div>
                 <div class="p-4 bg-gray-50 rounded-xl">
-                  <p class="text-sm text-gray-500">Память</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.memory') }}</p>
                   <p class="text-xl font-bold text-gray-900">{{ systemInfo.memoryUsage }}</p>
                 </div>
               </div>
@@ -964,28 +971,28 @@ const executeRestore = () => {
                   <p class="font-medium text-gray-900">{{ systemInfo.phpVersion }}</p>
                 </div>
                 <div class="p-4 border border-gray-200 rounded-xl">
-                  <p class="text-sm text-gray-500">База данных</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.database') }}</p>
                   <p class="font-medium text-gray-900">{{ systemInfo.dbVersion }}</p>
                 </div>
                 <div class="p-4 border border-gray-200 rounded-xl">
-                  <p class="text-sm text-gray-500">ОС сервера</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.serverOS') }}</p>
                   <p class="font-medium text-gray-900">{{ systemInfo.serverOS }}</p>
                 </div>
                 <div class="p-4 border border-gray-200 rounded-xl">
-                  <p class="text-sm text-gray-500">Использование диска</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.maintenance.diskUsage') }}</p>
                   <p class="font-medium text-gray-900">{{ systemInfo.diskUsage }}</p>
                 </div>
               </div>
 
               <div class="mt-6 flex gap-3">
                 <button @click="openClearCache" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Очистить кэш
+                  {{ $t('adminSettings.maintenance.clearCache') }}
                 </button>
                 <button @click="openRestartQueues" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Перезапустить очереди
+                  {{ $t('adminSettings.maintenance.restartQueues') }}
                 </button>
                 <button @click="checkUpdates" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Проверить обновления
+                  {{ $t('adminSettings.maintenance.checkUpdates') }}
                 </button>
               </div>
             </div>
@@ -1001,7 +1008,7 @@ const executeRestore = () => {
           <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
             <div class="p-6 border-b border-gray-200">
               <div class="flex items-center justify-between">
-                <h3 class="text-xl font-bold text-gray-900">Настройка интеграции</h3>
+                <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.integrations.modalTitle') }}</h3>
                 <button @click="showIntegrationModal = false" class="p-2 text-gray-400 hover:text-gray-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1017,14 +1024,14 @@ const executeRestore = () => {
               </div>
 
               <div class="flex items-center justify-between">
-                <span class="text-gray-700 font-medium">Статус подключения</span>
+                <span class="text-gray-700 font-medium">{{ $t('adminSettings.integrations.connectionStatus') }}</span>
                 <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(selectedIntegration.status)]">
-                  {{ selectedIntegration.status === 'active' ? 'Активно' : 'Отключено' }}
+                  {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.statusActive') : $t('adminSettings.integrations.statusInactive') }}
                 </span>
               </div>
 
               <div>
-                <label class="text-sm text-gray-500">Последняя синхронизация</label>
+                <label class="text-sm text-gray-500">{{ $t('adminSettings.integrations.lastSyncLabel') }}</label>
                 <p class="font-medium text-gray-900">{{ selectedIntegration.lastSync }}</p>
               </div>
 
@@ -1039,7 +1046,7 @@ const executeRestore = () => {
                       : 'bg-green-50 text-green-700 hover:bg-green-100'
                   ]"
                 >
-                  {{ selectedIntegration.status === 'active' ? 'Отключить' : 'Включить' }}
+                  {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.disable') : $t('adminSettings.integrations.enable') }}
                 </button>
                 <button
                   @click="syncIntegration"
@@ -1050,14 +1057,14 @@ const executeRestore = () => {
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Синхронизировать
+                  {{ $t('adminSettings.integrations.sync') }}
                 </button>
               </div>
             </div>
 
             <div class="p-6 border-t border-gray-200 flex justify-end">
               <button @click="showIntegrationModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Закрыть
+                {{ $t('adminSettings.maintenance.close') }}
               </button>
             </div>
           </div>
@@ -1077,7 +1084,7 @@ const executeRestore = () => {
             <div class="p-6">
               <template v-if="!confirmDone">
                 <p class="text-gray-600">{{ confirmMessage }}</p>
-                <p class="text-sm text-amber-600 mt-3 p-3 bg-amber-50 rounded-lg">Вы уверены, что хотите продолжить?</p>
+                <p class="text-sm text-amber-600 mt-3 p-3 bg-amber-50 rounded-lg">{{ $t('adminSettings.maintenance.confirmPrompt') }}</p>
               </template>
               <template v-else>
                 <div class="text-center">
@@ -1094,7 +1101,7 @@ const executeRestore = () => {
             <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
               <template v-if="!confirmDone">
                 <button @click="showConfirmModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Отмена
+                  {{ $t('adminSettings.maintenance.cancel') }}
                 </button>
                 <button
                   @click="executeConfirmAction"
@@ -1105,12 +1112,12 @@ const executeRestore = () => {
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  {{ confirmProcessing ? 'Выполнение...' : 'Подтвердить' }}
+                  {{ confirmProcessing ? $t('adminSettings.maintenance.processing') : $t('adminSettings.maintenance.confirm') }}
                 </button>
               </template>
               <template v-else>
                 <button @click="showConfirmModal = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
-                  Готово
+                  {{ $t('adminSettings.maintenance.done') }}
                 </button>
               </template>
             </div>
@@ -1126,7 +1133,7 @@ const executeRestore = () => {
           <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div class="p-6 border-b border-gray-200">
               <div class="flex items-center justify-between">
-                <h3 class="text-xl font-bold text-gray-900">Проверка обновлений</h3>
+                <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.maintenance.checkUpdates') }}</h3>
                 <button @click="showUpdateModal = false" class="p-2 text-gray-400 hover:text-gray-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -1142,8 +1149,8 @@ const executeRestore = () => {
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <p class="text-gray-600">Проверка обновлений...</p>
-                  <p class="text-sm text-gray-400 mt-1">Текущая версия: {{ systemInfo.version }}</p>
+                  <p class="text-gray-600">{{ $t('adminSettings.maintenance.checkingUpdates') }}</p>
+                  <p class="text-sm text-gray-400 mt-1">{{ $t('adminSettings.maintenance.currentVersion') }}: {{ systemInfo.version }}</p>
                 </div>
               </template>
               <template v-else-if="updateResult">
@@ -1153,11 +1160,11 @@ const executeRestore = () => {
                       <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span class="font-semibold text-blue-800">Доступно обновление</span>
+                      <span class="font-semibold text-blue-800">{{ $t('adminSettings.maintenance.updateAvailable') }}</span>
                     </div>
-                    <p class="text-blue-700">Версия {{ updateResult.version }}</p>
+                    <p class="text-blue-700">{{ $t('adminSettings.maintenance.versionLabel') }} {{ updateResult.version }}</p>
                   </div>
-                  <h4 class="font-medium text-gray-900 mb-2">Что нового:</h4>
+                  <h4 class="font-medium text-gray-900 mb-2">{{ $t('adminSettings.maintenance.whatsNew') }}</h4>
                   <ul class="space-y-2">
                     <li v-for="(change, idx) in updateResult.changes" :key="idx" class="flex items-start gap-2 text-sm text-gray-600">
                       <span class="text-green-500 mt-0.5">+</span>
@@ -1172,8 +1179,8 @@ const executeRestore = () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p class="font-medium text-gray-900">Система обновлена</p>
-                    <p class="text-sm text-gray-500 mt-1">Версия {{ systemInfo.version }} — последняя</p>
+                    <p class="font-medium text-gray-900">{{ $t('adminSettings.maintenance.systemUpToDate') }}</p>
+                    <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.maintenance.latestVersion', { version: systemInfo.version }) }}</p>
                   </div>
                 </template>
               </template>
@@ -1181,7 +1188,7 @@ const executeRestore = () => {
 
             <div class="p-6 border-t border-gray-200 flex justify-end">
               <button @click="showUpdateModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                Закрыть
+                {{ $t('adminSettings.maintenance.close') }}
               </button>
             </div>
           </div>
@@ -1195,18 +1202,18 @@ const executeRestore = () => {
         <div v-if="showRestoreConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => { if (e.target === e.currentTarget) showRestoreConfirm = false }">
           <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div class="p-6 border-b border-gray-200">
-              <h3 class="text-xl font-bold text-gray-900">Восстановление из копии</h3>
+              <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.restoreModal.title') }}</h3>
             </div>
 
             <div class="p-6">
               <template v-if="!restoreDone">
                 <div v-if="restoreTarget" class="p-4 bg-gray-50 rounded-xl mb-4">
-                  <p class="text-sm text-gray-500">Копия от</p>
+                  <p class="text-sm text-gray-500">{{ $t('adminSettings.restoreModal.backupFrom') }}</p>
                   <p class="font-medium text-gray-900">{{ restoreTarget.date }}</p>
-                  <p class="text-sm text-gray-500 mt-1">Размер: {{ restoreTarget.size }}</p>
+                  <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.size') }}: {{ restoreTarget.size }}</p>
                 </div>
                 <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p class="text-sm text-red-700 font-medium">Внимание! Текущие данные будут заменены данными из резервной копии. Это действие необратимо.</p>
+                  <p class="text-sm text-red-700 font-medium">{{ $t('adminSettings.restoreModal.warning') }}</p>
                 </div>
               </template>
               <template v-else>
@@ -1216,8 +1223,8 @@ const executeRestore = () => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p class="font-medium text-gray-900">Восстановление завершено</p>
-                  <p class="text-sm text-gray-500 mt-1">Данные успешно восстановлены из копии от {{ restoreTarget?.date }}</p>
+                  <p class="font-medium text-gray-900">{{ $t('adminSettings.restoreModal.restoreComplete') }}</p>
+                  <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.restoreSuccess', { date: restoreTarget?.date }) }}</p>
                 </div>
               </template>
             </div>
@@ -1225,7 +1232,7 @@ const executeRestore = () => {
             <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
               <template v-if="!restoreDone">
                 <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  Отмена
+                  {{ $t('adminSettings.restoreModal.cancel') }}
                 </button>
                 <button
                   @click="executeRestore"
@@ -1236,12 +1243,12 @@ const executeRestore = () => {
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  {{ restoring ? 'Восстановление...' : 'Восстановить' }}
+                  {{ restoring ? $t('adminSettings.restoreModal.restoring') : $t('adminSettings.restoreModal.restoreBtn') }}
                 </button>
               </template>
               <template v-else>
                 <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
-                  Готово
+                  {{ $t('adminSettings.restoreModal.done') }}
                 </button>
               </template>
             </div>

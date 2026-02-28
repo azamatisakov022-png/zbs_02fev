@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
@@ -10,24 +11,25 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
+const { t } = useI18n()
 
 // Loading state
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
 // Регионы Кыргызстана
-const regions = [
-  'Все регионы',
-  'Бишкек',
-  'Ош',
-  'Чуйская область',
-  'Ошская область',
-  'Джалал-Абадская область',
-  'Иссык-Кульская область',
-  'Нарынская область',
-  'Таласская область',
-  'Баткенская область',
-]
+const regions = computed(() => [
+  t('employeeReports.allRegions'),
+  t('employeeReports.regionBishkek'),
+  t('employeeReports.regionOsh'),
+  t('employeeReports.regionChuy'),
+  t('employeeReports.regionOshObl'),
+  t('employeeReports.regionJalalAbad'),
+  t('employeeReports.regionIssykKul'),
+  t('employeeReports.regionNaryn'),
+  t('employeeReports.regionTalas'),
+  t('employeeReports.regionBatken'),
+])
 
 // Активный тип отчёта
 const activeReport = ref<'summary' | 'landfills' | 'licenses' | 'normatives' | 'regions' | null>(null)
@@ -76,7 +78,7 @@ const getSummaryChangeColor = (changeType: string) => {
 const landfillsFilters = ref({
   dateFrom: '2025-01-01',
   dateTo: '2025-02-03',
-  region: 'Все регионы',
+  region: '',
   status: 'all',
 })
 
@@ -110,7 +112,7 @@ const landfillsData = ref<LandfillRow[]>([
 
 const filteredLandfills = computed(() => {
   return landfillsData.value.filter(l => {
-    if (landfillsFilters.value.region !== 'Все регионы') {
+    if (landfillsFilters.value.region && landfillsFilters.value.region !== regions.value[0]) {
       // Match region loosely
       const filterRegion = landfillsFilters.value.region.toLowerCase()
       const dataRegion = l.region.toLowerCase()
@@ -157,9 +159,9 @@ const getConditionColor = (condition: string) => {
 
 const getConditionLabel = (condition: string) => {
   const labels: Record<string, string> = {
-    good: 'Хорошее',
-    warning: 'Требует внимания',
-    critical: 'Критическое',
+    good: t('employeeReports.conditionGood'),
+    warning: t('employeeReports.conditionWarning'),
+    critical: t('employeeReports.conditionCritical'),
   }
   return labels[condition] || condition
 }
@@ -174,7 +176,7 @@ const getFillColor = (percent: number) => {
 const licensesFilters = ref({
   dateFrom: '2025-01-01',
   dateTo: '2025-02-03',
-  region: 'Все регионы',
+  region: '',
   status: 'all',
 })
 
@@ -205,7 +207,7 @@ const licensesReportData = ref<LicenseReportRow[]>([
 
 const filteredLicenses = computed(() => {
   return licensesReportData.value.filter(l => {
-    if (licensesFilters.value.region !== 'Все регионы') {
+    if (licensesFilters.value.region && licensesFilters.value.region !== regions.value[0]) {
       const filterRegion = licensesFilters.value.region.toLowerCase()
       const dataRegion = l.region.toLowerCase()
       if (!dataRegion.includes(filterRegion) && !filterRegion.includes(dataRegion.replace('обл.', '').replace('г. ', '').trim())) {
@@ -248,10 +250,10 @@ const getLicenseStatusColor = (status: string) => {
 
 const getLicenseStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
-    active: 'Действующая',
-    expiring: 'Истекает',
-    expired: 'Истекла',
-    revoked: 'Аннулирована',
+    active: t('employeeReports.licStatusActive'),
+    expiring: t('employeeReports.licStatusExpiring'),
+    expired: t('employeeReports.licStatusExpired'),
+    revoked: t('employeeReports.licStatusRevoked'),
   }
   return labels[status] || status
 }
@@ -260,7 +262,7 @@ const getLicenseStatusLabel = (status: string) => {
 const normativesFilters = ref({
   dateFrom: '2025-01-01',
   dateTo: '2025-02-03',
-  region: 'Все регионы',
+  region: '',
 })
 
 interface NormativeRow {
@@ -304,9 +306,9 @@ const getNormStatusColor = (status: string) => {
 
 const getNormStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
-    fulfilled: 'Выполнен',
-    partial: 'Частично',
-    failed: 'Не выполнен',
+    fulfilled: t('employeeReports.normFulfilled'),
+    partial: t('employeeReports.normPartial'),
+    failed: t('employeeReports.normFailed'),
   }
   return labels[status] || status
 }
@@ -363,31 +365,31 @@ const exportToExcel = () => {
 
   if (activeReport.value === 'summary') {
     filename = 'report_summary.csv'
-    csvContent = 'Показатель,Единица,Значение,Изменение\n'
+    csvContent = `${t('employeeReports.thIndicator')},${t('employeeReports.thUnit')},${t('employeeReports.thValue')},${t('employeeReports.thChange')}\n`
     summaryData.value.forEach(r => {
       csvContent += `"${r.indicator}","${r.unit}","${r.value}","${r.change}"\n`
     })
   } else if (activeReport.value === 'landfills') {
     filename = 'report_landfills.csv'
-    csvContent = 'Название,Регион,Тип,Ёмкость (т),Заполнено (т),Заполненность (%),Состояние,Соответствие,Последняя проверка\n'
+    csvContent = `${t('common.name')},${t('common.region')},${t('common.type')},${t('employeeReports.thCapacity')},${t('employeeReports.thFilled')},${t('employeeReports.thFillPercent')},${t('employeeReports.thCondition')},${t('employeeReports.thCompliance')},${t('employeeReports.thInspection')}\n`
     filteredLandfills.value.forEach(l => {
-      csvContent += `"${l.name}","${l.region}","${l.type}",${l.capacityTotal},${l.capacityUsed},${l.fillPercent},"${getConditionLabel(l.condition)}","${l.compliant ? 'Да' : 'Нет'}","${l.lastInspection}"\n`
+      csvContent += `"${l.name}","${l.region}","${l.type}",${l.capacityTotal},${l.capacityUsed},${l.fillPercent},"${getConditionLabel(l.condition)}","${l.compliant ? t('common.yes') : t('common.no')}","${l.lastInspection}"\n`
     })
   } else if (activeReport.value === 'licenses') {
     filename = 'report_licenses.csv'
-    csvContent = 'Организация,ИНН,Номер лицензии,Вид деятельности,Регион,Выдана,Действует до,Статус\n'
+    csvContent = `${t('employeeReports.thOrganization')},${t('employeeReports.thInn')},${t('employeeReports.thLicenseNumber')},${t('employeeReports.thActivity')},${t('common.region')},${t('employeeReports.thIssued')},${t('employeeReports.thValidUntil')},${t('common.status')}\n`
     filteredLicenses.value.forEach(l => {
       csvContent += `"${l.company}","${l.inn}","${l.licenseNumber}","${l.activity}","${l.region}","${l.issueDate}","${l.expiryDate}","${getLicenseStatusLabel(l.status)}"\n`
     })
   } else if (activeReport.value === 'normatives') {
     filename = 'report_normatives.csv'
-    csvContent = 'Вид отхода,Норматив (%),Факт (%),Объём образования (т),Переработано (т),Статус\n'
+    csvContent = `${t('employeeReports.thWasteType')},${t('employeeReports.thNormPercent')},${t('employeeReports.thFactPercent')},${t('employeeReports.thGenerationVolume')},${t('employeeReports.thRecycled')},${t('common.status')}\n`
     normativesData.value.forEach(n => {
       csvContent += `"${n.wasteType}",${n.targetPercent},${n.actualPercent},${n.volume},${n.recycled},"${getNormStatusLabel(n.status)}"\n`
     })
   } else if (activeReport.value === 'regions') {
     filename = 'report_regions.csv'
-    csvContent = 'Регион,Организаций,Переработчиков,Полигонов,Лицензий,Объём переработки (т),Выполнение норм (%),Доля %\n'
+    csvContent = `${t('common.region')},${t('employeeReports.thOrganizations')},${t('employeeReports.thRecyclers')},${t('employeeReports.thLandfills')},${t('employeeReports.thLicenses')},${t('employeeReports.thRecyclingVolume')},${t('employeeReports.thNormCompliance')},${t('employeeReports.thShare')} %\n`
     regionsData.value.forEach(r => {
       csvContent += `"${r.region}",${r.organizations},${r.recyclers},${r.landfills},${r.licenses},${r.volume},${r.normPercent},${r.share}\n`
     })
@@ -406,7 +408,7 @@ const exportToPdf = () => {
   window.print()
 }
 
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 
 const selectReport = (type: 'summary' | 'landfills' | 'licenses' | 'normatives' | 'regions') => {
   activeReport.value = type
@@ -441,23 +443,23 @@ const goBack = () => {
           </button>
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
-              {{ activeReport === 'summary' ? 'Сводный отчёт для руководства' :
-                 activeReport === 'landfills' ? 'Отчёт о состоянии полигонов' :
-                 activeReport === 'licenses' ? 'Отчёт по лицензиям' :
-                 activeReport === 'normatives' ? 'Отчёт о выполнении нормативов' :
-                 activeReport === 'regions' ? 'Отчёт по регионам' : $t('pages.employee.reportsTitle') }}
+              {{ activeReport === 'summary' ? $t('employeeReports.summaryTitle') :
+                 activeReport === 'landfills' ? $t('employeeReports.landfillsTitle') :
+                 activeReport === 'licenses' ? $t('employeeReports.licensesTitle') :
+                 activeReport === 'normatives' ? $t('employeeReports.normativesTitle') :
+                 activeReport === 'regions' ? $t('employeeReports.regionsTitle') : $t('pages.employee.reportsTitle') }}
             </h1>
             <p class="text-gray-600 mt-1">
-              {{ activeReport ? 'Формирование и выгрузка отчётов для МПРЭТН' : 'Выберите тип отчёта для формирования' }}
+              {{ activeReport ? $t('employeeReports.activeSubtitle') : $t('employeeReports.selectSubtitle') }}
             </p>
           </div>
         </div>
       </div>
 
       <SectionGuide
-        title="Формирование отчётности"
-        description="Генерация регламентных и аналитических отчётов."
-        :actions="['Формирование отчётов по расписанию', 'Создание аналитических выборок', 'Экспорт в Excel/PDF']"
+        :title="$t('employeeReports.guideTitle')"
+        :description="$t('employeeReports.guideDescription')"
+        :actions="[$t('employeeReports.guideAction1'), $t('employeeReports.guideAction2'), $t('employeeReports.guideAction3')]"
         storageKey="employee-reports"
       />
 
@@ -479,10 +481,10 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Сводный отчёт для руководства</h3>
-          <p class="text-gray-500 text-sm mb-4">Сводная информация о состоянии системы управления отходами: количество лицензированных субъектов, состояние полигонов, выполнение нормативов переработки</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('employeeReports.summaryTitle') }}</h3>
+          <p class="text-gray-500 text-sm mb-4">{{ $t('employeeReports.summaryDesc') }}</p>
           <div class="flex items-center text-purple-600 font-medium text-sm">
-            <span>Сформировать отчёт</span>
+            <span>{{ $t('employeeReports.generateReport') }}</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -499,10 +501,10 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт о состоянии полигонов</h3>
-          <p class="text-gray-500 text-sm mb-4">Сводка по полигонам и свалкам: заполненность, техническое состояние, соответствие нормам</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('employeeReports.landfillsTitle') }}</h3>
+          <p class="text-gray-500 text-sm mb-4">{{ $t('employeeReports.landfillsDesc') }}</p>
           <div class="flex items-center text-violet-600 font-medium text-sm">
-            <span>Сформировать отчёт</span>
+            <span>{{ $t('employeeReports.generateReport') }}</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -519,10 +521,10 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по лицензиям</h3>
-          <p class="text-gray-500 text-sm mb-4">Реестр выданных лицензий: действующие, истекающие, аннулированные, динамика за период</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('employeeReports.licensesTitle') }}</h3>
+          <p class="text-gray-500 text-sm mb-4">{{ $t('employeeReports.licensesDesc') }}</p>
           <div class="flex items-center text-blue-600 font-medium text-sm">
-            <span>Сформировать отчёт</span>
+            <span>{{ $t('employeeReports.generateReport') }}</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -539,10 +541,10 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт о выполнении нормативов</h3>
-          <p class="text-gray-500 text-sm mb-4">Процент выполнения нормативов переработки по группам товаров и регионам</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('employeeReports.normativesTitle') }}</h3>
+          <p class="text-gray-500 text-sm mb-4">{{ $t('employeeReports.normativesDesc') }}</p>
           <div class="flex items-center text-emerald-600 font-medium text-sm">
-            <span>Сформировать отчёт</span>
+            <span>{{ $t('employeeReports.generateReport') }}</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -559,10 +561,10 @@ const goBack = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">Отчёт по регионам</h3>
-          <p class="text-gray-500 text-sm mb-4">Распределение полигонов, лицензированных организаций и объёмов переработки по регионам Кыргызстана</p>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('employeeReports.regionsTitle') }}</h3>
+          <p class="text-gray-500 text-sm mb-4">{{ $t('employeeReports.regionsDesc') }}</p>
           <div class="flex items-center text-indigo-600 font-medium text-sm">
-            <span>Сформировать отчёт</span>
+            <span>{{ $t('employeeReports.generateReport') }}</span>
             <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -574,7 +576,7 @@ const goBack = () => {
       <template v-if="activeReport === 'summary'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
@@ -605,7 +607,7 @@ const goBack = () => {
           <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
-              Сводный отчёт за период: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
+              {{ $t('employeeReports.summaryForPeriod') }}: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -625,10 +627,10 @@ const goBack = () => {
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-8">№</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Показатель</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Единица</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Значение</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Изменение</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thIndicator') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thUnit') }}</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thValue') }}</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thChange') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
@@ -653,7 +655,7 @@ const goBack = () => {
       <template v-if="activeReport === 'landfills'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
@@ -664,7 +666,7 @@ const goBack = () => {
               <input v-model="landfillsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
               <select v-model="landfillsFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
                 <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
               </select>
@@ -672,9 +674,9 @@ const goBack = () => {
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label>
               <select v-model="landfillsFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500">
-                <option value="all">Все</option>
-                <option value="compliant">Соответствует</option>
-                <option value="non-compliant">Нарушения</option>
+                <option value="all">{{ $t('common.all') }}</option>
+                <option value="compliant">{{ $t('employeeReports.compliant') }}</option>
+                <option value="non-compliant">{{ $t('employeeReports.nonCompliant') }}</option>
               </select>
             </div>
             <div class="flex items-end">
@@ -698,19 +700,19 @@ const goBack = () => {
           <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Всего объектов</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.totalObjects') }}</p>
               <p class="text-2xl font-bold text-violet-600">{{ landfillsSummary.total }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Средняя заполненность</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.avgFill') }}</p>
               <p class="text-2xl font-bold text-gray-900">{{ landfillsSummary.avgFill }}%</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">С нарушениями</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.withViolations') }}</p>
               <p class="text-2xl font-bold text-amber-600">{{ landfillsSummary.violations }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Критическое состояние</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.criticalState') }}</p>
               <p class="text-2xl font-bold text-red-600">{{ landfillsSummary.critical }}</p>
             </div>
           </div>
@@ -719,7 +721,7 @@ const goBack = () => {
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <div class="text-sm text-gray-600">
-                Найдено объектов: <span class="font-semibold">{{ filteredLandfills.length }}</span>
+                {{ $t('employeeReports.foundObjects') }}: <span class="font-semibold">{{ filteredLandfills.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
                 <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -736,25 +738,25 @@ const goBack = () => {
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ёмкость (т)</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Заполнено (т)</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Заполненность</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Состояние</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Соответствие</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Проверка</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.type') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thCapacity') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thFilled') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thFillPercent') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thCondition') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thCompliance') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thInspection') }}</th>
                   </tr>
                 </thead>
                 <tbody v-if="filteredLandfills.length === 0">
                   <tr>
                     <td colspan="9">
                       <EmptyState
-                        title="По запросу ничего не найдено"
-                        description="Нет полигонов, соответствующих выбранным фильтрам"
+                        :title="$t('employeeReports.emptySearchTitle')"
+                        :description="$t('employeeReports.emptyLandfillsDesc')"
                         :actionLabel="$t('common.reset')"
-                        @action="landfillsFilters.region = 'Все регионы'; landfillsFilters.status = 'all'"
+                        @action="landfillsFilters.region = ''; landfillsFilters.status = 'all'"
                       />
                     </td>
                   </tr>
@@ -779,13 +781,13 @@ const goBack = () => {
                       </div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                      <AppBadge :variant="getStatusBadgeVariant(getConditionLabel(l.condition))">
+                      <AppBadge :variant="getStatusBadgeVariant(l.condition)">
                         {{ getConditionLabel(l.condition) }}
                       </AppBadge>
                     </td>
                     <td class="px-4 py-3 text-center">
                       <span :class="['text-xs px-2 py-1 rounded-full font-medium', l.compliant ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700']">
-                        {{ l.compliant ? 'Да' : 'Нет' }}
+                        {{ l.compliant ? $t('common.yes') : $t('common.no') }}
                       </span>
                     </td>
                     <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.lastInspection }}</td>
@@ -801,7 +803,7 @@ const goBack = () => {
       <template v-if="activeReport === 'licenses'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
@@ -812,7 +814,7 @@ const goBack = () => {
               <input v-model="licensesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
               <select v-model="licensesFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                 <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
               </select>
@@ -820,11 +822,11 @@ const goBack = () => {
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label>
               <select v-model="licensesFilters.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option value="all">Все</option>
-                <option value="active">Действующая</option>
-                <option value="expiring">Истекает</option>
-                <option value="expired">Истекла</option>
-                <option value="revoked">Аннулирована</option>
+                <option value="all">{{ $t('common.all') }}</option>
+                <option value="active">{{ $t('employeeReports.licStatusActive') }}</option>
+                <option value="expiring">{{ $t('employeeReports.licStatusExpiring') }}</option>
+                <option value="expired">{{ $t('employeeReports.licStatusExpired') }}</option>
+                <option value="revoked">{{ $t('employeeReports.licStatusRevoked') }}</option>
               </select>
             </div>
             <div class="flex items-end">
@@ -848,19 +850,19 @@ const goBack = () => {
           <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Всего лицензий</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.totalLicenses') }}</p>
               <p class="text-2xl font-bold text-blue-600">{{ licensesSummary.total }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Действующих</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.activeLicenses') }}</p>
               <p class="text-2xl font-bold text-green-600">{{ licensesSummary.active }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Истекает (30 дн)</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.expiring30') }}</p>
               <p class="text-2xl font-bold text-amber-600">{{ licensesSummary.expiring }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Истекших / Аннулированных</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.expiredRevoked') }}</p>
               <p class="text-2xl font-bold text-red-600">{{ licensesSummary.expiredRevoked }}</p>
             </div>
           </div>
@@ -869,7 +871,7 @@ const goBack = () => {
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <div class="text-sm text-gray-600">
-                Найдено лицензий: <span class="font-semibold">{{ filteredLicenses.length }}</span>
+                {{ $t('employeeReports.foundLicenses') }}: <span class="font-semibold">{{ filteredLicenses.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
                 <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -886,13 +888,13 @@ const goBack = () => {
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Организация</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Номер лицензии</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид деятельности</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Выдана</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действует до</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thOrganization') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thInn') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thLicenseNumber') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thActivity') }}</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thIssued') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thValidUntil') }}</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                   </tr>
                 </thead>
@@ -900,10 +902,10 @@ const goBack = () => {
                   <tr>
                     <td colspan="8">
                       <EmptyState
-                        title="По запросу ничего не найдено"
-                        description="Нет лицензий, соответствующих выбранным фильтрам"
+                        :title="$t('employeeReports.emptySearchTitle')"
+                        :description="$t('employeeReports.emptyLicensesDesc')"
                         :actionLabel="$t('common.reset')"
-                        @action="licensesFilters.region = 'Все регионы'; licensesFilters.status = 'all'"
+                        @action="licensesFilters.region = ''; licensesFilters.status = 'all'"
                       />
                     </td>
                   </tr>
@@ -918,7 +920,7 @@ const goBack = () => {
                     <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.issueDate }}</td>
                     <td class="px-4 py-3 text-center text-gray-600 text-sm">{{ l.expiryDate }}</td>
                     <td class="px-4 py-3 text-center">
-                      <AppBadge :variant="getStatusBadgeVariant(getLicenseStatusLabel(l.status))">
+                      <AppBadge :variant="getStatusBadgeVariant(l.status)">
                         {{ getLicenseStatusLabel(l.status) }}
                       </AppBadge>
                     </td>
@@ -934,7 +936,7 @@ const goBack = () => {
       <template v-if="activeReport === 'normatives'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
@@ -945,7 +947,7 @@ const goBack = () => {
               <input v-model="normativesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
               <select v-model="normativesFilters.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                 <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
               </select>
@@ -971,19 +973,19 @@ const goBack = () => {
           <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Видов отходов</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.wasteTypes') }}</p>
               <p class="text-2xl font-bold text-emerald-600">{{ normativesSummary.total }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Выполняют норматив</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.meetNorm') }}</p>
               <p class="text-2xl font-bold text-green-600">{{ normativesSummary.fulfilled }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Частично выполняют</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.partialNorm') }}</p>
               <p class="text-2xl font-bold text-amber-600">{{ normativesSummary.partial }}</p>
             </div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-              <p class="text-sm text-gray-500">Не выполняют</p>
+              <p class="text-sm text-gray-500">{{ $t('employeeReports.failNorm') }}</p>
               <p class="text-2xl font-bold text-red-600">{{ normativesSummary.failed }}</p>
             </div>
           </div>
@@ -992,7 +994,7 @@ const goBack = () => {
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
               <div class="text-sm text-gray-600">
-                Видов отходов: <span class="font-semibold">{{ normativesData.length }}</span>
+                {{ $t('employeeReports.wasteTypes') }}: <span class="font-semibold">{{ normativesData.length }}</span>
               </div>
               <div class="flex flex-wrap gap-2">
                 <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -1009,12 +1011,12 @@ const goBack = () => {
               <table class="w-full">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид отхода</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Норматив (%)</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Факт (%)</th>
-                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-48">Выполнение</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Объём образования (т)</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Переработано (т)</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thWasteType') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thNormPercent') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thFactPercent') }}</th>
+                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-48">{{ $t('employeeReports.thFulfillment') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thGenerationVolume') }}</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thRecycled') }}</th>
                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                   </tr>
                 </thead>
@@ -1039,7 +1041,7 @@ const goBack = () => {
                     <td class="px-4 py-3 text-right text-gray-600">{{ n.volume.toFixed(1) }}</td>
                     <td class="px-4 py-3 text-right text-gray-600">{{ n.recycled.toFixed(1) }}</td>
                     <td class="px-4 py-3 text-center">
-                      <AppBadge :variant="getStatusBadgeVariant(getNormStatusLabel(n.status))">
+                      <AppBadge :variant="getStatusBadgeVariant(n.status)">
                         {{ getNormStatusLabel(n.status) }}
                       </AppBadge>
                     </td>
@@ -1055,7 +1057,7 @@ const goBack = () => {
       <template v-if="activeReport === 'regions'">
         <!-- Filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Параметры отчёта</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
@@ -1086,7 +1088,7 @@ const goBack = () => {
           <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
-              Распределение по <span class="font-semibold">{{ regionsData.length }}</span> регионам
+              {{ $t('employeeReports.distributionBy') }} <span class="font-semibold">{{ regionsData.length }}</span> {{ $t('employeeReports.regionsCount') }}
             </div>
             <div class="flex flex-wrap gap-2">
               <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -1105,14 +1107,14 @@ const goBack = () => {
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Организаций</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Переработчиков</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Полигонов</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Лицензий</th>
-                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Объём переработки (т)</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Выполнение норм (%)</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Доля</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thOrganizations') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thRecyclers') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thLandfills') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thLicenses') }}</th>
+                  <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thRecyclingVolume') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thNormCompliance') }}</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeReports.thShare') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
@@ -1140,7 +1142,7 @@ const goBack = () => {
               </tbody>
               <tfoot class="bg-indigo-50 border-t-2 border-indigo-200">
                 <tr>
-                  <td class="px-4 py-3 font-bold text-gray-900">ИТОГО:</td>
+                  <td class="px-4 py-3 font-bold text-gray-900">{{ $t('common.total') }}:</td>
                   <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.organizations }}</td>
                   <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.recyclers }}</td>
                   <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.landfills }}</td>

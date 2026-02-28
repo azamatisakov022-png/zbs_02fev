@@ -1,5 +1,7 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
+import { ReportStatus, type ReportStatusType } from '../constants/statuses'
+import i18n from '../i18n'
 
 export interface ProcessingItem {
   id: number
@@ -19,7 +21,7 @@ export interface UploadedFile {
   type: string
 }
 
-export type ReportStatus = 'Черновик' | 'На проверке' | 'Принят' | 'Отклонён' | 'На доработке'
+export type { ReportStatusType }
 
 export interface ReportHistoryEntry {
   id: number
@@ -41,7 +43,7 @@ export interface Report {
   totalDeclared: number
   totalProcessed: number
   processingPercent: number
-  status: ReportStatus
+  status: ReportStatusType
   rejectionReason?: string
   reviewDate?: string
   reviewer?: string
@@ -55,12 +57,12 @@ const state = reactive<{ reports: Report[]; loading: boolean }>({
   reports: [],
 })
 
-const backendStatusMap: Record<string, ReportStatus> = {
-  draft: 'Черновик',
-  submitted: 'На проверке',
-  approved: 'Принят',
-  rejected: 'Отклонён',
-  revision_requested: 'На доработке',
+const backendStatusMap: Record<string, ReportStatusType> = {
+  draft: ReportStatus.DRAFT,
+  submitted: ReportStatus.UNDER_REVIEW,
+  approved: ReportStatus.APPROVED,
+  rejected: ReportStatus.REJECTED,
+  revision_requested: ReportStatus.REVISION,
 }
 
 function mapBackendReport(r: any): Report {
@@ -79,7 +81,7 @@ function mapBackendReport(r: any): Report {
   return {
     id: r.id,
     number: r.number || '',
-    date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('ru-RU') : '',
+    date: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
     company: r.recyclerName || '',
     inn: r.submitterInn || '',
     year: r.period || '',
@@ -88,7 +90,7 @@ function mapBackendReport(r: any): Report {
     totalDeclared,
     totalProcessed,
     processingPercent: totalDeclared > 0 ? Math.round((totalProcessed / totalDeclared) * 100) : 0,
-    status: backendStatusMap[r.status] || r.status || 'Черновик',
+    status: backendStatusMap[r.status] || r.status || ReportStatus.DRAFT,
     history: [],
   }
 }
@@ -126,13 +128,13 @@ function addReport(data: {
   totalDeclared: number
   totalProcessed: number
   processingPercent: number
-}, status: ReportStatus = 'Черновик'): Report {
+}, status: ReportStatusType = ReportStatus.DRAFT): Report {
   const now = new Date()
   const num = String(Math.floor(Math.random() * 900) + 100)
   const report: Report = {
     id: nextId++,
     number: `РП-${now.getFullYear()}-${num}`,
-    date: now.toLocaleDateString('ru-RU'),
+    date: now.toLocaleDateString(),
     company: data.company,
     inn: data.inn,
     year: data.year,
@@ -142,7 +144,7 @@ function addReport(data: {
     totalProcessed: data.totalProcessed,
     processingPercent: data.processingPercent,
     status,
-    history: [{ id: Date.now(), action: 'Отчёт создан', date: now.toLocaleDateString('ru-RU'), user: data.company }],
+    history: [{ id: Date.now(), action: i18n.global.t('reportAction.created'), date: now.toLocaleDateString(), user: data.company }],
   }
   state.reports.unshift(report)
   silentApi.post('/reports', data).then(resp => {
@@ -150,7 +152,7 @@ function addReport(data: {
       report.id = resp.data.id
       report.number = resp.data.number || report.number
       // If submitting immediately, trigger submit on backend
-      if (status === 'На проверке') {
+      if (status === ReportStatus.UNDER_REVIEW) {
         silentApi.post(`/reports/${resp.data.id}/submit`).catch(() => {})
       }
     }
@@ -160,8 +162,8 @@ function addReport(data: {
 
 function submitForReview(id: number) {
   const report = state.reports.find(r => r.id === id)
-  if (report && (report.status === 'Черновик' || report.status === 'Отклонён')) {
-    report.status = 'На проверке'
+  if (report && (report.status === ReportStatus.DRAFT || report.status === ReportStatus.REJECTED)) {
+    report.status = ReportStatus.UNDER_REVIEW
     report.rejectionReason = undefined
   }
   silentApi.post(`/reports/${id}/submit`).catch(() => {})
@@ -169,15 +171,15 @@ function submitForReview(id: number) {
 
 function approveReport(id: number, comment?: string) {
   const report = state.reports.find(r => r.id === id)
-  if (report && report.status === 'На проверке') {
+  if (report && report.status === ReportStatus.UNDER_REVIEW) {
     const now = new Date()
-    report.status = 'Принят'
-    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.status = ReportStatus.APPROVED
+    report.reviewDate = now.toLocaleDateString()
     report.reviewer = 'Асанов Б.Т.'
     report.history.push({
       id: Date.now(),
-      action: 'Отчёт принят',
-      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      action: i18n.global.t('reportAction.approved'),
+      date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
       user: 'Асанов Б.Т.',
       comment,
     })
@@ -187,16 +189,16 @@ function approveReport(id: number, comment?: string) {
 
 function rejectReport(id: number, reason: string) {
   const report = state.reports.find(r => r.id === id)
-  if (report && report.status === 'На проверке') {
+  if (report && report.status === ReportStatus.UNDER_REVIEW) {
     const now = new Date()
-    report.status = 'Отклонён'
+    report.status = ReportStatus.REJECTED
     report.rejectionReason = reason
-    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.reviewDate = now.toLocaleDateString()
     report.reviewer = 'Асанов Б.Т.'
     report.history.push({
       id: Date.now(),
-      action: 'Отчёт отклонён',
-      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      action: i18n.global.t('reportAction.rejected'),
+      date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
       user: 'Асанов Б.Т.',
       comment: reason,
     })
@@ -206,16 +208,16 @@ function rejectReport(id: number, reason: string) {
 
 function returnReportForRevision(id: number, comment: string) {
   const report = state.reports.find(r => r.id === id)
-  if (report && report.status === 'На проверке') {
+  if (report && report.status === ReportStatus.UNDER_REVIEW) {
     const now = new Date()
-    report.status = 'На доработке'
+    report.status = ReportStatus.REVISION
     report.rejectionReason = comment
-    report.reviewDate = now.toLocaleDateString('ru-RU')
+    report.reviewDate = now.toLocaleDateString()
     report.reviewer = 'Асанов Б.Т.'
     report.history.push({
       id: Date.now(),
-      action: 'Возвращён на доработку',
-      date: `${now.toLocaleDateString('ru-RU')} ${now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+      action: i18n.global.t('reportAction.returnedForRevision'),
+      date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
       user: 'Асанов Б.Т.',
       comment,
     })
@@ -228,7 +230,7 @@ function getBusinessReports(_company?: string) {
 }
 
 function getPendingCount() {
-  return state.reports.filter(r => r.status === 'На проверке').length
+  return state.reports.filter(r => r.status === ReportStatus.UNDER_REVIEW).length
 }
 
 export const reportStore = {

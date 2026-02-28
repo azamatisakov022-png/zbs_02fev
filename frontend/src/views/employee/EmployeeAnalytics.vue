@@ -1,25 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Period filter
 const selectedPeriod = ref('year')
-const periods = [
-  { id: 'month', name: 'Месяц' },
-  { id: 'quarter', name: 'Квартал' },
-  { id: 'year', name: 'Год' },
-]
+const periods = computed(() => [
+  { id: 'month', name: t('employeeAnalytics.month') },
+  { id: 'quarter', name: t('employeeAnalytics.quarter') },
+  { id: 'year', name: t('employeeAnalytics.year') },
+])
 
 // Key metrics
-const metrics = ref([
-  { label: 'Собрано утильсбора', value: '245.8 млн', change: '+12.4%', trend: 'up', icon: '💰' },
-  { label: 'Переработано отходов', value: '34,560 т', change: '+8.2%', trend: 'up', icon: '♻️' },
-  { label: 'Зарегистрировано организаций', value: '1,847', change: '+156', trend: 'up', icon: '🏢' },
-  { label: 'Выдано лицензий', value: '89', change: '+12', trend: 'up', icon: '📜' },
+const metrics = computed(() => [
+  { label: t('employeeAnalytics.feeCollected'), value: '245.8 ' + t('employeeAnalytics.mln'), change: '+12.4%', trend: 'up', icon: '💰' },
+  { label: t('employeeAnalytics.wasteRecycled'), value: '34,560 ' + t('common.tons'), change: '+8.2%', trend: 'up', icon: '♻️' },
+  { label: t('employeeAnalytics.orgsRegistered'), value: '1,847', change: '+156', trend: 'up', icon: '🏢' },
+  { label: t('employeeAnalytics.licensesIssued'), value: '89', change: '+12', trend: 'up', icon: '📜' },
 ])
 
 // Waste by category
@@ -70,7 +72,7 @@ const topCompanies = ref([
   { name: 'ОсОО «Газпром Нефть Азия»', fees: 5.4, declarations: 15 },
 ])
 
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
 </script>
 
@@ -85,8 +87,8 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Аналитика</h1>
-          <p class="text-gray-600 mt-1">Статистика и отчётность по системе учёта отходов</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('employeeAnalytics.title') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('employeeAnalytics.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <div class="flex rounded-lg border border-gray-300 overflow-hidden">
@@ -104,7 +106,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               {{ period.name }}
             </button>
           </div>
-          <button @click="toastStore.show({ type: 'info', title: 'Экспорт', message: 'Экспорт аналитики будет доступен в следующем обновлении' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeAnalytics.exportNotReady') })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -128,7 +130,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
                 <span :class="metric.trend === 'up' ? 'text-green-600' : 'text-red-600'" class="text-sm font-medium">
                   {{ metric.change }}
                 </span>
-                <span class="text-xs text-gray-500">vs прошлый период</span>
+                <span class="text-xs text-gray-500">{{ $t('employeeAnalytics.vsPrevPeriod') }}</span>
               </div>
             </div>
             <div class="w-12 h-12 bg-sky-100 rounded-xl flex items-center justify-center text-2xl">
@@ -142,15 +144,15 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
         <!-- Chart Area -->
         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="font-semibold text-gray-900">Динамика показателей</h3>
+            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.dynamics') }}</h3>
             <div class="flex items-center gap-4 text-sm">
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-sky-500"></div>
-                <span class="text-gray-600">Декларации</span>
+                <span class="text-gray-600">{{ $t('employeeAnalytics.declarations') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                <span class="text-gray-600">Отчёты</span>
+                <span class="text-gray-600">{{ $t('employeeAnalytics.reports') }}</span>
               </div>
             </div>
           </div>
@@ -166,12 +168,12 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
                 <div
                   class="flex-1 bg-sky-500 rounded-t transition-all hover:bg-sky-600"
                   :style="{ height: `${(data.declarations / maxMonthlyValue) * 100}%` }"
-                  :title="`Декларации: ${data.declarations}`"
+                  :title="`${$t('employeeAnalytics.declarations')}: ${data.declarations}`"
                 ></div>
                 <div
                   class="flex-1 bg-green-500 rounded-t transition-all hover:bg-green-600"
                   :style="{ height: `${(data.reports / maxMonthlyValue) * 100}%` }"
-                  :title="`Отчёты: ${data.reports}`"
+                  :title="`${$t('employeeAnalytics.reports')}: ${data.reports}`"
                 ></div>
               </div>
               <span class="text-xs text-gray-500">{{ data.month }}</span>
@@ -181,7 +183,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
 
         <!-- Waste by Category -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-6">Структура отходов</h3>
+          <h3 class="font-semibold text-gray-900 mb-6">{{ $t('employeeAnalytics.wasteStructure') }}</h3>
 
           <!-- Donut chart placeholder -->
           <div class="relative w-40 h-40 mx-auto mb-6">
@@ -201,7 +203,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="text-center">
                 <p class="text-2xl font-bold text-gray-900">34.5K</p>
-                <p class="text-xs text-gray-500">тонн</p>
+                <p class="text-xs text-gray-500">{{ $t('employeeAnalytics.tonsLabel') }}</p>
               </div>
             </div>
           </div>
@@ -229,16 +231,16 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
         <!-- Regional Performance -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="font-semibold text-gray-900">Показатели по регионам</h3>
+            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.regionMetrics') }}</h3>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Орг-ции</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Сборы (млн)</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Соответствие</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeAnalytics.orgs') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeAnalytics.feesMln') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeAnalytics.compliance') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
@@ -269,7 +271,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
         <!-- Top Companies -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="font-semibold text-gray-900">Топ плательщиков утильсбора</h3>
+            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.topPayers') }}</h3>
           </div>
           <div class="p-4">
             <div class="space-y-4">
@@ -286,11 +288,11 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
                 </div>
                 <div class="flex-1">
                   <p class="font-medium text-gray-900">{{ company.name }}</p>
-                  <p class="text-sm text-gray-500">{{ company.declarations }} деклараций</p>
+                  <p class="text-sm text-gray-500">{{ company.declarations }} {{ $t('employeeAnalytics.declarationsCount') }}</p>
                 </div>
                 <div class="text-right">
-                  <p class="font-bold text-gray-900">{{ company.fees }} млн</p>
-                  <p class="text-xs text-gray-500">сом</p>
+                  <p class="font-bold text-gray-900">{{ company.fees }} {{ $t('employeeAnalytics.mln') }}</p>
+                  <p class="text-xs text-gray-500">{{ $t('common.som') }}</p>
                 </div>
               </div>
             </div>
@@ -300,10 +302,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
 
       <!-- Compliance Overview -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="font-semibold text-gray-900 mb-6">Соответствие нормативам переработки</h3>
+        <h3 class="font-semibold text-gray-900 mb-6">{{ $t('employeeAnalytics.recyclingCompliance') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Пластик</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.plastic') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -311,10 +313,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-green-600">80%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 20%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:20%</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Бумага</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.paper') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -322,10 +324,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-green-600">85%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 25%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:25%</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Стекло</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.glass') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -333,10 +335,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-yellow-600">70%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 30%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:30%</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Металл</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.metal') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -344,10 +346,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-green-600">90%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 35%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:35%</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Электроника</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.electronics') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -355,10 +357,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-red-600">50%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 40%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:40%</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
-            <p class="text-sm text-gray-500 mb-2">Батареи</p>
+            <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.batteries') }}</p>
             <div class="relative w-16 h-16 mx-auto">
               <svg class="w-16 h-16 transform -rotate-90">
                 <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none" />
@@ -366,7 +368,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </svg>
               <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-yellow-600">65%</span>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Норма: 50%</p>
+            <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:50%</p>
           </div>
         </div>
       </div>

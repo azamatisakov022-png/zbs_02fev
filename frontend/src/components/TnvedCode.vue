@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { tnvedNotes, parseTnvedCode } from '../data/tnved-notes'
+
+const { t } = useI18n()
 
 const props = defineProps<{ code: string }>()
 
@@ -54,7 +57,7 @@ function hideTooltip() {
       <span class="tnved-code__badge">{{ n }}</span>
       <Transition name="tnved-tip">
         <div v-if="activeNote === n" class="tnved-code__tooltip" :style="tooltipStyle">
-          {{ tnvedNotes[n] || 'Примечание ' + n }}
+          {{ tnvedNotes[n] || $t('tnved.note') + ' ' + n }}
         </div>
       </Transition>
     </span>

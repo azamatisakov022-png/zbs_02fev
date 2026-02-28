@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
 interface Ticket {
@@ -145,29 +147,29 @@ const priorityFilter = ref('')
 const categoryFilter = ref('')
 const searchQuery = ref('')
 
-const categories = [
-  { value: 'technical', label: 'Техническая проблема' },
-  { value: 'consultation', label: 'Консультация' },
-  { value: 'data_change', label: 'Изменение данных' },
-  { value: 'access', label: 'Проблемы с доступом' },
-  { value: 'suggestion', label: 'Предложение' },
-  { value: 'other', label: 'Другое' },
-]
+const categories = computed(() => [
+  { value: 'technical', label: t('adminSupport.catTechnical') },
+  { value: 'consultation', label: t('adminSupport.catConsultation') },
+  { value: 'data_change', label: t('adminSupport.catDataChange') },
+  { value: 'access', label: t('adminSupport.catAccess') },
+  { value: 'suggestion', label: t('adminSupport.catSuggestion') },
+  { value: 'other', label: t('adminSupport.catOther') },
+])
 
-const priorities = [
-  { value: 'low', label: 'Низкий', color: 'bg-slate-100 text-slate-700' },
-  { value: 'medium', label: 'Средний', color: 'bg-blue-100 text-blue-700' },
-  { value: 'high', label: 'Высокий', color: 'bg-orange-100 text-orange-700' },
-  { value: 'critical', label: 'Критический', color: 'bg-red-100 text-red-700' },
-]
+const priorities = computed(() => [
+  { value: 'low', label: t('adminSupport.prioLow'), color: 'bg-slate-100 text-slate-700' },
+  { value: 'medium', label: t('adminSupport.prioMedium'), color: 'bg-blue-100 text-blue-700' },
+  { value: 'high', label: t('adminSupport.prioHigh'), color: 'bg-orange-100 text-orange-700' },
+  { value: 'critical', label: t('adminSupport.prioCritical'), color: 'bg-red-100 text-red-700' },
+])
 
-const statuses = [
-  { value: 'new', label: 'Новое', color: 'bg-rose-100 text-rose-700' },
-  { value: 'in_progress', label: 'В работе', color: 'bg-blue-100 text-blue-700' },
-  { value: 'waiting', label: 'Ожидание ответа', color: 'bg-amber-100 text-amber-700' },
-  { value: 'resolved', label: 'Решено', color: 'bg-green-100 text-green-700' },
-  { value: 'closed', label: 'Закрыто', color: 'bg-gray-100 text-gray-500' },
-]
+const statuses = computed(() => [
+  { value: 'new', label: t('adminSupport.statusNew'), color: 'bg-rose-100 text-rose-700' },
+  { value: 'in_progress', label: t('adminSupport.statusInProgress'), color: 'bg-blue-100 text-blue-700' },
+  { value: 'waiting', label: t('adminSupport.statusWaiting'), color: 'bg-amber-100 text-amber-700' },
+  { value: 'resolved', label: t('adminSupport.statusResolved'), color: 'bg-green-100 text-green-700' },
+  { value: 'closed', label: t('adminSupport.statusClosed'), color: 'bg-gray-100 text-gray-500' },
+])
 
 const filteredTickets = computed(() => {
   return tickets.value.filter(ticket => {
@@ -212,30 +214,30 @@ const sendMessage = () => {
     author: 'Иванов И.И.',
     isSupport: true,
     message: newMessage.value,
-    timestamp: new Date().toLocaleString('ru-RU')
+    timestamp: new Date().toLocaleString()
   })
 
   newMessage.value = ''
 }
 
 const getStatusColor = (status: string) => {
-  return statuses.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-700'
+  return statuses.value.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-700'
 }
 
 const getStatusLabel = (status: string) => {
-  return statuses.find(s => s.value === status)?.label || status
+  return statuses.value.find(s => s.value === status)?.label || status
 }
 
 const getPriorityColor = (priority: string) => {
-  return priorities.find(p => p.value === priority)?.color || 'bg-gray-100 text-gray-700'
+  return priorities.value.find(p => p.value === priority)?.color || 'bg-gray-100 text-gray-700'
 }
 
 const getPriorityLabel = (priority: string) => {
-  return priorities.find(p => p.value === priority)?.label || priority
+  return priorities.value.find(p => p.value === priority)?.label || priority
 }
 
 const getCategoryLabel = (category: string) => {
-  return categories.find(c => c.value === category)?.label || category
+  return categories.value.find(c => c.value === category)?.label || category
 }
 
 const getRoleColor = (role: string) => {
@@ -250,10 +252,10 @@ const getRoleColor = (role: string) => {
 
 const getRoleLabel = (role: string) => {
   const labels: Record<string, string> = {
-    admin: 'Админ',
-    employee: 'Сотрудник',
-    business: 'Плательщик',
-    'eco-operator': 'Эко-оператор',
+    admin: t('adminSupport.roleAdmin'),
+    employee: t('adminSupport.roleEmployee'),
+    business: t('adminSupport.roleBusiness'),
+    'eco-operator': t('adminSupport.roleEcoOperator'),
   }
   return labels[role] || role
 }
@@ -283,8 +285,8 @@ const changeStatus = (status: Ticket['status']) => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Обращения пользователей</h1>
-          <p class="text-gray-600 mt-1">Техническая поддержка и консультации</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('adminSupport.title') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('adminSupport.subtitle') }}</p>
         </div>
       </div>
 
@@ -293,7 +295,7 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Всего</p>
+              <p class="text-sm text-gray-500">{{ $t('adminSupport.statTotal') }}</p>
               <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
             </div>
             <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
@@ -307,7 +309,7 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Новые</p>
+              <p class="text-sm text-gray-500">{{ $t('adminSupport.statNew') }}</p>
               <p class="text-2xl font-bold text-rose-600">{{ stats.new }}</p>
             </div>
             <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
@@ -321,7 +323,7 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">В работе</p>
+              <p class="text-sm text-gray-500">{{ $t('adminSupport.statInProgress') }}</p>
               <p class="text-2xl font-bold text-blue-600">{{ stats.inProgress }}</p>
             </div>
             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -335,7 +337,7 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Ожидание</p>
+              <p class="text-sm text-gray-500">{{ $t('adminSupport.statWaiting') }}</p>
               <p class="text-2xl font-bold text-amber-600">{{ stats.waiting }}</p>
             </div>
             <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
@@ -349,7 +351,7 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Решено</p>
+              <p class="text-sm text-gray-500">{{ $t('adminSupport.statResolved') }}</p>
               <p class="text-2xl font-bold text-green-600">{{ stats.resolved }}</p>
             </div>
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -372,7 +374,7 @@ const changeStatus = (status: Ticket['status']) => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по номеру, теме, пользователю..."
+                :placeholder="$t('adminSupport.searchPlaceholder')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
               />
             </div>
@@ -382,7 +384,7 @@ const changeStatus = (status: Ticket['status']) => {
             v-model="statusFilter"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
           >
-            <option value="">Все статусы</option>
+            <option value="">{{ $t('adminSupport.allStatuses') }}</option>
             <option v-for="status in statuses" :key="status.value" :value="status.value">
               {{ status.label }}
             </option>
@@ -392,7 +394,7 @@ const changeStatus = (status: Ticket['status']) => {
             v-model="priorityFilter"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
           >
-            <option value="">Все приоритеты</option>
+            <option value="">{{ $t('adminSupport.allPriorities') }}</option>
             <option v-for="priority in priorities" :key="priority.value" :value="priority.value">
               {{ priority.label }}
             </option>
@@ -402,7 +404,7 @@ const changeStatus = (status: Ticket['status']) => {
             v-model="categoryFilter"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
           >
-            <option value="">Все категории</option>
+            <option value="">{{ $t('adminSupport.allCategories') }}</option>
             <option v-for="category in categories" :key="category.value" :value="category.value">
               {{ category.label }}
             </option>
@@ -415,14 +417,14 @@ const changeStatus = (status: Ticket['status']) => {
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Номер</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тема</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Пользователь</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Категория</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Приоритет</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Исполнитель</th>
-              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Дата</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thNumber') }}</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thSubject') }}</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thUser') }}</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thCategory') }}</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thPriority') }}</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thStatus') }}</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thAssignee') }}</th>
+              <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('adminSupport.thDate') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -478,16 +480,16 @@ const changeStatus = (status: Ticket['status']) => {
           <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
-          <p class="text-gray-500">Обращений не найдено</p>
+          <p class="text-gray-500">{{ $t('adminSupport.emptyState') }}</p>
         </div>
 
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <p class="text-sm text-gray-500">Показано {{ filteredTickets.length }} обращений</p>
+          <p class="text-sm text-gray-500">{{ $t('adminSupport.shown') }} {{ filteredTickets.length }} {{ $t('adminSupport.tickets') }}</p>
           <div class="flex items-center gap-2">
-            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Назад</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">{{ $t('adminSupport.prevPage') }}</button>
             <button class="px-3 py-1 bg-rose-600 text-white rounded-lg">1</button>
-            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Далее</button>
+            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">{{ $t('adminSupport.nextPage') }}</button>
           </div>
         </div>
       </div>
@@ -525,7 +527,7 @@ const changeStatus = (status: Ticket['status']) => {
             <div class="flex">
               <!-- Messages -->
               <div class="flex-1 p-6 border-r border-gray-200">
-                <h4 class="font-semibold text-gray-900 mb-4">Переписка</h4>
+                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('adminSupport.conversation') }}</h4>
 
                 <div class="space-y-4 mb-6">
                   <div
@@ -558,7 +560,7 @@ const changeStatus = (status: Ticket['status']) => {
                   <textarea
                     v-model="newMessage"
                     rows="3"
-                    placeholder="Введите ответ..."
+                    :placeholder="$t('adminSupport.replyPlaceholder')"
                     class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
                   ></textarea>
                   <div class="flex items-center justify-between mt-3">
@@ -572,7 +574,7 @@ const changeStatus = (status: Ticket['status']) => {
                       :disabled="!newMessage.trim()"
                       class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Отправить
+                      {{ $t('adminSupport.sendBtn') }}
                     </button>
                   </div>
                 </div>
@@ -580,11 +582,11 @@ const changeStatus = (status: Ticket['status']) => {
 
               <!-- Sidebar -->
               <div class="w-72 p-6">
-                <h4 class="font-semibold text-gray-900 mb-4">Информация</h4>
+                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('adminSupport.infoTitle') }}</h4>
 
                 <div class="space-y-4">
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Пользователь</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelUser') }}</label>
                     <p class="font-medium text-gray-900">{{ selectedTicket.user }}</p>
                     <span :class="['text-xs px-1.5 py-0.5 rounded', getRoleColor(selectedTicket.userRole)]">
                       {{ getRoleLabel(selectedTicket.userRole) }}
@@ -592,50 +594,50 @@ const changeStatus = (status: Ticket['status']) => {
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Организация</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelOrganization') }}</label>
                     <p class="text-gray-900">{{ selectedTicket.organization }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Email</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelEmail') }}</label>
                     <p class="text-gray-900">{{ selectedTicket.email }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Телефон</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelPhone') }}</label>
                     <p class="text-gray-900">{{ selectedTicket.phone }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Категория</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelCategory') }}</label>
                     <p class="text-gray-900">{{ getCategoryLabel(selectedTicket.category) }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Создано</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelCreated') }}</label>
                     <p class="text-gray-900">{{ selectedTicket.createdAt }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Обновлено</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelUpdated') }}</label>
                     <p class="text-gray-900">{{ selectedTicket.updatedAt }}</p>
                   </div>
 
                   <div>
-                    <label class="text-xs text-gray-500 uppercase">Исполнитель</label>
+                    <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelAssignee') }}</label>
                     <p v-if="selectedTicket.assignee" class="text-gray-900">{{ selectedTicket.assignee }}</p>
                     <button
                       v-else
                       @click="assignToMe"
                       class="text-rose-600 hover:text-rose-700 font-medium"
                     >
-                      Взять в работу
+                      {{ $t('adminSupport.takeInWork') }}
                     </button>
                   </div>
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-gray-200">
-                  <label class="text-xs text-gray-500 uppercase mb-2 block">Изменить статус</label>
+                  <label class="text-xs text-gray-500 uppercase mb-2 block">{{ $t('adminSupport.changeStatus') }}</label>
                   <div class="flex flex-wrap gap-2">
                     <button
                       v-for="status in statuses"

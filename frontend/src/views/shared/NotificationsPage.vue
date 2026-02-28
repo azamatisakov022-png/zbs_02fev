@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, type ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -89,12 +89,12 @@ function handleNavigate(n: Notification) {
   }
 }
 
-const typeConfig: Record<string, { color: string; bg: string; icon: string; label: string }> = {
-  info: { color: '#2563eb', bg: '#eff6ff', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', label: 'Информация' },
-  success: { color: '#059669', bg: '#ecfdf5', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', label: 'Успех' },
-  warning: { color: '#d97706', bg: '#fffbeb', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z', label: 'Предупреждение' },
-  error: { color: '#dc2626', bg: '#fef2f2', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', label: 'Ошибка' },
-}
+const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: string; label: string }>> = computed(() => ({
+  info: { color: '#2563eb', bg: '#eff6ff', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', label: t('notificationsPage.typeInfo') },
+  success: { color: '#059669', bg: '#ecfdf5', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', label: t('notificationsPage.typeSuccess') },
+  warning: { color: '#d97706', bg: '#fffbeb', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z', label: t('notificationsPage.typeWarning') },
+  error: { color: '#dc2626', bg: '#fef2f2', icon: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z', label: t('notificationsPage.typeError') },
+}))
 </script>
 
 <template>
@@ -196,7 +196,7 @@ const typeConfig: Record<string, { color: string; bg: string; icon: string; labe
               v-if="getNotificationLink(n)"
               @click.stop="handleNavigate(n)"
               class="self-center px-3 py-1.5 text-xs font-medium text-[#0e888d] bg-[#f0fdfa] rounded-lg hover:bg-[#ccfbf1] transition-colors flex-shrink-0"
-            >Перейти</button>
+            >{{ t('notificationsPage.goTo') }}</button>
           </div>
         </TransitionGroup>
       </div>

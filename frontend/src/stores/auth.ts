@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue'
 import api from '../api/client'
+import i18n from '../i18n'
 
 export interface AuthUser {
   id: number
@@ -74,7 +75,7 @@ async function login(inn: string, password: string): Promise<AuthUser> {
     saveToStorage()
     return data.user
   } catch (err: any) {
-    const msg = err.response?.data?.message || 'Ошибка авторизации'
+    const msg = err.response?.data?.message || (i18n.global.t('error.authError') as string)
     state.error = msg
     throw new Error(msg)
   } finally {
@@ -100,7 +101,7 @@ async function register(payload: {
     saveToStorage()
     return data.user
   } catch (err: any) {
-    const msg = err.response?.data?.message || 'Ошибка регистрации'
+    const msg = err.response?.data?.message || (i18n.global.t('error.registrationError') as string)
     state.error = msg
     throw new Error(msg)
   } finally {

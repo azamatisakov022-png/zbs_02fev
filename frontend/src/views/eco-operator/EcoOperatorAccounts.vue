@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
@@ -10,6 +11,7 @@ import { AppButton } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -53,13 +55,13 @@ const totalDebt = computed(() => debtAccounts.value.reduce((sum, a) => sum + Mat
 const totalOverpaid = computed(() => overpaidAccounts.value.reduce((sum, a) => sum + a.balance, 0))
 
 // Table columns
-const columns = [
-  { key: 'company', label: 'Наименование организации', width: '22%' },
-  { key: 'inn', label: 'ИНН', width: '14%' },
-  { key: 'balance', label: 'Баланс', width: '14%' },
-  { key: 'lastPayment', label: 'Последнее поступление', width: '16%' },
-  { key: 'status', label: 'Статус', width: '10%' },
-]
+const columns = computed(() => [
+  { key: 'company', label: t('ecoAccounts.colCompanyName'), width: '22%' },
+  { key: 'inn', label: t('ecoAccounts.colInn'), width: '14%' },
+  { key: 'balance', label: t('ecoAccounts.colBalance'), width: '14%' },
+  { key: 'lastPayment', label: t('ecoAccounts.colLastPayment'), width: '16%' },
+  { key: 'status', label: t('ecoAccounts.colStatus'), width: '10%' },
+])
 
 // Table data with computed fields
 const tableData = computed(() => {
@@ -70,7 +72,7 @@ const tableData = computed(() => {
       company: acc.company,
       inn: acc.inn,
       balance: acc.balance,
-      lastPayment: lastPaymentTx ? `${lastPaymentTx.date} — ${lastPaymentTx.paymentAmount.toLocaleString('ru-RU')} сом` : '—',
+      lastPayment: lastPaymentTx ? `${lastPaymentTx.date} — ${lastPaymentTx.paymentAmount.toLocaleString()} ${t('ecoAccounts.som')}` : '—',
       status: acc.status,
     }
   })
@@ -78,13 +80,13 @@ const tableData = computed(() => {
 
 // Balance formatting
 const formatBalance = (balance: number): string => {
-  return Math.abs(balance).toLocaleString('ru-RU') + ' сом'
+  return Math.abs(balance).toLocaleString() + ' ' + t('ecoAccounts.som')
 }
 
 const getBalanceLabel = (balance: number): string => {
-  if (balance < 0) return 'Задолженность'
-  if (balance > 0) return 'Переплата'
-  return 'Оплачено'
+  if (balance < 0) return t('ecoAccounts.debt')
+  if (balance > 0) return t('ecoAccounts.overpayment')
+  return t('ecoAccounts.paid')
 }
 
 const getBalanceColor = (balance: number): string => {
@@ -94,7 +96,7 @@ const getBalanceColor = (balance: number): string => {
 }
 
 const getStatusStyle = (status: string) => {
-  if (status === 'Активен') return 'background:#D1FAE5;color:#065F46'
+  if (status === 'active') return 'background:#D1FAE5;color:#065F46'
   return 'background:#FEE2E2;color:#991B1B'
 }
 
@@ -119,9 +121,9 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
     </div>
 
     <SectionGuide
-      title="Лицевые счета плательщиков"
-      description="Финансовая информация по каждому плательщику утилизационного сбора."
-      :actions="['Просмотр баланса счетов', 'История начислений и платежей', 'Формирование выписок', 'Контроль задолженностей']"
+      :title="$t('ecoAccounts.guideTitle')"
+      :description="$t('ecoAccounts.guideDescription')"
+      :actions="[$t('ecoAccounts.guideAction1'), $t('ecoAccounts.guideAction2'), $t('ecoAccounts.guideAction3'), $t('ecoAccounts.guideAction4')]"
       storageKey="eco-accounts"
     />
 
@@ -133,7 +135,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
           <div class="w-10 h-10 bg-[#64748b] rounded-xl flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           </div>
-          <p class="text-sm font-medium text-[#64748b]">Всего организаций</p>
+          <p class="text-sm font-medium text-[#64748b]">{{ $t('ecoAccounts.totalOrganizations') }}</p>
         </div>
         <p class="text-3xl font-bold text-[#1e293b]">{{ totalCompanies }}</p>
       </div>
@@ -144,10 +146,10 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
           <div class="w-10 h-10 bg-[#EF4444] rounded-xl flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
           </div>
-          <p class="text-sm font-medium text-red-800">С задолженностью</p>
+          <p class="text-sm font-medium text-red-800">{{ $t('ecoAccounts.withDebt') }}</p>
         </div>
         <p class="text-3xl font-bold text-red-900">{{ debtAccounts.length }}</p>
-        <p class="text-xs text-red-600 mt-1 font-medium">{{ totalDebt.toLocaleString('ru-RU') }} сом</p>
+        <p class="text-xs text-red-600 mt-1 font-medium">{{ totalDebt.toLocaleString() }} {{ $t('ecoAccounts.som') }}</p>
       </div>
 
       <!-- 3. Overpaid -->
@@ -156,10 +158,10 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
           <div class="w-10 h-10 bg-[#F59E0B] rounded-xl flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
           </div>
-          <p class="text-sm font-medium text-amber-800">С переплатой</p>
+          <p class="text-sm font-medium text-amber-800">{{ $t('ecoAccounts.withOverpayment') }}</p>
         </div>
         <p class="text-3xl font-bold text-amber-900">{{ overpaidAccounts.length }}</p>
-        <p class="text-xs text-amber-600 mt-1 font-medium">{{ totalOverpaid.toLocaleString('ru-RU') }} сом</p>
+        <p class="text-xs text-amber-600 mt-1 font-medium">{{ totalOverpaid.toLocaleString() }} {{ $t('ecoAccounts.som') }}</p>
       </div>
 
       <!-- 4. No debt (balance = 0) -->
@@ -168,7 +170,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
           <div class="w-10 h-10 bg-[#059669] rounded-xl flex items-center justify-center">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
-          <p class="text-sm font-medium text-emerald-800">Без задолженности</p>
+          <p class="text-sm font-medium text-emerald-800">{{ $t('ecoAccounts.noDebt') }}</p>
         </div>
         <p class="text-3xl font-bold text-emerald-900">{{ zeroAccounts.length }}</p>
       </div>
@@ -185,10 +187,10 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
         <div class="flex flex-wrap gap-2 mb-3">
           <button
             v-for="tab in ([
-              { key: 'all', label: 'Все', count: totalCompanies },
-              { key: 'debt', label: 'С задолженностью', count: debtAccounts.length },
-              { key: 'overpaid', label: 'С переплатой', count: overpaidAccounts.length },
-              { key: 'zero', label: 'Без задолженности', count: zeroAccounts.length },
+              { key: 'all', label: $t('ecoAccounts.tabAll'), count: totalCompanies },
+              { key: 'debt', label: $t('ecoAccounts.tabDebt'), count: debtAccounts.length },
+              { key: 'overpaid', label: $t('ecoAccounts.tabOverpaid'), count: overpaidAccounts.length },
+              { key: 'zero', label: $t('ecoAccounts.tabNoDebt'), count: zeroAccounts.length },
             ] as { key: BalanceFilter, label: string, count: number }[])"
             :key="tab.key"
             @click="balanceFilter = tab.key"
@@ -217,7 +219,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск по названию компании или ИНН..."
+          :placeholder="$t('ecoAccounts.searchPlaceholder')"
           class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
         />
       </div>
@@ -258,15 +260,15 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
         <template #actions="{ row }">
           <AppButton variant="ghost" size="sm" @click="viewPayer(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-            Детали
+            {{ $t('ecoAccounts.details') }}
           </AppButton>
         </template>
         <template #empty>
           <EmptyState
             v-if="isFiltersActive"
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-            title="Ничего не найдено"
-            description="Попробуйте изменить параметры поиска"
+            :title="$t('ecoAccounts.notFound')"
+            :description="$t('ecoAccounts.tryChangeSearch')"
             :actionLabel="$t('empty.resetFilters')"
             @action="resetFilters"
           />
@@ -274,7 +276,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
             v-else
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>'
             :title="$t('empty.noAccounts')"
-            description="Плательщики пока не зарегистрированы в системе"
+            :description="$t('ecoAccounts.noPayersRegistered')"
           />
         </template>
       </DataTable>

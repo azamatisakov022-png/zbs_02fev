@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, reactive, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
 // --- Types ---
@@ -20,23 +22,23 @@ interface NotificationTemplate {
 }
 
 // --- Available variables ---
-const availableVariables = ref([
-  { key: '{company_name}', label: 'Название компании' },
-  { key: '{user_name}', label: 'Имя пользователя' },
-  { key: '{amount}', label: 'Сумма' },
-  { key: '{date}', label: 'Дата' },
-  { key: '{deadline}', label: 'Крайний срок' },
-  { key: '{status}', label: 'Статус' },
-  { key: '{document_id}', label: 'ID документа' },
-  { key: '{period}', label: 'Период' },
+const availableVariables = computed(() => [
+  { key: '{company_name}', label: t('adminNotifications.varCompanyName') },
+  { key: '{user_name}', label: t('adminNotifications.varUserName') },
+  { key: '{amount}', label: t('adminNotifications.varAmount') },
+  { key: '{date}', label: t('adminNotifications.varDate') },
+  { key: '{deadline}', label: t('adminNotifications.varDeadline') },
+  { key: '{status}', label: t('adminNotifications.varStatus') },
+  { key: '{document_id}', label: t('adminNotifications.varDocumentId') },
+  { key: '{period}', label: t('adminNotifications.varPeriod') },
 ])
 
 // --- Recipient options ---
-const recipientOptions = ref([
-  { value: 'payer', label: 'Плательщик' },
-  { value: 'employee', label: 'Сотрудник МПРЭТН' },
-  { value: 'eco-operator', label: 'ГП Эко Оператор' },
-  { value: 'admin', label: 'Администратор' },
+const recipientOptions = computed(() => [
+  { value: 'payer', label: t('adminNotifications.recipientPayer') },
+  { value: 'employee', label: t('adminNotifications.recipientEmployee') },
+  { value: 'eco-operator', label: t('adminNotifications.recipientEcoOperator') },
+  { value: 'admin', label: t('adminNotifications.recipientAdmin') },
 ])
 
 // --- Template data ---
@@ -258,7 +260,7 @@ const openEditModal = (template: NotificationTemplate) => {
 
 const duplicateTemplate = (template: NotificationTemplate) => {
   formData.id = 0
-  formData.name = template.name + ' (копия)'
+  formData.name = template.name + ' ' + t('adminNotifications.copySuffix')
   formData.type = template.type
   formData.recipients = [...template.recipients]
   formData.subject = template.subject
@@ -391,7 +393,7 @@ const getTypeLabel = (type: string) => {
     email: 'Email',
     sms: 'SMS',
     push: 'Push',
-    all: 'Все',
+    all: t('adminNotifications.typeAll'),
   }
   return labels[type] || type
 }
@@ -408,10 +410,10 @@ const getTypeColor = (type: string) => {
 
 const getRecipientLabel = (recipient: string) => {
   const labels: Record<string, string> = {
-    payer: 'Плательщик',
-    employee: 'Сотрудник МПРЭТН',
-    'eco-operator': 'ГП Эко Оператор',
-    admin: 'Администратор',
+    payer: t('adminNotifications.recipientPayer'),
+    employee: t('adminNotifications.recipientEmployee'),
+    'eco-operator': t('adminNotifications.recipientEcoOperator'),
+    admin: t('adminNotifications.recipientAdmin'),
   }
   return labels[recipient] || recipient
 }
@@ -447,8 +449,8 @@ const showPreview = ref(false)
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-[#415861]">Управление уведомлениями</h1>
-          <p class="text-[#64748b] mt-1">Настройка шаблонов и правил отправки уведомлений</p>
+          <h1 class="text-2xl font-bold text-[#415861]">{{ $t('adminNotifications.pageTitle') }}</h1>
+          <p class="text-[#64748b] mt-1">{{ $t('adminNotifications.pageSubtitle') }}</p>
         </div>
         <button
           @click="openCreateModal"
@@ -457,7 +459,7 @@ const showPreview = ref(false)
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Создать шаблон
+          {{ $t('adminNotifications.createTemplate') }}
         </button>
       </div>
 
@@ -466,7 +468,7 @@ const showPreview = ref(false)
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-[#64748b]">Всего шаблонов</p>
+              <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.totalTemplates') }}</p>
               <p class="text-2xl font-bold text-[#415861] mt-1">{{ stats.total }}</p>
             </div>
             <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
@@ -480,7 +482,7 @@ const showPreview = ref(false)
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-[#64748b]">Активных</p>
+              <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.activeTemplates') }}</p>
               <p class="text-2xl font-bold text-[#0e888d] mt-1">{{ stats.active }}</p>
             </div>
             <div class="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center">
@@ -494,7 +496,7 @@ const showPreview = ref(false)
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-[#64748b]">Email уведомлений</p>
+              <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.emailNotifications') }}</p>
               <p class="text-2xl font-bold text-blue-600 mt-1">{{ stats.email }}</p>
             </div>
             <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
@@ -508,7 +510,7 @@ const showPreview = ref(false)
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-[#64748b]">SMS уведомлений</p>
+              <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.smsNotifications') }}</p>
               <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.sms }}</p>
             </div>
             <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
@@ -525,7 +527,7 @@ const showPreview = ref(false)
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Search -->
           <div>
-            <label class="block text-sm font-medium text-[#415861] mb-1">Поиск по названию</label>
+            <label class="block text-sm font-medium text-[#415861] mb-1">{{ $t('adminNotifications.searchByName') }}</label>
             <div class="relative">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -533,7 +535,7 @@ const showPreview = ref(false)
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск шаблона..."
+                :placeholder="$t('adminNotifications.searchPlaceholder')"
                 class="w-full pl-9 pr-3 py-2 border border-[#e2e8f0] rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
               />
             </div>
@@ -541,29 +543,29 @@ const showPreview = ref(false)
 
           <!-- Type filter -->
           <div>
-            <label class="block text-sm font-medium text-[#415861] mb-1">Тип уведомления</label>
+            <label class="block text-sm font-medium text-[#415861] mb-1">{{ $t('adminNotifications.notificationType') }}</label>
             <select
               v-model="filterType"
               class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
             >
-              <option value="">Все типы</option>
+              <option value="">{{ $t('adminNotifications.allTypes') }}</option>
               <option value="email">Email</option>
               <option value="sms">SMS</option>
               <option value="push">Push</option>
-              <option value="all">Все каналы</option>
+              <option value="all">{{ $t('adminNotifications.allChannels') }}</option>
             </select>
           </div>
 
           <!-- Status filter -->
           <div>
-            <label class="block text-sm font-medium text-[#415861] mb-1">Статус</label>
+            <label class="block text-sm font-medium text-[#415861] mb-1">{{ $t('adminNotifications.status') }}</label>
             <select
               v-model="filterStatus"
               class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
             >
-              <option value="">Все статусы</option>
-              <option value="active">Активен</option>
-              <option value="inactive">Отключён</option>
+              <option value="">{{ $t('adminNotifications.allStatuses') }}</option>
+              <option value="active">{{ $t('adminNotifications.statusActive') }}</option>
+              <option value="inactive">{{ $t('adminNotifications.statusInactive') }}</option>
             </select>
           </div>
         </div>
@@ -575,13 +577,13 @@ const showPreview = ref(false)
           <table class="w-full">
             <thead class="bg-[#f8fafc] border-b border-[#e2e8f0]">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Название шаблона</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Тип</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Получатели</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Переменные</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider">Статус</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">Обновлён</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider">Действия</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colTemplateName') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colType') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colRecipients') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colVariables') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colStatus') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colUpdated') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider">{{ $t('adminNotifications.colActions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#e2e8f0]">
@@ -645,7 +647,7 @@ const showPreview = ref(false)
                       'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
                       template.active ? 'bg-[#0e888d]' : 'bg-gray-300'
                     ]"
-                    :title="template.active ? 'Активен' : 'Отключён'"
+                    :title="template.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive')"
                   >
                     <span
                       :class="[
@@ -655,7 +657,7 @@ const showPreview = ref(false)
                     />
                   </button>
                   <div class="text-xs mt-1" :class="template.active ? 'text-[#0e888d]' : 'text-[#64748b]'">
-                    {{ template.active ? 'Активен' : 'Отключён' }}
+                    {{ template.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive') }}
                   </div>
                 </td>
 
@@ -670,7 +672,7 @@ const showPreview = ref(false)
                     <button
                       @click="openEditModal(template)"
                       class="p-2 text-[#64748b] hover:text-[#0e888d] hover:bg-[#0e888d]/5 rounded-lg transition-colors"
-                      title="Редактировать"
+                      :title="$t('adminNotifications.editTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -679,7 +681,7 @@ const showPreview = ref(false)
                     <button
                       @click="duplicateTemplate(template)"
                       class="p-2 text-[#64748b] hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Дублировать"
+                      :title="$t('adminNotifications.duplicateTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -688,7 +690,7 @@ const showPreview = ref(false)
                     <button
                       @click="openDeleteModal(template)"
                       class="p-2 text-[#64748b] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Удалить"
+                      :title="$t('adminNotifications.deleteTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -706,14 +708,14 @@ const showPreview = ref(false)
           <svg class="w-12 h-12 text-[#e2e8f0] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
-          <p class="text-[#64748b] font-medium">Шаблоны не найдены</p>
-          <p class="text-sm text-[#64748b] mt-1">Попробуйте изменить параметры фильтрации</p>
+          <p class="text-[#64748b] font-medium">{{ $t('adminNotifications.templatesNotFound') }}</p>
+          <p class="text-sm text-[#64748b] mt-1">{{ $t('adminNotifications.tryChangeFilters') }}</p>
         </div>
 
         <!-- Table footer -->
         <div class="px-6 py-4 border-t border-[#e2e8f0] flex items-center justify-between bg-[#f8fafc]">
           <p class="text-sm text-[#64748b]">
-            Показано {{ filteredTemplates.length }} из {{ templates.length }} шаблонов
+            {{ $t('adminNotifications.shownOf', { filtered: filteredTemplates.length, total: templates.length }) }}
           </p>
         </div>
       </div>
@@ -729,9 +731,9 @@ const showPreview = ref(false)
               <div class="flex items-center justify-between">
                 <div>
                   <h3 class="text-xl font-bold text-[#415861]">
-                    {{ isEditing ? 'Редактировать шаблон' : 'Создать шаблон уведомления' }}
+                    {{ isEditing ? $t('adminNotifications.editTemplate') : $t('adminNotifications.createNotificationTemplate') }}
                   </h3>
-                  <p class="text-sm text-[#64748b] mt-1">Заполните параметры шаблона уведомления</p>
+                  <p class="text-sm text-[#64748b] mt-1">{{ $t('adminNotifications.fillTemplateParams') }}</p>
                 </div>
                 <button @click="showModal = false" class="p-2 text-[#64748b] hover:text-[#415861] rounded-lg hover:bg-gray-100 transition-colors">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -748,11 +750,11 @@ const showPreview = ref(false)
                 <div class="lg:col-span-2 space-y-5">
                   <!-- Template name -->
                   <div>
-                    <label class="block text-sm font-medium text-[#415861] mb-1.5">Название шаблона</label>
+                    <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.templateName') }}</label>
                     <input
                       v-model="formData.name"
                       type="text"
-                      placeholder="Например: Напоминание об оплате"
+                      :placeholder="$t('adminNotifications.templateNamePlaceholder')"
                       class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
                     />
                   </div>
@@ -760,21 +762,21 @@ const showPreview = ref(false)
                   <div class="grid grid-cols-2 gap-4">
                     <!-- Type -->
                     <div>
-                      <label class="block text-sm font-medium text-[#415861] mb-1.5">Тип уведомления</label>
+                      <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.notificationType') }}</label>
                       <select
                         v-model="formData.type"
                         class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
                       >
                         <option value="email">Email</option>
                         <option value="sms">SMS</option>
-                        <option value="push">Push-уведомление</option>
-                        <option value="all">Все каналы</option>
+                        <option value="push">{{ $t('adminNotifications.pushNotification') }}</option>
+                        <option value="all">{{ $t('adminNotifications.allChannels') }}</option>
                       </select>
                     </div>
 
                     <!-- Active toggle -->
                     <div>
-                      <label class="block text-sm font-medium text-[#415861] mb-1.5">Статус шаблона</label>
+                      <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.templateStatus') }}</label>
                       <div class="flex items-center gap-3 h-[42px]">
                         <button
                           @click="formData.active = !formData.active"
@@ -791,7 +793,7 @@ const showPreview = ref(false)
                           />
                         </button>
                         <span class="text-sm" :class="formData.active ? 'text-[#0e888d] font-medium' : 'text-[#64748b]'">
-                          {{ formData.active ? 'Активен' : 'Отключён' }}
+                          {{ formData.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive') }}
                         </span>
                       </div>
                     </div>
@@ -799,7 +801,7 @@ const showPreview = ref(false)
 
                   <!-- Recipients -->
                   <div>
-                    <label class="block text-sm font-medium text-[#415861] mb-1.5">Получатели</label>
+                    <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.recipients') }}</label>
                     <div class="flex flex-wrap gap-2">
                       <button
                         v-for="option in recipientOptions"
@@ -819,23 +821,23 @@ const showPreview = ref(false)
 
                   <!-- Subject (for email) -->
                   <div v-if="formData.type === 'email' || formData.type === 'all'">
-                    <label class="block text-sm font-medium text-[#415861] mb-1.5">Тема письма</label>
+                    <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.emailSubject') }}</label>
                     <input
                       v-model="formData.subject"
                       type="text"
-                      placeholder="Тема email-уведомления"
+                      :placeholder="$t('adminNotifications.emailSubjectPlaceholder')"
                       class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm"
                     />
                   </div>
 
                   <!-- Body -->
                   <div>
-                    <label class="block text-sm font-medium text-[#415861] mb-1.5">Тело шаблона</label>
+                    <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminNotifications.templateBody') }}</label>
                     <textarea
                       ref="templateBodyRef"
                       v-model="formData.body"
                       rows="10"
-                      placeholder="Введите текст уведомления. Используйте переменные из панели справа для подстановки данных."
+                      :placeholder="$t('adminNotifications.templateBodyPlaceholder')"
                       class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-sm font-mono leading-relaxed resize-y"
                     ></textarea>
                   </div>
@@ -854,7 +856,7 @@ const showPreview = ref(false)
                       >
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                       </svg>
-                      {{ showPreview ? 'Скрыть предпросмотр' : 'Показать предпросмотр' }}
+                      {{ showPreview ? $t('adminNotifications.hidePreview') : $t('adminNotifications.showPreview') }}
                     </button>
                   </div>
 
@@ -867,12 +869,12 @@ const showPreview = ref(false)
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          <span class="text-sm font-medium text-[#415861]">Предпросмотр (с примерными данными)</span>
+                          <span class="text-sm font-medium text-[#415861]">{{ $t('adminNotifications.previewWithSampleData') }}</span>
                         </div>
                       </div>
                       <div class="p-4">
                         <div v-if="formData.subject && (formData.type === 'email' || formData.type === 'all')" class="mb-3 pb-3 border-b border-[#e2e8f0]">
-                          <p class="text-xs text-[#64748b] mb-1">Тема:</p>
+                          <p class="text-xs text-[#64748b] mb-1">{{ $t('adminNotifications.subjectLabel') }}</p>
                           <p class="text-sm font-medium text-[#415861]">{{ previewSubject }}</p>
                         </div>
                         <div class="text-sm text-[#415861] whitespace-pre-wrap leading-relaxed">{{ previewBody }}</div>
@@ -888,10 +890,10 @@ const showPreview = ref(false)
                       <svg class="w-4 h-4 text-[#0e888d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
-                      Доступные переменные
+                      {{ $t('adminNotifications.availableVariables') }}
                     </h4>
                     <p class="text-xs text-[#64748b] mb-4">
-                      Нажмите на переменную, чтобы вставить её в тело шаблона
+                      {{ $t('adminNotifications.variableHint') }}
                     </p>
                     <div class="space-y-2">
                       <button
@@ -908,9 +910,9 @@ const showPreview = ref(false)
                     </div>
 
                     <div class="mt-5 pt-4 border-t border-[#e2e8f0]">
-                      <h4 class="text-xs font-semibold text-[#415861] mb-2 uppercase tracking-wider">Подсказка</h4>
+                      <h4 class="text-xs font-semibold text-[#415861] mb-2 uppercase tracking-wider">{{ $t('adminNotifications.tipTitle') }}</h4>
                       <p class="text-xs text-[#64748b] leading-relaxed">
-                        Переменные автоматически заменяются реальными данными при отправке уведомления. Например, <span class="font-mono text-[#0e888d]">{company_name}</span> будет заменено на название организации получателя.
+                        {{ $t('adminNotifications.tipText', { variable: '{company_name}' }) }}
                       </p>
                     </div>
                   </div>
@@ -924,7 +926,7 @@ const showPreview = ref(false)
                 @click="showModal = false"
                 class="px-5 py-2.5 bg-white border border-[#e2e8f0] text-[#415861] rounded-xl font-medium hover:bg-gray-50 transition-colors"
               >
-                Отмена
+                {{ $t('adminNotifications.cancel') }}
               </button>
               <div class="flex items-center gap-3">
                 <button
@@ -935,7 +937,7 @@ const showPreview = ref(false)
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  Предпросмотр
+                  {{ $t('adminNotifications.preview') }}
                 </button>
                 <button
                   @click="saveTemplate"
@@ -945,7 +947,7 @@ const showPreview = ref(false)
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
-                  {{ isEditing ? 'Сохранить изменения' : 'Создать шаблон' }}
+                  {{ isEditing ? $t('adminNotifications.saveChanges') : $t('adminNotifications.createTemplate') }}
                 </button>
               </div>
             </div>
@@ -960,7 +962,7 @@ const showPreview = ref(false)
         <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
           <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div class="p-6 border-b border-[#e2e8f0]">
-              <h3 class="text-xl font-bold text-[#415861]">Удаление шаблона</h3>
+              <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminNotifications.deleteTemplateTitle') }}</h3>
             </div>
 
             <div class="p-6">
@@ -972,20 +974,20 @@ const showPreview = ref(false)
                     </svg>
                   </div>
                   <div>
-                    <p class="text-sm text-red-800 font-medium">Вы уверены, что хотите удалить этот шаблон?</p>
-                    <p class="text-xs text-red-600 mt-1">Это действие нельзя отменить.</p>
+                    <p class="text-sm text-red-800 font-medium">{{ $t('adminNotifications.deleteConfirmText') }}</p>
+                    <p class="text-xs text-red-600 mt-1">{{ $t('adminNotifications.deleteIrreversible') }}</p>
                   </div>
                 </div>
 
                 <div class="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-                  <p class="text-sm text-[#64748b]">Шаблон:</p>
+                  <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.templateLabel') }}</p>
                   <p class="font-semibold text-[#415861]">{{ deleteTarget.name }}</p>
                   <div class="flex items-center gap-2 mt-2">
                     <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', getTypeColor(deleteTarget.type)]">
                       {{ getTypeLabel(deleteTarget.type) }}
                     </span>
                     <span class="text-xs text-[#64748b]">
-                      {{ deleteTarget.active ? 'Активен' : 'Отключён' }}
+                      {{ deleteTarget.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive') }}
                     </span>
                   </div>
                 </div>
@@ -997,7 +999,7 @@ const showPreview = ref(false)
                 @click="showDeleteModal = false"
                 class="px-5 py-2.5 bg-white border border-[#e2e8f0] text-[#415861] rounded-xl font-medium hover:bg-gray-50 transition-colors"
               >
-                Отмена
+                {{ $t('adminNotifications.cancel') }}
               </button>
               <button
                 @click="confirmDelete"
@@ -1006,7 +1008,7 @@ const showPreview = ref(false)
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                Удалить
+                {{ $t('adminNotifications.delete') }}
               </button>
             </div>
           </div>

@@ -1,26 +1,29 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StubPage from '../../components/dashboard/StubPage.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
 const { roleTitle, menuItems } = useAdminMenu()
+const { t } = useI18n()
 
-const pageTitles: Record<string, string> = {
-  '/admin/organizations': 'Организации',
-  '/admin/declarations': 'Все декларации',
-  '/admin/reports': 'Все отчёты',
-  '/admin/registries': 'Реестры и справочники',
-  '/admin/calculations': 'Настройки расчётов',
-  '/admin/analytics': 'Аналитика',
-  '/admin/audit': 'Журнал действий',
-  '/admin/settings': 'Настройки системы',
-  '/admin/support': 'Обращения пользователей',
-}
-
-const pageTitle = computed(() => pageTitles[route.path] || 'Страница')
+const pageTitle = computed(() => {
+  const titles: Record<string, string> = {
+    '/admin/organizations': t('adminStub.organizations'),
+    '/admin/declarations': t('adminStub.allDeclarations'),
+    '/admin/reports': t('adminStub.allReports'),
+    '/admin/registries': t('adminStub.registries'),
+    '/admin/calculations': t('adminStub.calcSettings'),
+    '/admin/analytics': t('adminStub.analytics'),
+    '/admin/audit': t('adminStub.auditLog'),
+    '/admin/settings': t('adminStub.systemSettings'),
+    '/admin/support': t('adminStub.support'),
+  }
+  return titles[route.path] || t('adminStub.page')
+})
 </script>
 
 <template>

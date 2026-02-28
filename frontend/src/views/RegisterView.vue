@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { productGroups } from '../data/product-groups'
 import { toastStore } from '../stores/toast'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // Registration mode: 'choose' = initial screen, 'esi' = simplified after ESI, 'manual' = existing wizard
 const registrationMode = ref<'choose' | 'esi' | 'manual'>('choose')
@@ -34,32 +36,32 @@ interface WasteCategory {
 }
 
 // 24 группы продукции по ПКМ КР №322 — плоский список
-const wasteItems: WasteCategory[] = [
-  { value: 'g1', label: '1. Изделия из гофрированной бумаги/картона' },
-  { value: 'g2', label: '2. Изделия из негофрированной бумаги/картона' },
-  { value: 'g3', label: '3. Масла' },
-  { value: 'g4', label: '4. Шины, покрышки и камеры резиновые' },
-  { value: 'g5', label: '5. Изделия из резины (за исключением шин)' },
-  { value: 'g6', label: '6. Изделия пластмассовые упаковочные' },
-  { value: 'g7', label: '7. Изделия пластмассовые прочие' },
-  { value: 'g8', label: '8. Стекло полое' },
-  { value: 'g9', label: '9. Компьютеры и периферийное оборудование, офисное оборудование' },
-  { value: 'g10', label: '10. Мониторы, приемники телевизионные' },
-  { value: 'g11', label: '11. Элементы первичные и батареи первичных элементов' },
-  { value: 'g12', label: '12. Аккумуляторы свинцовые' },
-  { value: 'g13', label: '13. Батареи аккумуляторные' },
-  { value: 'g14', label: '14. Оборудование электрическое осветительное' },
-  { value: 'g15', label: '15. Техника бытовая крупная' },
-  { value: 'g16', label: '16. Техника бытовая мелкая, инструмент ручной' },
-  { value: 'g17', label: '17. Оборудование холодильное и вентиляционное' },
-  { value: 'g18', label: '18. Фильтры для двигателей внутреннего сгорания' },
-  { value: 'g19', label: '19. Упаковка из полимерных материалов, не содержащих галогены' },
-  { value: 'g20', label: '20. Упаковка из полимерных материалов, содержащих галоген' },
-  { value: 'g21', label: '21. Упаковка из комбинированных материалов' },
-  { value: 'g22', label: '22. Упаковка из гофрированного картона' },
-  { value: 'g23', label: '23. Упаковка из бумаги и негофрированного картона' },
-  { value: 'g24', label: '24. Упаковка стеклянная' },
-]
+const wasteItems = computed<WasteCategory[]>(() => [
+  { value: 'g1', label: t('registerView.wasteG1') },
+  { value: 'g2', label: t('registerView.wasteG2') },
+  { value: 'g3', label: t('registerView.wasteG3') },
+  { value: 'g4', label: t('registerView.wasteG4') },
+  { value: 'g5', label: t('registerView.wasteG5') },
+  { value: 'g6', label: t('registerView.wasteG6') },
+  { value: 'g7', label: t('registerView.wasteG7') },
+  { value: 'g8', label: t('registerView.wasteG8') },
+  { value: 'g9', label: t('registerView.wasteG9') },
+  { value: 'g10', label: t('registerView.wasteG10') },
+  { value: 'g11', label: t('registerView.wasteG11') },
+  { value: 'g12', label: t('registerView.wasteG12') },
+  { value: 'g13', label: t('registerView.wasteG13') },
+  { value: 'g14', label: t('registerView.wasteG14') },
+  { value: 'g15', label: t('registerView.wasteG15') },
+  { value: 'g16', label: t('registerView.wasteG16') },
+  { value: 'g17', label: t('registerView.wasteG17') },
+  { value: 'g18', label: t('registerView.wasteG18') },
+  { value: 'g19', label: t('registerView.wasteG19') },
+  { value: 'g20', label: t('registerView.wasteG20') },
+  { value: 'g21', label: t('registerView.wasteG21') },
+  { value: 'g22', label: t('registerView.wasteG22') },
+  { value: 'g23', label: t('registerView.wasteG23') },
+  { value: 'g24', label: t('registerView.wasteG24') },
+])
 
 const esiFormErrors = reactive<Record<string, string>>({})
 
@@ -79,14 +81,14 @@ const toggleWasteCategory = (value: string) => {
   }
 }
 
-const allWasteSelected = computed(() => esiForm.wasteCategories.length === wasteItems.length)
+const allWasteSelected = computed(() => esiForm.wasteCategories.length === wasteItems.value.length)
 
 const toggleAllWaste = () => {
   if (allWasteSelected.value) {
     esiForm.wasteCategories.splice(0)
   } else {
     esiForm.wasteCategories.splice(0)
-    esiForm.wasteCategories.push(...wasteItems.map(i => i.value))
+    esiForm.wasteCategories.push(...wasteItems.value.map(i => i.value))
   }
 }
 
@@ -95,10 +97,10 @@ const validateEsiForm = (): boolean => {
   esiFormErrors.wasteCategories = ''
 
   if (!esiForm.activityType) {
-    esiFormErrors.activityType = 'Выберите вид деятельности'
+    esiFormErrors.activityType = t('register.errors.selectActivityType')
   }
   if (esiForm.wasteCategories.length === 0) {
-    esiFormErrors.wasteCategories = 'Выберите хотя бы одну категорию'
+    esiFormErrors.wasteCategories = t('register.errors.selectAtLeastOneCategory')
   }
 
   return !esiFormErrors.activityType && !esiFormErrors.wasteCategories
@@ -110,7 +112,7 @@ const esiRegistrationNumber = ref('')
 
 const submitEsiRegistration = async () => {
   if (!esiForm.confirmData) {
-    toastStore.show({ type: 'warning', title: 'Подтвердите согласие', message: 'Подтвердите согласие с условиями' })
+    toastStore.show({ type: 'warning', title: t('register.toast.confirmAgreementTitle'), message: t('register.toast.confirmAgreementMessage') })
     return
   }
   if (!validateEsiForm()) return
@@ -134,75 +136,75 @@ const startManualRegistration = () => {
 const currentStep = ref(1)
 const totalSteps = 5
 
-const steps = [
-  { number: 1, title: 'Тип организации' },
-  { number: 2, title: 'Данные организации' },
-  { number: 3, title: 'Руководитель и контакты' },
-  { number: 4, title: 'Документы' },
-  { number: 5, title: 'Проверка и отправка' },
-]
+const steps = computed(() => [
+  { number: 1, title: t('register.steps.orgType') },
+  { number: 2, title: t('register.steps.orgData') },
+  { number: 3, title: t('register.steps.directorContacts') },
+  { number: 4, title: t('register.steps.documents') },
+  { number: 5, title: t('register.steps.reviewSubmit') },
+])
 
-const orgTypeGroups = [
+const orgTypeGroups = computed(() => [
   {
-    label: 'Хозяйственные общества',
+    label: t('register.orgTypeGroups.businessEntities'),
     options: [
-      { value: 'osoo', label: 'ОсОО (Общество с ограниченной ответственностью)' },
-      { value: 'oao', label: 'ОАО (Открытое акционерное общество)' },
-      { value: 'zao', label: 'ЗАО (Закрытое акционерное общество)' },
-      { value: 'odo', label: 'ОДО (Общество с дополнительной ответственностью)' },
+      { value: 'osoo', label: t('register.orgTypes.osoo') },
+      { value: 'oao', label: t('register.orgTypes.oao') },
+      { value: 'zao', label: t('register.orgTypes.zao') },
+      { value: 'odo', label: t('register.orgTypes.odo') },
     ],
   },
   {
-    label: 'Государственные и муниципальные',
+    label: t('register.orgTypeGroups.stateAndMunicipal'),
     options: [
-      { value: 'gp', label: 'ГП (Государственное предприятие)' },
-      { value: 'mp', label: 'МП (Муниципальное предприятие)' },
+      { value: 'gp', label: t('register.orgTypes.gp') },
+      { value: 'mp', label: t('register.orgTypes.mp') },
     ],
   },
   {
-    label: 'Кооперативы и товарищества',
+    label: t('register.orgTypeGroups.cooperatives'),
     options: [
-      { value: 'pk', label: 'ПК (Производственный кооператив)' },
-      { value: 'pt', label: 'Полное товарищество' },
-      { value: 'kt', label: 'Коммандитное товарищество' },
+      { value: 'pk', label: t('register.orgTypes.pk') },
+      { value: 'pt', label: t('register.orgTypes.pt') },
+      { value: 'kt', label: t('register.orgTypes.kt') },
     ],
   },
   {
-    label: 'Некоммерческие',
+    label: t('register.orgTypeGroups.nonCommercial'),
     options: [
-      { value: 'oo', label: 'ОО (Общественное объединение)' },
-      { value: 'of', label: 'ОФ (Общественный фонд)' },
-      { value: 'uchrezhdenie', label: 'Учреждение' },
+      { value: 'oo', label: t('register.orgTypes.oo') },
+      { value: 'of', label: t('register.orgTypes.of') },
+      { value: 'uchrezhdenie', label: t('register.orgTypes.uchrezhdenie') },
     ],
   },
   {
-    label: 'Индивидуальные',
+    label: t('register.orgTypeGroups.individual'),
     options: [
-      { value: 'ip', label: 'ИП (Индивидуальный предприниматель)' },
-      { value: 'kfh', label: 'КФХ (Крестьянское (фермерское) хозяйство)' },
+      { value: 'ip', label: t('register.orgTypes.ip') },
+      { value: 'kfh', label: t('register.orgTypes.kfh') },
     ],
   },
   {
-    label: 'Иностранные',
+    label: t('register.orgTypeGroups.foreign'),
     options: [
-      { value: 'filial', label: 'Филиал иностранного юридического лица' },
-      { value: 'predstavitelstvo', label: 'Представительство иностранного юридического лица' },
+      { value: 'filial', label: t('register.orgTypes.filial') },
+      { value: 'predstavitelstvo', label: t('register.orgTypes.predstavitelstvo') },
     ],
   },
-]
+])
 
-const orgTypes = orgTypeGroups.flatMap(g => g.options)
+const orgTypes = computed(() => orgTypeGroups.value.flatMap(g => g.options))
 
 const individualOrgTypes = ['ip', 'kfh']
 
 const isIndividual = computed(() => individualOrgTypes.includes(formData.orgType))
 
-const activityTypes = [
-  { value: 'importer', label: 'Импортёр' },
-  { value: 'producer', label: 'Производитель' },
-  { value: 'both', label: 'Импортёр и Производитель' },
-  { value: 'recycler', label: 'Переработчик отходов' },
-]
+const activityTypes = computed(() => [
+  { value: 'importer', label: t('register.activityTypes.importer') },
+  { value: 'producer', label: t('register.activityTypes.producer') },
+  { value: 'both', label: t('register.activityTypes.both') },
+  { value: 'recycler', label: t('register.activityTypes.recycler') },
+])
 
 const formData = reactive({
   orgType: '',
@@ -243,17 +245,17 @@ const formData = reactive({
   confirmData: false,
 })
 
-const regions = [
-  'г. Бишкек',
-  'г. Ош',
-  'Чуйская область',
-  'Ошская область',
-  'Джалал-Абадская область',
-  'Иссык-Кульская область',
-  'Нарынская область',
-  'Таласская область',
-  'Баткенская область',
-]
+const regions = computed(() => [
+  t('registerView.regionBishkek'),
+  t('registerView.regionOsh'),
+  t('registerView.regionChuy'),
+  t('registerView.regionOshOblast'),
+  t('registerView.regionJalalAbad'),
+  t('registerView.regionIssykKul'),
+  t('registerView.regionNaryn'),
+  t('registerView.regionTalas'),
+  t('registerView.regionBatken'),
+])
 
 const errors = reactive<Record<string, string>>({})
 
@@ -273,8 +275,8 @@ const validatePhone = (phone: string): boolean => {
 const validateStep1 = (): boolean => {
   errors.orgType = ''
   errors.activityType = ''
-  if (!formData.orgType) errors.orgType = 'Выберите тип организации'
-  if (!formData.activityType) errors.activityType = 'Выберите вид деятельности'
+  if (!formData.orgType) errors.orgType = t('register.errors.selectOrgType')
+  if (!formData.activityType) errors.activityType = t('register.errors.selectActivityType')
   return !errors.orgType && !errors.activityType
 }
 
@@ -293,33 +295,33 @@ const validateStep2 = (): boolean => {
   errors.selectedProductGroups = ''
 
   if (isIndividual.value) {
-    if (!formData.lastName.trim()) errors.lastName = 'Введите фамилию'
-    if (!formData.firstName.trim()) errors.firstName = 'Введите имя'
-    if (!formData.passportSeries.trim()) errors.passportSeries = 'Введите серию паспорта'
-    if (!formData.passportNumber.trim()) errors.passportNumber = 'Введите номер паспорта'
+    if (!formData.lastName.trim()) errors.lastName = t('register.errors.enterLastName')
+    if (!formData.firstName.trim()) errors.firstName = t('register.errors.enterFirstName')
+    if (!formData.passportSeries.trim()) errors.passportSeries = t('register.errors.enterPassportSeries')
+    if (!formData.passportNumber.trim()) errors.passportNumber = t('register.errors.enterPassportNumber')
   } else {
-    if (!formData.shortName.trim()) errors.shortName = 'Введите краткое наименование'
-    if (!formData.fullName.trim()) errors.fullName = 'Введите полное наименование'
+    if (!formData.shortName.trim()) errors.shortName = t('register.errors.enterShortName')
+    if (!formData.fullName.trim()) errors.fullName = t('register.errors.enterFullName')
   }
   if (!formData.inn.trim()) {
-    errors.inn = 'Введите ИНН'
+    errors.inn = t('register.errors.enterInn')
   } else if (!validateINN(formData.inn)) {
-    errors.inn = 'ИНН должен содержать 14 цифр'
+    errors.inn = t('register.errors.innFormat')
   }
-  if (!formData.legalRegion) errors.legalRegion = 'Выберите область/город'
-  if (!formData.legalCity.trim()) errors.legalCity = 'Введите город/район'
+  if (!formData.legalRegion) errors.legalRegion = t('register.errors.selectRegion')
+  if (!formData.legalCity.trim()) errors.legalCity = t('register.errors.enterCity')
   if (!formData.phone || formData.phone === '+996 ') {
-    errors.phone = 'Введите номер телефона'
+    errors.phone = t('register.errors.enterPhone')
   } else if (!validatePhone(formData.phone)) {
-    errors.phone = 'Неверный формат телефона'
+    errors.phone = t('register.errors.invalidPhone')
   }
   if (!formData.email.trim()) {
-    errors.email = 'Введите email'
+    errors.email = t('register.errors.enterEmail')
   } else if (!validateEmail(formData.email)) {
-    errors.email = 'Неверный формат email'
+    errors.email = t('register.errors.invalidEmail')
   }
   if (formData.selectedProductGroups.length === 0) {
-    errors.selectedProductGroups = 'Выберите хотя бы одну группу товаров'
+    errors.selectedProductGroups = t('register.errors.selectAtLeastOneProductGroup')
   }
   return Object.keys(errors).filter(k => errors[k]).length === 0
 }
@@ -332,15 +334,15 @@ const validateStep3 = (): boolean => {
   errors.contactPhone = ''
   errors.contactEmail = ''
 
-  if (!formData.directorFullName.trim()) errors.directorFullName = 'Введите ФИО руководителя'
-  if (!formData.directorPosition.trim()) errors.directorPosition = 'Введите должность'
-  if (!formData.directorPhone || formData.directorPhone === '+996 ') errors.directorPhone = 'Введите телефон руководителя'
-  if (!formData.contactFullName.trim()) errors.contactFullName = 'Введите ФИО контактного лица'
-  if (!formData.contactPhone || formData.contactPhone === '+996 ') errors.contactPhone = 'Введите телефон контактного лица'
+  if (!formData.directorFullName.trim()) errors.directorFullName = t('register.errors.enterDirectorFullName')
+  if (!formData.directorPosition.trim()) errors.directorPosition = t('register.errors.enterPosition')
+  if (!formData.directorPhone || formData.directorPhone === '+996 ') errors.directorPhone = t('register.errors.enterDirectorPhone')
+  if (!formData.contactFullName.trim()) errors.contactFullName = t('register.errors.enterContactFullName')
+  if (!formData.contactPhone || formData.contactPhone === '+996 ') errors.contactPhone = t('register.errors.enterContactPhone')
   if (!formData.contactEmail.trim()) {
-    errors.contactEmail = 'Введите email контактного лица'
+    errors.contactEmail = t('register.errors.enterContactEmail')
   } else if (!validateEmail(formData.contactEmail)) {
-    errors.contactEmail = 'Неверный формат email'
+    errors.contactEmail = t('register.errors.invalidEmail')
   }
   return !errors.directorFullName && !errors.directorPosition && !errors.directorPhone &&
          !errors.contactFullName && !errors.contactPhone && !errors.contactEmail
@@ -360,12 +362,12 @@ const isDragging = ref(false)
 const activeUploadCategory = ref<UploadedFile['category']>('certificate')
 let nextFileId = 1
 
-const fileCategories = [
-  { value: 'certificate', label: 'Свидетельство о регистрации', required: true },
-  { value: 'extract', label: 'Выписка из реестра', required: false },
-  { value: 'license', label: 'Лицензия (если есть)', required: false },
-  { value: 'proxy', label: 'Доверенность (если регистрирует не руководитель)', required: false },
-]
+const fileCategories = computed(() => [
+  { value: 'certificate', label: t('register.fileCategories.certificate'), required: true },
+  { value: 'extract', label: t('register.fileCategories.extract'), required: false },
+  { value: 'license', label: t('register.fileCategories.license'), required: false },
+  { value: 'proxy', label: t('register.fileCategories.proxy'), required: false },
+])
 
 const handleDrop = (e: DragEvent) => {
   isDragging.value = false
@@ -387,14 +389,14 @@ const addFiles = (files: FileList) => {
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     if (!allowedTypes.includes(file.type)) {
-      toastStore.show({ type: 'warning', title: 'Недопустимый формат', message: `Файл \u00AB${file.name}\u00BB имеет недопустимый формат. Разрешены: PDF, JPG, PNG` })
+      toastStore.show({ type: 'warning', title: t('register.toast.invalidFormat'), message: t('register.toast.invalidFormatMessage', { name: file.name }) })
       continue
     }
     if (file.size > maxSize) {
-      toastStore.show({ type: 'warning', title: 'Файл слишком большой', message: `Файл \u00AB${file.name}\u00BB превышает максимальный размер 10 МБ` })
+      toastStore.show({ type: 'warning', title: t('register.toast.fileTooLarge'), message: t('register.toast.fileTooLargeMessage', { name: file.name }) })
       continue
     }
-    const category = fileCategories.find(c => c.value === activeUploadCategory.value)
+    const category = fileCategories.value.find(c => c.value === activeUploadCategory.value)
     uploadedFiles.value.push({
       id: nextFileId++,
       name: file.name,
@@ -453,11 +455,11 @@ const registrationNumber = ref('')
 
 const submitRegistration = async () => {
   if (!formData.confirmData) {
-    toastStore.show({ type: 'warning', title: 'Подтвердите данные', message: 'Подтвердите достоверность введённых данных' })
+    toastStore.show({ type: 'warning', title: t('register.toast.confirmDataTitle'), message: t('register.toast.confirmDataMessage') })
     return
   }
   if (!hasRequiredDocuments.value) {
-    toastStore.show({ type: 'warning', title: 'Отсутствует документ', message: 'Загрузите обязательный документ: Свидетельство о регистрации' })
+    toastStore.show({ type: 'warning', title: t('register.toast.missingDocument'), message: t('register.toast.missingDocumentMessage') })
     return
   }
   isSubmitting.value = true
@@ -469,11 +471,11 @@ const submitRegistration = async () => {
 }
 
 const getOrgTypeLabel = (value: string) => {
-  return orgTypes.find(t => t.value === value)?.label || value
+  return orgTypes.value.find(t => t.value === value)?.label || value
 }
 
 const getActivityTypeLabel = (value: string) => {
-  return activityTypes.find(t => t.value === value)?.label || value
+  return activityTypes.value.find(t => t.value === value)?.label || value
 }
 
 const toggleProductGroup = (value: string) => {
@@ -531,7 +533,7 @@ const setManualCapacityValue = (groupValue: string, value: string) => {
 }
 
 const getWasteCategoryLabel = (value: string): string => {
-  const item = wasteItems.find(i => i.value === value)
+  const item = wasteItems.value.find(i => i.value === value)
   if (item) {
     const match = item.label.match(/^\d+\.\s*(.+)$/)
     return match ? match[1] : item.label
@@ -560,8 +562,8 @@ const goHome = () => {
       <!-- ==================== MODE: CHOOSE (Initial ESI Screen) ==================== -->
       <div v-if="registrationMode === 'choose' && !isEsiLoading" class="max-w-lg mx-auto py-8">
         <div class="text-center mb-8">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Регистрация плательщика утилизационного сбора</h1>
-          <p class="text-[#64748b]">Выберите способ регистрации</p>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('register.title') }}</h1>
+          <p class="text-[#64748b]">{{ $t('register.chooseMethod') }}</p>
         </div>
 
         <!-- ESI Button -->
@@ -572,17 +574,17 @@ const goHome = () => {
           <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.83-3.23 9.36-7 10.57-3.77-1.21-7-5.74-7-10.57V6.3l7-3.12zM12 7a3 3 0 00-3 3v1H8v6h8v-6h-1v-1a3 3 0 00-3-3zm0 1.5a1.5 1.5 0 011.5 1.5v1h-3v-1A1.5 1.5 0 0112 8.5z"/>
           </svg>
-          Зарегистрироваться через ЕСИ Түндүк
+          {{ $t('register.registerViaEsi') }}
         </button>
 
         <p class="text-center text-sm text-[#64748b] mb-6">
-          Быстрая регистрация — данные будут заполнены автоматически из ЕСИ
+          {{ $t('register.esiDescription') }}
         </p>
 
         <!-- Divider -->
         <div class="flex items-center gap-4 my-6">
           <div class="flex-1 h-px bg-[#e2e8f0]"></div>
-          <span class="text-sm text-[#70868f] font-medium">или</span>
+          <span class="text-sm text-[#70868f] font-medium">{{ $t('register.or') }}</span>
           <div class="flex-1 h-px bg-[#e2e8f0]"></div>
         </div>
 
@@ -592,16 +594,16 @@ const goHome = () => {
             @click="startManualRegistration"
             class="text-[#0e888d] text-sm font-medium hover:underline"
           >
-            Зарегистрироваться без ЕСИ (заполнить вручную)
+            {{ $t('register.registerManual') }}
           </button>
         </div>
 
         <!-- Login link -->
         <div class="text-center mt-8">
           <p class="text-[#70868f] text-sm">
-            Уже есть аккаунт?
+            {{ $t('register.alreadyHaveAccount') }}
             <router-link to="/login" class="text-[#0e888d] font-medium hover:underline">
-              Войти
+              {{ $t('register.login') }}
             </router-link>
           </p>
         </div>
@@ -615,15 +617,15 @@ const goHome = () => {
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-[#415861] mb-2">Подключение к ЕСИ Түндүк...</h2>
-        <p class="text-[#70868f]">Получение данных организации</p>
+        <h2 class="text-xl font-semibold text-[#415861] mb-2">{{ $t('register.connectingToEsi') }}</h2>
+        <p class="text-[#70868f]">{{ $t('register.gettingOrgData') }}</p>
       </div>
 
       <!-- ==================== MODE: ESI (Simplified Form) ==================== -->
       <div v-if="registrationMode === 'esi' && !isEsiLoading && !isEsiSuccess" class="max-w-3xl mx-auto">
         <div class="mb-6 text-center">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Регистрация через ЕСИ Түндүк</h1>
-          <p class="text-[#64748b]">Проверьте данные и заполните дополнительную информацию</p>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('register.esiTitle') }}</h1>
+          <p class="text-[#64748b]">{{ $t('register.esiSubtitle') }}</p>
         </div>
 
         <!-- ESI Data (readonly) -->
@@ -632,13 +634,13 @@ const goHome = () => {
             <svg class="w-5 h-5 text-[#0e888d]" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.83-3.23 9.36-7 10.57-3.77-1.21-7-5.74-7-10.57V6.3l7-3.12z"/>
             </svg>
-            <span class="font-semibold text-[#0e888d]">Данные из ЕСИ Түндүк</span>
-            <span class="ml-auto text-xs text-[#0e888d] bg-[#d1e7e8] px-2 py-0.5 rounded-full">Подтверждено</span>
+            <span class="font-semibold text-[#0e888d]">{{ $t('register.esiDataTitle') }}</span>
+            <span class="ml-auto text-xs text-[#0e888d] bg-[#d1e7e8] px-2 py-0.5 rounded-full">{{ $t('register.confirmed') }}</span>
           </div>
           <div class="p-6 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">ИНН</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.inn') }}</label>
                 <input
                   type="text"
                   :value="esiData.inn"
@@ -647,7 +649,7 @@ const goHome = () => {
                 />
               </div>
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">Наименование</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.orgName') }}</label>
                 <input
                   type="text"
                   :value="esiData.shortName"
@@ -656,7 +658,7 @@ const goHome = () => {
                 />
               </div>
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">ФИО руководителя</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.directorFullName') }}</label>
                 <input
                   type="text"
                   :value="esiData.directorFullName"
@@ -665,7 +667,7 @@ const goHome = () => {
                 />
               </div>
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">Юридический адрес</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.legalAddress') }}</label>
                 <input
                   type="text"
                   :value="esiData.legalAddress"
@@ -674,7 +676,7 @@ const goHome = () => {
                 />
               </div>
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">Телефон</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.phone') }}</label>
                 <input
                   type="text"
                   :value="esiData.phone"
@@ -683,7 +685,7 @@ const goHome = () => {
                 />
               </div>
               <div>
-                <label class="block text-xs text-[#64748b] mb-1">Email</label>
+                <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.email') }}</label>
                 <input
                   type="text"
                   :value="esiData.email"
@@ -698,12 +700,12 @@ const goHome = () => {
         <!-- Additional fields to fill -->
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6">
           <div class="px-6 py-4 bg-[#f8fafc] border-b border-[#e2e8f0]">
-            <span class="font-semibold text-[#1e293b]">Дополнительная информация</span>
+            <span class="font-semibold text-[#1e293b]">{{ $t('register.additionalInfo') }}</span>
           </div>
           <div class="p-6 space-y-6">
             <!-- Activity Type -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.activityType') }} *</label>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
                   v-for="type in activityTypes"
@@ -729,13 +731,13 @@ const goHome = () => {
 
             <!-- Waste Categories (24 группы по ПКМ КР №322) -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">Категории товаров (группы отходов) *</label>
-              <p class="text-xs text-[#64748b] mb-4">Согласно постановлению КМ КР №322. Выберите все применимые категории.</p>
+              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('register.wasteCategories') }} *</label>
+              <p class="text-xs text-[#64748b] mb-4">{{ $t('register.wasteCategoriesHint') }}</p>
 
               <div class="border border-[#e2e8f0] rounded-2xl overflow-hidden">
                 <!-- Header with "Выбрать все" -->
                 <div class="flex items-center justify-between px-4 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8]">
-                  <span class="font-semibold text-[#0e888d] text-sm">24 группы продукции (ПКМ КР №322)</span>
+                  <span class="font-semibold text-[#0e888d] text-sm">{{ $t('register.productGroups24') }}</span>
                   <button
                     type="button"
                     @click="toggleAllWaste"
@@ -746,7 +748,7 @@ const goHome = () => {
                         : 'bg-white text-[#0e888d] border border-[#0e888d] hover:bg-[#f0fdfa]'
                     ]"
                   >
-                    {{ allWasteSelected ? 'Снять все' : 'Выбрать все' }}
+                    {{ allWasteSelected ? $t('register.deselectAll') : $t('register.selectAll') }}
                   </button>
                 </div>
                 <!-- Flat list in 2 columns -->
@@ -776,8 +778,8 @@ const goHome = () => {
 
               <!-- Recycler Capacities (ESI) -->
               <div v-if="esiForm.activityType === 'recycler' && esiForm.wasteCategories.length > 0" class="mt-6">
-                <h3 class="text-base font-semibold text-[#1e293b] mb-1">Мощности переработки (т/год)</h3>
-                <p class="text-sm text-[#64748b] mb-4">Укажите максимальную мощность переработки по каждому виду отходов</p>
+                <h3 class="text-base font-semibold text-[#1e293b] mb-1">{{ $t('register.recyclingCapacity') }}</h3>
+                <p class="text-sm text-[#64748b] mb-4">{{ $t('register.recyclingCapacityHint') }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div v-for="cat in esiForm.wasteCategories" :key="'esi-cap-' + cat" class="bg-[#f8fafc] rounded-lg p-3 border border-[#e2e8f0]">
                     <label class="block text-xs font-medium text-[#1e293b] mb-1.5">{{ getWasteCategoryLabel(cat) }}</label>
@@ -790,7 +792,7 @@ const goHome = () => {
                         placeholder="0"
                         class="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
                       />
-                      <span class="text-xs text-[#94a3b8] whitespace-nowrap">т/год</span>
+                      <span class="text-xs text-[#94a3b8] whitespace-nowrap">{{ $t('register.tonsPerYear') }}</span>
                     </div>
                   </div>
                 </div>
@@ -805,7 +807,7 @@ const goHome = () => {
                 class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d]"
               />
               <span class="text-sm text-[#1e293b]">
-                Подтверждаю достоверность предоставленных данных и соглашаюсь с условиями обработки персональных данных
+                {{ $t('register.confirmDataAgreement') }}
               </span>
             </label>
           </div>
@@ -819,7 +821,7 @@ const goHome = () => {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Назад
+              {{ $t('common.back') }}
             </button>
             <button
               @click="submitEsiRegistration"
@@ -833,7 +835,7 @@ const goHome = () => {
               <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {{ isEsiSubmitting ? 'Отправка...' : 'Отправить заявку на регистрацию' }}
+              {{ isEsiSubmitting ? $t('register.sending') : $t('register.submitApplication') }}
             </button>
           </div>
         </div>
@@ -847,17 +849,17 @@ const goHome = () => {
           </svg>
         </div>
 
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Заявка на регистрацию отправлена!</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('register.applicationSent') }}</h1>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="text-center">
-            <p class="text-sm text-[#64748b] mb-2">Номер заявки</p>
+            <p class="text-sm text-[#64748b] mb-2">{{ $t('register.applicationNumber') }}</p>
             <p class="text-2xl font-bold text-[#0e888d] font-mono mb-4">{{ esiRegistrationNumber }}</p>
 
             <div class="bg-[#f0fdf4] rounded-xl p-4 text-left">
               <p class="text-[#166534] text-sm">
-                <strong>Ваша заявка будет рассмотрена в течение 3 рабочих дней.</strong><br><br>
-                Уведомление о результате будет отправлено на email: <strong>{{ esiData.email }}</strong>
+                <strong>{{ $t('register.reviewIn3Days') }}</strong><br><br>
+                {{ $t('register.notificationWillBeSent') }} <strong>{{ esiData.email }}</strong>
               </p>
             </div>
           </div>
@@ -870,7 +872,7 @@ const goHome = () => {
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          Вернуться на главную
+          {{ $t('register.backToHome') }}
         </button>
       </div>
 
@@ -884,17 +886,17 @@ const goHome = () => {
             </svg>
           </div>
 
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Заявка на регистрацию отправлена!</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('register.applicationSent') }}</h1>
 
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
             <div class="text-center">
-              <p class="text-sm text-[#64748b] mb-2">Номер заявки</p>
+              <p class="text-sm text-[#64748b] mb-2">{{ $t('register.applicationNumber') }}</p>
               <p class="text-2xl font-bold text-[#0e888d] font-mono mb-4">{{ registrationNumber }}</p>
 
               <div class="bg-[#f0fdf4] rounded-xl p-4 text-left">
                 <p class="text-[#166534] text-sm">
-                  <strong>Ваша заявка будет рассмотрена в течение 3 рабочих дней.</strong><br><br>
-                  Уведомление о результате будет отправлено на указанный email: <strong>{{ formData.email }}</strong>
+                  <strong>{{ $t('register.reviewIn3Days') }}</strong><br><br>
+                  {{ $t('register.notificationWillBeSentToEmail') }} <strong>{{ formData.email }}</strong>
                 </p>
               </div>
             </div>
@@ -907,7 +909,7 @@ const goHome = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            Вернуться на главную
+            {{ $t('register.backToHome') }}
           </button>
         </div>
 
@@ -915,8 +917,8 @@ const goHome = () => {
         <div v-else class="max-w-4xl mx-auto">
           <!-- Header -->
           <div class="mb-6 text-center">
-            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Регистрация плательщика утилизационного сбора</h1>
-            <p class="text-[#64748b]">Заполните форму для подачи заявки на регистрацию</p>
+            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('register.title') }}</h1>
+            <p class="text-[#64748b]">{{ $t('register.manualSubtitle') }}</p>
           </div>
 
           <!-- Progress Steps -->
@@ -969,11 +971,11 @@ const goHome = () => {
           <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
             <!-- Step 1: Organization Type -->
             <div v-if="currentStep === 1" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Тип организации</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.steps.orgType') }}</h2>
 
               <div class="space-y-6">
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-3">Организационно-правовая форма *</label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.orgLegalForm') }} *</label>
                   <div class="relative">
                     <select
                       v-model="formData.orgType"
@@ -983,7 +985,7 @@ const goHome = () => {
                         !formData.orgType ? 'text-[#94a3b8]' : 'text-[#1e293b]'
                       ]"
                     >
-                      <option value="" disabled>Выберите организационно-правовую форму</option>
+                      <option value="" disabled>{{ $t('register.selectOrgLegalForm') }}</option>
                       <optgroup v-for="group in orgTypeGroups" :key="group.label" :label="group.label">
                         <option v-for="opt in group.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                       </optgroup>
@@ -994,7 +996,7 @@ const goHome = () => {
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-3">Вид деятельности *</label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.activityType') }} *</label>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label
                       v-for="type in activityTypes"
@@ -1022,18 +1024,18 @@ const goHome = () => {
 
             <!-- Step 2: Organization Data -->
             <div v-if="currentStep === 2" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ isIndividual ? 'Данные предпринимателя' : 'Данные организации' }}</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ isIndividual ? $t('register.entrepreneurData') : $t('register.orgData') }}</h2>
 
               <div class="space-y-6">
                 <!-- Individual (ИП/КФХ) fields -->
                 <template v-if="isIndividual">
                   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Фамилия *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.lastName') }} *</label>
                       <input
                         v-model="formData.lastName"
                         type="text"
-                        placeholder="Асанов"
+                        :placeholder="$t('register.placeholders.lastName')"
                         :class="[
                           'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.lastName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1042,11 +1044,11 @@ const goHome = () => {
                       <p v-if="errors.lastName" class="mt-1 text-sm text-red-600">{{ errors.lastName }}</p>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Имя *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.firstName') }} *</label>
                       <input
                         v-model="formData.firstName"
                         type="text"
-                        placeholder="Азамат"
+                        :placeholder="$t('register.placeholders.firstName')"
                         :class="[
                           'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.firstName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1055,18 +1057,18 @@ const goHome = () => {
                       <p v-if="errors.firstName" class="mt-1 text-sm text-red-600">{{ errors.firstName }}</p>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Отчество</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.middleName') }}</label>
                       <input
                         v-model="formData.middleName"
                         type="text"
-                        placeholder="Бакытович"
+                        :placeholder="$t('register.placeholders.middleName')"
                         class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
                       />
                     </div>
                   </div>
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Серия паспорта *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.passportSeries') }} *</label>
                       <input
                         v-model="formData.passportSeries"
                         type="text"
@@ -1080,7 +1082,7 @@ const goHome = () => {
                       <p v-if="errors.passportSeries" class="mt-1 text-sm text-red-600">{{ errors.passportSeries }}</p>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Номер паспорта *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.passportNumber') }} *</label>
                       <input
                         v-model="formData.passportNumber"
                         type="text"
@@ -1094,7 +1096,7 @@ const goHome = () => {
                       <p v-if="errors.passportNumber" class="mt-1 text-sm text-red-600">{{ errors.passportNumber }}</p>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Кем выдан</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.passportIssuedBy') }}</label>
                       <input
                         v-model="formData.passportIssuedBy"
                         type="text"
@@ -1103,7 +1105,7 @@ const goHome = () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Дата выдачи</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.passportDate') }}</label>
                       <input
                         v-model="formData.passportDate"
                         type="date"
@@ -1117,11 +1119,11 @@ const goHome = () => {
                 <template v-else>
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Краткое наименование *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.shortName') }} *</label>
                       <input
                         v-model="formData.shortName"
                         type="text"
-                        placeholder="ОсОО «Название»"
+                        :placeholder="$t('register.placeholders.shortName')"
                         :class="[
                           'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.shortName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1130,11 +1132,11 @@ const goHome = () => {
                       <p v-if="errors.shortName" class="mt-1 text-sm text-red-600">{{ errors.shortName }}</p>
                     </div>
                     <div>
-                      <label class="block text-sm font-medium text-[#1e293b] mb-2">Полное наименование *</label>
+                      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.fullName') }} *</label>
                       <input
                         v-model="formData.fullName"
                         type="text"
-                        placeholder="Общество с ограниченной ответственностью «Название»"
+                        :placeholder="$t('register.placeholders.fullName')"
                         :class="[
                           'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.fullName ? 'border-red-300 focus:border-red-500' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1147,7 +1149,7 @@ const goHome = () => {
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">ИНН (14 цифр) *</label>
+                    <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.inn14') }} *</label>
                     <input
                       v-model="formData.inn"
                       type="text"
@@ -1161,7 +1163,7 @@ const goHome = () => {
                     <p v-if="errors.inn" class="mt-1 text-sm text-red-600">{{ errors.inn }}</p>
                   </div>
                   <div v-if="!isIndividual">
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">ОКПО</label>
+                    <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.okpo') }}</label>
                     <input
                       v-model="formData.okpo"
                       type="text"
@@ -1173,8 +1175,8 @@ const goHome = () => {
 
                 <!-- Виды продукции -->
                 <div style="margin-top: 24px;">
-                  <h3 class="pg-section-title">ВИДЫ ПРОДУКЦИИ</h3>
-                  <p class="pg-subtitle">Укажите группы товаров, которые ваша организация ввозит или производит *</p>
+                  <h3 class="pg-section-title">{{ $t('register.productTypes') }}</h3>
+                  <p class="pg-subtitle">{{ $t('register.productTypesHint') }} *</p>
 
                   <div
                     :class="['pg-grid-container', errors.selectedProductGroups ? 'pg-grid-container--error' : '']"
@@ -1199,14 +1201,14 @@ const goHome = () => {
 
                   <div class="flex items-center justify-between mt-3">
                     <span class="pg-counter">
-                      Выбрано: {{ formData.selectedProductGroups.length }} из {{ productGroups.length }} групп
+                      {{ $t('register.selected') }}: {{ formData.selectedProductGroups.length }} {{ $t('register.outOf') }} {{ productGroups.length }} {{ $t('register.groups') }}
                     </span>
                     <button
                       type="button"
                       @click="toggleAllProductGroups"
                       class="pg-toggle-btn"
                     >
-                      {{ allProductGroupsSelected ? 'Снять все' : 'Выбрать все' }}
+                      {{ allProductGroupsSelected ? $t('register.deselectAll') : $t('register.selectAll') }}
                     </button>
                   </div>
 
@@ -1214,8 +1216,8 @@ const goHome = () => {
 
                   <!-- Recycler Capacities (Manual) -->
                   <div v-if="formData.activityType === 'recycler' && formData.selectedProductGroups.length > 0" class="mt-6">
-                    <h3 class="text-base font-semibold text-[#1e293b] mb-1">Мощности переработки (т/год)</h3>
-                    <p class="text-sm text-[#64748b] mb-4">Укажите максимальную мощность переработки по каждой группе товаров</p>
+                    <h3 class="text-base font-semibold text-[#1e293b] mb-1">{{ $t('register.recyclingCapacity') }}</h3>
+                    <p class="text-sm text-[#64748b] mb-4">{{ $t('register.recyclingCapacityHintManual') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       <div v-for="gv in formData.selectedProductGroups" :key="'manual-cap-' + gv" class="bg-[#f8fafc] rounded-lg p-3 border border-[#e2e8f0]">
                         <label class="block text-xs font-medium text-[#1e293b] mb-1.5">{{ productGroups.find(g => g.value === gv)?.label || gv }}</label>
@@ -1228,29 +1230,29 @@ const goHome = () => {
                             placeholder="0"
                             class="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
                           />
-                          <span class="text-xs text-[#94a3b8] whitespace-nowrap">т/год</span>
+                          <span class="text-xs text-[#94a3b8] whitespace-nowrap">{{ $t('register.tonsPerYear') }}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div class="mt-4">
-                    <label class="block text-sm font-medium text-[#1e293b] mb-1">Уточнение видов продукции (необязательно)</label>
+                    <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('register.productNote') }}</label>
                     <input
                       v-model="formData.productNote"
                       type="text"
-                      placeholder="Например: ПЭТ-бутылки, полиэтиленовые пакеты, картонные коробки..."
+                      :placeholder="$t('register.placeholders.productNote')"
                       class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 text-sm"
                     />
-                    <p class="mt-1 text-xs text-[#94a3b8]">Укажите конкретные виды товаров для более точного учёта</p>
+                    <p class="mt-1 text-xs text-[#94a3b8]">{{ $t('register.productNoteHint') }}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-sm font-semibold text-[#1e293b] mb-3 uppercase tracking-wide">Юридический адрес</h3>
+                  <h3 class="text-sm font-semibold text-[#1e293b] mb-3 uppercase tracking-wide">{{ $t('register.legalAddress') }}</h3>
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Область/город *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.regionCity') }} *</label>
                       <select
                         v-model="formData.legalRegion"
                         :class="[
@@ -1258,12 +1260,12 @@ const goHome = () => {
                           errors.legalRegion ? 'border-red-300' : 'border-[#e2e8f0] focus:border-[#0e888d]'
                         ]"
                       >
-                        <option value="">Выберите</option>
+                        <option value="">{{ $t('register.select') }}</option>
                         <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                       </select>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Город/район *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.cityDistrict') }} *</label>
                       <input
                         v-model="formData.legalCity"
                         type="text"
@@ -1274,7 +1276,7 @@ const goHome = () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Улица</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.street') }}</label>
                       <input
                         v-model="formData.legalStreet"
                         type="text"
@@ -1282,7 +1284,7 @@ const goHome = () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Дом/офис</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.buildingOffice') }}</label>
                       <input
                         v-model="formData.legalBuilding"
                         type="text"
@@ -1294,7 +1296,7 @@ const goHome = () => {
 
                 <div>
                   <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-[#1e293b] uppercase tracking-wide">Фактический адрес</h3>
+                    <h3 class="text-sm font-semibold text-[#1e293b] uppercase tracking-wide">{{ $t('register.actualAddress') }}</h3>
                     <label class="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -1302,23 +1304,23 @@ const goHome = () => {
                         @change="copyLegalToActual"
                         class="w-4 h-4 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d]"
                       />
-                      <span class="text-sm text-[#64748b]">Совпадает с юридическим</span>
+                      <span class="text-sm text-[#64748b]">{{ $t('register.sameAsLegal') }}</span>
                     </label>
                   </div>
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Область/город</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.regionCity') }}</label>
                       <select
                         v-model="formData.actualRegion"
                         :disabled="formData.sameAddress"
                         class="w-full px-3 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0e888d] disabled:bg-gray-100"
                       >
-                        <option value="">Выберите</option>
+                        <option value="">{{ $t('register.select') }}</option>
                         <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                       </select>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Город/район</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.cityDistrict') }}</label>
                       <input
                         v-model="formData.actualCity"
                         type="text"
@@ -1327,7 +1329,7 @@ const goHome = () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Улица</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.street') }}</label>
                       <input
                         v-model="formData.actualStreet"
                         type="text"
@@ -1336,7 +1338,7 @@ const goHome = () => {
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Дом/офис</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.buildingOffice') }}</label>
                       <input
                         v-model="formData.actualBuilding"
                         type="text"
@@ -1349,7 +1351,7 @@ const goHome = () => {
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">Контактный телефон *</label>
+                    <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.contactPhone') }} *</label>
                     <input
                       v-model="formData.phone"
                       type="tel"
@@ -1362,7 +1364,7 @@ const goHome = () => {
                     <p v-if="errors.phone" class="mt-1 text-sm text-red-600">{{ errors.phone }}</p>
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-[#1e293b] mb-2">Email *</label>
+                    <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('register.email') }} *</label>
                     <input
                       v-model="formData.email"
                       type="email"
@@ -1380,7 +1382,7 @@ const goHome = () => {
 
             <!-- Step 3: Director & Contact -->
             <div v-if="currentStep === 3" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Руководитель и контактное лицо</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.directorAndContact') }}</h2>
 
               <div class="space-y-8">
                 <div>
@@ -1388,15 +1390,15 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    Руководитель организации
+                    {{ $t('register.orgDirector') }}
                   </h3>
                   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">ФИО *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.fullNameLabel') }} *</label>
                       <input
                         v-model="formData.directorFullName"
                         type="text"
-                        placeholder="Иванов Иван Иванович"
+                        :placeholder="$t('register.placeholders.directorFullName')"
                         :class="[
                           'w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.directorFullName ? 'border-red-300' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1405,11 +1407,11 @@ const goHome = () => {
                       <p v-if="errors.directorFullName" class="mt-1 text-xs text-red-600">{{ errors.directorFullName }}</p>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Должность *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.position') }} *</label>
                       <input
                         v-model="formData.directorPosition"
                         type="text"
-                        placeholder="Директор"
+                        :placeholder="$t('register.placeholders.position')"
                         :class="[
                           'w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.directorPosition ? 'border-red-300' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1418,7 +1420,7 @@ const goHome = () => {
                       <p v-if="errors.directorPosition" class="mt-1 text-xs text-red-600">{{ errors.directorPosition }}</p>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Телефон *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.phone') }} *</label>
                       <input
                         v-model="formData.directorPhone"
                         type="tel"
@@ -1438,15 +1440,15 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Контактное лицо
+                    {{ $t('register.contactPerson') }}
                   </h3>
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">ФИО *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.fullNameLabel') }} *</label>
                       <input
                         v-model="formData.contactFullName"
                         type="text"
-                        placeholder="Петрова Анна Сергеевна"
+                        :placeholder="$t('register.placeholders.contactFullName')"
                         :class="[
                           'w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
                           errors.contactFullName ? 'border-red-300' : 'border-[#e2e8f0] focus:border-[#0e888d]'
@@ -1455,16 +1457,16 @@ const goHome = () => {
                       <p v-if="errors.contactFullName" class="mt-1 text-xs text-red-600">{{ errors.contactFullName }}</p>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Должность</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.position') }}</label>
                       <input
                         v-model="formData.contactPosition"
                         type="text"
-                        placeholder="Бухгалтер"
+                        :placeholder="$t('register.placeholders.contactPosition')"
                         class="w-full px-3 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0e888d]"
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Телефон *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.phone') }} *</label>
                       <input
                         v-model="formData.contactPhone"
                         type="tel"
@@ -1477,7 +1479,7 @@ const goHome = () => {
                       <p v-if="errors.contactPhone" class="mt-1 text-xs text-red-600">{{ errors.contactPhone }}</p>
                     </div>
                     <div>
-                      <label class="block text-xs text-[#64748b] mb-1">Email *</label>
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.email') }} *</label>
                       <input
                         v-model="formData.contactEmail"
                         type="email"
@@ -1496,7 +1498,7 @@ const goHome = () => {
 
             <!-- Step 4: Documents -->
             <div v-if="currentStep === 4" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Загрузка документов</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.uploadDocuments') }}</h2>
 
               <div class="space-y-6">
                 <div v-for="cat in fileCategories" :key="cat.value" class="border border-[#e2e8f0] rounded-xl p-4">
@@ -1506,13 +1508,13 @@ const goHome = () => {
                         {{ cat.label }}
                         <span v-if="cat.required" class="text-red-500">*</span>
                       </h3>
-                      <p class="text-xs text-[#64748b] mt-1">PDF, JPG, PNG до 10 МБ</p>
+                      <p class="text-xs text-[#64748b] mt-1">{{ $t('register.fileFormats') }}</p>
                     </div>
                     <label class="inline-flex items-center gap-2 bg-[#0e888d] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0a6b6f] transition-colors cursor-pointer">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      Выбрать файл
+                      {{ $t('register.selectFile') }}
                       <input
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
@@ -1546,7 +1548,7 @@ const goHome = () => {
                     </div>
                   </div>
                   <div v-else class="text-center py-4 text-sm text-[#64748b]">
-                    Файл не загружен
+                    {{ $t('register.fileNotUploaded') }}
                   </div>
                 </div>
 
@@ -1562,21 +1564,21 @@ const goHome = () => {
                   <svg class="w-10 h-10 text-[#64748b] mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p class="text-sm text-[#64748b]">Перетащите файлы сюда</p>
+                  <p class="text-sm text-[#64748b]">{{ $t('register.dragFilesHere') }}</p>
                 </div>
 
                 <div v-if="!hasRequiredDocuments" class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
                   <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <p class="text-sm text-amber-800">Загрузите обязательный документ: <strong>Свидетельство о регистрации</strong></p>
+                  <p class="text-sm text-amber-800">{{ $t('register.uploadRequiredDoc') }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Step 5: Review -->
             <div v-if="currentStep === 5" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Проверка и отправка</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.steps.reviewSubmit') }}</h2>
 
               <div class="space-y-6">
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
@@ -1584,15 +1586,15 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    Тип организации
+                    {{ $t('register.steps.orgType') }}
                   </h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span class="text-[#64748b]">Организационно-правовая форма:</span>
+                      <span class="text-[#64748b]">{{ $t('register.orgLegalForm') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ getOrgTypeLabel(formData.orgType) }}</p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">Вид деятельности:</span>
+                      <span class="text-[#64748b]">{{ $t('register.activityType') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ getActivityTypeLabel(formData.activityType) }}</p>
                     </div>
                   </div>
@@ -1603,27 +1605,27 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    {{ isIndividual ? 'Данные предпринимателя' : 'Данные организации' }}
+                    {{ isIndividual ? $t('register.entrepreneurData') : $t('register.orgData') }}
                   </h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div v-if="isIndividual">
-                      <span class="text-[#64748b]">ФИО:</span>
+                      <span class="text-[#64748b]">{{ $t('register.fullNameLabel') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.lastName }} {{ formData.firstName }} {{ formData.middleName }}</p>
                     </div>
                     <div v-if="isIndividual">
-                      <span class="text-[#64748b]">Паспорт:</span>
+                      <span class="text-[#64748b]">{{ $t('register.passport') }}:</span>
                       <p class="font-medium text-[#1e293b] font-mono">{{ formData.passportSeries }} {{ formData.passportNumber }}</p>
                     </div>
                     <div v-if="!isIndividual">
-                      <span class="text-[#64748b]">Наименование:</span>
+                      <span class="text-[#64748b]">{{ $t('register.orgName') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.shortName }}</p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">ИНН:</span>
+                      <span class="text-[#64748b]">{{ $t('register.inn') }}:</span>
                       <p class="font-medium text-[#1e293b] font-mono">{{ formData.inn }}</p>
                     </div>
                     <div class="sm:col-span-2">
-                      <span class="text-[#64748b]">Юридический адрес:</span>
+                      <span class="text-[#64748b]">{{ $t('register.legalAddress') }}:</span>
                       <p class="font-medium text-[#1e293b]">
                         {{ formData.legalRegion }}, {{ formData.legalCity }}
                         <template v-if="formData.legalStreet">, {{ formData.legalStreet }}</template>
@@ -1631,11 +1633,11 @@ const goHome = () => {
                       </p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">Телефон:</span>
+                      <span class="text-[#64748b]">{{ $t('register.phone') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.phone }}</p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">Email:</span>
+                      <span class="text-[#64748b]">{{ $t('register.email') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.email }}</p>
                     </div>
                   </div>
@@ -1646,16 +1648,16 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Руководитель и контактное лицо
+                    {{ $t('register.directorAndContact') }}
                   </h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span class="text-[#64748b]">Руководитель:</span>
+                      <span class="text-[#64748b]">{{ $t('register.director') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.directorFullName }}</p>
                       <p class="text-[#64748b]">{{ formData.directorPosition }}, {{ formData.directorPhone }}</p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">Контактное лицо:</span>
+                      <span class="text-[#64748b]">{{ $t('register.contactPerson') }}:</span>
                       <p class="font-medium text-[#1e293b]">{{ formData.contactFullName }}</p>
                       <p class="text-[#64748b]">{{ formData.contactPhone }}, {{ formData.contactEmail }}</p>
                     </div>
@@ -1667,7 +1669,7 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    Виды продукции ({{ formData.selectedProductGroups.length }})
+                    {{ $t('register.productTypes') }} ({{ formData.selectedProductGroups.length }})
                   </h3>
                   <div class="flex flex-wrap gap-2">
                     <span
@@ -1679,16 +1681,16 @@ const goHome = () => {
                     </span>
                   </div>
                   <p v-if="formData.productNote" class="mt-3 text-sm text-[#64748b]">
-                    <span class="font-medium text-[#1e293b]">Примечание:</span> {{ formData.productNote }}
+                    <span class="font-medium text-[#1e293b]">{{ $t('register.note') }}:</span> {{ formData.productNote }}
                   </p>
 
                   <!-- Recycler capacities in review -->
                   <div v-if="formData.activityType === 'recycler' && formData.recyclerCapacities.length > 0">
-                    <h4 class="font-medium text-[#1e293b] mb-2">Мощности переработки</h4>
+                    <h4 class="font-medium text-[#1e293b] mb-2">{{ $t('register.recyclingCapacityTitle') }}</h4>
                     <div class="space-y-1">
                       <div v-for="cap in formData.recyclerCapacities" :key="'review-cap-' + cap.wasteType" class="flex items-center justify-between text-sm">
                         <span class="text-[#64748b]">{{ productGroups.find(g => g.value === cap.wasteType)?.label || cap.wasteType }}</span>
-                        <span class="font-medium text-[#1e293b]">{{ cap.capacityTons }} т/год</span>
+                        <span class="font-medium text-[#1e293b]">{{ cap.capacityTons }} {{ $t('register.tonsPerYear') }}</span>
                       </div>
                     </div>
                   </div>
@@ -1699,7 +1701,7 @@ const goHome = () => {
                     <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
-                    Прикреплённые документы ({{ uploadedFiles.length }})
+                    {{ $t('register.attachedDocuments') }} ({{ uploadedFiles.length }})
                   </h3>
                   <div v-if="uploadedFiles.length > 0" class="space-y-2">
                     <div v-for="file in uploadedFiles" :key="file.id" class="flex items-center gap-2 text-sm text-[#1e293b]">
@@ -1709,7 +1711,7 @@ const goHome = () => {
                       {{ fileCategories.find(c => c.value === file.category)?.label }}: {{ file.name }}
                     </div>
                   </div>
-                  <p v-else class="text-sm text-[#64748b]">Документы не прикреплены</p>
+                  <p v-else class="text-sm text-[#64748b]">{{ $t('register.noDocumentsAttached') }}</p>
                 </div>
 
                 <label class="flex items-start gap-3 p-4 rounded-xl border-2 border-[#e2e8f0] cursor-pointer hover:border-[#0e888d]/50 transition-colors">
@@ -1719,7 +1721,7 @@ const goHome = () => {
                     class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d]"
                   />
                   <span class="text-sm text-[#1e293b]">
-                    Подтверждаю достоверность предоставленных данных и соглашаюсь с условиями обработки персональных данных
+                    {{ $t('register.confirmDataAgreement') }}
                   </span>
                 </label>
               </div>
@@ -1735,7 +1737,7 @@ const goHome = () => {
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Назад
+                {{ $t('common.back') }}
               </button>
               <button
                 v-else
@@ -1745,7 +1747,7 @@ const goHome = () => {
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Назад
+                {{ $t('common.back') }}
               </button>
 
               <div class="flex flex-col sm:flex-row gap-3">
@@ -1754,7 +1756,7 @@ const goHome = () => {
                   @click="nextStep"
                   class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0e888d] text-white rounded-lg font-medium hover:bg-[#0a6b6f] transition-colors"
                 >
-                  Далее
+                  {{ $t('common.next') }}
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
@@ -1773,7 +1775,7 @@ const goHome = () => {
                   <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {{ isSubmitting ? 'Отправка...' : 'Отправить заявку на регистрацию' }}
+                  {{ isSubmitting ? $t('register.sending') : $t('register.submitApplication') }}
                 </button>
               </div>
             </div>

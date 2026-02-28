@@ -147,7 +147,7 @@ function formatValue(val: number): string {
 
       <!-- Tooltip values on hover (CSS-only via title) -->
       <g v-for="(p, i) in points" :key="'tip-' + i">
-        <title>{{ p.label }}: {{ p.value.toLocaleString('ru-RU') }}</title>
+        <title>{{ p.label }}: {{ p.value.toLocaleString() }}</title>
         <rect
           :x="p.x - 20"
           :y="padding.top"

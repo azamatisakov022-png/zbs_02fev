@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   productGroups,
   productSubgroups,
@@ -10,6 +11,8 @@ import {
 import { getNormativeForGroup, normativeTiers, getNormativeTier } from '../data/recycling-norms'
 import { toastStore } from '../stores/toast'
 import ProductGroupSelector from '../components/ProductGroupSelector.vue'
+
+const { t } = useI18n()
 
 // ─── Types ───
 interface CalcRow {
@@ -123,9 +126,9 @@ function getVolumeError(row: CalcRow): string {
   const val = String(row.volume).trim()
   if (!val) return ''
   const num = parseFloat(val)
-  if (isNaN(num)) return 'Введите числовое значение'
-  if (num <= 0) return 'Объём должен быть больше 0'
-  if (num > 99999) return 'Максимум 99 999 тонн'
+  if (isNaN(num)) return t('calculatorPage.errorNumeric')
+  if (num <= 0) return t('calculatorPage.errorPositive')
+  if (num > 99999) return t('calculatorPage.errorMax')
   return ''
 }
 
@@ -164,10 +167,10 @@ function newCalculation() {
 
 // ─── Format helpers ───
 function fmt(n: number): string {
-  return n.toLocaleString('ru-RU')
+  return n.toLocaleString()
 }
 function fmtDec(n: number): string {
-  return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function getGroupLabel(value: string): string {
@@ -182,8 +185,8 @@ function getSubgroupLabel(row: CalcRow): string {
 // ─── PDF Export ───
 function downloadPdf() {
   const now = new Date()
-  const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const dateStr = now.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 
   const tableRows = resultRows.value.map(r => {
     return `<tr>
@@ -201,7 +204,7 @@ function downloadPdf() {
 
   const html = `<!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
-<title>Расчёт утилизационного сбора</title>
+<title>${t('calculatorPage.pdfTitle')}</title>
 <style>
   body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1e293b; font-size: 13px; }
   h1 { font-size: 18px; text-align: center; margin-bottom: 4px; }
@@ -216,27 +219,27 @@ function downloadPdf() {
   .disclaimer { margin-top: 32px; padding: 12px 16px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; font-size: 12px; color: #92400e; }
   @media print { body { margin: 20px; } }
 </style></head><body>
-  <div class="header-line">АИС «ГП Эко Оператор»</div>
-  <h1>Предварительный расчёт утилизационного сбора</h1>
-  <h2>Дата: ${dateStr}, ${timeStr}</h2>
+  <div class="header-line">${t('calculatorPage.pdfAisTitle')}</div>
+  <h1>${t('calculatorPage.pdfTitle')}</h1>
+  <h2>${t('calculatorPage.pdfDate')} ${dateStr}, ${timeStr}</h2>
   <div style="margin-bottom:8px">
-    <strong>Тип операции:</strong> ${operationType.value === 'import' ? 'Импорт' : 'Производство'} &nbsp;
-    <strong>Год:</strong> ${year.value}
+    <strong>${t('calculatorPage.pdfOperationType')}</strong> ${operationType.value === 'import' ? t('calculatorPage.import') : t('calculatorPage.production')} &nbsp;
+    <strong>${t('calculatorPage.pdfYear')}</strong> ${year.value}
   </div>
-  <div class="formula"><strong>Формула:</strong> Усб = (Масса &times; Норматив / 100) &times; Ставка</div>
+  <div class="formula"><strong>${t('calculatorPage.formulaLabel')}</strong> Усб = (Масса &times; Норматив / 100) &times; Ставка</div>
   <table>
     <thead><tr>
-      <th style="text-align:left">Группа</th>
-      <th style="text-align:left">Подгруппа</th>
-      <th>Масса (т)</th>
-      <th>Норматив (%)</th>
-      <th>К переработке (т)</th>
-      <th>Ставка (сом/т)</th>
-      <th>Сумма (сом)</th>
+      <th style="text-align:left">${t('calculatorPage.group')}</th>
+      <th style="text-align:left">${t('calculatorPage.subgroup')}</th>
+      <th>${t('calculatorPage.massT')}</th>
+      <th>${t('calculatorPage.normPercent')}</th>
+      <th>${t('calculatorPage.toRecycleT')}</th>
+      <th>${t('calculatorPage.rateSomT')}</th>
+      <th>${t('calculatorPage.amountSom')}</th>
     </tr></thead>
     <tbody>${tableRows}
       <tr class="total-row">
-        <td style="padding:6px 10px;border:1px solid #94a3b8" colspan="2"><strong>ИТОГО</strong></td>
+        <td style="padding:6px 10px;border:1px solid #94a3b8" colspan="2"><strong>${t('calculatorPage.total')}</strong></td>
         <td style="padding:6px 10px;border:1px solid #94a3b8;text-align:right"><strong>${fmtDec(totalVol)}</strong></td>
         <td style="padding:6px 10px;border:1px solid #94a3b8" colspan="2"></td>
         <td style="padding:6px 10px;border:1px solid #94a3b8"></td>
@@ -245,18 +248,18 @@ function downloadPdf() {
     </tbody>
   </table>
   <div class="total-box">
-    <div style="color:#64748b;margin-bottom:4px">Итого утилизационный сбор:</div>
-    <div class="total-amount">${fmtDec(totalAmount.value)} сом</div>
+    <div style="color:#64748b;margin-bottom:4px">${t('calculatorPage.totalFee')}</div>
+    <div class="total-amount">${fmtDec(totalAmount.value)} ${t('calculatorPage.som')}</div>
   </div>
-  <div class="disclaimer"><strong>Примечание:</strong> Данный расчёт является предварительным и не имеет юридической силы.</div>
+  <div class="disclaimer">${t('calculatorPage.pdfDisclaimer')}</div>
   <div style="font-size:12px;color:#64748b;margin-top:24px">
-    <p>Ставки: ПКМ КР №730 от 03.12.2024</p>
-    <p>Нормативы переработки: ПКМ КР №322 от 15.05.2023</p>
+    <p>${t('calculatorPage.pdfRates')}</p>
+    <p>${t('calculatorPage.pdfNorms')}</p>
   </div>
 </body></html>`
 
   const w = window.open('', '_blank')
-  if (!w) { toastStore.show({ type: 'warning', title: 'Окно заблокировано', message: 'Разрешите всплывающие окна для скачивания PDF' }); return }
+  if (!w) { toastStore.show({ type: 'warning', title: t('calculatorPage.popupBlockedTitle'), message: t('calculatorPage.popupBlockedMessage') }); return }
   w.document.write(html)
   w.document.close()
   w.onload = () => { w.print() }
@@ -268,9 +271,9 @@ function downloadPdf() {
     <!-- Banner (contained, rounded, same width as content) -->
     <div class="container-main pt-8 lg:pt-10">
       <div class="text-white rounded-2xl py-10 lg:py-14 px-6 text-center" style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%)">
-        <h1 class="text-3xl lg:text-4xl font-bold mb-3">Калькулятор утилизационного сбора (РОП)</h1>
+        <h1 class="text-3xl lg:text-4xl font-bold mb-3">{{ $t('calculatorPage.title') }}</h1>
         <p class="text-white/80 text-base lg:text-lg max-w-2xl mx-auto">
-          Предварительный расчёт суммы утилизационного сбора согласно ПКМ КР №730
+          {{ $t('calculatorPage.subtitle') }}
         </p>
       </div>
     </div>
@@ -282,27 +285,27 @@ function downloadPdf() {
 
           <!-- Global fields -->
           <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-            <h2 class="text-lg font-bold text-[#1e293b] mb-5">Параметры расчёта</h2>
+            <h2 class="text-lg font-bold text-[#1e293b] mb-5">{{ $t('calculatorPage.params') }}</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <!-- Operation type -->
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">Тип операции</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('calculatorPage.operationType') }}</label>
                 <div class="flex gap-4">
                   <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="radio" v-model="operationType" value="import"
                       class="w-4 h-4 text-[#10b981] focus:ring-[#10b981]/20 border-[#e2e8f0]" />
-                    <span class="text-sm text-[#1e293b]">Импорт</span>
+                    <span class="text-sm text-[#1e293b]">{{ $t('calculatorPage.import') }}</span>
                   </label>
                   <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="radio" v-model="operationType" value="production"
                       class="w-4 h-4 text-[#10b981] focus:ring-[#10b981]/20 border-[#e2e8f0]" />
-                    <span class="text-sm text-[#1e293b]">Производство</span>
+                    <span class="text-sm text-[#1e293b]">{{ $t('calculatorPage.production') }}</span>
                   </label>
                 </div>
               </div>
               <!-- Year -->
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">Год расчёта</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('calculatorPage.yearCalc') }}</label>
                 <select v-model="year"
                   class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm">
                   <option :value="2025">2025</option>
@@ -319,7 +322,7 @@ function downloadPdf() {
           <!-- Product items -->
           <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
             <div class="flex items-center justify-between mb-5">
-              <h2 class="text-lg font-bold text-[#1e293b]">Товары и упаковка</h2>
+              <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('calculatorPage.goodsAndPackaging') }}</h2>
               <span class="text-xs text-[#94a3b8]">{{ rows.length }} / 10</span>
             </div>
 
@@ -329,10 +332,10 @@ function downloadPdf() {
 
                 <!-- Row header -->
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide">Позиция {{ idx + 1 }}</span>
+                  <span class="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide">{{ $t('calculatorPage.position') }} {{ idx + 1 }}</span>
                   <button v-if="rows.length > 1" @click="removeRow(row.id)"
                     class="w-7 h-7 rounded-lg flex items-center justify-center text-[#94a3b8] hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Удалить позицию">
+                    :title="$t('calculatorPage.removePosition')">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -354,13 +357,13 @@ function downloadPdf() {
                   <!-- Volume (Масса, тонн) -->
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">
-                      Масса (тонн)
+                      {{ $t('calculatorPage.massTons') }}
                       <span class="relative group inline-block ml-1 cursor-help">
                         <svg class="w-3.5 h-3.5 inline text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1e293b] text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          1 тонна = 1 000 кг
+                          {{ $t('calculatorPage.tonHint') }}
                         </span>
                       </span>
                     </label>
@@ -372,14 +375,14 @@ function downloadPdf() {
                         step="0.001" min="0" max="99999"
                         class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm pr-12"
                       />
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">тонн</span>
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">{{ $t('calculatorPage.tons') }}</span>
                     </div>
                     <p v-if="getVolumeError(row)" class="text-xs text-red-500 mt-1">{{ getVolumeError(row) }}</p>
                   </div>
 
                   <!-- Норматив (auto) -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Норматив переработки</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.recyclingStandard') }}</label>
                     <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
                       {{ row.group ? row.recyclingStandard + '%' : '—' }}
                     </div>
@@ -387,7 +390,7 @@ function downloadPdf() {
 
                   <!-- Объём к переработке (auto) -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">К переработке (т)</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.toRecycleT') }}</label>
                     <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
                       {{ row.group ? fmtDec(row.volumeToRecycle) : '—' }}
                     </div>
@@ -395,7 +398,7 @@ function downloadPdf() {
 
                   <!-- Ставка (auto) -->
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Ставка (сом/т)</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.rateSomT') }}</label>
                     <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
                       {{ row.group ? fmt(row.rate) : '—' }}
                     </div>
@@ -407,7 +410,7 @@ function downloadPdf() {
                   <span class="text-xs text-[#64748b]">
                     Расчёт: {{ fmtDec(row.volumeToRecycle) }} т &times; {{ fmt(row.rate) }} сом/т
                   </span>
-                  <span class="text-sm font-bold text-[#1e293b]">{{ fmtDec(row.amount) }} сом</span>
+                  <span class="text-sm font-bold text-[#1e293b]">{{ fmtDec(row.amount) }} {{ $t('calculatorPage.som') }}</span>
                 </div>
               </div>
             </div>
@@ -418,7 +421,7 @@ function downloadPdf() {
               <svg class="w-4 h-4 inline mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              Добавить ещё позицию
+              {{ $t('calculatorPage.addPosition') }}
             </button>
           </div>
 
@@ -429,9 +432,9 @@ function downloadPdf() {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div class="text-xs text-[#64748b] space-y-1">
-                <p><strong>Формула:</strong> Усб = (Масса &times; Норматив / 100) &times; Ставка</p>
-                <p>Если подгруппа выбрана — ставка корректируется на коэффициент подгруппы.</p>
-                <p><strong>Основание:</strong> Ставки — ПКМ КР №730 от 03.12.2024.</p>
+                <p><strong>{{ $t('calculatorPage.formulaLabel') }}</strong> {{ $t('calculatorPage.formulaText') }}</p>
+                <p>{{ $t('calculatorPage.formulaNote') }}</p>
+                <p>{{ $t('calculatorPage.ratesNote') }}</p>
               </div>
             </div>
 
@@ -444,11 +447,11 @@ function downloadPdf() {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                Рассчитать
+                {{ $t('calculatorPage.calculate') }}
               </button>
               <button @click="clearForm"
                 class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border border-[#e2e8f0] text-[#64748b] hover:bg-white hover:border-[#94a3b8] transition-colors">
-                Очистить
+                {{ $t('calculatorPage.clear') }}
               </button>
             </div>
           </div>
@@ -461,20 +464,20 @@ function downloadPdf() {
           >
             <div v-if="showResult" id="calc-result" class="space-y-6">
               <div class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
-                <h3 class="text-lg font-bold text-[#065f46] mb-4">Результат расчёта</h3>
+                <h3 class="text-lg font-bold text-[#065f46] mb-4">{{ $t('calculatorPage.result') }}</h3>
 
                 <!-- Result table -->
                 <div class="overflow-x-auto mb-4">
                   <table class="w-full text-sm border-collapse">
                     <thead>
                       <tr class="text-left text-[#047857]">
-                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tl-lg font-semibold">Группа</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] font-semibold">Подгруппа</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">Масса (т)</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-center font-semibold">Норм. (%)</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">К перер. (т)</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">Ставка</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tr-lg text-right font-semibold">Сумма (сом)</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tl-lg font-semibold">{{ $t('calculatorPage.group') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] font-semibold">{{ $t('calculatorPage.subgroup') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.massT') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] text-center font-semibold">{{ $t('calculatorPage.normPercent') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.toRecycleShort') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.rate') }}</th>
+                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tr-lg text-right font-semibold">{{ $t('calculatorPage.amountSom') }}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -490,7 +493,7 @@ function downloadPdf() {
                     </tbody>
                     <tfoot>
                       <tr class="bg-[#dcfce7]">
-                        <td class="px-3 py-3 font-bold text-[#065f46] rounded-bl-lg" colspan="6">ИТОГО</td>
+                        <td class="px-3 py-3 font-bold text-[#065f46] rounded-bl-lg" colspan="6">{{ $t('calculatorPage.total') }}</td>
                         <td class="px-3 py-3 text-right font-bold text-[#065f46] rounded-br-lg text-lg">{{ fmtDec(totalAmount) }}</td>
                       </tr>
                     </tfoot>
@@ -499,9 +502,9 @@ function downloadPdf() {
 
                 <!-- Big total -->
                 <div class="bg-white rounded-xl p-5 text-center border border-[#bbf7d0]">
-                  <p class="text-sm text-[#64748b] mb-1">Итого утилизационный сбор:</p>
-                  <p class="text-3xl lg:text-4xl font-bold text-[#15803d]">{{ fmtDec(totalAmount) }} сом</p>
-                  <p class="text-xs text-[#94a3b8] mt-2">Год: {{ year }} &middot; {{ operationType === 'import' ? 'Импорт' : 'Производство' }}</p>
+                  <p class="text-sm text-[#64748b] mb-1">{{ $t('calculatorPage.totalFee') }}</p>
+                  <p class="text-3xl lg:text-4xl font-bold text-[#15803d]">{{ fmtDec(totalAmount) }} {{ $t('calculatorPage.som') }}</p>
+                  <p class="text-xs text-[#94a3b8] mt-2">{{ $t('calculatorPage.year') }}: {{ year }} &middot; {{ operationType === 'import' ? $t('calculatorPage.import') : $t('calculatorPage.production') }}</p>
                 </div>
               </div>
 
@@ -512,11 +515,11 @@ function downloadPdf() {
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  Скачать PDF
+                  {{ $t('calculatorPage.downloadPdf') }}
                 </button>
                 <button @click="newCalculation"
                   class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] rounded-xl text-sm font-semibold text-white hover:bg-[#059669] transition-colors shadow-sm">
-                  Новый расчёт
+                  {{ $t('calculatorPage.newCalc') }}
                 </button>
               </div>
             </div>
@@ -535,36 +538,36 @@ function downloadPdf() {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 class="font-bold text-[#1e293b]">О калькуляторе</h3>
+                <h3 class="font-bold text-[#1e293b]">{{ $t('calculatorPage.about') }}</h3>
               </div>
               <ul class="space-y-3 text-sm text-[#64748b]">
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span>Калькулятор для <strong class="text-[#1e293b]">предварительного расчёта</strong> утилизационного сбора</span>
+                  <span v-html="$t('calculatorPage.aboutItem1')"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span>Группа + подгруппа — <strong class="text-[#1e293b]">как в ЛК плательщика</strong></span>
+                  <span v-html="$t('calculatorPage.aboutItem2')"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span>Ставки: <strong class="text-[#1e293b]">ПКМ КР №730</strong> от 03.12.2024</span>
+                  <span v-html="$t('calculatorPage.aboutItem3')"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span>Официальный расчёт — через <strong class="text-[#1e293b]">Личный кабинет</strong></span>
+                  <span v-html="$t('calculatorPage.aboutItem4')"></span>
                 </li>
               </ul>
 
               <div class="mt-5 pt-4 border-t border-[#e2e8f0]">
-                <p class="text-xs text-[#94a3b8] mb-1">По вопросам:</p>
+                <p class="text-xs text-[#94a3b8] mb-1">{{ $t('calculatorPage.questions') }}</p>
                 <p class="text-sm text-[#1e293b]">eco-operator@gov.kg</p>
                 <p class="text-sm text-[#1e293b]">+996 312 XXX XXX</p>
               </div>
 
               <router-link to="/login"
                 class="mt-5 flex items-center justify-center gap-2 w-full py-3 bg-[#10b981] text-white rounded-xl text-sm font-semibold hover:bg-[#059669] transition-colors">
-                Войти в Личный кабинет
+                {{ $t('calculatorPage.loginLink') }}
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
@@ -573,14 +576,14 @@ function downloadPdf() {
 
             <!-- Normatives table -->
             <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-              <h3 class="font-bold text-[#1e293b] mb-3">Нормативы переработки по годам</h3>
+              <h3 class="font-bold text-[#1e293b] mb-3">{{ $t('calculatorPage.normsByYears') }}</h3>
               <div class="overflow-x-auto">
                 <table class="w-full text-xs">
                   <thead>
                     <tr class="text-[#64748b]">
-                      <th class="pb-2 text-left font-medium">Год</th>
-                      <th class="pb-2 text-center font-medium">Гр. 1-4</th>
-                      <th class="pb-2 text-center font-medium">Гр. 5-24</th>
+                      <th class="pb-2 text-left font-medium">{{ $t('calculatorPage.year') }}</th>
+                      <th class="pb-2 text-center font-medium">{{ $t('calculatorPage.groups14') }}</th>
+                      <th class="pb-2 text-center font-medium">{{ $t('calculatorPage.groups524') }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-[#1e293b]">
@@ -594,8 +597,8 @@ function downloadPdf() {
                 </table>
               </div>
               <p class="text-xs text-[#94a3b8] mt-3">
-                Гр. 1-4: бумага/картон, масла, шины<br>
-                Гр. 5-24: прочие товары и вся упаковка
+                {{ $t('calculatorPage.groups14desc') }}<br>
+                {{ $t('calculatorPage.groups524desc') }}
               </p>
             </div>
 
@@ -605,10 +608,7 @@ function downloadPdf() {
                 <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p class="text-xs text-[#92400e]">
-                  Данный расчёт является <strong>предварительным</strong> и не имеет юридической силы.
-                  Для официальной подачи расчёта воспользуйтесь Личным кабинетом плательщика.
-                </p>
+                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
               </div>
             </div>
           </div>

@@ -1,38 +1,40 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Полный список 24 групп товаров
-const productGroups = [
-  { number: 0, name: 'Все группы' },
-  { number: 1, name: 'Изделия из гофрированной бумаги/картона', type: 'goods' },
-  { number: 2, name: 'Изделия из негофрированной бумаги/картона', type: 'goods' },
-  { number: 3, name: 'Масла', type: 'goods' },
-  { number: 4, name: 'Шины, покрышки и камеры резиновые', type: 'goods' },
-  { number: 5, name: 'Изделия из резины (за исключением шин)', type: 'goods' },
-  { number: 6, name: 'Изделия пластмассовые упаковочные', type: 'goods' },
-  { number: 7, name: 'Изделия пластмассовые прочие', type: 'goods' },
-  { number: 8, name: 'Стекло полое', type: 'goods' },
-  { number: 9, name: 'Компьютеры и периферийное оборудование', type: 'goods' },
-  { number: 10, name: 'Мониторы, приемники телевизионные', type: 'goods' },
-  { number: 11, name: 'Элементы первичные и батареи', type: 'goods' },
-  { number: 12, name: 'Аккумуляторы свинцовые', type: 'goods' },
-  { number: 13, name: 'Батареи аккумуляторные', type: 'goods' },
-  { number: 14, name: 'Оборудование электрическое осветительное', type: 'goods' },
-  { number: 15, name: 'Техника бытовая крупная', type: 'goods' },
-  { number: 16, name: 'Техника бытовая мелкая, инструмент', type: 'goods' },
-  { number: 17, name: 'Оборудование холодильное и вентиляционное', type: 'goods' },
-  { number: 18, name: 'Фильтры для ДВС', type: 'goods' },
-  { number: 19, name: 'Упаковка полимерная (без галогенов)', type: 'packaging' },
-  { number: 20, name: 'Упаковка полимерная (с галогенами)', type: 'packaging' },
-  { number: 21, name: 'Упаковка комбинированная', type: 'packaging' },
-  { number: 22, name: 'Упаковка из гофрокартона', type: 'packaging' },
-  { number: 23, name: 'Упаковка из бумаги/картона', type: 'packaging' },
-  { number: 24, name: 'Упаковка стеклянная', type: 'packaging' },
-]
+const productGroups = computed(() => [
+  { number: 0, name: t('ecoPayments.allGroups') },
+  { number: 1, name: t('ecoPayments.group1'), type: 'goods' },
+  { number: 2, name: t('ecoPayments.group2'), type: 'goods' },
+  { number: 3, name: t('ecoPayments.group3'), type: 'goods' },
+  { number: 4, name: t('ecoPayments.group4'), type: 'goods' },
+  { number: 5, name: t('ecoPayments.group5'), type: 'goods' },
+  { number: 6, name: t('ecoPayments.group6'), type: 'goods' },
+  { number: 7, name: t('ecoPayments.group7'), type: 'goods' },
+  { number: 8, name: t('ecoPayments.group8'), type: 'goods' },
+  { number: 9, name: t('ecoPayments.group9'), type: 'goods' },
+  { number: 10, name: t('ecoPayments.group10'), type: 'goods' },
+  { number: 11, name: t('ecoPayments.group11'), type: 'goods' },
+  { number: 12, name: t('ecoPayments.group12'), type: 'goods' },
+  { number: 13, name: t('ecoPayments.group13'), type: 'goods' },
+  { number: 14, name: t('ecoPayments.group14'), type: 'goods' },
+  { number: 15, name: t('ecoPayments.group15'), type: 'goods' },
+  { number: 16, name: t('ecoPayments.group16'), type: 'goods' },
+  { number: 17, name: t('ecoPayments.group17'), type: 'goods' },
+  { number: 18, name: t('ecoPayments.group18'), type: 'goods' },
+  { number: 19, name: t('ecoPayments.group19'), type: 'packaging' },
+  { number: 20, name: t('ecoPayments.group20'), type: 'packaging' },
+  { number: 21, name: t('ecoPayments.group21'), type: 'packaging' },
+  { number: 22, name: t('ecoPayments.group22'), type: 'packaging' },
+  { number: 23, name: t('ecoPayments.group23'), type: 'packaging' },
+  { number: 24, name: t('ecoPayments.group24'), type: 'packaging' },
+])
 
 // Filters for payments
 const paymentsFilters = ref({
@@ -201,7 +203,7 @@ const yearTotal = computed(() => monthlyData.value.reduce((sum, m) => sum + m.am
 const totalAmount = computed(() => summaryStats.value.totalPayments + summaryStats.value.totalDebt)
 
 // Helpers
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 
 const formatCompactNumber = (num: number) => {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'М'
@@ -210,7 +212,7 @@ const formatCompactNumber = (num: number) => {
 }
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('ru-RU')
+  return new Date(dateStr).toLocaleDateString()
 }
 
 const getDebtorStatusClass = (status: string) => {
@@ -224,9 +226,9 @@ const getDebtorStatusClass = (status: string) => {
 
 const getDebtorStatusText = (status: string) => {
   switch (status) {
-    case 'unpaid': return 'Не оплачено'
-    case 'partial': return 'Частично'
-    case 'overdue': return 'Просрочено'
+    case 'unpaid': return t('ecoPayments.statusUnpaid')
+    case 'partial': return t('ecoPayments.statusPartial')
+    case 'overdue': return t('ecoPayments.statusOverdue')
     default: return status
   }
 }
@@ -262,16 +264,16 @@ const showUniquePayers = () => {
 const exportPaymentsReport = (format: 'excel' | 'pdf') => {
   if (format === 'excel') {
     let csvContent = '\uFEFF'
-    csvContent += 'Отчёт по поступлениям утилизационного сбора\n'
-    csvContent += `Период:,${paymentsFilters.value.dateFrom} — ${paymentsFilters.value.dateTo}\n\n`
-    csvContent += 'Компания,ИНН,Группа товара,Период,Сумма,Дата оплаты\n'
+    csvContent += t('ecoPayments.csvPaymentsTitle') + '\n'
+    csvContent += `${t('ecoPayments.csvPeriod')}:,${paymentsFilters.value.dateFrom} — ${paymentsFilters.value.dateTo}\n\n`
+    csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvProductGroup')},${t('ecoPayments.csvPeriodCol')},${t('ecoPayments.csvAmount')},${t('ecoPayments.csvPaymentDate')}\n`
 
     filteredPayments.value.forEach(p => {
       csvContent += `"${p.company}",${p.inn},"${p.groupName}","${p.period}",${p.amount},"${formatDate(p.paymentDate)}"\n`
     })
 
-    csvContent += `\nИТОГО:,,,,${paymentsTotals.value.amount},\n`
-    csvContent += `\nДата формирования:,${new Date().toLocaleDateString('ru-RU')}\n`
+    csvContent += `\n${t('ecoPayments.csvTotal')}:,,,,${paymentsTotals.value.amount},\n`
+    csvContent += `\n${t('ecoPayments.csvGeneratedDate')}:,${new Date().toLocaleDateString()}\n`
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -287,16 +289,16 @@ const exportPaymentsReport = (format: 'excel' | 'pdf') => {
 const exportDebtsReport = (format: 'excel' | 'pdf') => {
   if (format === 'excel') {
     let csvContent = '\uFEFF'
-    csvContent += 'Отчёт по задолженностям\n'
-    csvContent += `Период:,${debtsFilters.value.dateFrom} — ${debtsFilters.value.dateTo}\n\n`
-    csvContent += 'Компания,ИНН,Ожидаемая сумма,Оплачено,Задолженность,Дней просрочки,Статус\n'
+    csvContent += t('ecoPayments.csvDebtsTitle') + '\n'
+    csvContent += `${t('ecoPayments.csvPeriod')}:,${debtsFilters.value.dateFrom} — ${debtsFilters.value.dateTo}\n\n`
+    csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvExpectedAmount')},${t('ecoPayments.csvPaid')},${t('ecoPayments.csvDebt')},${t('ecoPayments.csvDaysOverdue')},${t('ecoPayments.csvStatus')}\n`
 
     filteredDebtors.value.forEach(d => {
       csvContent += `"${d.company}",${d.inn},${d.expectedAmount},${d.paidAmount},${d.debt},${d.daysOverdue},"${getDebtorStatusText(d.status)}"\n`
     })
 
-    csvContent += `\nИТОГО:,,${debtorsTotals.value.expected},${debtorsTotals.value.paid},${debtorsTotals.value.debt},,\n`
-    csvContent += `\nДата формирования:,${new Date().toLocaleDateString('ru-RU')}\n`
+    csvContent += `\n${t('ecoPayments.csvTotal')}:,,${debtorsTotals.value.expected},${debtorsTotals.value.paid},${debtorsTotals.value.debt},,\n`
+    csvContent += `\n${t('ecoPayments.csvGeneratedDate')}:,${new Date().toLocaleDateString()}\n`
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -313,39 +315,39 @@ const exportDebtsReport = (format: 'excel' | 'pdf') => {
 const exportFullAnalytics = (format: 'excel' | 'pdf') => {
   if (format === 'excel') {
     let csvContent = '\uFEFF'
-    csvContent += 'ПОЛНЫЙ ОТЧЁТ ПО АНАЛИТИКЕ ПЛАТЕЖЕЙ\n'
-    csvContent += `Дата формирования:,${new Date().toLocaleDateString('ru-RU')}\n\n`
+    csvContent += t('ecoPayments.csvFullReportTitle') + '\n'
+    csvContent += `${t('ecoPayments.csvGeneratedDate')}:,${new Date().toLocaleDateString()}\n\n`
 
     // Summary
-    csvContent += '=== СВОДКА ===\n'
-    csvContent += `Общая сумма поступлений:,${summaryStats.value.totalPayments} сом\n`
-    csvContent += `Общая задолженность:,${summaryStats.value.totalDebt} сом\n`
-    csvContent += `Оплативших компаний:,${summaryStats.value.payersCount}\n`
-    csvContent += `Должников:,${summaryStats.value.debtorsCount}\n\n`
+    csvContent += `=== ${t('ecoPayments.csvSummary')} ===\n`
+    csvContent += `${t('ecoPayments.totalPayments')}:,${summaryStats.value.totalPayments} ${t('ecoPayments.som')}\n`
+    csvContent += `${t('ecoPayments.totalDebt')}:,${summaryStats.value.totalDebt} ${t('ecoPayments.som')}\n`
+    csvContent += `${t('ecoPayments.paidCompanies')}:,${summaryStats.value.payersCount}\n`
+    csvContent += `${t('ecoPayments.debtors')}:,${summaryStats.value.debtorsCount}\n\n`
 
     // Monthly data
-    csvContent += '=== ПОСТУПЛЕНИЯ ПО МЕСЯЦАМ ===\n'
-    csvContent += 'Месяц,Сумма\n'
+    csvContent += `=== ${t('ecoPayments.csvMonthlyPayments')} ===\n`
+    csvContent += `${t('ecoPayments.csvMonth')},${t('ecoPayments.csvAmount')}\n`
     monthlyData.value.forEach(m => {
       csvContent += `${m.month},${m.amount}\n`
     })
-    csvContent += `Всего за год:,${yearTotal.value}\n\n`
+    csvContent += `${t('ecoPayments.yearTotal')}:,${yearTotal.value}\n\n`
 
     // Payments
-    csvContent += '=== ПОСТУПИВШИЕ ПЛАТЕЖИ ===\n'
-    csvContent += 'Компания,ИНН,Группа товара,Период,Сумма,Дата оплаты\n'
+    csvContent += `=== ${t('ecoPayments.csvReceivedPayments')} ===\n`
+    csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvProductGroup')},${t('ecoPayments.csvPeriodCol')},${t('ecoPayments.csvAmount')},${t('ecoPayments.csvPaymentDate')}\n`
     paymentsData.value.forEach(p => {
       csvContent += `"${p.company}",${p.inn},"${p.groupName}","${p.period}",${p.amount},"${formatDate(p.paymentDate)}"\n`
     })
-    csvContent += `ИТОГО:,,,,${summaryStats.value.totalPayments},\n\n`
+    csvContent += `${t('ecoPayments.csvTotal')}:,,,,${summaryStats.value.totalPayments},\n\n`
 
     // Debts
-    csvContent += '=== ЗАДОЛЖЕННОСТИ ===\n'
-    csvContent += 'Компания,ИНН,Ожидаемая сумма,Оплачено,Задолженность,Дней просрочки,Статус\n'
+    csvContent += `=== ${t('ecoPayments.csvDebtsSection')} ===\n`
+    csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvExpectedAmount')},${t('ecoPayments.csvPaid')},${t('ecoPayments.csvDebt')},${t('ecoPayments.csvDaysOverdue')},${t('ecoPayments.csvStatus')}\n`
     debtorsData.value.forEach(d => {
       csvContent += `"${d.company}",${d.inn},${d.expectedAmount},${d.paidAmount},${d.debt},${d.daysOverdue},"${getDebtorStatusText(d.status)}"\n`
     })
-    csvContent += `ИТОГО:,,${debtorsTotals.value.expected},${debtorsTotals.value.paid},${summaryStats.value.totalDebt},,\n`
+    csvContent += `${t('ecoPayments.csvTotal')}:,,${debtorsTotals.value.expected},${debtorsTotals.value.paid},${summaryStats.value.totalDebt},,\n`
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -367,7 +369,7 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Отчёт по аналитике платежей</title>
+      <title>${t('ecoPayments.pdfTitle')}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
         h1 { color: #1e293b; font-size: 18px; margin-bottom: 5px; }
@@ -395,27 +397,27 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
       </style>
     </head>
     <body>
-      <h1>Аналитика платежей — Эко Оператор</h1>
-      <div class="date">Дата формирования: ${new Date().toLocaleDateString('ru-RU')}</div>
+      <h1>${t('ecoPayments.pdfHeader')}</h1>
+      <div class="date">${t('ecoPayments.csvGeneratedDate')}: ${new Date().toLocaleDateString()}</div>
   `
 
   if (type === 'full' || type === 'payments') {
     content += `
       <div class="summary">
         <div class="summary-card">
-          <div class="label">Общая сумма поступлений</div>
-          <div class="value green">${formatNumber(summaryStats.value.totalPayments)} сом</div>
+          <div class="label">${t('ecoPayments.totalPayments')}</div>
+          <div class="value green">${formatNumber(summaryStats.value.totalPayments)} ${t('ecoPayments.som')}</div>
         </div>
         <div class="summary-card">
-          <div class="label">Общая задолженность</div>
-          <div class="value red">${formatNumber(summaryStats.value.totalDebt)} сом</div>
+          <div class="label">${t('ecoPayments.totalDebt')}</div>
+          <div class="value red">${formatNumber(summaryStats.value.totalDebt)} ${t('ecoPayments.som')}</div>
         </div>
         <div class="summary-card">
-          <div class="label">Оплативших компаний</div>
+          <div class="label">${t('ecoPayments.paidCompanies')}</div>
           <div class="value blue">${summaryStats.value.payersCount}</div>
         </div>
         <div class="summary-card">
-          <div class="label">Должников</div>
+          <div class="label">${t('ecoPayments.debtors')}</div>
           <div class="value">${summaryStats.value.debtorsCount}</div>
         </div>
       </div>
@@ -425,7 +427,7 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
   if (type === 'full') {
     content += `
       <div class="chart-section">
-        <h2 style="margin-top: 0; border: none;">Поступления по месяцам (2025)</h2>
+        <h2 style="margin-top: 0; border: none;">${t('ecoPayments.monthlyPayments2025')}</h2>
         <table>
           <tr>
             ${monthlyData.value.map(m => `<th style="text-align: center">${m.month}</th>`).join('')}
@@ -434,7 +436,7 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
             ${monthlyData.value.map(m => `<td style="text-align: center">${m.amount > 0 ? formatCompactNumber(m.amount) : '—'}</td>`).join('')}
           </tr>
         </table>
-        <div style="text-align: right; font-weight: bold; margin-top: 10px;">Всего за год: ${formatNumber(yearTotal.value)} сом</div>
+        <div style="text-align: right; font-weight: bold; margin-top: 10px;">${t('ecoPayments.yearTotal')}: ${formatNumber(yearTotal.value)} ${t('ecoPayments.som')}</div>
       </div>
     `
   }
@@ -444,16 +446,16 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
     const total = type === 'full' ? summaryStats.value.totalPayments : paymentsTotals.value.amount
 
     content += `
-      <h2>Поступившие платежи</h2>
+      <h2>${t('ecoPayments.receivedPayments')}</h2>
       <table>
         <thead>
           <tr>
-            <th>Компания</th>
-            <th>ИНН</th>
-            <th>Группа товара</th>
-            <th>Период</th>
-            <th class="amount">Сумма</th>
-            <th>Дата оплаты</th>
+            <th>${t('ecoPayments.csvCompany')}</th>
+            <th>${t('ecoPayments.csvInn')}</th>
+            <th>${t('ecoPayments.csvProductGroup')}</th>
+            <th>${t('ecoPayments.csvPeriodCol')}</th>
+            <th class="amount">${t('ecoPayments.csvAmount')}</th>
+            <th>${t('ecoPayments.csvPaymentDate')}</th>
           </tr>
         </thead>
         <tbody>
@@ -463,13 +465,13 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
               <td>${p.inn}</td>
               <td>№${p.groupNumber}: ${p.groupName}</td>
               <td>${p.period}</td>
-              <td class="amount">${formatNumber(p.amount)} сом</td>
+              <td class="amount">${formatNumber(p.amount)} ${t('ecoPayments.som')}</td>
               <td>${formatDate(p.paymentDate)}</td>
             </tr>
           `).join('')}
           <tr class="total-row">
-            <td colspan="4"><strong>ИТОГО (${payments.length} платежей)</strong></td>
-            <td class="amount"><strong>${formatNumber(total)} сом</strong></td>
+            <td colspan="4"><strong>${t('ecoPayments.csvTotal')} (${payments.length} ${t('ecoPayments.paymentsCount')})</strong></td>
+            <td class="amount"><strong>${formatNumber(total)} ${t('ecoPayments.som')}</strong></td>
             <td></td>
           </tr>
         </tbody>
@@ -487,17 +489,17 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
     } : debtorsTotals.value
 
     content += `
-      <h2>Задолженности</h2>
+      <h2>${t('ecoPayments.debtsTitle')}</h2>
       <table>
         <thead>
           <tr>
-            <th>Компания</th>
-            <th>ИНН</th>
-            <th class="amount">Ожидаемая сумма</th>
-            <th class="amount">Оплачено</th>
-            <th class="amount">Задолженность</th>
-            <th>Просрочка</th>
-            <th>Статус</th>
+            <th>${t('ecoPayments.csvCompany')}</th>
+            <th>${t('ecoPayments.csvInn')}</th>
+            <th class="amount">${t('ecoPayments.csvExpectedAmount')}</th>
+            <th class="amount">${t('ecoPayments.csvPaid')}</th>
+            <th class="amount">${t('ecoPayments.csvDebt')}</th>
+            <th>${t('ecoPayments.overdue')}</th>
+            <th>${t('ecoPayments.csvStatus')}</th>
           </tr>
         </thead>
         <tbody>
@@ -508,15 +510,15 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
               <td class="amount">${formatNumber(d.expectedAmount)}</td>
               <td class="amount">${formatNumber(d.paidAmount)}</td>
               <td class="amount" style="color: #dc2626; font-weight: bold;">${formatNumber(d.debt)}</td>
-              <td>${d.daysOverdue} дн.</td>
+              <td>${d.daysOverdue} ${t('ecoPayments.days')}</td>
               <td>${getDebtorStatusText(d.status)}</td>
             </tr>
           `).join('')}
           <tr class="total-row debts">
-            <td colspan="2"><strong>ИТОГО (${totals.count} должников)</strong></td>
+            <td colspan="2"><strong>${t('ecoPayments.csvTotal')} (${totals.count} ${t('ecoPayments.debtorsCount')})</strong></td>
             <td class="amount"><strong>${formatNumber(totals.expected)}</strong></td>
             <td class="amount"><strong>${formatNumber(totals.paid)}</strong></td>
-            <td class="amount" style="color: #dc2626;"><strong>${formatNumber(totals.debt)} сом</strong></td>
+            <td class="amount" style="color: #dc2626;"><strong>${formatNumber(totals.debt)} ${t('ecoPayments.som')}</strong></td>
             <td colspan="2"></td>
           </tr>
         </tbody>
@@ -590,8 +592,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </svg>
             </div>
             <div>
-              <p class="text-sm text-gray-500">Общая сумма поступлений</p>
-              <p class="text-xl font-bold text-green-600">{{ formatNumber(summaryStats.totalPayments) }} сом</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoPayments.totalPayments') }}</p>
+              <p class="text-xl font-bold text-green-600">{{ formatNumber(summaryStats.totalPayments) }} {{ $t('ecoPayments.som') }}</p>
             </div>
           </div>
         </div>
@@ -607,8 +609,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </svg>
             </div>
             <div>
-              <p class="text-sm text-gray-500">Общая задолженность</p>
-              <p class="text-xl font-bold text-red-600">{{ formatNumber(summaryStats.totalDebt) }} сом</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoPayments.totalDebt') }}</p>
+              <p class="text-xl font-bold text-red-600">{{ formatNumber(summaryStats.totalDebt) }} {{ $t('ecoPayments.som') }}</p>
             </div>
           </div>
         </div>
@@ -624,7 +626,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </svg>
             </div>
             <div>
-              <p class="text-sm text-gray-500">Оплативших компаний</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoPayments.paidCompanies') }}</p>
               <p class="text-xl font-bold text-blue-600">{{ summaryStats.payersCount }}</p>
             </div>
           </div>
@@ -641,7 +643,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </svg>
             </div>
             <div>
-              <p class="text-sm text-gray-500">Должников</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoPayments.debtors') }}</p>
               <p class="text-xl font-bold text-amber-600">{{ summaryStats.debtorsCount }}</p>
             </div>
           </div>
@@ -652,7 +654,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Bar Chart: Monthly Payments with amounts -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Поступления по месяцам (2025)</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoPayments.monthlyPayments2025') }}</h3>
           <div class="flex items-end gap-2 h-56 pt-6">
             <div v-for="m in monthlyData" :key="m.month" class="flex-1 flex flex-col items-center">
               <div class="w-full flex flex-col items-center justify-end h-44 relative">
@@ -674,13 +676,13 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             </div>
           </div>
           <div class="mt-6 pt-4 border-t border-gray-100 text-center">
-            <span class="text-lg font-bold text-lime-600">Всего за год: {{ formatNumber(yearTotal) }} сом</span>
+            <span class="text-lg font-bold text-lime-600">{{ $t('ecoPayments.yearTotal') }}: {{ formatNumber(yearTotal) }} {{ $t('ecoPayments.som') }}</span>
           </div>
         </div>
 
         <!-- Pie Chart: Paid vs Debt with total inside -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">Соотношение оплачено / задолженность</h3>
+          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoPayments.paidVsDebtRatio') }}</h3>
           <div class="flex items-center justify-center h-48">
             <div class="relative w-44 h-44">
               <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
@@ -696,7 +698,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               <div class="absolute inset-0 flex items-center justify-center">
                 <div class="text-center">
                   <div class="text-2xl font-bold text-gray-900">{{ formatCompactNumber(totalAmount) }}</div>
-                  <div class="text-xs text-gray-500">сом всего</div>
+                  <div class="text-xs text-gray-500">{{ $t('ecoPayments.somTotal') }}</div>
                 </div>
               </div>
             </div>
@@ -705,16 +707,16 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                <span class="text-sm text-gray-700">Оплачено ({{ paidPercent }}%)</span>
+                <span class="text-sm text-gray-700">{{ $t('ecoPayments.paid') }} ({{ paidPercent }}%)</span>
               </div>
-              <span class="font-bold text-green-600">{{ formatNumber(summaryStats.totalPayments) }} сом</span>
+              <span class="font-bold text-green-600">{{ formatNumber(summaryStats.totalPayments) }} {{ $t('ecoPayments.som') }}</span>
             </div>
             <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg">
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-red-300"></span>
-                <span class="text-sm text-gray-700">Задолженность ({{ 100 - paidPercent }}%)</span>
+                <span class="text-sm text-gray-700">{{ $t('ecoPayments.debtLabel') }} ({{ 100 - paidPercent }}%)</span>
               </div>
-              <span class="font-bold text-red-600">{{ formatNumber(summaryStats.totalDebt) }} сом</span>
+              <span class="font-bold text-red-600">{{ formatNumber(summaryStats.totalDebt) }} {{ $t('ecoPayments.som') }}</span>
             </div>
           </div>
         </div>
@@ -734,9 +736,9 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Поступившие платежи
+              {{ $t('ecoPayments.receivedPayments') }}
               <span v-if="showUniqueCompanies" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-2">
-                Уникальные компании
+                {{ $t('ecoPayments.uniqueCompanies') }}
                 <button @click="showUniqueCompanies = false" class="ml-1 hover:text-blue-900">×</button>
               </span>
             </h3>
@@ -767,24 +769,24 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
         <div class="p-4 border-b border-gray-200 bg-gray-50">
           <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
-              <label class="block text-xs text-gray-500 mb-1">Поиск по компании</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.searchByCompany') }}</label>
               <input
                 v-model="paymentsFilters.search"
                 type="text"
-                placeholder="Введите название компании..."
+                :placeholder="$t('ecoPayments.enterCompanyName')"
                 class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Период с</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
               <input v-model="paymentsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Период по</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
               <input v-model="paymentsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Группа товаров</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.productGroupLabel') }}</label>
               <select v-model="paymentsFilters.groupNumber" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500">
                 <option v-for="g in productGroups" :key="g.number" :value="g.number">
                   {{ g.number === 0 ? g.name : `№${g.number}: ${g.name}` }}
@@ -799,12 +801,12 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Компания</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Группа товара</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Период</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Сумма</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Дата оплаты</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.company') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.productGroup') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.period') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.amount') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.paymentDate') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -813,19 +815,19 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <td class="px-4 py-3 text-gray-600 font-mono text-sm">{{ p.inn }}</td>
                 <td class="px-4 py-3 text-gray-600 text-sm">№{{ p.groupNumber }}: {{ p.groupName }}</td>
                 <td class="px-4 py-3 text-gray-600">{{ p.period }}</td>
-                <td class="px-4 py-3 text-right font-bold text-green-600">{{ formatNumber(p.amount) }} сом</td>
+                <td class="px-4 py-3 text-right font-bold text-green-600">{{ formatNumber(p.amount) }} {{ $t('ecoPayments.som') }}</td>
                 <td class="px-4 py-3 text-center text-gray-600">{{ formatDate(p.paymentDate) }}</td>
               </tr>
               <tr v-if="filteredPayments.length === 0">
                 <td colspan="6" class="px-4 py-8 text-center text-gray-500">
-                  Платежи не найдены
+                  {{ $t('ecoPayments.noPaymentsFound') }}
                 </td>
               </tr>
             </tbody>
             <tfoot class="bg-green-100 border-t-2 border-green-300">
               <tr>
-                <td colspan="4" class="px-4 py-3 font-bold text-gray-900 text-base">ИТОГО ({{ paymentsTotals.count }} платежей):</td>
-                <td class="px-4 py-3 text-right font-bold text-green-700 text-lg">{{ formatNumber(paymentsTotals.amount) }} сом</td>
+                <td colspan="4" class="px-4 py-3 font-bold text-gray-900 text-base">{{ $t('ecoPayments.total') }} ({{ paymentsTotals.count }} {{ $t('ecoPayments.paymentsCount') }}):</td>
+                <td class="px-4 py-3 text-right font-bold text-green-700 text-lg">{{ formatNumber(paymentsTotals.amount) }} {{ $t('ecoPayments.som') }}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -847,7 +849,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
-              Задолженности
+              {{ $t('ecoPayments.debtsTitle') }}
             </h3>
             <div class="flex gap-2">
               <button
@@ -876,24 +878,24 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
         <div class="p-4 border-b border-gray-200 bg-gray-50">
           <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
-              <label class="block text-xs text-gray-500 mb-1">Поиск по компании</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.searchByCompany') }}</label>
               <input
                 v-model="debtsFilters.search"
                 type="text"
-                placeholder="Введите название компании..."
+                :placeholder="$t('ecoPayments.enterCompanyName')"
                 class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Период с</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
               <input v-model="debtsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Период по</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
               <input v-model="debtsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
-              <label class="block text-xs text-gray-500 mb-1">Мин. сумма задолженности</label>
+              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.minDebtAmount') }}</label>
               <input v-model.number="debtsFilters.minDebt" type="number" placeholder="0" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 w-40" />
             </div>
           </div>
@@ -904,13 +906,13 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Компания</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Ожидаемая сумма</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Оплачено</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Задолженность</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Просрочка</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.company') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.inn') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.expectedAmount') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.paidCol') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.debtLabel') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.overdue') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoPayments.status') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -922,7 +924,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
                 <td class="px-4 py-3 text-right font-bold text-red-600">{{ formatNumber(d.debt) }}</td>
                 <td class="px-4 py-3 text-center">
                   <span :class="['font-bold', d.daysOverdue > 30 ? 'text-red-600' : d.daysOverdue > 14 ? 'text-amber-600' : 'text-gray-600']">
-                    {{ d.daysOverdue }} дн.
+                    {{ d.daysOverdue }} {{ $t('ecoPayments.days') }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-center">
@@ -933,16 +935,16 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </tr>
               <tr v-if="filteredDebtors.length === 0">
                 <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                  Должники не найдены
+                  {{ $t('ecoPayments.noDebtorsFound') }}
                 </td>
               </tr>
             </tbody>
             <tfoot class="bg-red-100 border-t-2 border-red-300">
               <tr>
-                <td colspan="2" class="px-4 py-3 font-bold text-gray-900 text-base">ИТОГО ({{ debtorsTotals.count }} должников):</td>
+                <td colspan="2" class="px-4 py-3 font-bold text-gray-900 text-base">{{ $t('ecoPayments.total') }} ({{ debtorsTotals.count }} {{ $t('ecoPayments.debtorsCount') }}):</td>
                 <td class="px-4 py-3 text-right font-bold text-gray-700">{{ formatNumber(debtorsTotals.expected) }}</td>
                 <td class="px-4 py-3 text-right font-bold text-green-600">{{ formatNumber(debtorsTotals.paid) }}</td>
-                <td class="px-4 py-3 text-right font-bold text-red-700 text-lg">{{ formatNumber(debtorsTotals.debt) }} сом</td>
+                <td class="px-4 py-3 text-right font-bold text-red-700 text-lg">{{ formatNumber(debtorsTotals.debt) }} {{ $t('ecoPayments.som') }}</td>
                 <td colspan="2"></td>
               </tr>
             </tfoot>

@@ -1,17 +1,20 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
-const stats = [
-  { title: 'Пользователей', value: '342', icon: statsIcons.users, color: 'blue' as const },
-  { title: 'Организаций', value: '156', icon: statsIcons.applications, color: 'teal' as const },
-  { title: 'На проверке', value: '89', icon: statsIcons.pending, color: 'orange' as const },
-  { title: 'Собрано утильсбора', value: '12.4 млн с', icon: statsIcons.money, color: 'green' as const },
-]
+const stats = computed(() => [
+  { title: t('adminDashboard.users'), value: '342', icon: statsIcons.users, color: 'blue' as const },
+  { title: t('adminDashboard.organizations'), value: '156', icon: statsIcons.applications, color: 'teal' as const },
+  { title: t('adminDashboard.onReview'), value: '89', icon: statsIcons.pending, color: 'orange' as const },
+  { title: t('adminDashboard.collectedFee'), value: t('adminDashboard.collectedFeeValue'), icon: statsIcons.money, color: 'green' as const },
+])
 
 interface AuditEntry {
   time: string
@@ -29,24 +32,24 @@ const auditLog: AuditEntry[] = [
   { time: '13:22', user: 'Иванов И.И.', action: 'Создание пользователя', status: 'success' },
 ]
 
-const statusConfig = {
-  success: { label: 'Успешно', bg: 'bg-[#ecfdf5]', text: 'text-[#059669]', dot: 'bg-[#059669]' },
-  warning: { label: 'Внимание', bg: 'bg-[#fffbeb]', text: 'text-[#d97706]', dot: 'bg-[#d97706]' },
-  error: { label: 'Ошибка', bg: 'bg-[#fef2f2]', text: 'text-[#dc2626]', dot: 'bg-[#dc2626]' },
-}
+const statusConfig = computed(() => ({
+  success: { label: t('adminDashboard.statusSuccess'), bg: 'bg-[#ecfdf5]', text: 'text-[#059669]', dot: 'bg-[#059669]' },
+  warning: { label: t('adminDashboard.statusWarning'), bg: 'bg-[#fffbeb]', text: 'text-[#d97706]', dot: 'bg-[#d97706]' },
+  error: { label: t('adminDashboard.statusError'), bg: 'bg-[#fef2f2]', text: 'text-[#dc2626]', dot: 'bg-[#dc2626]' },
+}))
 
-const pendingItems = [
-  { label: 'Декларации на проверке', count: 45, route: '/admin/references' },
-  { label: 'Новые организации', count: 12, route: '/admin/users' },
-  { label: 'Расчёты на утверждение', count: 23, route: '/admin/references' },
-  { label: 'Истекающие лицензии', count: 7, route: '/admin/references' },
-]
+const pendingItems = computed(() => [
+  { label: t('adminDashboard.declarationsOnReview'), count: 45, route: '/admin/references' },
+  { label: t('adminDashboard.newOrganizations'), count: 12, route: '/admin/users' },
+  { label: t('adminDashboard.calcsForApproval'), count: 23, route: '/admin/references' },
+  { label: t('adminDashboard.expiringLicenses'), count: 7, route: '/admin/references' },
+])
 
-const quickActions = [
-  { label: 'Управление пользователями', route: '/admin/users', icon: icons.users, bgColor: 'bg-[#2563eb]' },
-  { label: 'Журнал аудита', route: '/admin/audit', icon: icons.audit, bgColor: 'bg-[#059669]' },
-  { label: 'Настройки системы', route: '/admin/settings', icon: icons.settings, bgColor: 'bg-[#d97706]' },
-]
+const quickActions = computed(() => [
+  { label: t('adminDashboard.userManagement'), route: '/admin/users', icon: icons.users, bgColor: 'bg-[#2563eb]' },
+  { label: t('adminDashboard.auditLog'), route: '/admin/audit', icon: icons.audit, bgColor: 'bg-[#059669]' },
+  { label: t('adminDashboard.systemSettings'), route: '/admin/settings', icon: icons.settings, bgColor: 'bg-[#d97706]' },
+])
 
 interface SystemAlert {
   type: 'warning' | 'info' | 'error' | 'success'
@@ -97,8 +100,8 @@ const alertConfig = {
   >
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Панель управления</h1>
-      <p class="text-[#64748b]">Администрирование системы «ГП Эко Оператор»</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('adminDashboard.title') }}</h1>
+      <p class="text-[#64748b]">{{ $t('adminDashboard.subtitle') }}</p>
     </div>
 
     <!-- KPI Stats Cards -->
@@ -118,9 +121,9 @@ const alertConfig = {
       <!-- LEFT: Audit Log -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Последние действия</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.recentActions') }}</h2>
           <router-link to="/admin/audit" class="text-[#0e888d] text-sm font-medium hover:underline">
-            Все записи &rarr;
+            {{ $t('adminDashboard.allRecords') }} &rarr;
           </router-link>
         </div>
         <div class="divide-y divide-[#f1f5f9]">
@@ -149,7 +152,7 @@ const alertConfig = {
       <!-- RIGHT: Pending Items -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Требует внимания</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.requiresAttention') }}</h2>
         </div>
         <div class="p-4 space-y-3">
           <router-link
@@ -199,8 +202,8 @@ const alertConfig = {
           </svg>
         </div>
         <div>
-          <h4 class="font-semibold text-lg mb-1">Система работает стабильно</h4>
-          <p class="opacity-90">Все сервисы функционируют в штатном режиме. Последнее обновление: сегодня в 03:00</p>
+          <h4 class="font-semibold text-lg mb-1">{{ $t('adminDashboard.systemStable') }}</h4>
+          <p class="opacity-90">{{ $t('adminDashboard.systemStableDesc') }}</p>
         </div>
       </div>
     </div>
@@ -208,7 +211,7 @@ const alertConfig = {
     <!-- System Alerts -->
     <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
       <div class="px-6 py-4 border-b border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b]">Системные уведомления</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.systemNotifications') }}</h2>
       </div>
       <div class="p-4 space-y-3">
         <div

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { CalcStatus } from '../../constants/statuses'
+import { RefundStatus } from '../../constants/statuses'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { recyclerStore } from '../../stores/recyclers'
@@ -11,17 +14,18 @@ import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const { t } = useI18n()
 
 // ─── Tabs ───
 type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
 const activeTab = ref<TabId>('summary')
-const tabs: { id: TabId; label: string }[] = [
-  { id: 'summary', label: 'Общая сводка' },
-  { id: 'finance', label: 'Финансы' },
-  { id: 'products', label: 'Товары и переработка' },
-  { id: 'regional', label: 'Региональная статистика' },
-  { id: 'reports', label: 'Выгрузка отчётов' },
-]
+const tabs = computed<{ id: TabId; label: string }[]>(() => [
+  { id: 'summary', label: t('ecoAnalytics.tabs.summary') },
+  { id: 'finance', label: t('ecoAnalytics.tabs.finance') },
+  { id: 'products', label: t('ecoAnalytics.tabs.products') },
+  { id: 'regional', label: t('ecoAnalytics.tabs.regional') },
+  { id: 'reports', label: t('ecoAnalytics.tabs.reports') },
+])
 
 // ─── Period filter ───
 type PeriodMode = 'month' | 'quarter' | 'year' | 'custom'
@@ -158,7 +162,7 @@ const hasGroupFilter = computed(() => !!selectedGroup.value)
 // ─── Filtered data from stores ───
 const paidCalcs = computed(() => {
   const base = calculationStore.state.calculations.filter(c =>
-    (c.status === 'Оплачено' || c.status === 'Принято') && isInRange(c.date) &&
+    (c.status === CalcStatus.PAID || c.status === CalcStatus.APPROVED) && isInRange(c.date) &&
     (!selectedPayer.value || c.company === selectedPayer.value)
   )
   if (!selectedGroup.value) return base
@@ -181,7 +185,7 @@ const getMatchingItems = (items: any[]) => {
 
 const approvedRefunds = computed(() =>
   refundStore.state.refunds.filter(r =>
-    (r.status === 'Одобрена' || r.status === 'На рассмотрении') && isInRange(r.date) &&
+    (r.status === RefundStatus.APPROVED || r.status === RefundStatus.UNDER_REVIEW) && isInRange(r.date) &&
     (!selectedPayer.value || r.company === selectedPayer.value)
   )
 )
@@ -195,20 +199,20 @@ const avgCalc = computed(() => paidCalcs.value.length ? Math.round(totalIncome.v
 // ─── Bar chart data — monthly mock with realistic dynamics ───
 const chartMode = ref<'months' | 'quarters'>('months')
 
-const monthlyMockFallback = [
-  { label: 'Янв', income: 1089128, refunds: 253 },
-  { label: 'Фев', income: 620425, refunds: 1986 },
-  { label: 'Мар', income: 480000, refunds: 0 },
-  { label: 'Апр', income: 720000, refunds: 1200 },
-  { label: 'Май', income: 890000, refunds: 3500 },
-  { label: 'Июн', income: 1050000, refunds: 2800 },
-  { label: 'Июл', income: 1180000, refunds: 1500 },
-  { label: 'Авг', income: 960000, refunds: 4200 },
-  { label: 'Сен', income: 1350000, refunds: 1800 },
-  { label: 'Окт', income: 1520000, refunds: 2200 },
-  { label: 'Ноя', income: 1680000, refunds: 3100 },
-  { label: 'Дек', income: 1920000, refunds: 4500 },
-]
+const monthlyMockFallback = computed(() => [
+  { label: t('ecoAnalytics.months.jan'), income: 1089128, refunds: 253 },
+  { label: t('ecoAnalytics.months.feb'), income: 620425, refunds: 1986 },
+  { label: t('ecoAnalytics.months.mar'), income: 480000, refunds: 0 },
+  { label: t('ecoAnalytics.months.apr'), income: 720000, refunds: 1200 },
+  { label: t('ecoAnalytics.months.may'), income: 890000, refunds: 3500 },
+  { label: t('ecoAnalytics.months.jun'), income: 1050000, refunds: 2800 },
+  { label: t('ecoAnalytics.months.jul'), income: 1180000, refunds: 1500 },
+  { label: t('ecoAnalytics.months.aug'), income: 960000, refunds: 4200 },
+  { label: t('ecoAnalytics.months.sep'), income: 1350000, refunds: 1800 },
+  { label: t('ecoAnalytics.months.oct'), income: 1520000, refunds: 2200 },
+  { label: t('ecoAnalytics.months.nov'), income: 1680000, refunds: 3100 },
+  { label: t('ecoAnalytics.months.dec'), income: 1920000, refunds: 4500 },
+])
 
 const quarterlyMockFallback = [
   { label: 'Q1', income: 2189553, refunds: 2239 },
@@ -219,11 +223,11 @@ const quarterlyMockFallback = [
 
 const monthlyMock = computed(() => {
   const income = analyticsStore.state.income
-  if (!income.length) return monthlyMockFallback
+  if (!income.length) return monthlyMockFallback.value
   return income.map(d => {
     const mk = d.period.length >= 7 ? d.period.slice(5, 7) : d.period
     return {
-      label: monthLabels[mk] || d.period,
+      label: monthLabelsMap.value[mk] || d.period,
       income: d.collected,
       refunds: d.refunded,
     }
@@ -263,7 +267,7 @@ function fmtShort(n: number): string {
 }
 
 function fmtFull(n: number): string {
-  return n.toLocaleString('ru-RU') + ' сом'
+  return n.toLocaleString() + ' ' + t('ecoAnalytics.currency')
 }
 
 // ─── Top product groups ───
@@ -323,16 +327,16 @@ const showExportMenu = ref(false)
 
 function doExport(format: string) {
   showExportMenu.value = false
-  toastStore.show({ type: 'info', title: 'Экспорт', message: `Экспорт в формате ${format} будет доступен в следующем обновлении` })
+  toastStore.show({ type: 'info', title: t('ecoAnalytics.exportTitle'), message: t('ecoAnalytics.exportFormatMsg', { format }) })
 }
 
 // ─── Reports tab ───
-const reportTemplates = [
-  { id: 'period', title: 'Отчёт по поступлениям за период', description: 'Детализация всех поступлений утильсбора за выбранный период с фильтрацией по плательщикам и группам товаров', icon: 'money', color: '#22C55E' },
-  { id: 'payers', title: 'Отчёт по плательщикам', description: 'Список плательщиков утильсбора с суммами начислений и оплат за выбранный период', icon: 'users', color: '#3B82F6' },
-  { id: 'groups', title: 'Отчёт по группам товаров', description: 'Структура поступлений утильсбора в разрезе 24 групп товаров и подгрупп', icon: 'chart', color: '#F59E0B' },
-  { id: 'summary', title: 'Сводный отчёт для руководства', description: 'Комплексный отчёт: финансовая сводка, товарная структура и динамика поступлений', icon: 'document', color: '#8B5CF6' },
-]
+const reportTemplates = computed(() => [
+  { id: 'period', title: t('ecoAnalytics.reports.periodReport'), description: t('ecoAnalytics.reports.periodReportDesc'), icon: 'money', color: '#22C55E' },
+  { id: 'payers', title: t('ecoAnalytics.reports.payersReport'), description: t('ecoAnalytics.reports.payersReportDesc'), icon: 'users', color: '#3B82F6' },
+  { id: 'groups', title: t('ecoAnalytics.reports.groupsReport'), description: t('ecoAnalytics.reports.groupsReportDesc'), icon: 'chart', color: '#F59E0B' },
+  { id: 'summary', title: t('ecoAnalytics.reports.summaryReport'), description: t('ecoAnalytics.reports.summaryReportDesc'), icon: 'document', color: '#8B5CF6' },
+])
 
 const activeReportTemplate = ref<string | null>(null)
 const isGeneratingReport = ref(false)
@@ -362,7 +366,7 @@ function generateReport() {
 }
 
 function downloadReportFile(_format: string) {
-  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Экспорт данных будет доступен в следующем обновлении' })
+  toastStore.show({ type: 'info', title: t('ecoAnalytics.exportTitle'), message: t('ecoAnalytics.exportDataMsg') })
 }
 
 // Mock data for report previews
@@ -395,21 +399,21 @@ const groupsReportMock = [
   { number: 8, name: 'Стекло полое', amount: 63285, share: 2.1 },
 ]
 
-const summaryReportMock = [
-  { indicator: 'Поступления утильсбора за период', value: '1 182 434 сом' },
-  { indicator: 'Возвраты за период', value: '2 239 сом' },
-  { indicator: 'Чистые поступления', value: '1 180 195 сом' },
-  { indicator: 'Количество расчётов', value: '15' },
-  { indicator: 'Средняя сумма расчёта', value: '78 829 сом' },
-  { indicator: 'Количество плательщиков', value: '12' },
-  { indicator: 'Количество групп товаров', value: '18' },
-  { indicator: 'Лидирующая группа товаров', value: 'Группа 4 — Шины (38.2%)' },
-  { indicator: 'Динамика к предыдущему периоду', value: '+12.5%' },
-  { indicator: 'Прогноз на следующий квартал', value: '1 350 000 сом' },
-]
+const summaryReportMock = computed(() => [
+  { indicator: t('ecoAnalytics.summaryReportData.incomeForPeriod'), value: '1 182 434 ' + t('ecoAnalytics.currency') },
+  { indicator: t('ecoAnalytics.summaryReportData.refundsForPeriod'), value: '2 239 ' + t('ecoAnalytics.currency') },
+  { indicator: t('ecoAnalytics.summaryReportData.netIncome'), value: '1 180 195 ' + t('ecoAnalytics.currency') },
+  { indicator: t('ecoAnalytics.summaryReportData.calcsCount'), value: '15' },
+  { indicator: t('ecoAnalytics.summaryReportData.avgCalcAmount'), value: '78 829 ' + t('ecoAnalytics.currency') },
+  { indicator: t('ecoAnalytics.summaryReportData.payersCount'), value: '12' },
+  { indicator: t('ecoAnalytics.summaryReportData.groupsCount'), value: '18' },
+  { indicator: t('ecoAnalytics.summaryReportData.leadingGroup'), value: 'Группа 4 — Шины (38.2%)' },
+  { indicator: t('ecoAnalytics.summaryReportData.dynamicsVsPrev'), value: '+12.5%' },
+  { indicator: t('ecoAnalytics.summaryReportData.forecastNextQuarter'), value: '1 350 000 ' + t('ecoAnalytics.currency') },
+])
 
 function getReportTemplateTitle(id: string): string {
-  return reportTemplates.find(t => t.id === id)?.title || ''
+  return reportTemplates.value.find(tmpl => tmpl.id === id)?.title || ''
 }
 
 // ─── Finance tab: Donut "По группам товаров" ───
@@ -429,7 +433,7 @@ const incomeByGroup = computed(() => {
   const sorted = Array.from(map.values()).sort((a, b) => b.amount - a.amount)
   const top6 = sorted.slice(0, 6)
   const restAmount = sorted.slice(6).reduce((s, g) => s + g.amount, 0)
-  if (restAmount > 0) top6.push({ label: 'Прочие', amount: restAmount })
+  if (restAmount > 0) top6.push({ label: t('ecoAnalytics.other'), amount: restAmount })
   return top6
 })
 
@@ -558,16 +562,16 @@ const groupDonutSegments = computed<DonutSegment[]>(() => {
 })
 
 // ─── Finance tab: Donut "По типу плательщиков" ───
-const payerTypeData = [
-  { label: 'ОсОО', pct: 55, color: '#3B82F6' },
-  { label: 'ОАО', pct: 20, color: '#22C55E' },
-  { label: 'ИП', pct: 15, color: '#F59E0B' },
-  { label: 'Прочие', pct: 10, color: '#94A3B8' },
-]
+const payerTypeData = computed(() => [
+  { label: t('ecoAnalytics.payerTypes.osoo'), pct: 55, color: '#3B82F6' },
+  { label: t('ecoAnalytics.payerTypes.oao'), pct: 20, color: '#22C55E' },
+  { label: t('ecoAnalytics.payerTypes.ip'), pct: 15, color: '#F59E0B' },
+  { label: t('ecoAnalytics.payerTypes.other'), pct: 10, color: '#94A3B8' },
+])
 
 const payerTypeWithAmounts = computed(() => {
   const total = totalIncome.value
-  return payerTypeData.map(p => ({
+  return payerTypeData.value.map(p => ({
     ...p,
     amount: Math.round(total * p.pct / 100)
   }))
@@ -578,7 +582,7 @@ const payerTypeTotal = computed(() => payerTypeWithAmounts.value.reduce((s, p) =
 const payerDonutSegments = computed<DonutSegment[]>(() => {
   const cx = 110, cy = 110, outerR = 88, innerR = 52
   let cumAngle = 0
-  return payerTypeData.map((p, i) => {
+  return payerTypeData.value.map((p, i) => {
     const sweep = (p.pct / 100) * 360 * donutAnimProgress.value
     const startAngle = cumAngle
     const endAngle = cumAngle + sweep
@@ -624,15 +628,15 @@ const topPayersTotalAmount = computed(() => payerRanking.value.reduce((s, p) => 
 const visiblePayers = computed(() => showAllPayers.value ? payerRanking.value : payerRanking.value.slice(0, 10))
 
 // ─── Finance tab: Debtors ───
-const debtors = [
-  { company: 'ОсОО «СтройИмпорт»', inn: '11234567890123', debt: 245800, overdueDays: 45, status: 'Просрочка' },
-  { company: 'ИП Абдуллаев', inn: '22345678901234', debt: 178500, overdueDays: 32, status: 'Уведомление отправлено' },
-  { company: 'ОсОО «МеталлТрейд»', inn: '33456789012345', debt: 156200, overdueDays: 28, status: 'Просрочка' },
-  { company: 'ОАО «ПластПром»', inn: '44567890123456', debt: 98750, overdueDays: 15, status: 'Уведомление отправлено' },
-  { company: 'ОсОО «ТекстильГрупп»', inn: '55678901234567', debt: 67300, overdueDays: 12, status: 'Просрочка' },
-]
+const debtors = computed(() => [
+  { company: 'ОсОО «СтройИмпорт»', inn: '11234567890123', debt: 245800, overdueDays: 45, statusKey: 'overdue', status: t('ecoAnalytics.finance.statusOverdue') },
+  { company: 'ИП Абдуллаев', inn: '22345678901234', debt: 178500, overdueDays: 32, statusKey: 'notified', status: t('ecoAnalytics.finance.statusNotified') },
+  { company: 'ОсОО «МеталлТрейд»', inn: '33456789012345', debt: 156200, overdueDays: 28, statusKey: 'overdue', status: t('ecoAnalytics.finance.statusOverdue') },
+  { company: 'ОАО «ПластПром»', inn: '44567890123456', debt: 98750, overdueDays: 15, statusKey: 'notified', status: t('ecoAnalytics.finance.statusNotified') },
+  { company: 'ОсОО «ТекстильГрупп»', inn: '55678901234567', debt: 67300, overdueDays: 12, statusKey: 'overdue', status: t('ecoAnalytics.finance.statusOverdue') },
+])
 
-const totalDebt = computed(() => debtors.reduce((s, d) => s + d.debt, 0))
+const totalDebt = computed(() => debtors.value.reduce((s, d) => s + d.debt, 0))
 
 // ─── Finance tab: Horizontal bar chart by groups ───
 const groupBarData = computed(() => groupRanking.value.slice(0, 8))
@@ -653,7 +657,7 @@ const incomeByGroupMass = computed(() => {
   const sorted = Array.from(map.values()).sort((a, b) => b.mass - a.mass)
   const top6 = sorted.slice(0, 6)
   const restMass = sorted.slice(6).reduce((s, g) => s + g.mass, 0)
-  if (restMass > 0) top6.push({ label: 'Прочие', mass: restMass })
+  if (restMass > 0) top6.push({ label: t('ecoAnalytics.other'), mass: restMass })
   return top6
 })
 
@@ -693,7 +697,7 @@ const groupCenterLabel = computed(() => {
   if (hoveredGroupIdx.value !== null && incomeByGroup.value[hoveredGroupIdx.value]) {
     return incomeByGroup.value[hoveredGroupIdx.value].label
   }
-  return 'Итого'
+  return t('ecoAnalytics.total')
 })
 
 // Center display for payer type donut
@@ -705,10 +709,10 @@ const payerCenterValue = computed(() => {
 })
 
 const payerCenterLabel = computed(() => {
-  if (hoveredPayerIdx.value !== null && payerTypeData[hoveredPayerIdx.value]) {
-    return payerTypeData[hoveredPayerIdx.value].label
+  if (hoveredPayerIdx.value !== null && payerTypeData.value[hoveredPayerIdx.value]) {
+    return payerTypeData.value[hoveredPayerIdx.value].label
   }
-  return 'Итого'
+  return t('ecoAnalytics.total')
 })
 
 // Center display for mass donut
@@ -723,19 +727,19 @@ const massCenterLabel = computed(() => {
   if (hoveredMassIdx.value !== null && incomeByGroupMass.value[hoveredMassIdx.value]) {
     return incomeByGroupMass.value[hoveredMassIdx.value].label
   }
-  return 'Итого'
+  return t('ecoAnalytics.total')
 })
 
 // Format center value for display
-function fmtCenter(n: number, unit: string = 'сом'): string {
-  if (unit === 'т') return n.toFixed(1) + ' т'
-  return n.toLocaleString('ru-RU') + ' сом'
+function fmtCenter(n: number, unit: string = ''): string {
+  if (unit === 'tons') return n.toFixed(1) + ' ' + t('ecoAnalytics.tons')
+  return n.toLocaleString() + ' ' + t('ecoAnalytics.currency')
 }
 
 // ─── Products tab: Dynamic mock for rate and trend ───
 function getAvgRate(totalAmount: number, totalMass: number): string {
   if (!totalMass) return '—'
-  return Math.round(totalAmount / totalMass).toLocaleString('ru-RU')
+  return Math.round(totalAmount / totalMass).toLocaleString()
 }
 
 // Seeded pseudo-random for stable mock trends per group
@@ -779,24 +783,24 @@ const recyclingKpis = computed(() => {
   const totalRequired = recyclingComparison.value.reduce((s, r) => s + r.required, 0)
   const pct = totalRequired > 0 ? (totalActual / totalRequired * 100).toFixed(1) : '0'
   return [
-    { title: 'Общий объём переработки', value: totalActual.toLocaleString('ru-RU') + ' т', icon: 'recycle', color: '#22C55E', bg: '#dcfce7' },
-    { title: 'Целевой показатель', value: totalRequired.toLocaleString('ru-RU') + ' т', icon: 'target', color: '#3B82F6', bg: '#dbeafe' },
-    { title: 'Выполнение норматива', value: pct + '%', icon: 'chart', color: parseFloat(pct) >= 100 ? '#22C55E' : '#F59E0B', bg: parseFloat(pct) >= 100 ? '#dcfce7' : '#fef3c7' },
+    { title: t('ecoAnalytics.products.totalRecyclingVolume'), value: totalActual.toLocaleString() + ' ' + t('ecoAnalytics.tons'), icon: 'recycle', color: '#22C55E', bg: '#dcfce7' },
+    { title: t('ecoAnalytics.products.targetIndicator'), value: totalRequired.toLocaleString() + ' ' + t('ecoAnalytics.tons'), icon: 'target', color: '#3B82F6', bg: '#dbeafe' },
+    { title: t('ecoAnalytics.products.normCompliance'), value: pct + '%', icon: 'chart', color: parseFloat(pct) >= 100 ? '#22C55E' : '#F59E0B', bg: parseFloat(pct) >= 100 ? '#dcfce7' : '#fef3c7' },
   ]
 })
 
-const recyclingComparisonFallback = [
-  { label: 'Пластик', required: 850, actual: 720 },
-  { label: 'Бумага/картон', required: 600, actual: 580 },
-  { label: 'Стекло', required: 400, actual: 310 },
-  { label: 'Металл', required: 350, actual: 420 },
-  { label: 'Текстиль', required: 200, actual: 150 },
-  { label: 'Шины', required: 500, actual: 667 },
-]
+const recyclingComparisonFallback = computed(() => [
+  { label: t('ecoAnalytics.recyclingMaterials.plastic'), required: 850, actual: 720 },
+  { label: t('ecoAnalytics.recyclingMaterials.paperCardboard'), required: 600, actual: 580 },
+  { label: t('ecoAnalytics.recyclingMaterials.glass'), required: 400, actual: 310 },
+  { label: t('ecoAnalytics.recyclingMaterials.metal'), required: 350, actual: 420 },
+  { label: t('ecoAnalytics.recyclingMaterials.textile'), required: 200, actual: 150 },
+  { label: t('ecoAnalytics.recyclingMaterials.tires'), required: 500, actual: 667 },
+])
 
 const recyclingComparison = computed(() => {
   const data = analyticsStore.state.recycling
-  if (!data.length) return recyclingComparisonFallback
+  if (!data.length) return recyclingComparisonFallback.value
   return data.map(r => ({
     label: r.wasteGroup,
     required: r.volumeReceived,
@@ -806,18 +810,18 @@ const recyclingComparison = computed(() => {
 
 const recyclingChartMax = computed(() => Math.max(...recyclingComparison.value.map(r => Math.max(r.required, r.actual))))
 
-const recyclingNormsFallback = [
-  { waste: 'Пластик', normPct: 25, factPct: 21.2, reqVol: 850, actVol: 720 },
-  { waste: 'Бумага/картон', normPct: 20, factPct: 19.3, reqVol: 600, actVol: 580 },
-  { waste: 'Стекло', normPct: 15, factPct: 10.3, reqVol: 400, actVol: 310 },
-  { waste: 'Металл', normPct: 30, factPct: 35.0, reqVol: 350, actVol: 420 },
-  { waste: 'Текстиль', normPct: 10, factPct: 7.5, reqVol: 200, actVol: 150 },
-  { waste: 'Шины', normPct: 35, factPct: 44.5, reqVol: 500, actVol: 667 },
-]
+const recyclingNormsFallback = computed(() => [
+  { waste: t('ecoAnalytics.recyclingMaterials.plastic'), normPct: 25, factPct: 21.2, reqVol: 850, actVol: 720 },
+  { waste: t('ecoAnalytics.recyclingMaterials.paperCardboard'), normPct: 20, factPct: 19.3, reqVol: 600, actVol: 580 },
+  { waste: t('ecoAnalytics.recyclingMaterials.glass'), normPct: 15, factPct: 10.3, reqVol: 400, actVol: 310 },
+  { waste: t('ecoAnalytics.recyclingMaterials.metal'), normPct: 30, factPct: 35.0, reqVol: 350, actVol: 420 },
+  { waste: t('ecoAnalytics.recyclingMaterials.textile'), normPct: 10, factPct: 7.5, reqVol: 200, actVol: 150 },
+  { waste: t('ecoAnalytics.recyclingMaterials.tires'), normPct: 35, factPct: 44.5, reqVol: 500, actVol: 667 },
+])
 
 const recyclingNorms = computed(() => {
   const data = analyticsStore.state.recycling
-  if (!data.length) return recyclingNormsFallback
+  if (!data.length) return recyclingNormsFallback.value
   return data.map(r => ({
     waste: r.wasteGroup,
     normPct: r.norm,
@@ -862,7 +866,7 @@ function hideBarTooltip() {
 }
 
 function exportTabData(tabName: string) {
-  toastStore.show({ type: 'info', title: 'Экспорт', message: `Выгрузка раздела «${tabName}» будет доступна в следующем обновлении` })
+  toastStore.show({ type: 'info', title: t('ecoAnalytics.exportTitle'), message: t('ecoAnalytics.exportTabMsg', { tabName }) })
 }
 
 // ─── Capacity balance data ───
@@ -971,33 +975,33 @@ const summaryCollectionPct = computed(() => summaryTotalCharged.value ? ((summar
 const summaryDebtPct = computed(() => summaryTotalCharged.value ? ((summaryTotalDebt.value / summaryTotalCharged.value) * 100).toFixed(1) : '0')
 const summaryTotalWaste = computed(() => summaryRegionData.value.reduce((s, r) => s + r.wasteVolume, 0))
 
-const summaryMonthlyDataFallback = [
-  { month: 'Янв', charged: 11200, collected: 9800 },
-  { month: 'Фев', charged: 10800, collected: 9200 },
-  { month: 'Мар', charged: 12400, collected: 10600 },
-  { month: 'Апр', charged: 13100, collected: 11400 },
-  { month: 'Май', charged: 14200, collected: 12800 },
-  { month: 'Июн', charged: 13600, collected: 11900 },
-  { month: 'Июл', charged: 12900, collected: 11100 },
-  { month: 'Авг', charged: 13400, collected: 11800 },
-  { month: 'Сен', charged: 14800, collected: 13200 },
-  { month: 'Окт', charged: 15100, collected: 13600 },
-  { month: 'Ноя', charged: 12800, collected: 11200 },
-  { month: 'Дек', charged: 12500, collected: 10800 },
-]
+const summaryMonthlyDataFallback = computed(() => [
+  { month: t('ecoAnalytics.months.jan'), charged: 11200, collected: 9800 },
+  { month: t('ecoAnalytics.months.feb'), charged: 10800, collected: 9200 },
+  { month: t('ecoAnalytics.months.mar'), charged: 12400, collected: 10600 },
+  { month: t('ecoAnalytics.months.apr'), charged: 13100, collected: 11400 },
+  { month: t('ecoAnalytics.months.may'), charged: 14200, collected: 12800 },
+  { month: t('ecoAnalytics.months.jun'), charged: 13600, collected: 11900 },
+  { month: t('ecoAnalytics.months.jul'), charged: 12900, collected: 11100 },
+  { month: t('ecoAnalytics.months.aug'), charged: 13400, collected: 11800 },
+  { month: t('ecoAnalytics.months.sep'), charged: 14800, collected: 13200 },
+  { month: t('ecoAnalytics.months.oct'), charged: 15100, collected: 13600 },
+  { month: t('ecoAnalytics.months.nov'), charged: 12800, collected: 11200 },
+  { month: t('ecoAnalytics.months.dec'), charged: 12500, collected: 10800 },
+])
 
-const monthLabels: Record<string, string> = {
-  '01': 'Янв', '02': 'Фев', '03': 'Мар', '04': 'Апр', '05': 'Май', '06': 'Июн',
-  '07': 'Июл', '08': 'Авг', '09': 'Сен', '10': 'Окт', '11': 'Ноя', '12': 'Дек',
-}
+const monthLabelsMap = computed<Record<string, string>>(() => ({
+  '01': t('ecoAnalytics.months.jan'), '02': t('ecoAnalytics.months.feb'), '03': t('ecoAnalytics.months.mar'), '04': t('ecoAnalytics.months.apr'), '05': t('ecoAnalytics.months.may'), '06': t('ecoAnalytics.months.jun'),
+  '07': t('ecoAnalytics.months.jul'), '08': t('ecoAnalytics.months.aug'), '09': t('ecoAnalytics.months.sep'), '10': t('ecoAnalytics.months.oct'), '11': t('ecoAnalytics.months.nov'), '12': t('ecoAnalytics.months.dec'),
+}))
 
 const summaryMonthlyData = computed(() => {
   const income = analyticsStore.state.income
-  if (!income.length) return summaryMonthlyDataFallback
+  if (!income.length) return summaryMonthlyDataFallback.value
   return income.map(d => {
     const monthKey = d.period.length >= 7 ? d.period.slice(5, 7) : d.period
     return {
-      month: monthLabels[monthKey] || d.period,
+      month: monthLabelsMap.value[monthKey] || d.period,
       charged: d.charged,
       collected: d.collected,
     }
@@ -1005,24 +1009,24 @@ const summaryMonthlyData = computed(() => {
 })
 const summaryMaxMonthly = computed(() => Math.max(...summaryMonthlyData.value.map(d => d.charged)))
 
-const summaryPayerCategoriesFallback = [
-  { label: 'Импортёры', value: 112, color: '#3B82F6' },
-  { label: 'Производители', value: 89, color: '#22C55E' },
-  { label: 'Импортёры и производители', value: 46, color: '#8B5CF6' },
-]
+const summaryPayerCategoriesFallback = computed(() => [
+  { label: t('ecoAnalytics.summaryPayerCategories.importers'), value: 112, color: '#3B82F6' },
+  { label: t('ecoAnalytics.summaryPayerCategories.producers'), value: 89, color: '#22C55E' },
+  { label: t('ecoAnalytics.summaryPayerCategories.both'), value: 46, color: '#8B5CF6' },
+])
 
 const summaryPayerCategories = computed(() => {
   const s = analyticsStore.state.summary
-  if (!s) return summaryPayerCategoriesFallback
+  if (!s) return summaryPayerCategoriesFallback.value
   // Derive from activePayers — split proportionally
   const total = s.activePayers || s.totalPayers
   const importers = Math.round(total * 0.45)
   const producers = Math.round(total * 0.36)
   const both = total - importers - producers
   return [
-    { label: 'Импортёры', value: importers, color: '#3B82F6' },
-    { label: 'Производители', value: producers, color: '#22C55E' },
-    { label: 'Импортёры и производители', value: both, color: '#8B5CF6' },
+    { label: t('ecoAnalytics.summaryPayerCategories.importers'), value: importers, color: '#3B82F6' },
+    { label: t('ecoAnalytics.summaryPayerCategories.producers'), value: producers, color: '#22C55E' },
+    { label: t('ecoAnalytics.summaryPayerCategories.both'), value: both, color: '#8B5CF6' },
   ]
 })
 const summaryTotalPayersCat = computed(() => summaryPayerCategories.value.reduce((s, c) => s + c.value, 0))
@@ -1075,10 +1079,10 @@ function summaryGetCollectionBg(rate: number): string {
   return 'bg-red-100 text-red-800'
 }
 
-function summaryFmt(n: number): string { return n.toLocaleString('ru-RU') }
+function summaryFmt(n: number): string { return n.toLocaleString() }
 function summaryFmtM(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' млн'
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' тыс'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' ' + t('ecoAnalytics.mln')
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' ' + t('ecoAnalytics.tys')
   return summaryFmt(n)
 }
 
@@ -1144,9 +1148,9 @@ const selectedSummaryRegion = ref('all')
     </div>
 
     <SectionGuide
-      title="Аналитика и отчётность"
-      description="Сводные показатели и формирование отчётов по сбору утилизационного сбора."
-      :actions="['Финансовая аналитика', 'Статистика по товарам и переработке', 'Региональная статистика', 'Выгрузка отчётов в Excel/PDF']"
+      :title="$t('ecoAnalytics.guide.title')"
+      :description="$t('ecoAnalytics.guide.description')"
+      :actions="[$t('ecoAnalytics.guide.action1'), $t('ecoAnalytics.guide.action2'), $t('ecoAnalytics.guide.action3'), $t('ecoAnalytics.guide.action4')]"
       storageKey="eco-analytics"
     />
 
@@ -1170,10 +1174,10 @@ const selectedSummaryRegion = ref('all')
       <!-- Period filter (sticky) -->
       <div class="an-period-bar">
         <div class="an-period-chips">
-          <button :class="['an-chip', activePeriodMode === 'month' ? 'an-chip--active' : '']" @click="activePeriodMode = 'month'">Этот месяц</button>
-          <button :class="['an-chip', activePeriodMode === 'quarter' ? 'an-chip--active' : '']" @click="activePeriodMode = 'quarter'">Квартал</button>
-          <button :class="['an-chip', activePeriodMode === 'year' ? 'an-chip--active' : '']" @click="activePeriodMode = 'year'">Этот год</button>
-          <button :class="['an-chip', activePeriodMode === 'custom' ? 'an-chip--active' : '']" @click="activePeriodMode = 'custom'">Произвольный период</button>
+          <button :class="['an-chip', activePeriodMode === 'month' ? 'an-chip--active' : '']" @click="activePeriodMode = 'month'">{{ $t('ecoAnalytics.period.thisMonth') }}</button>
+          <button :class="['an-chip', activePeriodMode === 'quarter' ? 'an-chip--active' : '']" @click="activePeriodMode = 'quarter'">{{ $t('ecoAnalytics.period.quarter') }}</button>
+          <button :class="['an-chip', activePeriodMode === 'year' ? 'an-chip--active' : '']" @click="activePeriodMode = 'year'">{{ $t('ecoAnalytics.period.thisYear') }}</button>
+          <button :class="['an-chip', activePeriodMode === 'custom' ? 'an-chip--active' : '']" @click="activePeriodMode = 'custom'">{{ $t('ecoAnalytics.period.custom') }}</button>
         </div>
         <!-- Quarter picker row -->
         <div v-if="activePeriodMode === 'quarter'" class="an-quarter-row">
@@ -1186,10 +1190,10 @@ const selectedSummaryRegion = ref('all')
         </div>
         <!-- Custom date pickers -->
         <div v-if="activePeriodMode === 'custom'" class="an-period-custom">
-          <label class="an-period-custom__label">С
+          <label class="an-period-custom__label">{{ $t('ecoAnalytics.period.from') }}
             <input type="text" v-model="customFrom" placeholder="DD.MM.YYYY" class="an-period-custom__input" />
           </label>
-          <label class="an-period-custom__label">По
+          <label class="an-period-custom__label">{{ $t('ecoAnalytics.period.to') }}
             <input type="text" v-model="customTo" placeholder="DD.MM.YYYY" class="an-period-custom__input" />
           </label>
         </div>
@@ -1198,26 +1202,26 @@ const selectedSummaryRegion = ref('all')
       <!-- Group/Subgroup filter -->
       <div class="flex flex-wrap items-end gap-3 my-4">
         <div>
-          <label class="block text-xs font-medium text-[#64748b] mb-1">Группа товаров</label>
+          <label class="block text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAnalytics.filters.productGroup') }}</label>
           <select
             v-model="selectedGroup"
             @change="onGroupChange"
             class="an-group-select"
             style="width: 320px; padding: 10px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 13px; background: white; outline: none;"
           >
-            <option value="">Все группы</option>
+            <option value="">{{ $t('ecoAnalytics.filters.allGroups') }}</option>
             <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-[#64748b] mb-1">Подгруппа</label>
+          <label class="block text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAnalytics.filters.subgroup') }}</label>
           <select
             v-model="selectedSubgroup"
             :disabled="!selectedGroup || subgroupOptions.length === 0"
             class="an-group-select"
             style="width: 320px; padding: 10px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 13px; background: white; outline: none;"
           >
-            <option value="">{{ !selectedGroup ? 'Сначала выберите группу' : subgroupOptions.length === 0 ? 'Нет подгрупп' : 'Все подгруппы' }}</option>
+            <option value="">{{ !selectedGroup ? $t('ecoAnalytics.filters.selectGroupFirst') : subgroupOptions.length === 0 ? $t('ecoAnalytics.filters.noSubgroups') : $t('ecoAnalytics.filters.allSubgroups') }}</option>
             <option v-for="sg in subgroupOptions" :key="sg.value" :value="sg.value">{{ sg.label }}</option>
           </select>
         </div>
@@ -1227,17 +1231,17 @@ const selectedSummaryRegion = ref('all')
           class="flex items-center gap-1 text-[13px] text-[#94a3b8] hover:text-[#64748b] transition-colors pb-2.5"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          Сбросить фильтры
+          {{ $t('ecoAnalytics.filters.resetFilters') }}
         </button>
       </div>
 
       <!-- Active filter indicator -->
       <div v-if="hasGroupFilter" class="mb-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-[10px]" style="background: #EFF6FF; border: 1px solid #BFDBFE;">
         <p class="text-sm" style="color: #1D4ED8;">
-          <span class="font-semibold">Фильтр:</span> {{ activeGroupLabel }}<span v-if="activeSubgroupLabel"> &rarr; {{ activeSubgroupLabel }}</span>
+          <span class="font-semibold">{{ $t('ecoAnalytics.filters.filterLabel') }}</span> {{ activeGroupLabel }}<span v-if="activeSubgroupLabel"> &rarr; {{ activeSubgroupLabel }}</span>
         </p>
         <button @click="clearGroupFilter" class="text-xs font-medium flex items-center gap-1 hover:underline" style="color: #1D4ED8;">
-          Сбросить <span>&times;</span>
+          {{ $t('ecoAnalytics.filters.reset') }} <span>&times;</span>
         </button>
       </div>
 
@@ -1250,7 +1254,7 @@ const selectedSummaryRegion = ref('all')
             v-model="payerSearch"
             @focus="onPayerFocus"
             @blur="onPayerBlur"
-            placeholder="Поиск по наименованию или ИНН плательщика"
+            :placeholder="$t('ecoAnalytics.filters.searchPayer')"
             class="an-payer-input"
           />
           <div v-else class="an-payer-badge">
@@ -1267,7 +1271,7 @@ const selectedSummaryRegion = ref('all')
             class="an-payer-dropdown__item"
           >
             <span class="an-payer-dropdown__name">{{ p.company }}</span>
-            <span class="an-payer-dropdown__inn">ИНН: {{ p.inn }}</span>
+            <span class="an-payer-dropdown__inn">{{ $t('ecoAnalytics.filters.inn') }} {{ p.inn }}</span>
           </button>
         </div>
       </div>
@@ -1287,8 +1291,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-blue-900">{{ summaryFmt(summaryTotalPayers) }}</p>
-          <p class="text-xs text-blue-700">Плательщиков на учёте</p>
-          <p class="text-xs text-blue-500 mt-1">+12 за месяц</p>
+          <p class="text-xs text-blue-700">{{ $t('ecoAnalytics.summary.payersRegistered') }}</p>
+          <p class="text-xs text-blue-500 mt-1">{{ $t('ecoAnalytics.summary.newPerMonth') }}</p>
         </div>
         <!-- Charged -->
         <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-4 border border-green-200 shadow-sm">
@@ -1298,8 +1302,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-green-900">{{ summaryFmtM(summaryTotalCharged) }}</p>
-          <p class="text-xs text-green-700">Начислено утильсбора</p>
-          <p class="text-xs text-green-500 mt-1">сом</p>
+          <p class="text-xs text-green-700">{{ $t('ecoAnalytics.summary.chargedFee') }}</p>
+          <p class="text-xs text-green-500 mt-1">{{ $t('ecoAnalytics.currency') }}</p>
         </div>
         <!-- Collected -->
         <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-4 border border-emerald-200 shadow-sm">
@@ -1309,8 +1313,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-emerald-900">{{ summaryFmtM(summaryTotalCollected) }}</p>
-          <p class="text-xs text-emerald-700">Собрано утильсбора</p>
-          <p class="text-xs text-emerald-500 mt-1">{{ summaryCollectionPct }}% собираемость</p>
+          <p class="text-xs text-emerald-700">{{ $t('ecoAnalytics.summary.collectedFee') }}</p>
+          <p class="text-xs text-emerald-500 mt-1">{{ summaryCollectionPct }}% {{ $t('ecoAnalytics.collectibility') }}</p>
         </div>
         <!-- Debt -->
         <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-4 border border-red-200 shadow-sm">
@@ -1320,8 +1324,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-red-900">{{ summaryFmtM(summaryTotalDebt) }}</p>
-          <p class="text-xs text-red-700">Задолженность</p>
-          <p class="text-xs text-red-500 mt-1">{{ summaryDebtPct }}% от начислений</p>
+          <p class="text-xs text-red-700">{{ $t('ecoAnalytics.summary.debt') }}</p>
+          <p class="text-xs text-red-500 mt-1">{{ summaryDebtPct }}% {{ $t('ecoAnalytics.ofCharges') }}</p>
         </div>
         <!-- Declarations -->
         <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 border border-purple-200 shadow-sm">
@@ -1331,8 +1335,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-purple-900">189</p>
-          <p class="text-xs text-purple-700">Деклараций подано</p>
-          <p class="text-xs text-purple-500 mt-1">94% в срок</p>
+          <p class="text-xs text-purple-700">{{ $t('ecoAnalytics.summary.declarationsFiled') }}</p>
+          <p class="text-xs text-purple-500 mt-1">94% {{ $t('ecoAnalytics.onTime') }}</p>
         </div>
         <!-- Recycled -->
         <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-4 border border-teal-200 shadow-sm">
@@ -1342,8 +1346,8 @@ const selectedSummaryRegion = ref('all')
             </div>
           </div>
           <p class="text-2xl font-bold text-teal-900">{{ summaryFmt(summaryTotalWaste) }}</p>
-          <p class="text-xs text-teal-700">Переработано (тонн)</p>
-          <p class="text-xs text-teal-500 mt-1">+8% к плану</p>
+          <p class="text-xs text-teal-700">{{ $t('ecoAnalytics.summary.recycledTons') }}</p>
+          <p class="text-xs text-teal-500 mt-1">+8% {{ $t('ecoAnalytics.toPlan') }}</p>
         </div>
       </div>
 
@@ -1351,7 +1355,7 @@ const selectedSummaryRegion = ref('all')
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Bar Chart: Monthly collections -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Динамика сбора утилизационного сбора</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.chartTitle') }}</h3>
           <div class="overflow-x-auto">
             <svg viewBox="0 0 600 260" class="w-full" preserveAspectRatio="xMidYMid meet">
               <line v-for="i in 5" :key="'sgl'+i" :x1="40" :x2="590" :y1="20 + (i-1)*50" :y2="20 + (i-1)*50" stroke="#f1f5f9" stroke-width="1" />
@@ -1364,20 +1368,20 @@ const selectedSummaryRegion = ref('all')
             </svg>
           </div>
           <div class="flex items-center gap-4 mt-3 justify-center">
-            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#bbf7d0]"></span>Начислено</span>
-            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>Собрано</span>
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#bbf7d0]"></span>{{ $t('ecoAnalytics.summary.charged') }}</span>
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>{{ $t('ecoAnalytics.summary.collected') }}</span>
           </div>
         </div>
 
         <!-- Donut: Payer categories -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Структура плательщиков по категориям</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.payerCategoriesTitle') }}</h3>
           <div class="flex items-center gap-6">
             <div class="relative flex-shrink-0">
               <svg viewBox="0 0 200 200" width="180" height="180">
                 <path v-for="(arc, i) in summaryDonutArcs" :key="i" :d="arc.d" fill="none" :stroke="arc.color" stroke-width="28" stroke-linecap="round" />
                 <text x="100" y="95" text-anchor="middle" fill="#1e293b" font-size="28" font-weight="700">{{ summaryTotalPayersCat }}</text>
-                <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">всего</text>
+                <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">{{ $t('ecoAnalytics.summary.allTotal') }}</text>
               </svg>
             </div>
             <div class="space-y-3 flex-1">
@@ -1397,7 +1401,7 @@ const selectedSummaryRegion = ref('all')
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Horizontal bars: Regional collection -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Собираемость по регионам</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.collectionByRegions') }}</h3>
           <div class="space-y-3">
             <div v-for="r in [...summaryRegionData].sort((a,b) => b.charged - a.charged)" :key="r.key" class="flex items-center gap-3">
               <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -1414,15 +1418,15 @@ const selectedSummaryRegion = ref('all')
 
         <!-- Top debtors -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Топ-5 должников</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.top5debtors') }}</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left text-[#64748b] text-xs">
                   <th class="pb-2 font-medium">#</th>
-                  <th class="pb-2 font-medium">Компания</th>
-                  <th class="pb-2 font-medium text-right">Задолженность</th>
-                  <th class="pb-2 font-medium text-right">Просрочка</th>
+                  <th class="pb-2 font-medium">{{ $t('ecoAnalytics.summary.company') }}</th>
+                  <th class="pb-2 font-medium text-right">{{ $t('ecoAnalytics.summary.debtColumn') }}</th>
+                  <th class="pb-2 font-medium text-right">{{ $t('ecoAnalytics.summary.overdue') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1431,11 +1435,11 @@ const selectedSummaryRegion = ref('all')
                   <td class="py-2.5 text-[#94a3b8]">{{ d.id }}</td>
                   <td class="py-2.5">
                     <p class="font-medium text-[#1e293b]">{{ d.company }}</p>
-                    <p class="text-xs text-[#94a3b8]">ИНН: {{ d.inn }}</p>
+                    <p class="text-xs text-[#94a3b8]">{{ $t('ecoAnalytics.filters.inn') }} {{ d.inn }}</p>
                   </td>
-                  <td class="py-2.5 text-right font-semibold text-red-600">{{ summaryFmt(d.debt) }} сом</td>
+                  <td class="py-2.5 text-right font-semibold text-red-600">{{ summaryFmt(d.debt) }} {{ $t('ecoAnalytics.currency') }}</td>
                   <td class="py-2.5 text-right">
-                    <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ d.overdue }} дн.</span>
+                    <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ d.overdue }} {{ $t('ecoAnalytics.days') }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -1456,9 +1460,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Поступило от утильсбора</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.finance.incomeFee') }}</span>
             <span class="an-card__value" style="color:#22C55E">{{ fmtFull(totalIncome) }}</span>
-            <span class="an-card__sub">{{ paidCalcs.length }} расчётов</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.calcsCount', { n: paidCalcs.length }) }}</span>
           </div>
         </div>
         <div class="an-card">
@@ -1466,9 +1470,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Возвращено</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.finance.returned') }}</span>
             <span class="an-card__value" style="color:#EF4444">{{ fmtFull(totalRefunded) }}</span>
-            <span class="an-card__sub">{{ approvedRefunds.length }} возвратов</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.refundsCount', { n: approvedRefunds.length }) }}</span>
           </div>
         </div>
         <div class="an-card">
@@ -1476,9 +1480,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Чистые поступления</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.finance.netIncome') }}</span>
             <span class="an-card__value" :style="{ color: netIncome >= 0 ? '#3B82F6' : '#EF4444' }">{{ fmtFull(netIncome) }}</span>
-            <span class="an-card__sub">поступило минус возвраты</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.incomeMinusRefunds') }}</span>
           </div>
         </div>
         <div class="an-card">
@@ -1486,9 +1490,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Средний расчёт</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.finance.avgCalc') }}</span>
             <span class="an-card__value" style="color:#64748B">{{ fmtFull(avgCalc) }}</span>
-            <span class="an-card__sub">за период</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.forPeriod') }}</span>
           </div>
         </div>
       </div>
@@ -1496,16 +1500,16 @@ const selectedSummaryRegion = ref('all')
       <!-- Bar chart -->
       <div class="an-chart-container mb-6">
         <div class="an-chart-header">
-          <h2 class="an-section-title">Динамика поступлений</h2>
+          <h2 class="an-section-title">{{ $t('ecoAnalytics.finance.incomeDynamics') }}</h2>
           <div class="an-toggle">
-            <button :class="['an-toggle__btn', chartMode === 'months' ? 'an-toggle__btn--active' : '']" @click="chartMode = 'months'">По месяцам</button>
-            <button :class="['an-toggle__btn', chartMode === 'quarters' ? 'an-toggle__btn--active' : '']" @click="chartMode = 'quarters'">По кварталам</button>
+            <button :class="['an-toggle__btn', chartMode === 'months' ? 'an-toggle__btn--active' : '']" @click="chartMode = 'months'">{{ $t('ecoAnalytics.finance.byMonths') }}</button>
+            <button :class="['an-toggle__btn', chartMode === 'quarters' ? 'an-toggle__btn--active' : '']" @click="chartMode = 'quarters'">{{ $t('ecoAnalytics.finance.byQuarters') }}</button>
           </div>
         </div>
         <!-- Legend -->
         <div class="an-chart-legend">
-          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#22C55E"></span> Поступления</span>
-          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#EF4444"></span> Возвраты</span>
+          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#22C55E"></span> {{ $t('ecoAnalytics.finance.incomeLabel') }}</span>
+          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#EF4444"></span> {{ $t('ecoAnalytics.finance.refundsLabel') }}</span>
         </div>
         <!-- Chart area -->
         <div class="an-chart">
@@ -1558,11 +1562,11 @@ const selectedSummaryRegion = ref('all')
 
       <!-- ── Структура поступлений: two donut charts ── -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Структура поступлений</h2>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.finance.incomeStructure') }}</h2>
         <div class="an-donut-grid">
           <!-- Left donut: По группам товаров -->
           <div class="an-donut-section">
-            <h3 class="an-donut-subtitle">По группам товаров</h3>
+            <h3 class="an-donut-subtitle">{{ $t('ecoAnalytics.finance.byProductGroups') }}</h3>
             <div class="an-donut-svg-wrap" style="position:relative">
               <svg viewBox="0 0 220 220" width="200" height="200" class="an-donut-svg">
                 <path
@@ -1577,7 +1581,7 @@ const selectedSummaryRegion = ref('all')
                     cursor: 'pointer',
                     transformOrigin: '110px 110px'
                   }"
-                  @mouseenter="hoveredGroupIdx = i; showDonutTooltip($event, incomeByGroup[i].label, incomeByGroup[i].amount.toLocaleString('ru-RU') + ' сом', (incomeByGroupTotal ? (incomeByGroup[i].amount / incomeByGroupTotal * 100).toFixed(1) : '0') + '%', paidCalcs.filter(c => c.items.some(it => { const gObj = productGroups.find(pg => pg.value === it.group); return (gObj?.label || it.group) === incomeByGroup[i].label })).length + ' расч.')"
+                  @mouseenter="hoveredGroupIdx = i; showDonutTooltip($event, incomeByGroup[i].label, incomeByGroup[i].amount.toLocaleString() + ' ' + $t('ecoAnalytics.currency'), (incomeByGroupTotal ? (incomeByGroup[i].amount / incomeByGroupTotal * 100).toFixed(1) : '0') + '%', paidCalcs.filter(c => c.items.some(it => { const gObj = productGroups.find(pg => pg.value === it.group); return (gObj?.label || it.group) === incomeByGroup[i].label })).length + ' ' + $t('ecoAnalytics.calcsShort'))"
                   @mousemove="moveDonutTooltip($event)"
                   @mouseleave="hoveredGroupIdx = null; hideDonutTooltip()"
                 />
@@ -1609,14 +1613,14 @@ const selectedSummaryRegion = ref('all')
               >
                 <span class="an-donut-legend__dot" :style="{ background: donutGroupColors[i % donutGroupColors.length] }"></span>
                 <span class="an-donut-legend__label">{{ g.label }}</span>
-                <span class="an-donut-legend__value">{{ g.amount.toLocaleString('ru-RU') }} сом</span>
+                <span class="an-donut-legend__value">{{ g.amount.toLocaleString() }} {{ $t('ecoAnalytics.currency') }}</span>
                 <span class="an-donut-legend__pct">{{ incomeByGroupTotal ? ((g.amount / incomeByGroupTotal) * 100).toFixed(1) : '0' }}%</span>
               </div>
             </div>
           </div>
           <!-- Right donut: По типу плательщиков -->
           <div class="an-donut-section">
-            <h3 class="an-donut-subtitle">По типу плательщиков</h3>
+            <h3 class="an-donut-subtitle">{{ $t('ecoAnalytics.finance.byPayerType') }}</h3>
             <div class="an-donut-svg-wrap" style="position:relative">
               <svg viewBox="0 0 220 220" width="200" height="200" class="an-donut-svg">
                 <path
@@ -1631,7 +1635,7 @@ const selectedSummaryRegion = ref('all')
                     cursor: 'pointer',
                     transformOrigin: '110px 110px'
                   }"
-                  @mouseenter="hoveredPayerIdx = i; showDonutTooltip($event, payerTypeWithAmounts[i].label, payerTypeWithAmounts[i].amount.toLocaleString('ru-RU') + ' сом', payerTypeData[i].pct + '%')"
+                  @mouseenter="hoveredPayerIdx = i; showDonutTooltip($event, payerTypeWithAmounts[i].label, payerTypeWithAmounts[i].amount.toLocaleString() + ' ' + $t('ecoAnalytics.currency'), payerTypeData[i].pct + '%')"
                   @mousemove="moveDonutTooltip($event)"
                   @mouseleave="hoveredPayerIdx = null; hideDonutTooltip()"
                 />
@@ -1660,7 +1664,7 @@ const selectedSummaryRegion = ref('all')
               >
                 <span class="an-donut-legend__dot" :style="{ background: p.color }"></span>
                 <span class="an-donut-legend__label">{{ p.label }}</span>
-                <span class="an-donut-legend__value">{{ p.amount.toLocaleString('ru-RU') }} сом</span>
+                <span class="an-donut-legend__value">{{ p.amount.toLocaleString() }} {{ $t('ecoAnalytics.currency') }}</span>
                 <span class="an-donut-legend__pct">{{ p.pct }}%</span>
               </div>
             </div>
@@ -1670,16 +1674,16 @@ const selectedSummaryRegion = ref('all')
 
       <!-- ── Топ-10 плательщиков ── -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Топ-10 плательщиков по сумме утильсбора</h2>
-        <div v-if="payerRanking.length === 0" class="py-12 text-center text-[#94a3b8]">Нет данных за выбранный период</div>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.finance.top10payers') }}</h2>
+        <div v-if="payerRanking.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
         <div v-else>
           <div class="an-tbl-header">
             <span class="an-tbl-col an-tbl-col--num">#</span>
-            <span class="an-tbl-col an-tbl-col--name">Наименование</span>
-            <span class="an-tbl-col an-tbl-col--num2">ИНН</span>
-            <span class="an-tbl-col an-tbl-col--num2">Расчётов</span>
-            <span class="an-tbl-col an-tbl-col--amount">Сумма (сом)</span>
-            <span class="an-tbl-col an-tbl-col--share">Доля</span>
+            <span class="an-tbl-col an-tbl-col--name">{{ $t('ecoAnalytics.finance.nameColumn') }}</span>
+            <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.finance.innColumn') }}</span>
+            <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.finance.calcsColumn') }}</span>
+            <span class="an-tbl-col an-tbl-col--amount">{{ $t('ecoAnalytics.finance.amountSom') }}</span>
+            <span class="an-tbl-col an-tbl-col--share">{{ $t('ecoAnalytics.finance.shareColumn') }}</span>
           </div>
           <div v-for="(p, idx) in visiblePayers" :key="p.company" class="an-tbl-row-wrap">
             <div class="an-tbl-row" style="cursor:default">
@@ -1687,7 +1691,7 @@ const selectedSummaryRegion = ref('all')
               <span class="an-tbl-col an-tbl-col--name an-tbl-col--name-text">{{ p.company }}</span>
               <span class="an-tbl-col an-tbl-col--num2 an-tbl-col--mono">{{ p.inn }}</span>
               <span class="an-tbl-col an-tbl-col--num2">{{ p.calcCount }}</span>
-              <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold" style="color:#22C55E">{{ p.totalAmount.toLocaleString('ru-RU') }}</span>
+              <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold" style="color:#22C55E">{{ p.totalAmount.toLocaleString() }}</span>
               <span class="an-tbl-col an-tbl-col--share">
                 <span class="an-tbl-share-bar">
                   <span class="an-tbl-share-bar__fill" :style="{ width: (topPayersTotalAmount ? p.totalAmount / topPayersTotalAmount * 100 : 0) + '%' }"></span>
@@ -1698,7 +1702,7 @@ const selectedSummaryRegion = ref('all')
           </div>
           <div v-if="payerRanking.length > 10" class="an-show-all-wrap">
             <button class="an-show-all-btn" @click="showAllPayers = !showAllPayers">
-              {{ showAllPayers ? 'Свернуть' : 'Показать всех (' + payerRanking.length + ')' }}
+              {{ showAllPayers ? $t('ecoAnalytics.finance.collapse') : $t('ecoAnalytics.finance.showAll', { n: payerRanking.length }) }}
               <svg :class="['an-show-all-icon', showAllPayers ? 'an-show-all-icon--open' : '']" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
           </div>
@@ -1708,27 +1712,27 @@ const selectedSummaryRegion = ref('all')
       <!-- ── Топ должников ── -->
       <div class="an-chart-container mb-6 an-debtors-container">
         <div class="an-debtors-header">
-          <h2 class="an-section-title">Организации с просроченной оплатой</h2>
+          <h2 class="an-section-title">{{ $t('ecoAnalytics.finance.overdueOrgs') }}</h2>
           <span class="an-debtors-badge">{{ debtors.length }}</span>
         </div>
         <div class="an-debtors-total">
-          Общая задолженность: <strong style="color:#EF4444">{{ totalDebt.toLocaleString('ru-RU') }} сом</strong>
+          {{ $t('ecoAnalytics.finance.totalDebt') }} <strong style="color:#EF4444">{{ totalDebt.toLocaleString() }} {{ $t('ecoAnalytics.currency') }}</strong>
         </div>
         <div class="an-tbl-header">
-          <span class="an-tbl-col an-tbl-col--name">Наименование</span>
-          <span class="an-tbl-col an-tbl-col--num2">ИНН</span>
-          <span class="an-tbl-col an-tbl-col--amount">Задолженность</span>
-          <span class="an-tbl-col an-tbl-col--num2">Дней</span>
-          <span class="an-tbl-col an-tbl-col--status">Статус</span>
+          <span class="an-tbl-col an-tbl-col--name">{{ $t('ecoAnalytics.finance.nameColumn') }}</span>
+          <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.finance.innColumn') }}</span>
+          <span class="an-tbl-col an-tbl-col--amount">{{ $t('ecoAnalytics.summary.debtColumn') }}</span>
+          <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.finance.daysColumn') }}</span>
+          <span class="an-tbl-col an-tbl-col--status">{{ $t('ecoAnalytics.finance.statusColumn') }}</span>
         </div>
         <div v-for="d in debtors" :key="d.inn" class="an-tbl-row-wrap">
           <div class="an-tbl-row" style="cursor:default">
             <span class="an-tbl-col an-tbl-col--name an-tbl-col--name-text">{{ d.company }}</span>
             <span class="an-tbl-col an-tbl-col--num2 an-tbl-col--mono">{{ d.inn }}</span>
-            <span class="an-tbl-col an-tbl-col--amount" style="color:#EF4444;font-weight:700">{{ d.debt.toLocaleString('ru-RU') }}</span>
+            <span class="an-tbl-col an-tbl-col--amount" style="color:#EF4444;font-weight:700">{{ d.debt.toLocaleString() }}</span>
             <span class="an-tbl-col an-tbl-col--num2" style="color:#EF4444;font-weight:600">{{ d.overdueDays }}</span>
             <span class="an-tbl-col an-tbl-col--status">
-              <span :class="['an-status-badge', d.status === 'Просрочка' ? 'an-status-badge--red' : 'an-status-badge--orange']">{{ d.status }}</span>
+              <span :class="['an-status-badge', d.statusKey === 'overdue' ? 'an-status-badge--red' : 'an-status-badge--orange']">{{ d.status }}</span>
             </span>
           </div>
         </div>
@@ -1736,14 +1740,14 @@ const selectedSummaryRegion = ref('all')
 
       <!-- ── Поступления по группам товаров — horizontal bars ── -->
       <div class="an-chart-container mb-6" style="position:relative">
-        <h2 class="an-section-title mb-4">Поступления по группам товаров</h2>
-        <div v-if="groupBarData.length === 0" class="py-12 text-center text-[#94a3b8]">Нет данных за выбранный период</div>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.finance.incomeByGroups') }}</h2>
+        <div v-if="groupBarData.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
         <div v-else class="an-hbar-list">
           <div
             v-for="(g, idx) in groupBarData"
             :key="g.group"
             :class="['an-hbar-row', hoveredHbarIdx === idx ? 'an-hbar-row--active' : '', hoveredHbarIdx !== null && hoveredHbarIdx !== idx ? 'an-hbar-row--dimmed' : '']"
-            @mouseenter="hoveredHbarIdx = idx; showBarTooltip($event, [g.label, g.totalAmount.toLocaleString('ru-RU') + ' сом', (totalGroupAmount ? (g.totalAmount / totalGroupAmount * 100).toFixed(1) : '0') + '% от общей суммы', g.calcCount + ' расчётов'])"
+            @mouseenter="hoveredHbarIdx = idx; showBarTooltip($event, [g.label, g.totalAmount.toLocaleString() + ' ' + $t('ecoAnalytics.currency'), (totalGroupAmount ? (g.totalAmount / totalGroupAmount * 100).toFixed(1) : '0') + '% ' + $t('ecoAnalytics.ofTotal'), $t('ecoAnalytics.calcsCount', { n: g.calcCount })])"
             @mousemove="moveBarTooltip($event)"
             @mouseleave="hoveredHbarIdx = null; hideBarTooltip()"
           >
@@ -1751,7 +1755,7 @@ const selectedSummaryRegion = ref('all')
             <div class="an-hbar-track">
               <div class="an-hbar-fill" :style="{ width: (g.totalAmount / groupBarMax * 100) + '%', background: idx % 2 === 0 ? '#22C55E' : '#16A34A', filter: hoveredHbarIdx === idx ? 'brightness(1.15)' : 'none' }"></div>
             </div>
-            <span class="an-hbar-value">{{ g.totalAmount.toLocaleString('ru-RU') }} сом</span>
+            <span class="an-hbar-value">{{ g.totalAmount.toLocaleString() }} {{ $t('ecoAnalytics.currency') }}</span>
           </div>
         </div>
         <!-- Tooltip -->
@@ -1762,7 +1766,7 @@ const selectedSummaryRegion = ref('all')
 
       <!-- ── Finance tab export ── -->
       <div class="an-tab-export-row">
-        <button class="an-tab-export-btn" @click="exportTabData('Финансы')">
+        <button class="an-tab-export-btn" @click="exportTabData($t('ecoAnalytics.tabs.finance'))">
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {{ $t('common.exportData') }}
         </button>
@@ -1777,12 +1781,12 @@ const selectedSummaryRegion = ref('all')
       <!-- ═══ Subsection A: Анализ по товарам ═══ -->
       <h2 class="an-subsection-title">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-        Анализ по товарам
+        {{ $t('ecoAnalytics.products.productAnalysis') }}
       </h2>
 
       <!-- A1: Donut chart — Структура ввоза/производства по группам -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Структура ввоза/производства по группам</h2>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.importProductionStructure') }}</h2>
         <div class="an-donut-grid an-donut-grid--single">
           <div class="an-donut-section">
             <div class="an-donut-svg-wrap" style="position:relative">
@@ -1799,13 +1803,13 @@ const selectedSummaryRegion = ref('all')
                     cursor: 'pointer',
                     transformOrigin: '110px 110px'
                   }"
-                  @mouseenter="hoveredMassIdx = i; showDonutTooltip($event, incomeByGroupMass[i].label, incomeByGroupMass[i].mass.toFixed(1) + ' т', (totalGroupMass ? (incomeByGroupMass[i].mass / totalGroupMass * 100).toFixed(1) : '0') + '%')"
+                  @mouseenter="hoveredMassIdx = i; showDonutTooltip($event, incomeByGroupMass[i].label, incomeByGroupMass[i].mass.toFixed(1) + ' ' + $t('ecoAnalytics.tons'), (totalGroupMass ? (incomeByGroupMass[i].mass / totalGroupMass * 100).toFixed(1) : '0') + '%')"
                   @mousemove="moveDonutTooltip($event)"
                   @mouseleave="hoveredMassIdx = null; hideDonutTooltip()"
                 />
               </svg>
               <div class="an-donut-center">
-                <span class="an-donut-center__value">{{ fmtCenter(massCenterValue, 'т') }}</span>
+                <span class="an-donut-center__value">{{ fmtCenter(massCenterValue, 'tons') }}</span>
                 <span class="an-donut-center__label">{{ massCenterLabel }}</span>
               </div>
               <div
@@ -1828,7 +1832,7 @@ const selectedSummaryRegion = ref('all')
               >
                 <span class="an-donut-legend__dot" :style="{ background: donutGroupColors[i % donutGroupColors.length] }"></span>
                 <span class="an-donut-legend__label">{{ g.label }}</span>
-                <span class="an-donut-legend__value">{{ g.mass.toFixed(1) }} т</span>
+                <span class="an-donut-legend__value">{{ g.mass.toFixed(1) }} {{ $t('ecoAnalytics.tons') }}</span>
                 <span class="an-donut-legend__pct">{{ totalGroupMass ? ((g.mass / totalGroupMass) * 100).toFixed(1) : '0' }}%</span>
               </div>
             </div>
@@ -1838,21 +1842,21 @@ const selectedSummaryRegion = ref('all')
 
       <!-- A2: Product groups ranking table (enhanced with 2 new columns) -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Рейтинг групп товаров по сумме утильсбора</h2>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.groupRankingTitle') }}</h2>
 
-        <div v-if="groupRanking.length === 0" class="py-12 text-center text-[#94a3b8]">Нет данных за выбранный период</div>
+        <div v-if="groupRanking.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
 
         <div v-else>
           <!-- Table header -->
           <div class="an-tbl-header">
             <span class="an-tbl-col an-tbl-col--num">#</span>
-            <span class="an-tbl-col an-tbl-col--name">Группа товаров</span>
-            <span class="an-tbl-col an-tbl-col--num2">Расчётов</span>
-            <span class="an-tbl-col an-tbl-col--num2">Масса (т)</span>
-            <span class="an-tbl-col an-tbl-col--amount">Сумма (сом)</span>
-            <span class="an-tbl-col an-tbl-col--rate">Ср. ставка</span>
-            <span class="an-tbl-col an-tbl-col--trend">Динамика</span>
-            <span class="an-tbl-col an-tbl-col--share">Доля</span>
+            <span class="an-tbl-col an-tbl-col--name">{{ $t('ecoAnalytics.products.groupColumn') }}</span>
+            <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.products.calcsColumn') }}</span>
+            <span class="an-tbl-col an-tbl-col--num2">{{ $t('ecoAnalytics.products.massTons') }}</span>
+            <span class="an-tbl-col an-tbl-col--amount">{{ $t('ecoAnalytics.products.amountSom') }}</span>
+            <span class="an-tbl-col an-tbl-col--rate">{{ $t('ecoAnalytics.products.avgRate') }}</span>
+            <span class="an-tbl-col an-tbl-col--trend">{{ $t('ecoAnalytics.products.dynamics') }}</span>
+            <span class="an-tbl-col an-tbl-col--share">{{ $t('ecoAnalytics.products.shareColumn') }}</span>
             <span class="an-tbl-col an-tbl-col--chev"></span>
           </div>
 
@@ -1867,7 +1871,7 @@ const selectedSummaryRegion = ref('all')
               <span class="an-tbl-col an-tbl-col--name an-tbl-col--name-text">{{ ga.label }}</span>
               <span class="an-tbl-col an-tbl-col--num2">{{ ga.calcCount }}</span>
               <span class="an-tbl-col an-tbl-col--num2">{{ ga.totalMass.toFixed(1) }}</span>
-              <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold">{{ ga.totalAmount.toLocaleString('ru-RU') }}</span>
+              <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold">{{ ga.totalAmount.toLocaleString() }}</span>
               <span class="an-tbl-col an-tbl-col--rate">{{ getAvgRate(ga.totalAmount, ga.totalMass) }}</span>
               <span class="an-tbl-col an-tbl-col--trend">
                 <span :style="{ color: mockTrend(ga.group).up ? '#22C55E' : '#EF4444' }">
@@ -1890,20 +1894,20 @@ const selectedSummaryRegion = ref('all')
             <div :class="['an-tbl-expand', expandedGroups.has(ga.group) ? 'an-tbl-expand--open' : '']">
               <div class="an-tbl-expand__inner">
                 <div class="an-tbl-sub-header">
-                  <span class="an-tbl-sub-col an-tbl-sub-col--name">Подгруппа</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Кол-во</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Масса (т)</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Сумма (сом)</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Ср. ставка</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Динамика</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">Доля</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--name">{{ $t('ecoAnalytics.products.subgroup') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.quantity') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.massTons') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.amountSom') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.avgRate') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.dynamics') }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ $t('ecoAnalytics.products.shareColumn') }}</span>
                 </div>
                 <div v-for="sg in ga.subgroups.sort((a, b) => b.amount - a.amount)" :key="sg.subgroup" class="an-tbl-sub-row">
                   <span class="an-tbl-sub-col an-tbl-sub-col--name">{{ sg.label }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.count }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass.toFixed(1) }}</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.amount.toLocaleString('ru-RU') }}</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass ? Math.round(sg.amount / sg.mass).toLocaleString('ru-RU') : '—' }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.amount.toLocaleString() }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass ? Math.round(sg.amount / sg.mass).toLocaleString() : '—' }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">
                     <span :style="{ color: mockTrend(sg.subgroup).up ? '#22C55E' : '#EF4444' }">
                       {{ mockTrend(sg.subgroup).up ? '&#9650;' : '&#9660;' }}
@@ -1919,10 +1923,10 @@ const selectedSummaryRegion = ref('all')
           <!-- Totals row -->
           <div class="an-tbl-footer">
             <span class="an-tbl-col an-tbl-col--num"></span>
-            <span class="an-tbl-col an-tbl-col--name" style="font-weight:700">Итого</span>
+            <span class="an-tbl-col an-tbl-col--name" style="font-weight:700">{{ $t('ecoAnalytics.total') }}</span>
             <span class="an-tbl-col an-tbl-col--num2">{{ groupRanking.reduce((s, g) => s + g.calcCount, 0) }}</span>
             <span class="an-tbl-col an-tbl-col--num2">{{ groupRanking.reduce((s, g) => s + g.totalMass, 0).toFixed(1) }}</span>
-            <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold">{{ totalGroupAmount.toLocaleString('ru-RU') }}</span>
+            <span class="an-tbl-col an-tbl-col--amount an-tbl-col--bold">{{ totalGroupAmount.toLocaleString() }}</span>
             <span class="an-tbl-col an-tbl-col--rate"></span>
             <span class="an-tbl-col an-tbl-col--trend"></span>
             <span class="an-tbl-col an-tbl-col--share"><span class="an-tbl-share-pct" style="font-weight:700">100%</span></span>
@@ -1933,14 +1937,14 @@ const selectedSummaryRegion = ref('all')
 
       <!-- A3: Топ-10 подгрупп по массе ввоза — horizontal bars -->
       <div class="an-chart-container mb-6" style="position:relative">
-        <h2 class="an-section-title mb-4">Топ-10 подгрупп по массе ввоза</h2>
-        <div v-if="flatSubgroups.length === 0" class="py-12 text-center text-[#94a3b8]">Нет данных за выбранный период</div>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.top10subgroups') }}</h2>
+        <div v-if="flatSubgroups.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
         <div v-else class="an-hbar-list">
           <div
             v-for="(sg, idx) in flatSubgroups"
             :key="sg.subgroup + idx"
             :class="['an-hbar-row', hoveredSubbarIdx === idx ? 'an-hbar-row--active' : '', hoveredSubbarIdx !== null && hoveredSubbarIdx !== idx ? 'an-hbar-row--dimmed' : '']"
-            @mouseenter="hoveredSubbarIdx = idx; showBarTooltip($event, [sg.label, sg.parentGroup, sg.mass.toFixed(1) + ' т', sg.amount.toLocaleString('ru-RU') + ' сом'])"
+            @mouseenter="hoveredSubbarIdx = idx; showBarTooltip($event, [sg.label, sg.parentGroup, sg.mass.toFixed(1) + ' ' + $t('ecoAnalytics.tons'), sg.amount.toLocaleString() + ' ' + $t('ecoAnalytics.currency')])"
             @mousemove="moveBarTooltip($event)"
             @mouseleave="hoveredSubbarIdx = null; hideBarTooltip()"
           >
@@ -1951,7 +1955,7 @@ const selectedSummaryRegion = ref('all')
             <div class="an-hbar-track">
               <div class="an-hbar-fill" :style="{ width: (sg.mass / flatSubgroupMaxMass * 100) + '%', background: '#0e888d', filter: hoveredSubbarIdx === idx ? 'brightness(1.15)' : 'none' }"></div>
             </div>
-            <span class="an-hbar-value">{{ sg.mass.toFixed(1) }} т</span>
+            <span class="an-hbar-value">{{ sg.mass.toFixed(1) }} {{ $t('ecoAnalytics.tons') }}</span>
           </div>
         </div>
         <!-- Tooltip -->
@@ -1964,7 +1968,7 @@ const selectedSummaryRegion = ref('all')
       <div class="an-recycling-divider"></div>
       <h2 class="an-subsection-title">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-        Анализ переработки
+        {{ $t('ecoAnalytics.products.recyclingAnalysis') }}
       </h2>
 
       <!-- B1: 3 KPI cards -->
@@ -1985,11 +1989,11 @@ const selectedSummaryRegion = ref('all')
       <!-- B2: Grouped bar chart — Required vs Actual -->
       <div class="an-chart-container mb-6" style="position:relative">
         <div class="an-chart-header">
-          <h2 class="an-section-title">Требуемый vs фактический объём переработки</h2>
+          <h2 class="an-section-title">{{ $t('ecoAnalytics.products.requiredVsActual') }}</h2>
         </div>
         <div class="an-chart-legend">
-          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#3B82F6"></span> Требуемый</span>
-          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#22C55E"></span> Фактический</span>
+          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#3B82F6"></span> {{ $t('ecoAnalytics.products.requiredLabel') }}</span>
+          <span class="an-chart-legend__item"><span class="an-chart-legend__dot" style="background:#22C55E"></span> {{ $t('ecoAnalytics.products.actualLabel') }}</span>
         </div>
         <div class="an-chart">
           <div class="an-chart__yaxis">
@@ -2024,7 +2028,7 @@ const selectedSummaryRegion = ref('all')
                   @mouseleave="hoveredRecyclingIdx = null; hoveredRecyclingType = null"
                 >
                   <span class="an-chart__bar-val" style="color:#3B82F6">{{ item.required }}</span>
-                  <div v-if="hoveredRecyclingIdx === idx && hoveredRecyclingType === 'required'" class="an-chart__tooltip" style="background:#1e40af">Требуемый: {{ item.required }} т</div>
+                  <div v-if="hoveredRecyclingIdx === idx && hoveredRecyclingType === 'required'" class="an-chart__tooltip" style="background:#1e40af">{{ $t('ecoAnalytics.products.requiredTooltip', { value: item.required }) }}</div>
                 </div>
                 <div
                   class="an-chart__bar"
@@ -2038,7 +2042,7 @@ const selectedSummaryRegion = ref('all')
                   @mouseleave="hoveredRecyclingIdx = null; hoveredRecyclingType = null"
                 >
                   <span class="an-chart__bar-val" style="color:#22C55E">{{ item.actual }}</span>
-                  <div v-if="hoveredRecyclingIdx === idx && hoveredRecyclingType === 'actual'" class="an-chart__tooltip" style="background:#166534">Фактический: {{ item.actual }} т</div>
+                  <div v-if="hoveredRecyclingIdx === idx && hoveredRecyclingType === 'actual'" class="an-chart__tooltip" style="background:#166534">{{ $t('ecoAnalytics.products.actualTooltip', { value: item.actual }) }}</div>
                 </div>
               </div>
               <span class="an-chart__xlabel">{{ item.label }}</span>
@@ -2049,18 +2053,18 @@ const selectedSummaryRegion = ref('all')
 
       <!-- B3: Выполнение нормативов переработки — detailed table -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Выполнение нормативов переработки</h2>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.normComplianceTable') }}</h2>
         <div class="an-report-table-wrap">
           <table class="an-report-table">
             <thead>
               <tr>
-                <th>Вид отхода</th>
-                <th class="text-right">Норматив (%)</th>
-                <th class="text-right">Факт (%)</th>
-                <th class="text-right">Отклонение</th>
-                <th class="text-right">Объём требуемый (т)</th>
-                <th class="text-right">Объём фактический (т)</th>
-                <th>Статус</th>
+                <th>{{ $t('ecoAnalytics.products.wasteType') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.normPct') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.factPct') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.deviation') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.reqVolume') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.actVolume') }}</th>
+                <th>{{ $t('ecoAnalytics.products.statusCol') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -2081,23 +2085,23 @@ const selectedSummaryRegion = ref('all')
                 <td class="text-right font-semibold" :style="{ color: (n.factPct - n.normPct) >= 0 ? '#22C55E' : '#EF4444' }">
                   {{ (n.factPct - n.normPct) >= 0 ? '+' : '' }}{{ (n.factPct - n.normPct).toFixed(1) }}%
                 </td>
-                <td class="text-right text-[#64748b]">{{ n.reqVol.toLocaleString('ru-RU') }}</td>
-                <td class="text-right font-semibold" :style="{ color: n.actVol >= n.reqVol ? '#22C55E' : '#EF4444' }">{{ n.actVol.toLocaleString('ru-RU') }}</td>
+                <td class="text-right text-[#64748b]">{{ n.reqVol.toLocaleString() }}</td>
+                <td class="text-right font-semibold" :style="{ color: n.actVol >= n.reqVol ? '#22C55E' : '#EF4444' }">{{ n.actVol.toLocaleString() }}</td>
                 <td>
                   <span :class="['an-status-badge', n.factPct >= n.normPct ? 'an-status-badge--green' : 'an-status-badge--red']">
-                    {{ n.factPct >= n.normPct ? 'Выполнен' : 'Не выполнен' }}
+                    {{ n.factPct >= n.normPct ? $t('ecoAnalytics.products.statusMet') : $t('ecoAnalytics.products.statusNotMet') }}
                   </span>
                 </td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
-                <td class="font-bold">ИТОГО</td>
+                <td class="font-bold">{{ $t('ecoAnalytics.totalCaps') }}</td>
                 <td></td>
                 <td></td>
                 <td></td>
-                <td class="text-right font-bold">{{ recyclingNorms.reduce((s, n) => s + n.reqVol, 0).toLocaleString('ru-RU') }}</td>
-                <td class="text-right font-bold text-[#22C55E]">{{ recyclingNorms.reduce((s, n) => s + n.actVol, 0).toLocaleString('ru-RU') }}</td>
+                <td class="text-right font-bold">{{ recyclingNorms.reduce((s, n) => s + n.reqVol, 0).toLocaleString() }}</td>
+                <td class="text-right font-bold text-[#22C55E]">{{ recyclingNorms.reduce((s, n) => s + n.actVol, 0).toLocaleString() }}</td>
                 <td></td>
               </tr>
             </tfoot>
@@ -2109,7 +2113,7 @@ const selectedSummaryRegion = ref('all')
       <div class="an-recycling-divider"></div>
       <h2 class="an-subsection-title">
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-        Баланс мощностей по стране
+        {{ $t('ecoAnalytics.products.capacityBalance') }}
       </h2>
 
       <!-- C1: 3 KPI cards -->
@@ -2119,9 +2123,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Всего мощностей</span>
-            <span class="an-card__value" style="color:#3B82F6">{{ capacityKpis.totalCapacity.toLocaleString('ru-RU') }} т/год</span>
-            <span class="an-card__sub">активные переработчики</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.products.totalCapacity') }}</span>
+            <span class="an-card__value" style="color:#3B82F6">{{ capacityKpis.totalCapacity.toLocaleString() }} {{ $t('ecoAnalytics.tonsPerYear') }}</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.products.activeRecyclers') }}</span>
           </div>
         </div>
         <div class="an-card">
@@ -2129,9 +2133,9 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Средняя загруженность</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.products.avgLoad') }}</span>
             <span class="an-card__value" style="color:#F59E0B">{{ capacityKpis.avgLoad }}%</span>
-            <span class="an-card__sub">по активным переработчикам</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.products.byActiveRecyclers') }}</span>
           </div>
         </div>
         <div class="an-card">
@@ -2139,25 +2143,25 @@ const selectedSummaryRegion = ref('all')
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
           </div>
           <div class="an-card__body">
-            <span class="an-card__label">Дефицитных групп</span>
+            <span class="an-card__label">{{ $t('ecoAnalytics.products.deficitGroups') }}</span>
             <span class="an-card__value" style="color:#EF4444">{{ capacityKpis.deficitGroups }}</span>
-            <span class="an-card__sub">покрытие &lt; 100%</span>
+            <span class="an-card__sub">{{ $t('ecoAnalytics.products.coverageLess100') }}</span>
           </div>
         </div>
       </div>
 
       <!-- C2: Capacity balance table -->
       <div class="an-chart-container mb-6">
-        <h2 class="an-section-title mb-4">Баланс мощностей по стране</h2>
+        <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.capacityBalance') }}</h2>
         <div class="an-report-table-wrap">
           <table class="an-report-table">
             <thead>
               <tr>
-                <th>Группа отходов</th>
-                <th class="text-right">Объём к переработке (т)</th>
-                <th class="text-right">Мощность переработчиков (т)</th>
-                <th class="text-right">Дефицит/Профицит (т)</th>
-                <th class="text-right">Покрытие (%)</th>
+                <th>{{ $t('ecoAnalytics.products.wasteGroup') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.volumeToProcess') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.recyclerCapacity') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.deficitSurplus') }}</th>
+                <th class="text-right">{{ $t('ecoAnalytics.products.coveragePct') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -2166,10 +2170,10 @@ const selectedSummaryRegion = ref('all')
                 :key="i"
               >
                 <td class="font-medium">{{ item.group.label }}</td>
-                <td class="text-right text-[#64748b]">{{ item.volumeToProcess.toLocaleString('ru-RU') }}</td>
-                <td class="text-right font-semibold">{{ item.totalCapacity.toLocaleString('ru-RU') }}</td>
+                <td class="text-right text-[#64748b]">{{ item.volumeToProcess.toLocaleString() }}</td>
+                <td class="text-right font-semibold">{{ item.totalCapacity.toLocaleString() }}</td>
                 <td class="text-right font-semibold" :style="{ color: item.deficit >= 0 ? '#22C55E' : '#EF4444' }">
-                  {{ item.deficit >= 0 ? 'Профицит +' + item.deficit.toLocaleString('ru-RU') : 'Дефицит ' + item.deficit.toLocaleString('ru-RU') }}
+                  {{ item.deficit >= 0 ? $t('ecoAnalytics.products.surplus') + item.deficit.toLocaleString() : $t('ecoAnalytics.products.deficit') + item.deficit.toLocaleString() }}
                 </td>
                 <td class="text-right">
                   <span
@@ -2183,11 +2187,11 @@ const selectedSummaryRegion = ref('all')
             </tbody>
             <tfoot>
               <tr>
-                <td class="font-bold">ИТОГО</td>
-                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0).toLocaleString('ru-RU') }}</td>
-                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.totalCapacity, 0).toLocaleString('ru-RU') }}</td>
+                <td class="font-bold">{{ $t('ecoAnalytics.totalCaps') }}</td>
+                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.volumeToProcess, 0).toLocaleString() }}</td>
+                <td class="text-right font-bold">{{ capacityBalance.reduce((s, b) => s + b.totalCapacity, 0).toLocaleString() }}</td>
                 <td class="text-right font-bold" :style="{ color: capacityBalance.reduce((s, b) => s + b.deficit, 0) >= 0 ? '#22C55E' : '#EF4444' }">
-                  {{ capacityBalance.reduce((s, b) => s + b.deficit, 0) >= 0 ? 'Профицит +' : 'Дефицит ' }}{{ capacityBalance.reduce((s, b) => s + b.deficit, 0).toLocaleString('ru-RU') }}
+                  {{ capacityBalance.reduce((s, b) => s + b.deficit, 0) >= 0 ? $t('ecoAnalytics.products.surplus') : $t('ecoAnalytics.products.deficit') }}{{ capacityBalance.reduce((s, b) => s + b.deficit, 0).toLocaleString() }}
                 </td>
                 <td class="text-right font-bold">
                   <span
@@ -2208,7 +2212,7 @@ const selectedSummaryRegion = ref('all')
 
       <!-- B4: Products tab export -->
       <div class="an-tab-export-row">
-        <button class="an-tab-export-btn" @click="exportTabData('Товары и переработка')">
+        <button class="an-tab-export-btn" @click="exportTabData($t('ecoAnalytics.tabs.products'))">
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {{ $t('common.exportData') }}
         </button>
@@ -2221,7 +2225,7 @@ const selectedSummaryRegion = ref('all')
     <template v-if="activeTab === 'regional'">
       <!-- Region map cards -->
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="text-base font-bold text-[#1e293b] mb-4">Карта собираемости по регионам</h3>
+        <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.collectionMap') }}</h3>
         <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
           <button v-for="r in summaryRegionData" :key="'rmap-'+r.key"
             @click="selectedSummaryRegion = selectedSummaryRegion === r.key ? 'all' : r.key"
@@ -2233,7 +2237,7 @@ const selectedSummaryRegion = ref('all')
               {{ Math.round(r.collectionRate) }}
             </div>
             <p class="text-xs font-medium text-[#1e293b] truncate">{{ r.shortName }}</p>
-            <p class="text-[10px] text-[#64748b]">{{ summaryFmtM(r.collected) }} сом</p>
+            <p class="text-[10px] text-[#64748b]">{{ summaryFmtM(r.collected) }} {{ $t('ecoAnalytics.currency') }}</p>
           </button>
         </div>
         <div class="flex items-center gap-4 mt-4 justify-center text-xs text-[#64748b]">
@@ -2246,34 +2250,34 @@ const selectedSummaryRegion = ref('all')
 
       <!-- Sortable region table -->
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="text-base font-bold text-[#1e293b] mb-4">Детальная статистика по регионам</h3>
+        <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.detailedStats') }}</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead>
               <tr class="text-left text-[#64748b] bg-[#f8fafc] text-xs">
-                <th class="px-3 py-2.5 font-medium rounded-tl-lg">Регион</th>
+                <th class="px-3 py-2.5 font-medium rounded-tl-lg">{{ $t('ecoAnalytics.regional.regionColumn') }}</th>
                 <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('payers')">
-                  Плательщиков
+                  {{ $t('ecoAnalytics.regional.payersColumn') }}
                   <span v-if="regionalSortCol==='payers'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
                 </th>
                 <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('charged')">
-                  Начислено
+                  {{ $t('ecoAnalytics.regional.chargedColumn') }}
                   <span v-if="regionalSortCol==='charged'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
                 </th>
                 <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('collected')">
-                  Собрано
+                  {{ $t('ecoAnalytics.regional.collectedColumn') }}
                   <span v-if="regionalSortCol==='collected'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
                 </th>
                 <th class="px-3 py-2.5 font-medium text-center cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('collectionRate')">
-                  Собираемость
+                  {{ $t('ecoAnalytics.regional.collectibility') }}
                   <span v-if="regionalSortCol==='collectionRate'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
                 </th>
                 <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="regionalToggleSort('recyclers')">
-                  Переработчиков
+                  {{ $t('ecoAnalytics.regional.recyclersColumn') }}
                   <span v-if="regionalSortCol==='recyclers'" class="ml-0.5">{{ regionalSortDir==='desc' ? '↓' : '↑' }}</span>
                 </th>
-                <th class="px-3 py-2.5 font-medium text-right">Полигонов</th>
-                <th class="px-3 py-2.5 font-medium text-right rounded-tr-lg">Свалок</th>
+                <th class="px-3 py-2.5 font-medium text-right">{{ $t('ecoAnalytics.regional.landfillsColumn') }}</th>
+                <th class="px-3 py-2.5 font-medium text-right rounded-tr-lg">{{ $t('ecoAnalytics.regional.dumpsColumn') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -2281,8 +2285,8 @@ const selectedSummaryRegion = ref('all')
                 class="border-t border-[#f1f5f9] hover:bg-[#f8fafc] transition-colors">
                 <td class="px-3 py-2.5 font-medium text-[#1e293b]">{{ r.name }}</td>
                 <td class="px-3 py-2.5 text-right">{{ r.payers }}</td>
-                <td class="px-3 py-2.5 text-right font-medium">{{ summaryFmtM(r.charged) }} сом</td>
-                <td class="px-3 py-2.5 text-right font-medium text-green-600">{{ summaryFmtM(r.collected) }} сом</td>
+                <td class="px-3 py-2.5 text-right font-medium">{{ summaryFmtM(r.charged) }} {{ $t('ecoAnalytics.currency') }}</td>
+                <td class="px-3 py-2.5 text-right font-medium text-green-600">{{ summaryFmtM(r.collected) }} {{ $t('ecoAnalytics.currency') }}</td>
                 <td class="px-3 py-2.5 text-center">
                   <span :class="['px-2 py-0.5 rounded-full text-xs font-semibold', summaryGetCollectionBg(r.collectionRate)]">
                     {{ r.collectionRate }}%
@@ -2295,10 +2299,10 @@ const selectedSummaryRegion = ref('all')
             </tbody>
             <tfoot>
               <tr class="bg-[#f8fafc] font-semibold border-t-2 border-[#e2e8f0]">
-                <td class="px-3 py-2.5 text-[#1e293b]">ИТОГО</td>
+                <td class="px-3 py-2.5 text-[#1e293b]">{{ $t('ecoAnalytics.totalCaps') }}</td>
                 <td class="px-3 py-2.5 text-right">{{ summaryRegionData.reduce((s,r) => s+r.payers,0) }}</td>
-                <td class="px-3 py-2.5 text-right">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.charged,0)) }} сом</td>
-                <td class="px-3 py-2.5 text-right text-green-600">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.collected,0)) }} сом</td>
+                <td class="px-3 py-2.5 text-right">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.charged,0)) }} {{ $t('ecoAnalytics.currency') }}</td>
+                <td class="px-3 py-2.5 text-right text-green-600">{{ summaryFmtM(summaryRegionData.reduce((s,r) => s+r.collected,0)) }} {{ $t('ecoAnalytics.currency') }}</td>
                 <td class="px-3 py-2.5 text-center">
                   <span :class="['px-2 py-0.5 rounded-full text-xs font-semibold', summaryGetCollectionBg(parseFloat(summaryCollectionPct))]">
                     {{ summaryCollectionPct }}%
@@ -2317,7 +2321,7 @@ const selectedSummaryRegion = ref('all')
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Stacked bar: Waste by region -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Распределение отходов по регионам</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.wasteDistribution') }}</h3>
           <div class="space-y-2.5">
             <div v-for="r in [...summaryRegionData].sort((a,b) => b.wasteVolume - a.wasteVolume)" :key="'rwaste-'+r.key" class="flex items-center gap-3">
               <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -2325,32 +2329,32 @@ const selectedSummaryRegion = ref('all')
                 <div class="h-full rounded-lg transition-all bg-gradient-to-r from-[#22C55E] to-[#10b981]"
                   :style="{ width: (r.wasteVolume / summaryRegionData[0].wasteVolume * 100) + '%' }"></div>
               </div>
-              <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ summaryFmt(r.wasteVolume) }} т</span>
+              <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ summaryFmt(r.wasteVolume) }} {{ $t('ecoAnalytics.tons') }}</span>
             </div>
           </div>
         </div>
 
         <!-- Grouped bar: Infrastructure -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Инфраструктура по регионам</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.infrastructure') }}</h3>
           <div class="space-y-2.5">
             <div v-for="r in [...summaryRegionData].sort((a,b) => (b.recyclers+b.landfills) - (a.recyclers+a.landfills))" :key="'rinfra-'+r.key"
               class="flex items-center gap-3">
               <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
               <div class="flex-1 flex gap-0.5">
                 <div v-if="r.recyclers" class="h-5 bg-[#22C55E] rounded-l" :style="{ width: r.recyclers * 8 + 'px' }"
-                  :title="'Переработчиков: ' + r.recyclers"></div>
+                  :title="$t('ecoAnalytics.infraTooltip.recyclers', { n: r.recyclers })"></div>
                 <div v-if="r.landfills" class="h-5 bg-[#3B82F6]" :style="{ width: r.landfills * 8 + 'px' }"
-                  :title="'Полигонов: ' + r.landfills"></div>
+                  :title="$t('ecoAnalytics.infraTooltip.landfills', { n: r.landfills })"></div>
                 <div v-if="r.dumps" class="h-5 bg-[#F59E0B] rounded-r" :style="{ width: Math.min(r.dumps, 20) * 5 + 'px' }"
-                  :title="'Свалок: ' + r.dumps"></div>
+                  :title="$t('ecoAnalytics.infraTooltip.dumps', { n: r.dumps })"></div>
               </div>
             </div>
           </div>
           <div class="flex items-center gap-4 mt-4 justify-center text-xs text-[#64748b]">
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>Переработчики</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>Полигоны</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>Свалки</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>{{ $t('ecoAnalytics.regional.recyclersLegend') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>{{ $t('ecoAnalytics.regional.landfillsLegend') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>{{ $t('ecoAnalytics.regional.dumpsLegend') }}</span>
           </div>
         </div>
       </div>
@@ -2369,7 +2373,7 @@ const selectedSummaryRegion = ref('all')
           </button>
           <div>
             <h2 class="text-lg font-bold text-[#1e293b]">{{ getReportTemplateTitle(activeReportTemplate) }}</h2>
-            <p class="text-sm text-[#94a3b8]">Настройте параметры и сформируйте отчёт</p>
+            <p class="text-sm text-[#94a3b8]">{{ $t('ecoAnalytics.reports.configureAndGenerate') }}</p>
           </div>
         </div>
 
@@ -2377,11 +2381,11 @@ const selectedSummaryRegion = ref('all')
         <div class="an-report-params">
           <div class="an-report-params__row">
             <label class="an-report-params__label">
-              Период с
+              {{ $t('ecoAnalytics.period.periodFrom') }}
               <input type="date" v-model="reportDateFrom" class="an-report-params__input" />
             </label>
             <label class="an-report-params__label">
-              Период по
+              {{ $t('ecoAnalytics.period.periodTo') }}
               <input type="date" v-model="reportDateTo" class="an-report-params__input" />
             </label>
             <button @click="generateReport" :disabled="isGeneratingReport" class="an-report-generate-btn">
@@ -2400,7 +2404,7 @@ const selectedSummaryRegion = ref('all')
         <!-- Report preview -->
         <div v-if="reportPreviewReady" class="an-report-preview">
           <div class="an-report-preview__header">
-            <h3 class="an-section-title">Предварительный просмотр</h3>
+            <h3 class="an-section-title">{{ $t('ecoAnalytics.reports.preview') }}</h3>
             <div class="flex gap-2">
               <button @click="downloadReportFile('excel')" class="an-report-dl-btn an-report-dl-btn--excel">
                 <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -2418,11 +2422,11 @@ const selectedSummaryRegion = ref('all')
             <table class="an-report-table">
               <thead>
                 <tr>
-                  <th>Компания</th>
-                  <th>ИНН</th>
-                  <th>Группа товаров</th>
-                  <th class="text-right">Сумма (сом)</th>
-                  <th>Дата</th>
+                  <th>{{ $t('ecoAnalytics.reports.companyColumn') }}</th>
+                  <th>{{ $t('ecoAnalytics.reports.innColumn') }}</th>
+                  <th>{{ $t('ecoAnalytics.reports.productGroupColumn') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.amountSom') }}</th>
+                  <th>{{ $t('ecoAnalytics.reports.dateColumn') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2430,14 +2434,14 @@ const selectedSummaryRegion = ref('all')
                   <td class="font-medium text-[#1e293b]">{{ row.company }}</td>
                   <td class="text-[#64748b] font-mono text-sm">{{ row.inn }}</td>
                   <td class="text-[#64748b] text-sm">{{ row.group }}</td>
-                  <td class="text-right font-semibold text-[#22C55E]">{{ row.amount.toLocaleString('ru-RU') }}</td>
+                  <td class="text-right font-semibold text-[#22C55E]">{{ row.amount.toLocaleString() }}</td>
                   <td class="text-[#64748b]">{{ row.date }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="3" class="font-bold">ИТОГО ({{ periodReportMock.length }} записей)</td>
-                  <td class="text-right font-bold text-[#22C55E]">{{ periodReportMock.reduce((s, r) => s + r.amount, 0).toLocaleString('ru-RU') }}</td>
+                  <td colspan="3" class="font-bold">{{ $t('ecoAnalytics.reports.totalRecords', { n: periodReportMock.length }) }}</td>
+                  <td class="text-right font-bold text-[#22C55E]">{{ periodReportMock.reduce((s, r) => s + r.amount, 0).toLocaleString() }}</td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -2449,10 +2453,10 @@ const selectedSummaryRegion = ref('all')
             <table class="an-report-table">
               <thead>
                 <tr>
-                  <th>Компания</th>
-                  <th>ИНН</th>
-                  <th class="text-right">Кол-во расчётов</th>
-                  <th class="text-right">Общая сумма (сом)</th>
+                  <th>{{ $t('ecoAnalytics.reports.companyColumn') }}</th>
+                  <th>{{ $t('ecoAnalytics.reports.innColumn') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.calcsCountColumn') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.totalAmountSom') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2460,14 +2464,14 @@ const selectedSummaryRegion = ref('all')
                   <td class="font-medium text-[#1e293b]">{{ row.company }}</td>
                   <td class="text-[#64748b] font-mono text-sm">{{ row.inn }}</td>
                   <td class="text-right text-[#64748b]">{{ row.calcs }}</td>
-                  <td class="text-right font-semibold text-[#3B82F6]">{{ row.total.toLocaleString('ru-RU') }}</td>
+                  <td class="text-right font-semibold text-[#3B82F6]">{{ row.total.toLocaleString() }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="2" class="font-bold">ИТОГО ({{ payersReportMock.length }} плательщиков)</td>
+                  <td colspan="2" class="font-bold">{{ $t('ecoAnalytics.reports.totalPayers', { n: payersReportMock.length }) }}</td>
                   <td class="text-right font-bold">{{ payersReportMock.reduce((s, r) => s + r.calcs, 0) }}</td>
-                  <td class="text-right font-bold text-[#3B82F6]">{{ payersReportMock.reduce((s, r) => s + r.total, 0).toLocaleString('ru-RU') }}</td>
+                  <td class="text-right font-bold text-[#3B82F6]">{{ payersReportMock.reduce((s, r) => s + r.total, 0).toLocaleString() }}</td>
                 </tr>
               </tfoot>
             </table>
@@ -2478,24 +2482,24 @@ const selectedSummaryRegion = ref('all')
             <table class="an-report-table">
               <thead>
                 <tr>
-                  <th>Группа №</th>
-                  <th>Наименование</th>
-                  <th class="text-right">Сумма (сом)</th>
-                  <th class="text-right">Доля (%)</th>
+                  <th>{{ $t('ecoAnalytics.reports.groupNumber') }}</th>
+                  <th>{{ $t('ecoAnalytics.reports.nameColumn') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.amountSom') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.sharePct') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(row, i) in groupsReportMock" :key="i">
                   <td class="font-medium text-[#1e293b]">{{ row.number }}</td>
                   <td class="text-[#1e293b]">{{ row.name }}</td>
-                  <td class="text-right font-semibold text-[#F59E0B]">{{ row.amount.toLocaleString('ru-RU') }}</td>
+                  <td class="text-right font-semibold text-[#F59E0B]">{{ row.amount.toLocaleString() }}</td>
                   <td class="text-right text-[#64748b]">{{ row.share.toFixed(1) }}%</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="2" class="font-bold">ИТОГО</td>
-                  <td class="text-right font-bold text-[#F59E0B]">{{ groupsReportMock.reduce((s, r) => s + r.amount, 0).toLocaleString('ru-RU') }}</td>
+                  <td colspan="2" class="font-bold">{{ $t('ecoAnalytics.totalCaps') }}</td>
+                  <td class="text-right font-bold text-[#F59E0B]">{{ groupsReportMock.reduce((s, r) => s + r.amount, 0).toLocaleString() }}</td>
                   <td class="text-right font-bold">100%</td>
                 </tr>
               </tfoot>
@@ -2507,8 +2511,8 @@ const selectedSummaryRegion = ref('all')
             <table class="an-report-table">
               <thead>
                 <tr>
-                  <th>Показатель</th>
-                  <th class="text-right">Значение</th>
+                  <th>{{ $t('ecoAnalytics.reports.indicatorColumn') }}</th>
+                  <th class="text-right">{{ $t('ecoAnalytics.reports.valueColumn') }}</th>
                 </tr>
               </thead>
               <tbody>

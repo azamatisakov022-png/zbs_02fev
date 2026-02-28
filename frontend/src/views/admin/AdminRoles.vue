@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
 // --- Types ---
@@ -64,27 +66,37 @@ const roles: Role[] = [
 ]
 
 // --- Modules ---
-const modules = [
-  { id: 'users', label: 'Пользователи' },
-  { id: 'organizations', label: 'Организации' },
-  { id: 'declarations', label: 'Декларации' },
-  { id: 'recycling-reports', label: 'Отчёты о переработке' },
-  { id: 'calculations', label: 'Расчёты утильсбора' },
-  { id: 'payments', label: 'Платежи' },
-  { id: 'recyclers-registry', label: 'Реестр переработчиков' },
-  { id: 'licenses', label: 'Лицензии и документы' },
-  { id: 'references', label: 'Справочники' },
-  { id: 'analytics', label: 'Аналитика' },
-  { id: 'system-settings', label: 'Настройки системы' },
-  { id: 'audit-log', label: 'Журнал аудита' },
+const moduleIds = [
+  'users', 'organizations', 'declarations', 'recycling-reports',
+  'calculations', 'payments', 'recyclers-registry', 'licenses',
+  'references', 'analytics', 'system-settings', 'audit-log',
 ]
 
-const permissionLabels: { key: keyof Permission; label: string }[] = [
-  { key: 'view', label: 'Просмотр' },
-  { key: 'create', label: 'Создание' },
-  { key: 'edit', label: 'Редактирование' },
-  { key: 'delete', label: 'Удаление' },
-]
+const moduleLabelKeys: Record<string, string> = {
+  'users': 'adminRoles.modUsers',
+  'organizations': 'adminRoles.modOrganizations',
+  'declarations': 'adminRoles.modDeclarations',
+  'recycling-reports': 'adminRoles.modRecyclingReports',
+  'calculations': 'adminRoles.modCalculations',
+  'payments': 'adminRoles.modPayments',
+  'recyclers-registry': 'adminRoles.modRecyclersRegistry',
+  'licenses': 'adminRoles.modLicenses',
+  'references': 'adminRoles.modReferences',
+  'analytics': 'adminRoles.modAnalytics',
+  'system-settings': 'adminRoles.modSystemSettings',
+  'audit-log': 'adminRoles.modAuditLog',
+}
+
+const modules = computed(() =>
+  moduleIds.map(id => ({ id, label: t(moduleLabelKeys[id]) }))
+)
+
+const permissionLabels = computed<{ key: keyof Permission; label: string }[]>(() => [
+  { key: 'view', label: t('adminRoles.permView') },
+  { key: 'create', label: t('adminRoles.permCreate') },
+  { key: 'edit', label: t('adminRoles.permEdit') },
+  { key: 'delete', label: t('adminRoles.permDelete') },
+])
 
 // --- Permissions state ---
 function buildDefaultPermissions(): Record<string, Record<string, Permission>> {
@@ -92,14 +104,14 @@ function buildDefaultPermissions(): Record<string, Record<string, Permission>> {
 
   // Admin: all true
   result['admin'] = {}
-  for (const mod of modules) {
-    result['admin'][mod.id] = { view: true, create: true, edit: true, delete: true }
+  for (const modId of moduleIds) {
+    result['admin'][modId] = { view: true, create: true, edit: true, delete: true }
   }
 
   // Employee MPRETN
   result['employee'] = {}
-  for (const mod of modules) {
-    result['employee'][mod.id] = { view: false, create: false, edit: false, delete: false }
+  for (const modId of moduleIds) {
+    result['employee'][modId] = { view: false, create: false, edit: false, delete: false }
   }
   result['employee']['users'] = { view: true, create: false, edit: false, delete: false }
   result['employee']['organizations'] = { view: true, create: false, edit: true, delete: false }
@@ -116,8 +128,8 @@ function buildDefaultPermissions(): Record<string, Record<string, Permission>> {
 
   // Eco Operator
   result['eco-operator'] = {}
-  for (const mod of modules) {
-    result['eco-operator'][mod.id] = { view: false, create: false, edit: false, delete: false }
+  for (const modId of moduleIds) {
+    result['eco-operator'][modId] = { view: false, create: false, edit: false, delete: false }
   }
   result['eco-operator']['users'] = { view: true, create: false, edit: false, delete: false }
   result['eco-operator']['organizations'] = { view: true, create: false, edit: false, delete: false }
@@ -134,8 +146,8 @@ function buildDefaultPermissions(): Record<string, Record<string, Permission>> {
 
   // Payer
   result['payer'] = {}
-  for (const mod of modules) {
-    result['payer'][mod.id] = { view: false, create: false, edit: false, delete: false }
+  for (const modId of moduleIds) {
+    result['payer'][modId] = { view: false, create: false, edit: false, delete: false }
   }
   result['payer']['users'] = { view: false, create: false, edit: false, delete: false }
   result['payer']['organizations'] = { view: true, create: false, edit: true, delete: false }
@@ -171,13 +183,13 @@ const selectedRolePermissionSummary = computed(() => {
   if (!selectedRoleId.value) return []
   const rolePerms = permissions[selectedRoleId.value]
   if (!rolePerms) return []
-  return modules.map(mod => {
+  return modules.value.map(mod => {
     const p = rolePerms[mod.id]
     const activePerms: string[] = []
-    if (p.view) activePerms.push('Просмотр')
-    if (p.create) activePerms.push('Создание')
-    if (p.edit) activePerms.push('Редактирование')
-    if (p.delete) activePerms.push('Удаление')
+    if (p.view) activePerms.push(t('adminRoles.permView'))
+    if (p.create) activePerms.push(t('adminRoles.permCreate'))
+    if (p.edit) activePerms.push(t('adminRoles.permEdit'))
+    if (p.delete) activePerms.push(t('adminRoles.permDelete'))
     return {
       module: mod.label,
       permissions: activePerms,
@@ -201,7 +213,7 @@ function saveChanges() {
   isSaving.value = true
   setTimeout(() => {
     isSaving.value = false
-    toastMessage.value = 'Изменения прав доступа успешно сохранены'
+    toastMessage.value = t('adminRoles.toastPermissionsSaved')
     showToast.value = true
     setTimeout(() => {
       showToast.value = false
@@ -222,8 +234,8 @@ function openCreateModal() {
   newRoleForm.name = ''
   newRoleForm.description = ''
   newRoleForm.permissions = {}
-  for (const mod of modules) {
-    newRoleForm.permissions[mod.id] = { view: false, create: false, edit: false, delete: false }
+  for (const modId of moduleIds) {
+    newRoleForm.permissions[modId] = { view: false, create: false, edit: false, delete: false }
   }
   showCreateModal.value = true
 }
@@ -254,7 +266,7 @@ function submitCreateRole() {
   setTimeout(() => {
     isCreating.value = false
     showCreateModal.value = false
-    toastMessage.value = `Роль "${newRoleForm.name}" успешно создана`
+    toastMessage.value = t('adminRoles.toastRoleCreated', { name: newRoleForm.name })
     showToast.value = true
     setTimeout(() => {
       showToast.value = false
@@ -267,9 +279,9 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
   const rolePerms = permissions[roleId]
   if (!rolePerms) return { granted: 0, total: 0 }
   let granted = 0
-  const total = modules.length * 4
-  for (const mod of modules) {
-    const p = rolePerms[mod.id]
+  const total = moduleIds.length * 4
+  for (const modId of moduleIds) {
+    const p = rolePerms[modId]
     if (p.view) granted++
     if (p.create) granted++
     if (p.edit) granted++
@@ -290,8 +302,8 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-bold text-[#415861]">Роли и права доступа</h1>
-          <p class="text-[#64748b] mt-1">Управление ролями пользователей и настройка прав доступа к модулям системы</p>
+          <h1 class="text-2xl font-bold text-[#415861]">{{ $t('adminRoles.title') }}</h1>
+          <p class="text-[#64748b] mt-1">{{ $t('adminRoles.subtitle') }}</p>
         </div>
         <button
           @click="saveChanges"
@@ -310,7 +322,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
           <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          {{ isSaving ? 'Сохранение...' : 'Сохранить изменения' }}
+          {{ isSaving ? $t('adminRoles.saving') : $t('adminRoles.saveChanges') }}
         </button>
       </div>
 
@@ -337,7 +349,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             <div
               v-if="role.id === 'admin'"
               class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center"
-              title="Системная роль (нельзя изменить)"
+              :title="$t('adminRoles.systemRoleTooltip')"
             >
               <svg class="w-3.5 h-3.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -351,10 +363,10 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               <span class="font-medium">{{ role.userCount }}</span>
-              <span class="text-[#94a3b8]">польз.</span>
+              <span class="text-[#94a3b8]">{{ $t('adminRoles.usersShort') }}</span>
             </div>
             <div class="text-xs text-[#94a3b8]">
-              {{ getPermissionCount(role.id).granted }}/{{ getPermissionCount(role.id).total }} прав
+              {{ getPermissionCount(role.id).granted }}/{{ getPermissionCount(role.id).total }} {{ $t('adminRoles.rightsCount') }}
             </div>
           </div>
         </div>
@@ -408,7 +420,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               <p v-if="item.hasAccess" class="text-xs text-[#64748b] ml-6">
                 {{ item.permissions.join(', ') }}
               </p>
-              <p v-else class="text-xs text-red-400 ml-6">Нет доступа</p>
+              <p v-else class="text-xs text-red-400 ml-6">{{ $t('adminRoles.noAccess') }}</p>
             </div>
           </div>
         </div>
@@ -417,15 +429,15 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
       <!-- Permission Matrix Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-bold text-[#415861]">Матрица прав доступа</h2>
-          <p class="text-sm text-[#64748b] mt-0.5">Настройте разрешения для каждого модуля и роли</p>
+          <h2 class="text-lg font-bold text-[#415861]">{{ $t('adminRoles.permissionMatrix') }}</h2>
+          <p class="text-sm text-[#64748b] mt-0.5">{{ $t('adminRoles.permissionMatrixDesc') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
               <tr class="bg-[#f8fafc]">
                 <th class="px-6 py-3 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider w-[220px] min-w-[200px]">
-                  Модуль
+                  {{ $t('adminRoles.moduleColumn') }}
                 </th>
                 <th
                   v-for="role in roles"
@@ -440,7 +452,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                       {{ role.name }}
                     </span>
                     <span class="text-[10px] text-[#94a3b8] font-normal normal-case">
-                      П / С / Р / У
+                      {{ $t('adminRoles.permShortHeader') }}
                     </span>
                   </div>
                 </th>
@@ -503,18 +515,18 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
         <!-- Legend -->
         <div class="px-6 py-3 border-t border-[#e2e8f0] bg-[#f8fafc]">
           <div class="flex flex-wrap items-center gap-4 text-xs text-[#64748b]">
-            <span class="font-semibold text-[#415861]">Условные обозначения:</span>
+            <span class="font-semibold text-[#415861]">{{ $t('adminRoles.legendTitle') }}</span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">П</span> — Просмотр
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendViewShort') }}</span> — {{ $t('adminRoles.legendView') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">С</span> — Создание
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendCreateShort') }}</span> — {{ $t('adminRoles.legendCreate') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">Р</span> — Редактирование
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendEditShort') }}</span> — {{ $t('adminRoles.legendEdit') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">У</span> — Удаление
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendDeleteShort') }}</span> — {{ $t('adminRoles.legendDelete') }}
             </span>
             <span class="ml-auto flex items-center gap-2">
               <span class="inline-flex items-center gap-1">
@@ -523,7 +535,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                   </svg>
                 </span>
-                Разрешено
+                {{ $t('adminRoles.allowed') }}
               </span>
               <span class="inline-flex items-center gap-1">
                 <span class="w-5 h-5 rounded bg-gray-100 flex items-center justify-center">
@@ -531,7 +543,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                   </svg>
                 </span>
-                Запрещено
+                {{ $t('adminRoles.denied') }}
               </span>
             </span>
           </div>
@@ -541,7 +553,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
       <!-- Save Button (bottom) -->
       <div class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
         <p class="text-sm text-[#64748b]">
-          Изменения вступят в силу немедленно после сохранения для всех пользователей с соответствующими ролями.
+          {{ $t('adminRoles.changesNote') }}
         </p>
         <button
           @click="saveChanges"
@@ -556,7 +568,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
           <svg v-if="!isSaving" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          {{ isSaving ? 'Сохранение...' : 'Сохранить изменения' }}
+          {{ isSaving ? $t('adminRoles.saving') : $t('adminRoles.saveChanges') }}
         </button>
       </div>
 
@@ -564,9 +576,9 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-[#415861]">Создание новой роли</h2>
+            <h2 class="text-lg font-bold text-[#415861]">{{ $t('adminRoles.createRoleSection') }}</h2>
             <p class="text-sm text-[#64748b] mt-0.5">
-              Создайте пользовательскую роль с индивидуальным набором прав доступа
+              {{ $t('adminRoles.createRoleSectionDesc') }}
             </p>
           </div>
           <button
@@ -576,7 +588,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Создать роль
+            {{ $t('adminRoles.createRoleBtn') }}
           </button>
         </div>
       </div>
@@ -595,7 +607,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             </svg>
           </div>
           <div>
-            <p class="text-sm font-semibold text-[#415861]">Успешно</p>
+            <p class="text-sm font-semibold text-[#415861]">{{ $t('adminRoles.toastSuccess') }}</p>
             <p class="text-xs text-[#64748b] mt-0.5">{{ toastMessage }}</p>
           </div>
           <button @click="showToast = false" class="ml-2 p-1 text-[#94a3b8] hover:text-[#415861] transition-colors">
@@ -618,8 +630,8 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
               <div>
-                <h3 class="text-xl font-bold text-[#415861]">Создать новую роль</h3>
-                <p class="text-sm text-[#64748b] mt-1">Укажите название, описание и набор прав доступа</p>
+                <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminRoles.createRoleModalTitle') }}</h3>
+                <p class="text-sm text-[#64748b] mt-1">{{ $t('adminRoles.createRoleModalDesc') }}</p>
               </div>
               <button
                 @click="closeCreateModal"
@@ -636,12 +648,12 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               <!-- Name -->
               <div>
                 <label class="block text-sm font-medium text-[#415861] mb-1.5">
-                  Название роли <span class="text-red-500">*</span>
+                  {{ $t('adminRoles.roleNameLabel') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="newRoleForm.name"
                   type="text"
-                  placeholder="Например: Менеджер переработки"
+                  :placeholder="$t('adminRoles.roleNamePlaceholder')"
                   class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] transition-colors"
                 />
               </div>
@@ -649,25 +661,25 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               <!-- Description -->
               <div>
                 <label class="block text-sm font-medium text-[#415861] mb-1.5">
-                  Описание роли <span class="text-red-500">*</span>
+                  {{ $t('adminRoles.roleDescLabel') }} <span class="text-red-500">*</span>
                 </label>
                 <textarea
                   v-model="newRoleForm.description"
                   rows="3"
-                  placeholder="Опишите назначение и обязанности данной роли..."
+                  :placeholder="$t('adminRoles.roleDescPlaceholder')"
                   class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none transition-colors"
                 ></textarea>
               </div>
 
               <!-- Permissions -->
               <div>
-                <label class="block text-sm font-medium text-[#415861] mb-3">Права доступа по модулям</label>
+                <label class="block text-sm font-medium text-[#415861] mb-3">{{ $t('adminRoles.permissionsByModules') }}</label>
                 <div class="border border-[#e2e8f0] rounded-xl overflow-hidden overflow-x-auto">
                   <table class="w-full">
                     <thead>
                       <tr class="bg-[#f8fafc]">
                         <th class="px-4 py-2.5 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">
-                          Модуль
+                          {{ $t('adminRoles.moduleColumn') }}
                         </th>
                         <th
                           v-for="perm in permissionLabels"
@@ -715,7 +727,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                 @click="closeCreateModal"
                 class="px-5 py-2.5 text-[#64748b] border border-[#e2e8f0] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors"
               >
-                Отмена
+                {{ $t('adminRoles.cancel') }}
               </button>
               <button
                 @click="submitCreateRole"
@@ -731,7 +743,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                {{ isCreating ? 'Создание...' : 'Создать роль' }}
+                {{ isCreating ? $t('adminRoles.creating') : $t('adminRoles.createRoleBtn') }}
               </button>
             </div>
           </div>

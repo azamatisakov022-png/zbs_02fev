@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore, type Calculation } from '../../stores/calculations'
@@ -8,10 +9,12 @@ import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
 import { accountStore } from '../../stores/account'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { CalcStatus } from '../../constants/statuses'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -21,11 +24,11 @@ const calc = computed<Calculation | undefined>(() => calculationStore.getCalcula
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принято': return 'bg-green-100 text-green-800'
-    case 'Отклонено': return 'bg-red-100 text-red-800'
-    case 'Оплата на проверке': return 'bg-purple-100 text-purple-800'
-    case 'Оплачено': return 'bg-blue-100 text-blue-800'
+    case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'approved': return 'bg-green-100 text-green-800'
+    case 'rejected': return 'bg-red-100 text-red-800'
+    case 'payment_pending': return 'bg-purple-100 text-purple-800'
+    case 'paid': return 'bg-blue-100 text-blue-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -35,17 +38,17 @@ const timelineDates = computed(() => {
   if (!calc.value) return {}
   const d: Record<string, string | undefined> = { created: calc.value.date }
   const s = calc.value.status
-  if (s !== 'Черновик') d.submitted = calc.value.date
-  if (['На проверке', 'Принято', 'Отклонено', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) d.reviewed = calc.value.date
-  if (['Принято', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
-  if (s === 'Оплачено') d.paid = calc.value.paidAt || calc.value.date
-  if (s === 'Отклонено') d.rejected = calc.value.rejectedAt || calc.value.date
+  if (s !== CalcStatus.DRAFT) d.submitted = calc.value.date
+  if ([CalcStatus.UNDER_REVIEW, CalcStatus.APPROVED, CalcStatus.REJECTED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) d.reviewed = calc.value.date
+  if ([CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
+  if (s === CalcStatus.PAID) d.paid = calc.value.paidAt || calc.value.date
+  if (s === CalcStatus.REJECTED) d.rejected = calc.value.rejectedAt || calc.value.date
   return d
 })
 
 const payerTypeLabel = computed(() => {
   if (!calc.value) return ''
-  return calc.value.payerType === 'importer' ? 'Импортёр' : 'Производитель'
+  return calc.value.payerType === 'importer' ? t('ecoCalcDetail.payerImporter') : t('ecoCalcDetail.payerProducer')
 })
 
 const getGroupLabel = (value: string) => productGroups.find(g => g.value === value)?.label || value
@@ -88,12 +91,12 @@ const approveCalc = () => {
   calculationStore.approveCalculation(calc.value.id)
   notificationStore.add({
     type: 'success',
-    title: 'Расчёт одобрен',
-    message: `Ваш расчёт ${calc.value.number} одобрен.`,
+    title: t('ecoCalcDetail.notifApprovedTitle'),
+    message: t('ecoCalcDetail.notifApprovedMessage', { number: calc.value.number }),
     role: 'business',
     link: `/business/calculations/${calc.value.id}`
   })
-  toastMessage.value = `Расчёт ${calc.value.number} принят`
+  toastMessage.value = t('ecoCalcDetail.toastAccepted', { number: calc.value.number })
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
 }
@@ -108,12 +111,12 @@ const rejectCalc = () => {
   calculationStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
   notificationStore.add({
     type: 'warning',
-    title: 'Расчёт отклонён',
-    message: `Ваш расчёт ${calc.value.number} отклонён. Причина: ${rejectionReason.value.trim()}`,
+    title: t('ecoCalcDetail.notifRejectedTitle'),
+    message: t('ecoCalcDetail.notifRejectedMessage', { number: calc.value.number, reason: rejectionReason.value.trim() }),
     role: 'business'
   })
   showRejectModal.value = false
-  toastMessage.value = `Расчёт ${calc.value.number} отклонён`
+  toastMessage.value = t('ecoCalcDetail.toastRejected', { number: calc.value.number })
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
 }
@@ -128,7 +131,7 @@ const goBack = () => {
 }
 
 const downloadFile = (name: string) => {
-  toastStore.show({ type: 'info', title: 'Скачивание файла', message: name })
+  toastStore.show({ type: 'info', title: t('ecoCalcDetail.downloadFileToast'), message: name })
 }
 
 const downloadExcel = () => {
@@ -145,10 +148,10 @@ const downloadExcel = () => {
   <DashboardLayout role="eco-operator" :roleTitle="roleTitle" userName="ОсОО «ЭкоПереработка»" :menuItems="menuItems">
     <!-- Not Found -->
     <div v-if="!calc" class="text-center py-16">
-      <p class="text-lg text-[#64748b] mb-4">Расчёт не найден</p>
+      <p class="text-lg text-[#64748b] mb-4">{{ $t('ecoCalcDetail.notFound') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -160,22 +163,22 @@ const downloadExcel = () => {
             <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ calc.number }}</h1>
             <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(calc.status)]">{{ calc.status }}</span>
           </div>
-          <p class="text-[#64748b]">Дата подачи: {{ calc.date }}</p>
+          <p class="text-[#64748b]">{{ $t('ecoCalcDetail.submissionDate') }} {{ calc.date }}</p>
         </div>
         <button @click="goBack" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
       </div>
 
       <!-- Rejection reason block -->
-      <div v-if="calc.status === 'Отклонено' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+      <div v-if="calc.status === 'rejected' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
         <div class="flex items-start gap-3">
           <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
             <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
           </div>
           <div>
-            <p class="font-medium text-red-800 mb-1">Причина отклонения</p>
+            <p class="font-medium text-red-800 mb-1">{{ $t('ecoCalcDetail.rejectionReason') }}</p>
             <p class="text-sm text-red-700">{{ calc.rejectionReason }}</p>
           </div>
         </div>
@@ -183,30 +186,30 @@ const downloadExcel = () => {
 
       <!-- Payer Data -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Данные плательщика</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoCalcDetail.payerData') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
-            <span class="text-[#64748b]">Тип плательщика</span>
+            <span class="text-[#64748b]">{{ $t('ecoCalcDetail.payerType') }}</span>
             <p class="font-medium text-[#1e293b] mt-0.5">{{ payerTypeLabel }}</p>
           </div>
           <div>
-            <span class="text-[#64748b]">Наименование</span>
+            <span class="text-[#64748b]">{{ $t('ecoCalcDetail.companyName') }}</span>
             <p class="font-medium text-[#1e293b] mt-0.5">{{ calc.company }}</p>
           </div>
           <div>
-            <span class="text-[#64748b]">ИНН</span>
+            <span class="text-[#64748b]">{{ $t('ecoCalcDetail.inn') }}</span>
             <p class="font-medium text-[#1e293b] font-mono mt-0.5">{{ calc.inn }}</p>
           </div>
           <div v-if="calc.address">
-            <span class="text-[#64748b]">Адрес</span>
+            <span class="text-[#64748b]">{{ $t('ecoCalcDetail.address') }}</span>
             <p class="font-medium text-[#1e293b] mt-0.5">{{ calc.address }}</p>
           </div>
           <div>
-            <span class="text-[#64748b]">{{ calc.payerType === 'importer' ? 'Дата ввоза' : 'Период' }}</span>
+            <span class="text-[#64748b]">{{ calc.payerType === 'importer' ? $t('ecoCalcDetail.importDate') : $t('ecoCalcDetail.period') }}</span>
             <p class="font-medium text-[#1e293b] mt-0.5">{{ calc.payerType === 'importer' ? calc.importDate : calc.period }}</p>
           </div>
           <div v-if="calc.dueDate">
-            <span class="text-[#64748b]">Срок оплаты</span>
+            <span class="text-[#64748b]">{{ $t('ecoCalcDetail.dueDate') }}</span>
             <p class="font-medium text-[#1e293b] mt-0.5">{{ calc.dueDate }}</p>
           </div>
         </div>
@@ -218,23 +221,23 @@ const downloadExcel = () => {
       <!-- Items Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6 overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Товары и упаковка</h2>
-          <p class="text-sm text-[#64748b]">{{ calc.items.length }} {{ calc.items.length === 1 ? 'позиция' : 'позиций' }}</p>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoCalcDetail.goodsAndPackaging') }}</h2>
+          <p class="text-sm text-[#64748b]">{{ calc.items.length }} {{ calc.items.length === 1 ? $t('ecoCalcDetail.itemSingular') : $t('ecoCalcDetail.itemPlural') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-[#f8fafc]">
               <tr class="text-left text-[#64748b]">
                 <th class="px-4 py-3 font-medium w-10">#</th>
-                <th class="px-4 py-3 font-medium">Группа/подгруппа</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.5 Объём (т)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.6 Норм. (%)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.7 К перераб. (т)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.8 Передано (т)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.9 Вывезено (т)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.10 Облагаемый (т)</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.11 Ставка</th>
-                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">Гр.12 Сумма</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoCalcDetail.thGroupSubgroup') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol5Volume') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol6Norm') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol7ToRecycle') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol8Transferred') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol9Exported') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol10Taxable') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol11Rate') }}</th>
+                <th class="px-4 py-3 font-medium text-right whitespace-nowrap">{{ $t('ecoCalcDetail.thCol12Amount') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#e2e8f0]">
@@ -243,8 +246,8 @@ const downloadExcel = () => {
                 <td class="px-4 py-3 text-[#1e293b]">
                   <div class="font-medium">{{ getGroupLabel(item.group) }}</div>
                   <div class="text-xs text-[#64748b] truncate max-w-[220px]" :title="getSubgroupLabel(item.group, item.subgroup)">{{ getSubgroupLabel(item.group, item.subgroup) }}</div>
-                  <div v-if="item.gskpCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">ГСКП {{ item.gskpCode }}</div>
-                  <div v-if="item.tnvedCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></div>
+                  <div v-if="item.gskpCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">{{ $t('ecoCalcDetail.gskpPrefix') }} {{ item.gskpCode }}</div>
+                  <div v-if="item.tnvedCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">{{ $t('ecoCalcDetail.tnvedPrefix') }} <TnvedCode :code="item.tnvedCode" /></div>
                 </td>
                 <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.volume }}</td>
                 <td class="px-4 py-3 text-right text-[#64748b]">{{ item.recyclingStandard != null ? item.recyclingStandard + '%' : '—' }}</td>
@@ -252,8 +255,8 @@ const downloadExcel = () => {
                 <td class="px-4 py-3 text-right text-[#10b981] font-medium">{{ item.transferredToRecycling || '—' }}</td>
                 <td class="px-4 py-3 text-right text-[#2563eb] font-medium">{{ item.exportedFromKR || '—' }}</td>
                 <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.taxableVolume != null ? item.taxableVolume : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.rate.toLocaleString('ru-RU') }}</td>
-                <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString('ru-RU') }}</td>
+                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.rate.toLocaleString() }}</td>
+                <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
               </tr>
             </tbody>
           </table>
@@ -262,7 +265,7 @@ const downloadExcel = () => {
 
       <!-- Attached Documents -->
       <div v-if="calc.attachedFiles && calc.attachedFiles.length > 0" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Прикреплённые документы</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoCalcDetail.attachedDocuments') }}</h2>
         <div class="space-y-2">
           <button
             v-for="(file, idx) in calc.attachedFiles"
@@ -280,31 +283,31 @@ const downloadExcel = () => {
 
       <!-- Totals -->
       <div class="bg-gradient-to-r from-[#0e888d]/10 to-[#0e888d]/5 rounded-2xl p-6 border border-[#0e888d]/20 mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Итоги расчёта</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoCalcDetail.calculationTotals') }}</h2>
         <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.5 Общий объём</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume.toLocaleString('ru-RU') }} т</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalVolumeLabel') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.7 К переработке</p>
-            <p class="text-xl font-bold text-[#64748b]">{{ totalVolumeToRecycle.toLocaleString('ru-RU') }} т</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalToRecycleLabel') }}</p>
+            <p class="text-xl font-bold text-[#64748b]">{{ totalVolumeToRecycle.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.8 Передано на переработку</p>
-            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferredToRecycling.toLocaleString('ru-RU') }} т</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalTransferredLabel') }}</p>
+            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferredToRecycling.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.9 Вывезено из КР</p>
-            <p class="text-xl font-bold text-[#2563eb]">{{ totalExportedFromKR.toLocaleString('ru-RU') }} т</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalExportedLabel') }}</p>
+            <p class="text-xl font-bold text-[#2563eb]">{{ totalExportedFromKR.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.10 Облагаемый объём</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume.toLocaleString('ru-RU') }} т</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalTaxableLabel') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Гр.12 Итого к оплате</p>
-            <p class="text-2xl font-bold text-[#10b981]">{{ calc.totalAmount.toLocaleString('ru-RU') }} сом</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalPayableLabel') }}</p>
+            <p class="text-2xl font-bold text-[#10b981]">{{ calc.totalAmount.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</p>
           </div>
         </div>
       </div>
@@ -312,31 +315,31 @@ const downloadExcel = () => {
       <!-- Графа 13: Сверка платежей -->
       <div class="g13-container mb-6">
         <div class="g13-header">
-          <h3 class="g13-title">Графа 13. Сверка платежей за отчётный период</h3>
+          <h3 class="g13-title">{{ $t('ecoCalcDetail.g13Title') }}</h3>
           <div class="g13-tooltip-wrap">
             <svg class="w-4 h-4 text-[#94a3b8] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div class="g13-tooltip">Заполняется автоматически на основании данных лицевого счёта. Для производителей — по суммам ежеквартальных платежей, для импортёров — по суммам платежей при фактическом ввозе товаров.</div>
+            <div class="g13-tooltip">{{ $t('ecoCalcDetail.g13Tooltip') }}</div>
           </div>
         </div>
         <div class="g13-cards">
           <div class="g13-card">
-            <span class="g13-card__label">Начислено за период</span>
-            <span class="g13-card__value">{{ reconciliation.charged.toLocaleString('ru-RU') }} сом</span>
-            <span class="g13-card__sub">Из лицевого счёта</span>
+            <span class="g13-card__label">{{ $t('ecoCalcDetail.chargedForPeriod') }}</span>
+            <span class="g13-card__value">{{ reconciliation.charged.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            <span class="g13-card__sub">{{ $t('ecoCalcDetail.fromPersonalAccount') }}</span>
           </div>
           <div class="g13-card">
-            <span class="g13-card__label">Уплачено за период</span>
-            <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString('ru-RU') }} сом</span>
-            <span class="g13-card__sub">Из лицевого счёта</span>
+            <span class="g13-card__label">{{ $t('ecoCalcDetail.paidForPeriod') }}</span>
+            <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            <span class="g13-card__sub">{{ $t('ecoCalcDetail.fromPersonalAccount') }}</span>
           </div>
           <div :class="['g13-card g13-card--diff', reconciliation.difference > 0 ? 'g13-card--debt' : reconciliation.difference < 0 ? 'g13-card--overpay' : 'g13-card--zero']">
-            <span class="g13-card__label">Разница (начислено − уплачено)</span>
+            <span class="g13-card__label">{{ $t('ecoCalcDetail.differenceLabel') }}</span>
             <span class="g13-card__value" :class="{ 'g13-card__value--red': reconciliation.difference > 0, 'g13-card__value--green': reconciliation.difference < 0, 'g13-card__value--gray': reconciliation.difference === 0 }">
-              <template v-if="reconciliation.difference > 0">Недоимка: +{{ reconciliation.difference.toLocaleString('ru-RU') }} сом</template>
-              <template v-else-if="reconciliation.difference < 0">Переплата: {{ Math.abs(reconciliation.difference).toLocaleString('ru-RU') }} сом</template>
-              <template v-else>Задолженность отсутствует</template>
+              <template v-if="reconciliation.difference > 0">{{ $t('ecoCalcDetail.arrears') }} +{{ reconciliation.difference.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
+              <template v-else-if="reconciliation.difference < 0">{{ $t('ecoCalcDetail.overpayment') }} {{ Math.abs(reconciliation.difference).toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
+              <template v-else>{{ $t('ecoCalcDetail.noDebt') }}</template>
             </span>
           </div>
         </div>
@@ -346,20 +349,20 @@ const downloadExcel = () => {
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-6 lg:-mx-8 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <button @click="goBack" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
                 <button @click="downloadExcel" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  Скачать Excel
+                  {{ $t('ecoCalcDetail.downloadExcel') }}
                 </button>
-        <div v-if="calc.status === 'На проверке'" class="flex items-center gap-3">
+        <div v-if="calc.status === 'under_review'" class="flex items-center gap-3">
           <button @click="openRejectModal" class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            Отклонить
+            {{ $t('ecoCalcDetail.reject') }}
           </button>
           <button @click="approveCalc" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            Принять расчёт
+            {{ $t('ecoCalcDetail.acceptCalc') }}
           </button>
         </div>
       </div>
@@ -370,18 +373,18 @@ const downloadExcel = () => {
       <div v-if="showRejectModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showRejectModal = false">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
           <div class="p-6 border-b border-[#e2e8f0]">
-            <h3 class="text-lg font-bold text-[#1e293b]">Отклонить расчёт</h3>
-            <p class="text-sm text-[#64748b] mt-1">Укажите причину отклонения расчёта {{ calc?.number }}</p>
+            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.rejectCalcTitle') }}</h3>
+            <p class="text-sm text-[#64748b] mt-1">{{ $t('ecoCalcDetail.rejectCalcSubtitle', { number: calc?.number }) }}</p>
           </div>
           <div class="p-6">
-            <label class="block text-sm font-medium text-[#1e293b] mb-2">Причина отклонения <span class="text-[#EF4444]">*</span></label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoCalcDetail.rejectionReasonLabel') }} <span class="text-[#EF4444]">*</span></label>
             <textarea
               v-model="rejectionReason"
               rows="4"
-              placeholder="Опишите причину отклонения (минимум 10 символов)..."
+              :placeholder="$t('ecoCalcDetail.rejectionPlaceholder')"
               class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-red-400 text-sm resize-none"
             ></textarea>
-            <p class="text-xs text-[#94a3b8] mt-1">{{ rejectionReason.length }} / мин. 10 символов</p>
+            <p class="text-xs text-[#94a3b8] mt-1">{{ $t('ecoCalcDetail.rejectionMinChars', { count: rejectionReason.length }) }}</p>
           </div>
           <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
             <button @click="showRejectModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
@@ -392,7 +395,7 @@ const downloadExcel = () => {
               :disabled="rejectionReason.trim().length < 10"
               class="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Отклонить
+              {{ $t('ecoCalcDetail.reject') }}
             </button>
           </div>
         </div>

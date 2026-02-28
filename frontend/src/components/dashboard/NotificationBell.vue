@@ -110,7 +110,7 @@ const typeConfig = {
     <button
       @click="toggle"
       class="relative p-2 text-[#4B5563] hover:bg-[#f1f5f9] rounded-lg transition-colors"
-      :aria-label="`Уведомления${unreadCount > 0 ? `, ${unreadCount} непрочитанных` : ''}`"
+      :aria-label="t('notifications.title') + (unreadCount > 0 ? ', ' + t('notifications.unreadCount', { count: unreadCount }) : '')"
       :aria-expanded="isOpen"
     >
       <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -185,7 +185,7 @@ const typeConfig = {
                   v-if="getNotificationLink(n)"
                   @click.stop="handleNavigate(n)"
                   class="text-[11px] text-[#0e888d] hover:text-[#0a6d71] font-medium transition-colors"
-                >Перейти &rarr;</button>
+                >{{ t('notifications.goTo') }} &rarr;</button>
               </div>
             </div>
           </div>

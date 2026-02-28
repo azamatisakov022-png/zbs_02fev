@@ -1,10 +1,15 @@
 <script setup lang="ts">
-const responsibilities = [
-  'прозрачный механизм уплаты утилизационного сбора',
-  'целевое использование средств',
-  'участие в экологических программах',
-  'выполнение законодательных требований',
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const responsibilities = computed(() => [
+  t('rop.item1'),
+  t('rop.item2'),
+  t('rop.item3'),
+  t('rop.item4'),
+])
 </script>
 
 <template>
@@ -13,7 +18,7 @@ const responsibilities = [
       <!-- Section header -->
       <div class="mb-8 md:mb-10 lg:mb-[75px]">
         <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px] max-w-[711px]">
-          Расширенные обязательства производителей (импортеров)
+          {{ $t('rop.title') }}
         </h2>
         <div class="section-title-underline"></div>
       </div>
@@ -22,11 +27,11 @@ const responsibilities = [
         <!-- Content -->
         <div class="lg:w-[554px]">
           <p class="text-[#415861] text-lg md:text-xl lg:text-[33px] lg:leading-[1.5] font-medium mb-6 lg:mb-[20px]">
-            Принцип РОП обязывает производителей и импортёров обеспечивать переработку, сбор или утилизацию отходов.
+            {{ $t('rop.principle') }}
           </p>
 
           <h3 class="text-[#415861] text-base md:text-lg lg:text-[22px] lg:leading-[1.5] font-medium mb-6 lg:mb-[20px]">
-            Эко Оператор обеспечивает:
+            {{ $t('rop.ensures') }}
           </h3>
 
           <ul class="space-y-4 lg:space-y-[22px]">
@@ -48,7 +53,7 @@ const responsibilities = [
           <div class="rounded-[30px] lg:rounded-[50px] overflow-hidden h-[300px] md:h-[450px] lg:h-[653px] w-full lg:w-[620px]">
             <img
               src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600"
-              alt="Расширенные обязательства производителей"
+              :alt="$t('rop.imageAlt')"
               class="w-full h-full object-cover"
             />
           </div>

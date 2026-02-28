@@ -3,6 +3,9 @@ import { saveAs } from 'file-saver'
 import type { Calculation, ProductItem } from '../stores/calculations'
 import type { Report, ProcessingItem } from '../stores/reports'
 import { productGroups, getSubgroupLabel } from '../data/product-groups'
+import i18n from '../i18n'
+
+const t = (key: string, params?: Record<string, string | number>) => i18n.global.t(key, params || {})
 
 // ── Helpers ──
 
@@ -96,22 +99,22 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   const maxCol = 14 // A-N
 
   // Row 1: Приложение
-  setMergedCell(ws, 'A1', 'A1:N1', 'Приложение 2 к приказу', sRightItalic)
+  setMergedCell(ws, 'A1', 'A1:N1', t('excelExport.appendix'), sRightItalic)
   r++
 
   // Row 2
-  setMergedCell(ws, 'A2', 'A2:N2', 'От «___» _____________ 2026 года', sRight)
+  setMergedCell(ws, 'A2', 'A2:N2', t('excelExport.dateFrom'), sRight)
   r++
 
   // Row 3: empty
   r++
 
   // Row 4: ФОРМА
-  setMergedCell(ws, 'A4', 'A4:N4', 'ФОРМА', sTitle)
+  setMergedCell(ws, 'A4', 'A4:N4', t('excelExport.form'), sTitle)
   r++
 
   // Row 5: period
-  const periodText = `расчета суммы утилизационного сбора за «${calc.period || calc.quarter}» ${calc.year} год`
+  const periodText = t('excelExport.calcPeriodTitle', { period: calc.period || calc.quarter, year: calc.year })
   setMergedCell(ws, 'A5', 'A5:N5', periodText, sCenterBold)
   r++
 
@@ -119,25 +122,25 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   r++
 
   // Row 7
-  setMergedCell(ws, 'A7', 'A7:N7', 'Расчет предоставляется Оператору расширенной ответственности производителей (РОП)', sCenterItalic)
+  setMergedCell(ws, 'A7', 'A7:N7', t('excelExport.calcProvidedTo'), sCenterItalic)
   r++
 
   // Row 8: empty
   r++
 
   // Row 9: Section 1
-  setMergedCell(ws, 'A9', 'A9:N9', 'Раздел 1. Общие сведения о производителе, импортере', sSectionBold)
+  setMergedCell(ws, 'A9', 'A9:N9', t('excelExport.section1Title'), sSectionBold)
   r = 9
 
   // Rows 10-17: Company data
   const companyRows: [string, string][] = [
-    ['Организационно-правовая форма и наименование:', company.name],
-    ['Адрес:', company.address],
-    ['ИНН:', company.inn],
-    ['Код ОКПО:', company.okpo || '—'],
-    ['ОГРН:', company.ogrn || '—'],
-    ['Руководитель:', company.director || '—'],
-    ['Контактная информация:', [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
+    [t('excelExport.legalFormAndName'), company.name],
+    [t('excelExport.address'), company.address],
+    [t('excelExport.inn'), company.inn],
+    [t('excelExport.okpo'), company.okpo || '—'],
+    [t('excelExport.ogrn'), company.ogrn || '—'],
+    [t('excelExport.director'), company.director || '—'],
+    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
   ]
 
   companyRows.forEach((row, i) => {
@@ -149,22 +152,22 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   // Row 18: empty
   // Row 19: Section 2
   const secRow = 10 + companyRows.length + 1
-  setMergedCell(ws, `A${secRow}`, `A${secRow}:N${secRow}`, 'Раздел 2. Расчет утилизационного сбора', sSectionBold)
+  setMergedCell(ws, `A${secRow}`, `A${secRow}:N${secRow}`, t('excelExport.section2Title'), sSectionBold)
 
   // Header row (secRow + 2)
   const hRow = secRow + 2
   const headers = [
-    '№', 'Номер группы', 'Код товара\nГСКП', 'Код ТН ВЭД\nЕАЭС',
-    'Кол-во товаров,\nвыпущенных в\nобращение (тн)',
-    'Норматив\nпереработки',
-    'Кол-во товаров,\nподлежащих\nпереработке (тн)\n(гр.5×гр.6)',
-    'Кол-во отходов,\nпереданных на\nпереработку (тн)',
-    'Вывезено с\nтерритории КР\n(тн)',
-    'Итоговое кол-во,\nза которые\nнеобходимо\nуплатить (тн)\n(гр.7–гр.8–гр.9)',
-    'Ставка утил.\nсбора (сом/тн)',
-    'Итоговая сумма\nутил. сбора\nк оплате (сом)',
-    'Сумма утил.\nсбора начис-\nленная (сом)',
-    'Сумма утил.\nсбора уплачен-\nная (сом)',
+    t('excelExport.colNumber'), t('excelExport.colGroupNumber'), t('excelExport.colGskpCode'), t('excelExport.colTnvedCode'),
+    t('excelExport.colVolume'),
+    t('excelExport.colNorm'),
+    t('excelExport.colToRecycle'),
+    t('excelExport.colTransferred'),
+    t('excelExport.colExported'),
+    t('excelExport.colTaxable'),
+    t('excelExport.colRate'),
+    t('excelExport.colTotalAmount'),
+    t('excelExport.colCharged'),
+    t('excelExport.colPaid'),
   ]
   const cols = 'ABCDEFGHIJKLMN'.split('')
 
@@ -226,7 +229,7 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   })
 
   // TOTALS row
-  setMergedCell(ws, `A${dataRow}`, `A${dataRow}:D${dataRow}`, 'ВСЕГО', sTotalCell)
+  setMergedCell(ws, `A${dataRow}`, `A${dataRow}:D${dataRow}`, t('excelExport.totalRow'), sTotalCell)
   setCellValue(ws, `E${dataRow}`, totVol, 'n', sTotalNum)
   setCellValue(ws, `F${dataRow}`, '', 's', sTotalCell)
   setCellValue(ws, `G${dataRow}`, totRecycle, 'n', sTotalNum)
@@ -242,22 +245,22 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
   // Footer
   dataRow++
   setMergedCell(ws, `A${dataRow}`, `A${dataRow}:N${dataRow}`,
-    'Документ составлен на ___ листах с приложением подтверждающих документов на ___ листах.', { font: { sz: 10 } })
+    t('excelExport.footer'), { font: { sz: 10 } })
   dataRow += 2
   setMergedCell(ws, `A${dataRow}`, `A${dataRow}:N${dataRow}`,
-    'Должностное лицо: ______________________ / _________________________ / подпись', { font: { sz: 10 } })
+    t('excelExport.official'), { font: { sz: 10 } })
   dataRow++
-  setMergedCell(ws, `A${dataRow}`, `A${dataRow}:N${dataRow}`, 'М.П.', { font: { sz: 10 } })
+  setMergedCell(ws, `A${dataRow}`, `A${dataRow}:N${dataRow}`, t('excelExport.stamp'), { font: { sz: 10 } })
 
   // Update ref
   updateRange(ws, dataRow, maxCol)
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Расчёт утильсбора')
+  XLSX.utils.book_append_sheet(wb, ws, t('excelExport.sheetCalc'))
 
   // Generate and save
   const wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
   const companyShort = company.name.replace(/[«»"'ОсОО\s]/g, '').substring(0, 20)
-  const fileName = `Расчет_утильсбора_${calc.number}_${companyShort}.xlsx`
+  const fileName = `${t('excelExport.fileCalc')}_${calc.number}_${companyShort}.xlsx`
   saveAs(new Blob([wbOut], { type: 'application/octet-stream' }), fileName)
 }
 
@@ -278,24 +281,24 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
   const maxCol1 = 14 // A-N
 
   // Header block
-  setMergedCell(ws1, 'A1', 'A1:N1', 'Приложение к постановлению КМ КР №563', sRightItalic)
-  setMergedCell(ws1, 'A2', 'A2:N2', 'От «___» _____________ 2026 года', sRight)
-  setMergedCell(ws1, 'A4', 'A4:N4', 'ФОРМА', sTitle)
+  setMergedCell(ws1, 'A1', 'A1:N1', t('excelExport.appendixReport'), sRightItalic)
+  setMergedCell(ws1, 'A2', 'A2:N2', t('excelExport.dateFrom'), sRight)
+  setMergedCell(ws1, 'A4', 'A4:N4', t('excelExport.form'), sTitle)
   setMergedCell(ws1, 'A5', 'A5:N5',
-    `ОТЧЁТНОСТЬ о выполнении нормативов переработки отходов от использования товаров за ${report.year} год`,
+    t('excelExport.reportTitle', { year: report.year }),
     sCenterBold)
-  setMergedCell(ws1, 'A7', 'A7:N7', 'Отчётность предоставляется Оператору РОП', sCenterItalic)
+  setMergedCell(ws1, 'A7', 'A7:N7', t('excelExport.reportProvidedTo'), sCenterItalic)
 
   // Section 1: Company data
-  setMergedCell(ws1, 'A9', 'A9:N9', 'Раздел 1. Общие сведения о производителе, импортере', sSectionBold)
+  setMergedCell(ws1, 'A9', 'A9:N9', t('excelExport.section1TitleReport'), sSectionBold)
 
   const companyRows: [string, string][] = [
-    ['Наименование:', company.name],
-    ['Адрес:', company.address],
-    ['ИНН:', company.inn],
-    ['Код ОКПО:', company.okpo || '—'],
-    ['ОГРН:', company.ogrn || '—'],
-    ['Контактная информация:', [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
+    [t('excelExport.name'), company.name],
+    [t('excelExport.address'), company.address],
+    [t('excelExport.inn'), company.inn],
+    [t('excelExport.okpo'), company.okpo || '—'],
+    [t('excelExport.ogrn'), company.ogrn || '—'],
+    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
   ]
 
   companyRows.forEach((row, i) => {
@@ -306,22 +309,22 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
 
   // Section 2
   const s2Row = 10 + companyRows.length + 1
-  setMergedCell(ws1, `A${s2Row}`, `A${s2Row}:N${s2Row}`, 'Раздел 2. Информация о товарах и упаковке товаров', sSectionBold)
+  setMergedCell(ws1, `A${s2Row}`, `A${s2Row}:N${s2Row}`, t('excelExport.section2TitleReport'), sSectionBold)
   const sub1Row = s2Row + 1
-  setMergedCell(ws1, `A${sub1Row}`, `A${sub1Row}:N${sub1Row}`, '1. Информация о товарах (без упаковки товаров)', { font: { bold: true, sz: 10 } })
+  setMergedCell(ws1, `A${sub1Row}`, `A${sub1Row}:N${sub1Row}`, t('excelExport.subsection1'), { font: { bold: true, sz: 10 } })
 
   // Table 1 header
   const t1hRow = sub1Row + 1
   const t1Headers = [
-    '№ п/п', 'Наименование\nтовара', 'Код товара\nпо ГСКП', 'Наименование\nпозиции ТН ВЭД',
-    'Код ТН ВЭД\nЕАЭС', 'Кол-во товаров,\nвыпущенных в\nобращение (кг)',
-    'Норматив\nпереработки', 'Кол-во,\nподлежащих\nпереработке (кг)\n(гр.6×гр.7)',
-    'Кол-во\nпереработанных\nв отчёт. период\n(кг)',
-    'Кол-во перераб.\nв предыдущий\nпериод (кг)',
-    'Итого перераб.,\nзасчитываемых\n(кг)\n(гр.9+гр.10)',
-    'Кол-во, за\nкоторые\nнеобходимо\nуплатить (кг)\n(гр.8−гр.11)',
-    'Сведения о\nдокументах',
-    'Примечание',
+    t('excelExport.colRowNumber'), t('excelExport.colProductName'), t('excelExport.colGskpCodeReport'), t('excelExport.colTnvedName'),
+    t('excelExport.colTnvedCodeReport'), t('excelExport.colVolumeKg'),
+    t('excelExport.colNormReport'), t('excelExport.colToRecycleKg'),
+    t('excelExport.colRecycled'),
+    t('excelExport.colPrevRecycled'),
+    t('excelExport.colTotalRecycled'),
+    t('excelExport.colRemaining'),
+    t('excelExport.colDocuments'),
+    t('excelExport.colNote'),
   ]
 
   t1Headers.forEach((h, i) => {
@@ -372,7 +375,7 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
   })
 
   // Totals
-  setMergedCell(ws1, `A${dRow}`, `A${dRow}:E${dRow}`, 'ВСЕГО', sTotalCell)
+  setMergedCell(ws1, `A${dRow}`, `A${dRow}:E${dRow}`, t('excelExport.totalRow'), sTotalCell)
   setCellValue(ws1, `${cols1[5]}${dRow}`, totDeclared * 1000, 'n', sTotalNum)
   setCellValue(ws1, `${cols1[6]}${dRow}`, '', 's', sTotalCell)
   setCellValue(ws1, `${cols1[7]}${dRow}`, totDeclared * 1000 * 0.2, 'n', sTotalNum)
@@ -385,12 +388,12 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
 
   dRow += 2
   setMergedCell(ws1, `A${dRow}`, `A${dRow}:N${dRow}`,
-    'Должностное лицо: ______________________ / _________________________ / подпись', { font: { sz: 10 } })
+    t('excelExport.official'), { font: { sz: 10 } })
   dRow++
-  setMergedCell(ws1, `A${dRow}`, `A${dRow}:N${dRow}`, 'М.П.', { font: { sz: 10 } })
+  setMergedCell(ws1, `A${dRow}`, `A${dRow}:N${dRow}`, t('excelExport.stamp'), { font: { sz: 10 } })
 
   updateRange(ws1, dRow, maxCol1)
-  XLSX.utils.book_append_sheet(wb, ws1, 'Отчётность')
+  XLSX.utils.book_append_sheet(wb, ws1, t('excelExport.sheetReport'))
 
   // ── SHEET 2: Акт переработки ──
   const ws2: XLSX.WorkSheet = {}
@@ -399,36 +402,36 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
 
   const cols2 = 'ABCDE'.split('')
 
-  setMergedCell(ws2, 'A1', 'A1:E1', 'АКТ', sTitle)
-  setMergedCell(ws2, 'A2', 'A2:E2', 'приёма-передачи отходов на переработку', sCenterBold)
-  setMergedCell(ws2, 'A4', 'A4:B4', 'г. Бишкек', { font: { sz: 10 } })
-  setMergedCell(ws2, 'D4', 'D4:E4', `«___» _____________ ${report.year} г.`, sRight)
+  setMergedCell(ws2, 'A1', 'A1:E1', t('excelExport.actTitle'), sTitle)
+  setMergedCell(ws2, 'A2', 'A2:E2', t('excelExport.actSubtitle'), sCenterBold)
+  setMergedCell(ws2, 'A4', 'A4:B4', t('excelExport.cityBishkek'), { font: { sz: 10 } })
+  setMergedCell(ws2, 'D4', 'D4:E4', t('excelExport.actDate', { year: report.year }), sRight)
 
   let r2 = 6
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, 'Исполнитель (переработчик):', { font: { bold: true, sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, t('excelExport.executorRecycler'), { font: { bold: true, sz: 10 } })
   r2++
   const recyclerName = report.items[0]?.recycler || 'ОсОО «ЭкоРесайкл»'
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `Наименование: ${recyclerName}`, { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `${t('excelExport.nameLabel')} ${recyclerName}`, { font: { sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, 'ИНН: _______________ ОКПО: _______________', { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, t('excelExport.innOkpoLine'), { font: { sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, 'Лицензия: № _________ от ___________', { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, t('excelExport.licenseLine'), { font: { sz: 10 } })
 
   r2 += 2
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, 'Заказчик (плательщик утильсбора):', { font: { bold: true, sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, t('excelExport.customerPayer'), { font: { bold: true, sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `Наименование: ${company.name}`, { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `${t('excelExport.nameLabel')} ${company.name}`, { font: { sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `ИНН: ${company.inn}`, { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `${t('excelExport.inn')} ${company.inn}`, { font: { sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `Адрес: ${company.address}`, { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, `${t('excelExport.address')} ${company.address}`, { font: { sz: 10 } })
 
   r2 += 2
-  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, 'Таблица 1. Осуществил переработку отходов:', { font: { bold: true, sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:E${r2}`, t('excelExport.actTableTitle'), { font: { bold: true, sz: 10 } })
   r2++
 
   // Table header
-  const actHeaders = ['№ п/п', 'Наименование отхода', 'Статистический код', 'Количество (кг)', 'Группа товаров']
+  const actHeaders = [t('excelExport.colRowNumber'), t('excelExport.colWasteName'), t('excelExport.colStatCode'), t('excelExport.colQuantityKg'), t('excelExport.colProductGroup')]
   actHeaders.forEach((h, i) => {
     setCellValue(ws2, `${cols2[i]}${r2}`, h, 's', sHeader)
   })
@@ -445,18 +448,18 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
   })
 
   r2 += 2
-  setMergedCell(ws2, `A${r2}`, `A${r2}:B${r2}`, 'Исполнитель: _______________ / подпись', { font: { sz: 10 } })
-  setMergedCell(ws2, `D${r2}`, `D${r2}:E${r2}`, 'Заказчик: _______________ / подпись', { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:B${r2}`, t('excelExport.executorSignature'), { font: { sz: 10 } })
+  setMergedCell(ws2, `D${r2}`, `D${r2}:E${r2}`, t('excelExport.customerSignature'), { font: { sz: 10 } })
   r2++
-  setMergedCell(ws2, `A${r2}`, `A${r2}:B${r2}`, 'М.П.', { font: { sz: 10 } })
-  setMergedCell(ws2, `D${r2}`, `D${r2}:E${r2}`, 'М.П.', { font: { sz: 10 } })
+  setMergedCell(ws2, `A${r2}`, `A${r2}:B${r2}`, t('excelExport.stamp'), { font: { sz: 10 } })
+  setMergedCell(ws2, `D${r2}`, `D${r2}:E${r2}`, t('excelExport.stamp'), { font: { sz: 10 } })
 
   updateRange(ws2, r2, 5)
-  XLSX.utils.book_append_sheet(wb, ws2, 'Акт переработки')
+  XLSX.utils.book_append_sheet(wb, ws2, t('excelExport.sheetAct'))
 
   // Generate and save
   const wbOut = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
   const companyShort = company.name.replace(/[«»"'ОсОО\s]/g, '').substring(0, 20)
-  const fileName = `Отчет_переработка_${report.year}_${companyShort}.xlsx`
+  const fileName = `${t('excelExport.fileReport')}_${report.year}_${companyShort}.xlsx`
   saveAs(new Blob([wbOut], { type: 'application/octet-stream' }), fileName)
 }

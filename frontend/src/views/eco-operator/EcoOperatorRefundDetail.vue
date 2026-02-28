@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { refundStore, type Refund } from '../../stores/refunds'
+import { RefundStatus } from '../../constants/statuses'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -24,16 +27,16 @@ const refund = computed<Refund | undefined>(() => refundStore.getRefundById(refu
 // Status helpers
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Новая': return 'bg-blue-100 text-blue-800'
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Одобрена': return 'bg-green-100 text-green-800'
-    case 'Отклонена': return 'bg-red-100 text-red-800'
+    case RefundStatus.NEW: return 'bg-blue-100 text-blue-800'
+    case RefundStatus.UNDER_REVIEW: return 'bg-yellow-100 text-yellow-800'
+    case RefundStatus.APPROVED: return 'bg-green-100 text-green-800'
+    case RefundStatus.REJECTED: return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
 
 const canTakeAction = computed(() => {
-  return refund.value && (refund.value.status === 'На рассмотрении' || refund.value.status === 'Новая')
+  return refund.value && (refund.value.status === RefundStatus.UNDER_REVIEW || refund.value.status === RefundStatus.NEW)
 })
 
 // Group/subgroup label helpers
@@ -44,7 +47,7 @@ const successMessage = ref('')
 const approveRefund = () => {
   if (refund.value) {
     refundStore.approveRefund(refund.value.id)
-    successMessage.value = 'Заявка на возврат успешно одобрена'
+    successMessage.value = t('ecoRefundDetail.approvedSuccess')
     setTimeout(() => { successMessage.value = '' }, 4000)
   }
 }
@@ -67,7 +70,7 @@ const confirmReject = () => {
   if (refund.value && rejectionReason.value.trim()) {
     refundStore.rejectRefund(refund.value.id, rejectionReason.value.trim())
     closeRejectModal()
-    successMessage.value = 'Заявка на возврат отклонена'
+    successMessage.value = t('ecoRefundDetail.rejectedSuccess')
     setTimeout(() => { successMessage.value = '' }, 4000)
   }
 }
@@ -77,7 +80,7 @@ const confirmReject = () => {
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="Экологический оператор"
+    :userName="$t('ecoRefundDetail.userName')"
     :menuItems="menuItems"
   >
     <template v-if="isLoading">
@@ -112,24 +115,24 @@ const confirmReject = () => {
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-3 mb-1">
-              <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Заявка {{ refund.number }}</h1>
+              <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('ecoRefundDetail.requestNumber', { number: refund.number }) }}</h1>
               <AppBadge :variant="getStatusBadgeVariant(refund.status)">{{ refund.status }}</AppBadge>
             </div>
-            <p class="text-[#64748b]">от {{ refund.date }}</p>
+            <p class="text-[#64748b]">{{ $t('ecoRefundDetail.fromDate') }} {{ refund.date }}</p>
           </div>
         </div>
       </div>
 
       <!-- Payer data -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">Данные плательщика</h3>
+        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.payerData') }}</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-            <span class="text-[#64748b]">Организация:</span>
+            <span class="text-[#64748b]">{{ $t('ecoRefundDetail.organization') }}</span>
             <p class="font-medium text-[#1e293b] mt-1">{{ refund.company }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-            <span class="text-[#64748b]">ИНН:</span>
+            <span class="text-[#64748b]">{{ $t('ecoRefundDetail.inn') }}</span>
             <p class="font-medium text-[#1e293b] mt-1">{{ refund.inn }}</p>
           </div>
         </div>
@@ -137,7 +140,7 @@ const confirmReject = () => {
 
       <!-- Linked calculation -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">Связанный расчёт</h3>
+        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.linkedCalculation') }}</h3>
         <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0] flex items-center gap-3">
           <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -145,7 +148,7 @@ const confirmReject = () => {
             </svg>
           </div>
           <div>
-            <p class="text-sm text-[#64748b]">Номер расчёта</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRefundDetail.calculationNumber') }}</p>
             <p class="font-mono font-medium text-[#2563eb]">{{ refund.calculationNumber }}</p>
           </div>
         </div>
@@ -153,17 +156,17 @@ const confirmReject = () => {
 
       <!-- Items table -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">Вывезенные товары</h3>
+        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.exportedGoods') }}</h3>
         <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-[#f8fafc]">
               <tr class="text-left text-[#64748b]">
-                <th class="px-4 py-3 font-medium" style="min-width: 180px">Группа</th>
-                <th class="px-4 py-3 font-medium" style="min-width: 180px">Подгруппа</th>
-                <th class="px-4 py-3 font-medium text-right" style="min-width: 120px">Масса ввоза (тн)</th>
-                <th class="px-4 py-3 font-medium text-right" style="min-width: 140px">Вывезено из КР (тн)</th>
-                <th class="px-4 py-3 font-medium text-right" style="min-width: 110px">Ставка (сом/т)</th>
-                <th class="px-4 py-3 font-medium text-right" style="min-width: 130px">Сумма к возврату (сом)</th>
+                <th class="px-4 py-3 font-medium" style="min-width: 180px">{{ $t('ecoRefundDetail.thGroup') }}</th>
+                <th class="px-4 py-3 font-medium" style="min-width: 180px">{{ $t('ecoRefundDetail.thSubgroup') }}</th>
+                <th class="px-4 py-3 font-medium text-right" style="min-width: 120px">{{ $t('ecoRefundDetail.thImportMass') }}</th>
+                <th class="px-4 py-3 font-medium text-right" style="min-width: 140px">{{ $t('ecoRefundDetail.thExportedMass') }}</th>
+                <th class="px-4 py-3 font-medium text-right" style="min-width: 110px">{{ $t('ecoRefundDetail.thRate') }}</th>
+                <th class="px-4 py-3 font-medium text-right" style="min-width: 130px">{{ $t('ecoRefundDetail.thRefundAmount') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[#e2e8f0]">
@@ -172,14 +175,14 @@ const confirmReject = () => {
                 <td class="px-4 py-3 text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</td>
                 <td class="px-4 py-3 text-right font-medium">{{ item.mass }}</td>
                 <td class="px-4 py-3 text-right font-medium text-[#2563eb]">{{ item.exportedMass }}</td>
-                <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString('ru-RU') }}</td>
-                <td class="px-4 py-3 text-right font-bold text-[#10b981]">{{ item.refundAmount.toLocaleString('ru-RU') }}</td>
+                <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
+                <td class="px-4 py-3 text-right font-bold text-[#10b981]">{{ item.refundAmount.toLocaleString() }}</td>
               </tr>
             </tbody>
             <tfoot class="bg-[#f8fafc] font-semibold">
               <tr>
-                <td colspan="5" class="px-4 py-3">Итого к возврату</td>
-                <td class="px-4 py-3 text-right text-[#10b981]">{{ refund.totalRefund.toLocaleString('ru-RU') }} сом</td>
+                <td colspan="5" class="px-4 py-3">{{ $t('ecoRefundDetail.totalRefund') }}</td>
+                <td class="px-4 py-3 text-right text-[#10b981]">{{ refund.totalRefund.toLocaleString() }} {{ $t('ecoRefundDetail.som') }}</td>
               </tr>
             </tfoot>
           </table>
@@ -188,7 +191,7 @@ const confirmReject = () => {
 
       <!-- Attached documents -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">Прикреплённые документы ({{ refund.documents.length }})</h3>
+        <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.attachedDocuments', { count: refund.documents.length }) }}</h3>
         <div v-if="refund.documents.length > 0" class="space-y-2">
           <div v-for="(doc, idx) in refund.documents" :key="idx" class="flex items-center gap-3 bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
             <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -202,19 +205,19 @@ const confirmReject = () => {
             <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
           </div>
         </div>
-        <div v-else class="text-sm text-[#64748b]">Документы не прикреплены</div>
+        <div v-else class="text-sm text-[#64748b]">{{ $t('ecoRefundDetail.noDocuments') }}</div>
       </div>
 
       <!-- Total refund amount -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-[#1e293b] text-lg">Итого к возврату</h3>
-          <p class="text-3xl font-bold text-[#10b981]">{{ refund.totalRefund.toLocaleString('ru-RU') }} сом</p>
+          <h3 class="font-semibold text-[#1e293b] text-lg">{{ $t('ecoRefundDetail.totalRefund') }}</h3>
+          <p class="text-3xl font-bold text-[#10b981]">{{ refund.totalRefund.toLocaleString() }} {{ $t('ecoRefundDetail.som') }}</p>
         </div>
       </div>
 
       <!-- Rejection reason block -->
-      <div v-if="refund.status === 'Отклонена' && refund.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+      <div v-if="refund.status === 'rejected' && refund.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,7 +225,7 @@ const confirmReject = () => {
             </svg>
           </div>
           <div>
-            <p class="font-semibold text-red-800 mb-1">Причина отклонения</p>
+            <p class="font-semibold text-red-800 mb-1">{{ $t('ecoRefundDetail.rejectionReason') }}</p>
             <p class="text-sm text-red-700">{{ refund.rejectionReason }}</p>
           </div>
         </div>
@@ -235,13 +238,13 @@ const confirmReject = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Отклонить
+            {{ $t('ecoRefundDetail.reject') }}
           </AppButton>
           <AppButton variant="primary" @click="approveRefund">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            Одобрить возврат
+            {{ $t('ecoRefundDetail.approveRefund') }}
           </AppButton>
         </div>
       </div>
@@ -255,13 +258,13 @@ const confirmReject = () => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h2 class="text-xl font-bold text-[#1e293b] mb-2">Заявка не найдена</h2>
-        <p class="text-[#64748b] mb-6">Заявка с указанным идентификатором не существует</p>
+        <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('ecoRefundDetail.notFound') }}</h2>
+        <p class="text-[#64748b] mb-6">{{ $t('ecoRefundDetail.notFoundDesc') }}</p>
         <button
           @click="router.push('/eco-operator/refunds')"
           class="px-5 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors"
         >
-          Вернуться к списку
+          {{ $t('ecoRefundDetail.backToList') }}
         </button>
       </div>
     </template>
@@ -271,7 +274,7 @@ const confirmReject = () => {
       <div v-if="showRejectModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center" @click.self="closeRejectModal">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
           <div class="flex items-center justify-between p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">Отклонение заявки на возврат</h2>
+            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoRefundDetail.rejectModalTitle') }}</h2>
             <button @click="closeRejectModal" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -279,11 +282,11 @@ const confirmReject = () => {
             </button>
           </div>
           <div class="p-6">
-            <p class="text-sm text-[#64748b] mb-4">Укажите причину отклонения заявки <span class="font-medium text-[#1e293b]">{{ refund?.number }}</span></p>
+            <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoRefundDetail.rejectModalDesc') }} <span class="font-medium text-[#1e293b]">{{ refund?.number }}</span></p>
             <textarea
               v-model="rejectionReason"
               rows="4"
-              placeholder="Опишите причину отклонения заявки на возврат..."
+              :placeholder="$t('ecoRefundDetail.rejectPlaceholder')"
               class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#ef4444] text-sm resize-none"
             ></textarea>
           </div>

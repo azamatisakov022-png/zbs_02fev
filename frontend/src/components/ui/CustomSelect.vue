@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 export interface SelectOption {
   value: string | number | null
@@ -22,7 +25,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '— Выберите —',
+  placeholder: '',
   disabled: false,
   maxLabelLength: 80,
   compact: false,
@@ -108,7 +111,7 @@ const selectedOption = computed(() => {
 })
 
 const displayValue = computed(() => {
-  if (!selectedOption.value) return props.placeholder
+  if (!selectedOption.value) return props.placeholder || t('ui.selectPlaceholder')
   return truncateText(selectedOption.value.shortLabel || selectedOption.value.label, props.maxLabelLength)
 })
 
@@ -220,7 +223,7 @@ onUnmounted(() => {
           <div v-if="selectedOption.sublabel" class="value-sub">{{ selectedOption.sublabel }}</div>
         </template>
         <template v-else>
-          <span class="placeholder">{{ placeholder }}</span>
+          <span class="placeholder">{{ placeholder || t('ui.selectPlaceholder') }}</span>
         </template>
       </div>
       <div class="select-arrow" :class="{ 'is-open': isOpen }">
@@ -245,7 +248,7 @@ onUnmounted(() => {
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="Поиск..."
+            :placeholder="t('ui.searchPlaceholder')"
             @click.stop
           />
           <button v-if="searchQuery" class="search-clear" @click.stop="clearSearch">
@@ -258,7 +261,7 @@ onUnmounted(() => {
         <div class="dropdown-scroll">
           <!-- No results message -->
           <div v-if="searchable && searchQuery && !hasFilteredResults" class="no-results">
-            Ничего не найдено
+            {{ t('ui.nothingFound') }}
           </div>
 
           <!-- Ungrouped options first (like placeholder) -->

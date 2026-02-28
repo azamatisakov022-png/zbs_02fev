@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+
+const { t } = useI18n()
 
 interface Coords {
   lat: number
@@ -107,7 +110,7 @@ const cancel = () => {
       <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full overflow-hidden" style="border-radius: 12px;">
         <!-- Header -->
         <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">Указать координаты на карте</h3>
+          <h3 class="text-lg font-semibold text-gray-900">{{ $t('mapPicker.title') }}</h3>
           <button @click="cancel" class="text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -126,7 +129,7 @@ const cancel = () => {
               @input="searchAddress"
               @focus="showResults = searchResults.length > 0"
               type="text"
-              placeholder="Поиск адреса..."
+              :placeholder="$t('mapPicker.searchPlaceholder')"
               class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
             />
             <div
@@ -171,10 +174,10 @@ const cancel = () => {
           <div class="flex items-center justify-between">
             <p class="text-sm text-gray-500">
               <template v-if="pickerCoords">
-                Координаты: <span class="font-mono font-medium text-gray-700">{{ pickerCoords.lat }}, {{ pickerCoords.lng }}</span>
+                {{ $t('mapPicker.coordinates') }}: <span class="font-mono font-medium text-gray-700">{{ pickerCoords.lat }}, {{ pickerCoords.lng }}</span>
               </template>
               <template v-else>
-                Нажмите на карту для выбора координат
+                {{ $t('mapPicker.clickToSelectCoords') }}
               </template>
             </p>
           </div>
@@ -186,7 +189,7 @@ const cancel = () => {
             @click="cancel"
             class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Отмена
+            {{ $t('common.cancel') }}
           </button>
           <button
             @click="confirm"
@@ -196,7 +199,7 @@ const cancel = () => {
               pickerCoords ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'
             ]"
           >
-            Подтвердить
+            {{ $t('common.confirm') }}
           </button>
         </div>
       </div>

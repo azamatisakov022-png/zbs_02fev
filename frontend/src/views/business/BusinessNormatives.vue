@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { UTILIZATION_RATES_2025, getRateByGroup } from '../../data/rates'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const currentYear = 2026
@@ -53,68 +55,68 @@ interface FeeRateGroup {
 }
 
 // Ставки импортируются из единого источника data/rates.ts (ПКМ КР №730)
-const feeRateGroups: FeeRateGroup[] = [
+const feeRateGroups = computed<FeeRateGroup[]>(() => [
   {
     groupLetter: 'А',
-    groupTitle: 'Бумага и картон',
+    groupTitle: t('businessNorms.groupA'),
     items: [
-      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRateByGroup(1), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRateByGroup(2), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRateByGroup(1), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRateByGroup(2), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Б',
-    groupTitle: 'Масла, шины и резина',
+    groupTitle: t('businessNorms.groupB'),
     items: [
-      { id: 3, name: 'Масла', rate: getRateByGroup(3), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRateByGroup(4), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRateByGroup(5), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 3, name: 'Масла', rate: getRateByGroup(3), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRateByGroup(4), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRateByGroup(5), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'В',
-    groupTitle: 'Пластмассы и стекло',
+    groupTitle: t('businessNorms.groupV'),
     items: [
-      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRateByGroup(6), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRateByGroup(7), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 8, name: 'Стекло полое', rate: getRateByGroup(8), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRateByGroup(6), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRateByGroup(7), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 8, name: 'Стекло полое', rate: getRateByGroup(8), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Г',
-    groupTitle: 'Электроника и оборудование',
+    groupTitle: t('businessNorms.groupG'),
     items: [
-      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRateByGroup(9), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRateByGroup(10), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 11, name: 'Элементы первичные и батареи', rate: getRateByGroup(11), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRateByGroup(12), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 13, name: 'Батареи аккумуляторные', rate: getRateByGroup(13), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRateByGroup(14), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRateByGroup(9), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRateByGroup(10), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 11, name: 'Элементы первичные и батареи', rate: getRateByGroup(11), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRateByGroup(12), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 13, name: 'Батареи аккумуляторные', rate: getRateByGroup(13), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRateByGroup(14), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Д',
-    groupTitle: 'Бытовая техника и фильтры',
+    groupTitle: t('businessNorms.groupD'),
     items: [
-      { id: 15, name: 'Техника бытовая крупная', rate: getRateByGroup(15), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRateByGroup(16), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRateByGroup(17), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRateByGroup(18), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 15, name: 'Техника бытовая крупная', rate: getRateByGroup(15), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRateByGroup(16), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRateByGroup(17), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRateByGroup(18), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
   {
     groupLetter: 'Е',
-    groupTitle: 'Упаковка',
+    groupTitle: t('businessNorms.groupE'),
     items: [
-      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRateByGroup(19), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRateByGroup(20), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRateByGroup(21), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRateByGroup(22), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRateByGroup(23), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
-      { id: 24, name: 'Упаковка стеклянная', rate: getRateByGroup(24), unit: 'сом/тонна', effectiveDate: '01.01.2025' },
+      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRateByGroup(19), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRateByGroup(20), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRateByGroup(21), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRateByGroup(22), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRateByGroup(23), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
+      { id: 24, name: 'Упаковка стеклянная', rate: getRateByGroup(24), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
     ],
   },
-]
+])
 
 const getRateColorClass = (rate: number) => {
   if (rate >= 60) return 'text-red-600'
@@ -133,8 +135,8 @@ const getRateColorClass = (rate: number) => {
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Нормативы и ставки</h1>
-        <p class="text-gray-600 mt-1">Нормативы утилизации и ставки утилизационного сбора по 24 группам товаров (ПКМ КР №322)</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('businessNorms.pageTitle') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('businessNorms.pageSubtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
@@ -146,22 +148,22 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <h2 class="text-xl font-bold">Нормативы и ставки на {{ currentYear }} год</h2>
+            <h2 class="text-xl font-bold">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
             <p class="text-white/80 mt-1 max-w-2xl">
-              Проценты обязательной переработки и ставки утилизационного сбора согласно постановлению КМ КР №322.
+              {{ $t('businessNorms.bannerDesc') }}
             </p>
             <div class="flex items-center gap-4 mt-4">
               <router-link to="/legislation" class="inline-flex items-center gap-2 px-4 py-2 bg-white text-[#0e888d] rounded-lg font-medium hover:bg-gray-100 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                Законодательство
+                {{ $t('businessNorms.legislation') }}
               </router-link>
               <router-link to="/business/calculator" class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                Рассчитать сбор
+                {{ $t('businessNorms.calculateFee') }}
               </router-link>
             </div>
           </div>
@@ -179,7 +181,7 @@ const getRateColorClass = (rate: number) => {
               : 'text-gray-600 hover:bg-gray-100'
           ]"
         >
-          Нормативы утилизации
+          {{ $t('businessNorms.tabNorms') }}
         </button>
         <button
           @click="activeTab = 'rates'"
@@ -190,22 +192,22 @@ const getRateColorClass = (rate: number) => {
               : 'text-gray-600 hover:bg-gray-100'
           ]"
         >
-          Ставки утильсбора
+          {{ $t('businessNorms.tabRates') }}
         </button>
       </div>
 
       <!-- Table: Unified 24-group norms -->
       <div v-if="activeTab === 'norms'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="text-lg font-semibold text-gray-900">Нормативы переработки отходов от использования товаров (2025–2030)</h3>
-          <p class="text-sm text-gray-500 mt-1">Минимальный процент товаров, который должен быть переработан от общего объёма</p>
+          <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.normsTableTitle') }}</h3>
+          <p class="text-sm text-gray-500 mt-1">{{ $t('businessNorms.normsTableDesc') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full min-w-[700px]">
             <thead>
               <tr class="bg-[#0e888d] text-white">
                 <th class="px-3 py-4 text-center text-sm font-semibold w-12">№</th>
-                <th class="px-4 py-4 text-left text-sm font-semibold">Категория товара</th>
+                <th class="px-4 py-4 text-left text-sm font-semibold">{{ $t('businessNorms.productCategory') }}</th>
                 <th
                   v-for="year in years"
                   :key="year"
@@ -213,7 +215,7 @@ const getRateColorClass = (rate: number) => {
                   :class="year === currentYear ? 'bg-[#0b6d71] ring-2 ring-white/50' : ''"
                 >
                   {{ year }}
-                  <span v-if="year === currentYear" class="block text-xs font-normal opacity-80">текущий</span>
+                  <span v-if="year === currentYear" class="block text-xs font-normal opacity-80">{{ $t('businessNorms.current') }}</span>
                 </th>
               </tr>
             </thead>
@@ -246,8 +248,8 @@ const getRateColorClass = (rate: number) => {
       <div v-if="activeTab === 'rates'" class="space-y-5">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900">Ставки утилизационного сбора по 24 группам товаров РОП</h3>
-            <p class="text-sm text-gray-500 mt-1">Согласно постановлению Кабинета Министров КР №322</p>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.ratesTableTitle') }}</h3>
+            <p class="text-sm text-gray-500 mt-1">{{ $t('businessNorms.ratesTableDesc') }}</p>
           </div>
         </div>
 
@@ -255,7 +257,7 @@ const getRateColorClass = (rate: number) => {
           <!-- Group header -->
           <div class="px-6 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8] flex items-center gap-3">
             <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#0e888d] text-white text-sm font-bold">{{ group.groupLetter }}</span>
-            <span class="font-semibold text-[#0e888d]">ГРУППА {{ group.groupLetter }} — {{ group.groupTitle }}</span>
+            <span class="font-semibold text-[#0e888d]">{{ $t('businessNorms.groupLabel') }} {{ group.groupLetter }} — {{ group.groupTitle }}</span>
           </div>
           <!-- Group table -->
           <div class="overflow-x-auto">
@@ -263,10 +265,10 @@ const getRateColorClass = (rate: number) => {
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
                   <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">№</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Группа товаров</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Ставка</th>
-                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Ед. измерения</th>
-                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Дата вступления в силу</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.productGroupCol') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.rateCol') }}</th>
+                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.unitCol') }}</th>
+                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.effectiveDateCol') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,10 +297,10 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-900">Порядок расчёта</p>
+            <p class="font-medium text-gray-900">{{ $t('businessNorms.calcProcedure') }}</p>
             <p class="text-sm text-gray-600 mt-1">
-              Утилизационный сбор = Ставка x Масса (кол-во) x Коэффициент Н<sub>пер</sub>.
-              Используйте <router-link to="/business/calculator" class="text-[#0e888d] font-medium hover:underline">калькулятор утильсбора</router-link> для автоматического расчёта.
+              {{ $t('businessNorms.calcFormula') }}
+              {{ $t('businessNorms.useCalc1') }} <router-link to="/business/calculator" class="text-[#0e888d] font-medium hover:underline">{{ $t('businessNorms.feeCalculator') }}</router-link> {{ $t('businessNorms.useCalc2') }}
             </p>
           </div>
         </div>
@@ -315,58 +317,58 @@ const getRateColorClass = (rate: number) => {
                 </svg>
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900">Пример расчёта утилизационного сбора</h3>
-                <p class="text-sm text-gray-600">Импорт шин (группа №4)</p>
+                <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.exampleTitle') }}</h3>
+                <p class="text-sm text-gray-600">{{ $t('businessNorms.exampleSubtitle') }}</p>
               </div>
             </div>
           </div>
           <div class="p-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="space-y-3">
-                <h4 class="font-semibold text-gray-900 mb-4">Исходные данные:</h4>
+                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('businessNorms.initialData') }}:</h4>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Категория:</span>
-                  <span class="font-medium text-gray-900">Шины, покрышки и камеры резиновые (№4)</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.category') }}:</span>
+                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exCategory') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Масса партии:</span>
-                  <span class="font-medium text-gray-900">5 тонн</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.batchMass') }}:</span>
+                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exMass') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Год расчёта:</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.calcYear') }}:</span>
                   <span class="font-medium text-gray-900">2026</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Операция:</span>
-                  <span class="font-medium text-gray-900">Импорт</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.operation') }}:</span>
+                  <span class="font-medium text-gray-900">{{ $t('businessNorms.importOp') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Ставка (С<sub>ус</sub>):</span>
-                  <span class="font-medium text-gray-900">12 345 сом/тонна</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.rateLabel') }} (С<sub>ус</sub>):</span>
+                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exRate') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">Норматив переработки (2026):</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.recyclingNorm') }} (2026):</span>
                   <span class="font-medium text-[#0e888d]">30%</span>
                 </div>
                 <div class="flex justify-between py-2">
-                  <span class="text-gray-600">Коэффициент (Н<sub>пер</sub>):</span>
+                  <span class="text-gray-600">{{ $t('businessNorms.coefficient') }} (Н<sub>пер</sub>):</span>
                   <span class="font-medium text-gray-900">1 − 0,30 = <strong>0,70</strong></span>
                 </div>
               </div>
               <div class="bg-white rounded-xl p-5 border border-amber-200">
-                <h4 class="font-semibold text-gray-900 mb-4">Расчёт:</h4>
+                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('businessNorms.calculation') }}:</h4>
                 <div class="space-y-4">
                   <div class="p-4 bg-gray-50 rounded-lg font-mono text-sm">
-                    <p class="text-gray-600 mb-2">Формула:</p>
+                    <p class="text-gray-600 mb-2">{{ $t('businessNorms.formula') }}:</p>
                     <p class="text-gray-900 font-semibold">У<sub>сб</sub> = С<sub>ус</sub> × М × Н<sub>пер</sub></p>
                   </div>
                   <div class="p-4 bg-[#0e888d]/10 rounded-lg font-mono text-sm">
-                    <p class="text-gray-600 mb-2">Подставляем значения:</p>
+                    <p class="text-gray-600 mb-2">{{ $t('businessNorms.substituteValues') }}:</p>
                     <p class="text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
                   </div>
                   <div class="p-4 bg-[#0e888d] text-white rounded-lg text-center">
-                    <p class="text-sm opacity-80 mb-1">Итого к оплате:</p>
-                    <p class="text-2xl font-bold">43 207,50 сом</p>
+                    <p class="text-sm opacity-80 mb-1">{{ $t('businessNorms.totalToPay') }}:</p>
+                    <p class="text-2xl font-bold">43 207,50 {{ $t('businessNorms.som') }}</p>
                   </div>
                 </div>
               </div>
@@ -382,11 +384,11 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-900">Формула расчёта коэффициента Н<sub>пер</sub></p>
+            <p class="font-medium text-gray-900">{{ $t('businessNorms.nperFormulaTitle') }}</p>
             <p class="text-sm text-gray-600 mt-1">
-              Значение Н<sub>пер</sub> для расчёта = 1 − (норматив в процентах / 100).
+              {{ $t('businessNorms.nperFormulaDesc') }}
               <br/>
-              <span class="text-gray-500">Например, для шин в 2026 году: Н<sub>пер</sub> = 1 − 0,30 = <strong>0,70</strong></span>
+              <span class="text-gray-500">{{ $t('businessNorms.nperExample') }}</span>
             </p>
           </div>
         </div>
@@ -400,9 +402,9 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">Что такое норматив?</h4>
+          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard1Title') }}</h4>
           <p class="text-sm text-gray-600">
-            Минимальный процент товаров или упаковки, который должен быть переработан от общего объёма
+            {{ $t('businessNorms.infoCard1Desc') }}
           </p>
         </div>
 
@@ -412,9 +414,9 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">Ежегодный рост</h4>
+          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard2Title') }}</h4>
           <p class="text-sm text-gray-600">
-            Нормативы увеличиваются ежегодно согласно плану достижения целевых показателей к 2030 году (80%)
+            {{ $t('businessNorms.infoCard2Desc') }}
           </p>
         </div>
 
@@ -424,9 +426,9 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">Как выполнить?</h4>
+          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard3Title') }}</h4>
           <p class="text-sm text-gray-600">
-            Заключите договоры с лицензированными переработчиками или уплатите утилизационный сбор
+            {{ $t('businessNorms.infoCard3Desc') }}
           </p>
         </div>
       </div>

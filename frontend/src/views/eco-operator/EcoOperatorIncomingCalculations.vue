@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -8,10 +9,12 @@ import { calculationStore, type Calculation } from '../../stores/calculations'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { CalcStatus } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Tabs
@@ -20,16 +23,16 @@ const activeTab = ref<'calculations' | 'payments'>('calculations')
 // ========================
 // CALCULATIONS TAB
 // ========================
-const columns = [
-  { key: 'number', label: 'Номер', width: '9%' },
-  { key: 'company', label: 'Плательщик', width: '14%' },
-  { key: 'inn', label: 'ИНН', width: '10%' },
-  { key: 'payerTypeLabel', label: 'Тип', width: '8%' },
-  { key: 'date', label: 'Дата подачи', width: '8%' },
-  { key: 'itemCount', label: 'Позиций', width: '6%' },
-  { key: 'totalAmount', label: 'Сумма', width: '10%' },
-  { key: 'status', label: 'Статус', width: '10%' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('ecoIncomingCalcs.colNumber'), width: '9%' },
+  { key: 'company', label: t('ecoIncomingCalcs.colPayer'), width: '14%' },
+  { key: 'inn', label: t('ecoIncomingCalcs.colInn'), width: '10%' },
+  { key: 'payerTypeLabel', label: t('ecoIncomingCalcs.colType'), width: '8%' },
+  { key: 'date', label: t('ecoIncomingCalcs.colDateSubmitted'), width: '8%' },
+  { key: 'itemCount', label: t('ecoIncomingCalcs.colItems'), width: '6%' },
+  { key: 'totalAmount', label: t('ecoIncomingCalcs.colAmount'), width: '10%' },
+  { key: 'status', label: t('ecoIncomingCalcs.colStatus'), width: '10%' },
+])
 
 // Filters
 const searchQuery = ref('')
@@ -37,7 +40,7 @@ const statusFilter = ref('')
 const periodFilter = ref('')
 
 const filteredCalculations = computed(() => {
-  let list = calculationStore.state.calculations.filter(c => c.status !== 'Черновик')
+  let list = calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT)
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(c => c.number.toLowerCase().includes(q) || c.company.toLowerCase().includes(q) || c.inn.includes(q))
@@ -57,27 +60,27 @@ const filteredCalculations = computed(() => {
     })
     .map(c => ({
       ...c,
-      totalAmountFormatted: c.totalAmount.toLocaleString('ru-RU') + ' сом',
-      payerTypeLabel: c.payerType === 'importer' ? 'Импортёр' : 'Производитель',
+      totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
+      payerTypeLabel: c.payerType === 'importer' ? t('ecoIncomingCalcs.importer') : t('ecoIncomingCalcs.producer'),
       itemCount: c.items.length,
     }))
 })
 
 // Stats
-const totalCount = computed(() => calculationStore.state.calculations.filter(c => c.status !== 'Черновик').length)
-const pendingCount = computed(() => calculationStore.state.calculations.filter(c => c.status === 'На проверке').length)
-const approvedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === 'Принято' || c.status === 'Оплачено' || c.status === 'Оплата на проверке').length)
-const rejectedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === 'Отклонено').length)
+const totalCount = computed(() => calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT).length)
+const pendingCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW).length)
+const approvedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_PENDING).length)
+const rejectedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принято': return 'bg-green-100 text-green-800'
-    case 'Отклонено': return 'bg-red-100 text-red-800'
-    case 'Оплата на проверке': return 'bg-purple-100 text-purple-800'
-    case 'Оплачено': return 'bg-blue-100 text-blue-800'
-    case 'Оплата отклонена': return 'bg-red-100 text-red-800'
+    case 'draft': return 'bg-gray-100 text-gray-800'
+    case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'approved': return 'bg-green-100 text-green-800'
+    case 'rejected': return 'bg-red-100 text-red-800'
+    case 'payment_pending': return 'bg-purple-100 text-purple-800'
+    case 'paid': return 'bg-blue-100 text-blue-800'
+    case 'payment_rejected': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -134,14 +137,14 @@ const getGroupLabel = (value: string) => {
 // ========================
 // PAYMENTS TAB
 // ========================
-const paymentColumns = [
-  { key: 'number', label: 'Номер расчёта', width: '10%' },
-  { key: 'company', label: 'Организация', width: '18%' },
-  { key: 'totalAmount', label: 'Сумма', width: '10%' },
-  { key: 'paymentDate', label: 'Дата платежа', width: '10%' },
-  { key: 'paymentOrderNumber', label: 'Номер п/п', width: '10%' },
-  { key: 'status', label: 'Статус', width: '12%' },
-]
+const paymentColumns = computed(() => [
+  { key: 'number', label: t('ecoIncomingCalcs.colCalcNumber'), width: '10%' },
+  { key: 'company', label: t('ecoIncomingCalcs.colOrganization'), width: '18%' },
+  { key: 'totalAmount', label: t('ecoIncomingCalcs.colAmount'), width: '10%' },
+  { key: 'paymentDate', label: t('ecoIncomingCalcs.colPaymentDate'), width: '10%' },
+  { key: 'paymentOrderNumber', label: t('ecoIncomingCalcs.colPaymentOrderNum'), width: '10%' },
+  { key: 'status', label: t('ecoIncomingCalcs.colStatus'), width: '12%' },
+])
 
 const paymentSearchQuery = ref('')
 
@@ -149,7 +152,7 @@ const paymentPendingCount = computed(() => calculationStore.getPaymentPendingCou
 
 const filteredPayments = computed(() => {
   let list = calculationStore.state.calculations.filter(c =>
-    c.status === 'Оплата на проверке' || c.status === 'Оплачено' || c.status === 'Оплата отклонена'
+    c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED
   )
   if (paymentSearchQuery.value) {
     const q = paymentSearchQuery.value.toLowerCase()
@@ -157,7 +160,7 @@ const filteredPayments = computed(() => {
   }
   return list.map(c => ({
     ...c,
-    totalAmountFormatted: c.totalAmount.toLocaleString('ru-RU') + ' сом',
+    totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
     paymentDate: c.payment?.paymentDate || '',
     paymentOrderNumber: c.payment?.paymentOrderNumber || '',
   }))
@@ -182,11 +185,11 @@ const rejectPayment = () => {
 }
 
 // Empty state helpers
-const allCalculations = computed(() => calculationStore.state.calculations.filter(c => c.status !== 'Черновик'))
+const allCalculations = computed(() => calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT))
 const isCalcFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
 
 const allPayments = computed(() => calculationStore.state.calculations.filter(c =>
-  c.status === 'Оплата на проверке' || c.status === 'Оплачено' || c.status === 'Оплата отклонена'
+  c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED
 ))
 const isPaymentFiltersActive = computed(() => !!paymentSearchQuery.value)
 
@@ -214,9 +217,9 @@ const resetPaymentFilters = () => {
     </div>
 
     <SectionGuide
-      title="Входящие расчёты утилизационного сбора"
-      description="Расчёты, поступившие от плательщиков для проверки и утверждения."
-      :actions="['Просмотр новых расчётов', 'Проверка правильности данных', 'Одобрение или отклонение расчёта', 'Возврат на доработку с комментарием']"
+      :title="$t('ecoIncomingCalcs.guideTitle')"
+      :description="$t('ecoIncomingCalcs.guideDescription')"
+      :actions="[$t('ecoIncomingCalcs.guideAction1'), $t('ecoIncomingCalcs.guideAction2'), $t('ecoIncomingCalcs.guideAction3'), $t('ecoIncomingCalcs.guideAction4')]"
       storageKey="eco-calculations"
     />
 
@@ -229,10 +232,10 @@ const resetPaymentFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-yellow-800">На проверке</p>
+          <p class="text-sm font-medium text-yellow-800">{{ $t('ecoIncomingCalcs.statUnderReview') }}</p>
         </div>
         <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
-        <p class="text-xs text-yellow-600 mt-1">расчётов ожидают проверки</p>
+        <p class="text-xs text-yellow-600 mt-1">{{ $t('ecoIncomingCalcs.statAwaitingReview') }}</p>
       </div>
       <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-5 border border-purple-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -241,10 +244,10 @@ const resetPaymentFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-purple-800">Оплата на проверке</p>
+          <p class="text-sm font-medium text-purple-800">{{ $t('ecoIncomingCalcs.statPaymentReview') }}</p>
         </div>
         <p class="text-3xl font-bold text-purple-900">{{ paymentPendingCount }}</p>
-        <p class="text-xs text-purple-600 mt-1">оплат ожидают подтверждения</p>
+        <p class="text-xs text-purple-600 mt-1">{{ $t('ecoIncomingCalcs.statAwaitingPaymentConfirm') }}</p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -253,10 +256,10 @@ const resetPaymentFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-green-800">Принято за месяц</p>
+          <p class="text-sm font-medium text-green-800">{{ $t('ecoIncomingCalcs.statApprovedMonth') }}</p>
         </div>
         <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
-        <p class="text-xs text-green-600 mt-1">расчётов принято</p>
+        <p class="text-xs text-green-600 mt-1">{{ $t('ecoIncomingCalcs.statCalcsApproved') }}</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -265,10 +268,10 @@ const resetPaymentFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-blue-800">Общая сумма за месяц</p>
+          <p class="text-sm font-medium text-blue-800">{{ $t('ecoIncomingCalcs.statTotalMonth') }}</p>
         </div>
         <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
-        <p class="text-xs text-blue-600 mt-1">всего расчётов</p>
+        <p class="text-xs text-blue-600 mt-1">{{ $t('ecoIncomingCalcs.statTotalCalcs') }}</p>
       </div>
     </div>
 
@@ -280,11 +283,11 @@ const resetPaymentFilters = () => {
         </svg>
       </div>
       <div>
-        <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
+        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingCalcs.attentionRequired') }}</p>
         <p class="text-xs text-yellow-700">
-          <span v-if="pendingCount > 0">{{ pendingCount }} {{ pendingCount === 1 ? 'новый расчёт' : 'новых расчётов' }} на проверке</span>
+          <span v-if="pendingCount > 0">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingCalcs.newCalcSingular') : $t('ecoIncomingCalcs.newCalcPlural') }} {{ $t('ecoIncomingCalcs.onReview') }}</span>
           <span v-if="pendingCount > 0 && paymentPendingCount > 0"> · </span>
-          <span v-if="paymentPendingCount > 0">{{ paymentPendingCount }} {{ paymentPendingCount === 1 ? 'оплата' : 'оплат' }} на подтверждении</span>
+          <span v-if="paymentPendingCount > 0">{{ paymentPendingCount }} {{ paymentPendingCount === 1 ? $t('ecoIncomingCalcs.paymentSingular') : $t('ecoIncomingCalcs.paymentPlural') }} {{ $t('ecoIncomingCalcs.onConfirmation') }}</span>
         </p>
       </div>
     </div>
@@ -298,7 +301,7 @@ const resetPaymentFilters = () => {
           activeTab === 'calculations' ? 'bg-white text-[#1e293b] shadow-sm' : 'text-[#64748b] hover:text-[#1e293b]'
         ]"
       >
-        Расчёты
+        {{ $t('ecoIncomingCalcs.tabCalculations') }}
         <span v-if="pendingCount > 0" class="ml-1.5 px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">{{ pendingCount }}</span>
       </button>
       <button
@@ -308,7 +311,7 @@ const resetPaymentFilters = () => {
           activeTab === 'payments' ? 'bg-white text-[#1e293b] shadow-sm' : 'text-[#64748b] hover:text-[#1e293b]'
         ]"
       >
-        Проверка оплат
+        {{ $t('ecoIncomingCalcs.tabPayments') }}
         <span v-if="paymentPendingCount > 0" class="ml-1.5 px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">{{ paymentPendingCount }}</span>
       </button>
     </div>
@@ -322,20 +325,20 @@ const resetPaymentFilters = () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск по номеру, компании или ИНН..."
+            :placeholder="$t('ecoIncomingCalcs.searchPlaceholder')"
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
           <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все статусы</option>
-            <option value="На проверке">На проверке</option>
-            <option value="Принято">Принято</option>
-            <option value="Отклонено">Отклонено</option>
-            <option value="Оплата на проверке">Оплата на проверке</option>
-            <option value="Оплачено">Оплачено</option>
-            <option value="Оплата отклонена">Оплата отклонена</option>
+            <option value="">{{ $t('common.allStatuses') }}</option>
+            <option value="under_review">{{ $t('status.underReview') }}</option>
+            <option value="approved">{{ $t('status.approved') }}</option>
+            <option value="rejected">{{ $t('status.rejected') }}</option>
+            <option value="payment_pending">{{ $t('status.paymentPending') }}</option>
+            <option value="paid">{{ $t('status.paid') }}</option>
+            <option value="payment_rejected">{{ $t('status.paymentRejected') }}</option>
           </select>
           <select v-model="periodFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все периоды</option>
+            <option value="">{{ $t('ecoIncomingCalcs.allPeriods') }}</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
           </select>
@@ -385,8 +388,8 @@ const resetPaymentFilters = () => {
           <EmptyState
             v-else
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
-            title="Нет входящих расчётов"
-            description="Все расчёты обработаны"
+            :title="$t('ecoIncomingCalcs.emptyCalcsTitle')"
+            :description="$t('ecoIncomingCalcs.emptyCalcsDesc')"
           />
         </template>
       </DataTable>
@@ -401,7 +404,7 @@ const resetPaymentFilters = () => {
           <input
             v-model="paymentSearchQuery"
             type="text"
-            placeholder="Поиск по номеру или компании..."
+            :placeholder="$t('ecoIncomingCalcs.searchPaymentPlaceholder')"
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
         </div>
@@ -428,17 +431,17 @@ const resetPaymentFilters = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Детали
+              {{ $t('ecoIncomingCalcs.details') }}
             </AppButton>
             <AppButton
-              v-if="row.status === 'Оплата на проверке'"
+              v-if="row.status === 'payment_pending'"
               variant="secondary" size="sm"
               @click="openDetailModal(row)"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Проверить
+              {{ $t('ecoIncomingCalcs.review') }}
             </AppButton>
           </div>
         </template>
@@ -454,8 +457,8 @@ const resetPaymentFilters = () => {
           <EmptyState
             v-else
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>'
-            title="Нет платежей на проверке"
-            description="Все платежи обработаны"
+            :title="$t('ecoIncomingCalcs.emptyPaymentsTitle')"
+            :description="$t('ecoIncomingCalcs.emptyPaymentsDesc')"
           />
         </template>
       </DataTable>
@@ -468,8 +471,8 @@ const resetPaymentFilters = () => {
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-6 border-b border-[#e2e8f0]">
             <div>
-              <h2 class="text-xl font-bold text-[#1e293b]">Расчёт {{ selectedCalculation.number }}</h2>
-              <p class="text-sm text-[#64748b]">от {{ selectedCalculation.date }}</p>
+              <h2 class="text-xl font-bold text-[#1e293b]">{{ $t('ecoIncomingCalcs.calcNumber') }} {{ selectedCalculation.number }}</h2>
+              <p class="text-sm text-[#64748b]">{{ $t('ecoIncomingCalcs.fromDate') }} {{ selectedCalculation.date }}</p>
             </div>
             <div class="flex items-center gap-3">
               <AppBadge :variant="getStatusBadgeVariant(selectedCalculation.status)">{{ selectedCalculation.status }}</AppBadge>
@@ -485,22 +488,22 @@ const resetPaymentFilters = () => {
           <div class="p-6 space-y-6">
             <!-- Company Info -->
             <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-              <h3 class="font-semibold text-[#1e293b] mb-3">Данные плательщика</h3>
+              <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingCalcs.payerData') }}</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span class="text-[#64748b]">Организация:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingCalcs.organizationLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.company }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">ИНН:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingCalcs.innLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.inn }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">Период:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingCalcs.periodLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.period }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">Дата расчёта:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingCalcs.calcDateLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.date }}</span>
                 </div>
               </div>
@@ -508,19 +511,19 @@ const resetPaymentFilters = () => {
 
             <!-- Items Table -->
             <div>
-              <h3 class="font-semibold text-[#1e293b] mb-3">Детализация расчёта</h3>
+              <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingCalcs.calcDetails') }}</h3>
               <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
                 <table class="w-full text-sm">
                   <thead class="bg-[#f8fafc]">
                     <tr class="text-left text-[#64748b]">
-                      <th class="px-4 py-3 font-medium">Категория</th>
-                      <th class="px-4 py-3 font-medium">Подкатегория</th>
-                      <th class="px-4 py-3 font-medium">Код ГСКП / Материал</th>
-                      <th class="px-4 py-3 font-medium">Код ТН ВЭД / ТР ТС</th>
-                      <th class="px-4 py-3 font-medium">Наименование</th>
-                      <th class="px-4 py-3 font-medium text-right">Объём (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Ставка</th>
-                      <th class="px-4 py-3 font-medium text-right">Сумма</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('ecoIncomingCalcs.thCategory') }}</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('ecoIncomingCalcs.thSubcategory') }}</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('ecoIncomingCalcs.thGskpMaterial') }}</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('ecoIncomingCalcs.thTnvedTrts') }}</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('ecoIncomingCalcs.thName') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('ecoIncomingCalcs.thVolume') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('ecoIncomingCalcs.thRate') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('ecoIncomingCalcs.thAmount') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[#e2e8f0]">
@@ -538,14 +541,14 @@ const resetPaymentFilters = () => {
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
                       </template>
                       <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
-                      <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }} сом/т</td>
-                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} сом</td>
+                      <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }} {{ $t('ecoIncomingCalcs.somPerTon') }}</td>
+                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} {{ $t('ecoIncomingCalcs.som') }}</td>
                     </tr>
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">
                     <tr>
-                      <td colspan="7" class="px-4 py-3">Итого</td>
-                      <td class="px-4 py-3 text-right text-[#f59e0b]">{{ selectedCalculation.totalAmount.toLocaleString() }} сом</td>
+                      <td colspan="7" class="px-4 py-3">{{ $t('ecoIncomingCalcs.total') }}</td>
+                      <td class="px-4 py-3 text-right text-[#f59e0b]">{{ selectedCalculation.totalAmount.toLocaleString() }} {{ $t('ecoIncomingCalcs.som') }}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -554,33 +557,33 @@ const resetPaymentFilters = () => {
 
             <!-- Payment Info (if payment exists) -->
             <div v-if="selectedCalculation.payment" class="bg-purple-50 border border-purple-200 rounded-xl p-4">
-              <h3 class="font-semibold text-purple-800 mb-3">Данные об оплате</h3>
+              <h3 class="font-semibold text-purple-800 mb-3">{{ $t('ecoIncomingCalcs.paymentData') }}</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
                 <div>
-                  <span class="text-purple-600">Номер п/п:</span>
+                  <span class="text-purple-600">{{ $t('ecoIncomingCalcs.paymentOrderLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.payment.paymentOrderNumber }}</span>
                 </div>
                 <div>
-                  <span class="text-purple-600">Дата оплаты:</span>
+                  <span class="text-purple-600">{{ $t('ecoIncomingCalcs.paymentDateLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.payment.paymentDate }}</span>
                 </div>
                 <div>
-                  <span class="text-purple-600">Банк плательщика:</span>
+                  <span class="text-purple-600">{{ $t('ecoIncomingCalcs.payerBankLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.payment.payerBank }}</span>
                 </div>
                 <div>
-                  <span class="text-purple-600">Сумма перевода:</span>
-                  <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.payment.transferAmount.toLocaleString('ru-RU') }} сом</span>
+                  <span class="text-purple-600">{{ $t('ecoIncomingCalcs.transferAmountLabel') }}</span>
+                  <span class="ml-2 font-medium text-[#1e293b]">{{ selectedCalculation.payment.transferAmount.toLocaleString() }} {{ $t('ecoIncomingCalcs.som') }}</span>
                 </div>
                 <div v-if="selectedCalculation.payment.comment" class="sm:col-span-2">
-                  <span class="text-purple-600">Комментарий:</span>
+                  <span class="text-purple-600">{{ $t('ecoIncomingCalcs.commentLabel') }}</span>
                   <span class="ml-2 text-[#1e293b]">{{ selectedCalculation.payment.comment }}</span>
                 </div>
               </div>
 
               <!-- File preview -->
               <div class="bg-white rounded-lg p-3 border border-purple-200">
-                <p class="text-sm font-medium text-[#1e293b] mb-2">Платёжное поручение:</p>
+                <p class="text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoIncomingCalcs.paymentOrder') }}</p>
                 <div v-if="selectedCalculation.payment.fileDataUrl && selectedCalculation.payment.fileType.startsWith('image/')" class="rounded-lg overflow-hidden border border-[#e2e8f0]">
                   <img :src="selectedCalculation.payment.fileDataUrl" :alt="selectedCalculation.payment.fileName" class="max-w-full max-h-64 object-contain mx-auto" />
                 </div>
@@ -590,31 +593,31 @@ const resetPaymentFilters = () => {
                   </svg>
                   <div>
                     <p class="font-medium text-[#1e293b] text-sm">{{ selectedCalculation.payment.fileName }}</p>
-                    <p class="text-xs text-[#64748b]">PDF-документ</p>
+                    <p class="text-xs text-[#64748b]">{{ $t('ecoIncomingCalcs.pdfDocument') }}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Rejection reason if rejected -->
-            <div v-if="selectedCalculation.status === 'Отклонено' && selectedCalculation.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">Причина отклонения расчёта</p>
+            <div v-if="selectedCalculation.status === 'rejected' && selectedCalculation.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingCalcs.calcRejectionReason') }}</p>
               <p class="text-sm text-red-700">{{ selectedCalculation.rejectionReason }}</p>
             </div>
 
             <!-- Payment rejection reason -->
-            <div v-if="selectedCalculation.status === 'Оплата отклонена' && selectedCalculation.paymentRejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">Причина отклонения оплаты</p>
+            <div v-if="selectedCalculation.status === 'payment_rejected' && selectedCalculation.paymentRejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingCalcs.paymentRejectionReason') }}</p>
               <p class="text-sm text-red-700">{{ selectedCalculation.paymentRejectionReason }}</p>
             </div>
 
             <!-- Reject Calculation Form -->
             <div v-if="showRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <h3 class="font-semibold text-red-800 mb-3">Укажите причину отклонения</h3>
+              <h3 class="font-semibold text-red-800 mb-3">{{ $t('ecoIncomingCalcs.specifyRejectionReason') }}</h3>
               <textarea
                 v-model="rejectionReason"
                 rows="3"
-                placeholder="Опишите причину отклонения расчёта..."
+                :placeholder="$t('ecoIncomingCalcs.calcRejectionPlaceholder')"
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
               <div class="flex justify-end gap-3 mt-3">
@@ -633,11 +636,11 @@ const resetPaymentFilters = () => {
 
             <!-- Reject Payment Form -->
             <div v-if="showPaymentRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <h3 class="font-semibold text-red-800 mb-3">Укажите причину отклонения оплаты</h3>
+              <h3 class="font-semibold text-red-800 mb-3">{{ $t('ecoIncomingCalcs.specifyPaymentRejectionReason') }}</h3>
               <textarea
                 v-model="paymentRejectionReason"
                 rows="3"
-                placeholder="Опишите причину отклонения оплаты..."
+                :placeholder="$t('ecoIncomingCalcs.paymentRejectionPlaceholder')"
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
               <div class="flex justify-end gap-3 mt-3">
@@ -656,39 +659,39 @@ const resetPaymentFilters = () => {
           </div>
 
           <!-- Modal Footer: Calculation review actions -->
-          <div v-if="selectedCalculation.status === 'На проверке' && !showRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+          <div v-if="selectedCalculation.status === 'under_review' && !showRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
             <AppButton variant="danger" @click="showRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Отклонить расчёт
+              {{ $t('ecoIncomingCalcs.rejectCalc') }}
             </AppButton>
             <AppButton variant="primary" @click="approveCalc">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Принять расчёт
+              {{ $t('ecoIncomingCalcs.approveCalc') }}
             </AppButton>
           </div>
 
           <!-- Modal Footer: Payment review actions -->
-          <div v-else-if="selectedCalculation.status === 'Оплата на проверке' && !showPaymentRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+          <div v-else-if="selectedCalculation.status === 'payment_pending' && !showPaymentRejectForm" class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
             <AppButton variant="danger" @click="showPaymentRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Отклонить оплату
+              {{ $t('ecoIncomingCalcs.rejectPayment') }}
             </AppButton>
             <AppButton variant="primary" @click="approvePayment">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Подтвердить оплату
+              {{ $t('ecoIncomingCalcs.confirmPayment') }}
             </AppButton>
           </div>
 
           <!-- Close button for other statuses -->
-          <div v-else-if="selectedCalculation.status !== 'На проверке' && selectedCalculation.status !== 'Оплата на проверке'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
+          <div v-else-if="selectedCalculation.status !== 'under_review' && selectedCalculation.status !== 'payment_pending'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
             <AppButton variant="secondary" @click="closeDetail">
               {{ $t('common.close') }}
             </AppButton>

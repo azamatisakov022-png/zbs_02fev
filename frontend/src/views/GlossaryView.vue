@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Search query
 const searchQuery = ref('')
@@ -79,10 +82,10 @@ const groupedAbbreviations = computed(() => {
       <!-- Page header -->
       <div class="text-center mb-10">
         <h1 class="text-3xl md:text-4xl lg:text-[40px] font-bold text-[#415861] uppercase mb-4">
-          Глоссарий
+          {{ $t('glossary.title') }}
         </h1>
         <p class="text-lg md:text-xl text-[#415861] max-w-2xl mx-auto">
-          Сокращения и условные обозначения, используемые в системе АИС «ГП Эко Оператор»
+          {{ $t('glossary.subtitle') }}
         </p>
       </div>
 
@@ -97,7 +100,7 @@ const groupedAbbreviations = computed(() => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск по сокращению или названию..."
+            :placeholder="$t('glossary.searchPlaceholder')"
             class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d] text-gray-700 placeholder-gray-400"
           />
           <button
@@ -111,10 +114,10 @@ const groupedAbbreviations = computed(() => {
           </button>
         </div>
         <p v-if="searchQuery && filteredAbbreviations.length === 0" class="text-center text-gray-500 mt-4">
-          По запросу "{{ searchQuery }}" ничего не найдено
+          {{ $t('glossary.noResults', { query: searchQuery }) }}
         </p>
         <p v-else-if="searchQuery" class="text-center text-gray-500 mt-2 text-sm">
-          Найдено: {{ filteredAbbreviations.length }} из {{ abbreviations.length }}
+          {{ $t('glossary.foundCount', { count: filteredAbbreviations.length, total: abbreviations.length }) }}
         </p>
       </div>
 
@@ -124,8 +127,8 @@ const groupedAbbreviations = computed(() => {
           <table class="w-full">
             <thead>
               <tr class="bg-[#0e888d] text-white">
-                <th class="px-6 py-4 text-left text-sm font-semibold w-1/4">Сокращение</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold">Полное наименование</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold w-1/4">{{ $t('glossary.abbreviation') }}</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">{{ $t('glossary.fullName') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -149,8 +152,8 @@ const groupedAbbreviations = computed(() => {
           <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <h3 class="text-lg font-medium text-gray-900 mb-1">Ничего не найдено</h3>
-          <p class="text-gray-500">Попробуйте изменить поисковый запрос</p>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('glossary.nothingFound') }}</h3>
+          <p class="text-gray-500">{{ $t('glossary.tryChangingQuery') }}</p>
         </div>
       </div>
 
@@ -163,10 +166,9 @@ const groupedAbbreviations = computed(() => {
             </svg>
           </div>
           <div>
-            <h4 class="font-semibold text-gray-900 mb-1">О глоссарии</h4>
+            <h4 class="font-semibold text-gray-900 mb-1">{{ $t('glossary.aboutTitle') }}</h4>
             <p class="text-sm text-gray-600">
-              Данный глоссарий содержит сокращения и условные обозначения, применяемые в нормативных документах
-              и в автоматизированной информационной системе «ГП Эко Оператор».
+              {{ $t('glossary.aboutText') }}
             </p>
           </div>
         </div>
@@ -181,7 +183,7 @@ const groupedAbbreviations = computed(() => {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Вернуться на страницу «О портале»
+          {{ $t('glossary.backToAbout') }}
         </router-link>
       </div>
     </div>

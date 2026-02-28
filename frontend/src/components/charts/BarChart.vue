@@ -84,7 +84,7 @@ function formatValue(val: number): string {
           rx="4"
           class="bar-fill"
         >
-          <title>{{ bar.label }}: {{ bar.value.toLocaleString('ru-RU') }}</title>
+          <title>{{ bar.label }}: {{ bar.value.toLocaleString() }}</title>
         </rect>
 
         <!-- Value label -->

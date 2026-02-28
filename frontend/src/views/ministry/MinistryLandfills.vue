@@ -100,11 +100,11 @@ const totalCapacity = computed(() => {
 const getTypeLabel = (type: LandfillType): string => {
   switch (type) {
     case 'sanitary':
-      return 'Санитарный полигон'
+      return t('ministryLandfills.typeSanitary')
     case 'unauthorized':
-      return 'Несанкц. свалка'
+      return t('ministryLandfills.typeUnauthorized')
     case 'sorting':
-      return 'Сортировочная станция'
+      return t('ministryLandfills.typeSorting')
   }
 }
 
@@ -122,11 +122,11 @@ const getTypeBadgeClass = (type: LandfillType): string => {
 const getStatusLabel = (status: LandfillStatus): string => {
   switch (status) {
     case 'active':
-      return 'Действующий'
+      return t('ministryLandfills.statusActive')
     case 'closed':
-      return 'Закрыт'
+      return t('ministryLandfills.statusClosed')
     case 'recultivation':
-      return 'На рекультивации'
+      return t('ministryLandfills.statusRecultivation')
   }
 }
 
@@ -148,7 +148,7 @@ const getFillBarColorClass = (percent: number): string => {
 }
 
 const formatCapacity = (val: number): string => {
-  return val.toLocaleString('ru-RU')
+  return val.toLocaleString()
 }
 
 // ==================== MAP HELPERS ====================
@@ -268,6 +268,13 @@ const resetAllFilters = () => {
   filterType.value = ''
   filterStatus.value = ''
 }
+
+const guideActions = computed(() => [
+  t('ministryLandfills.guideAction1'),
+  t('ministryLandfills.guideAction2'),
+  t('ministryLandfills.guideAction3'),
+  t('ministryLandfills.guideAction4'),
+])
 </script>
 
 <template>
@@ -282,10 +289,10 @@ const resetAllFilters = () => {
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-1">
-            Полигоны ТБО
+            {{ $t('ministryLandfills.title') }}
           </h1>
           <p class="text-[#64748b] text-sm">
-            Реестр полигонов и объектов размещения твёрдых бытовых отходов
+            {{ $t('ministryLandfills.subtitle') }}
           </p>
         </div>
 
@@ -304,7 +311,7 @@ const resetAllFilters = () => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
               </svg>
-              Список
+              {{ $t('ministryLandfills.viewList') }}
             </button>
             <button
               @click="viewMode = 'map'"
@@ -318,7 +325,7 @@ const resetAllFilters = () => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              Карта
+              {{ $t('ministryLandfills.viewMap') }}
             </button>
           </div>
 
@@ -330,15 +337,15 @@ const resetAllFilters = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Добавить полигон
+            {{ $t('ministryLandfills.addLandfill') }}
           </button>
         </div>
       </div>
 
       <SectionGuide
-        title="Реестр полигонов ТБО"
-        description="Управление данными о санкционированных полигонах и несанкционированных свалках."
-        :actions="['Добавление новых полигонов', 'Обновление данных о загруженности', 'Регистрация несанкционированных свалок', 'Контроль ликвидации свалок']"
+        :title="$t('ministryLandfills.guideTitle')"
+        :description="$t('ministryLandfills.guideDescription')"
+        :actions="guideActions"
         storageKey="ministry-landfills"
       />
 
@@ -353,7 +360,7 @@ const resetAllFilters = () => {
               </svg>
             </div>
             <div>
-              <p class="text-sm text-[#64748b]">Всего полигонов</p>
+              <p class="text-sm text-[#64748b]">{{ $t('ministryLandfills.statsTotal') }}</p>
               <p class="text-2xl font-bold text-[#1e293b]">{{ totalCount }}</p>
             </div>
           </div>
@@ -368,7 +375,7 @@ const resetAllFilters = () => {
               </svg>
             </div>
             <div>
-              <p class="text-sm text-[#64748b]">Действующих</p>
+              <p class="text-sm text-[#64748b]">{{ $t('ministryLandfills.statsActive') }}</p>
               <p class="text-2xl font-bold text-[#10b981]">{{ activeCount }}</p>
             </div>
           </div>
@@ -383,7 +390,7 @@ const resetAllFilters = () => {
               </svg>
             </div>
             <div>
-              <p class="text-sm text-[#64748b]">Заполненность >85%</p>
+              <p class="text-sm text-[#64748b]">{{ $t('ministryLandfills.statsCritical') }}</p>
               <p class="text-2xl font-bold text-[#ef4444]">{{ criticalFillCount }}</p>
             </div>
           </div>
@@ -398,8 +405,8 @@ const resetAllFilters = () => {
               </svg>
             </div>
             <div>
-              <p class="text-sm text-[#64748b]">Общая ёмкость</p>
-              <p class="text-2xl font-bold text-[#7c3aed]">{{ totalCapacity }} тыс. т</p>
+              <p class="text-sm text-[#64748b]">{{ $t('ministryLandfills.statsTotalCapacity') }}</p>
+              <p class="text-2xl font-bold text-[#7c3aed]">{{ totalCapacity }} {{ $t('ministryLandfills.capacityUnit') }}</p>
             </div>
           </div>
         </div>
@@ -415,7 +422,7 @@ const resetAllFilters = () => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Поиск по названию, региону..."
+              :placeholder="$t('ministryLandfills.searchPlaceholder')"
               class="w-full pl-9 pr-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
             />
           </div>
@@ -424,7 +431,7 @@ const resetAllFilters = () => {
             v-model="filterRegion"
             class="px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
           >
-            <option value="">Все регионы</option>
+            <option value="">{{ $t('ministryLandfills.allRegions') }}</option>
             <option v-for="region in uniqueRegions" :key="region" :value="region">
               {{ region }}
             </option>
@@ -434,20 +441,20 @@ const resetAllFilters = () => {
             v-model="filterType"
             class="px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
           >
-            <option value="">Все типы</option>
-            <option value="sanitary">Санитарный полигон</option>
-            <option value="unauthorized">Несанкционированная свалка</option>
-            <option value="sorting">Мусоросортировочная станция</option>
+            <option value="">{{ $t('ministryLandfills.allTypes') }}</option>
+            <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
+            <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
+            <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
           </select>
 
           <select
             v-model="filterStatus"
             class="px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
           >
-            <option value="">Все статусы</option>
-            <option value="active">Действующий</option>
-            <option value="closed">Закрыт</option>
-            <option value="recultivation">На рекультивации</option>
+            <option value="">{{ $t('ministryLandfills.allStatuses') }}</option>
+            <option value="active">{{ $t('ministryLandfills.statusActive') }}</option>
+            <option value="closed">{{ $t('ministryLandfills.statusClosed') }}</option>
+            <option value="recultivation">{{ $t('ministryLandfills.statusRecultivation') }}</option>
           </select>
 
           <button
@@ -455,7 +462,7 @@ const resetAllFilters = () => {
             @click="resetAllFilters"
             class="px-3 py-2 text-sm text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors"
           >
-            Сбросить
+            {{ $t('ministryLandfills.resetFilters') }}
           </button>
         </div>
       </div>
@@ -517,7 +524,7 @@ const resetAllFilters = () => {
             <!-- Fill level -->
             <div class="mb-4">
               <div class="flex items-center justify-between text-sm mb-1.5">
-                <span class="text-[#64748b]">Заполненность:</span>
+                <span class="text-[#64748b]">{{ $t('ministryLandfills.fillLevel') }}</span>
                 <span
                   class="font-semibold"
                   :class="{
@@ -537,14 +544,14 @@ const resetAllFilters = () => {
                 ></div>
               </div>
               <p class="text-xs text-[#94a3b8] mt-1">
-                {{ formatCapacity(landfill.currentVolume) }} / {{ formatCapacity(landfill.designCapacity) }} тыс. т
+                {{ formatCapacity(landfill.currentVolume) }} / {{ formatCapacity(landfill.designCapacity) }} {{ $t('ministryLandfills.capacityUnit') }}
               </p>
             </div>
 
             <!-- Bottom info -->
             <div class="flex items-center justify-between text-xs text-[#64748b] pt-3 border-t border-[#f1f5f9]">
-              <span>Класс опасности: {{ landfill.hazardClasses.join(', ') }}</span>
-              <span>Срок эксплуатации: до {{ landfill.expiryYear }} г.</span>
+              <span>{{ $t('ministryLandfills.hazardClass') }} {{ landfill.hazardClasses.join(', ') }}</span>
+              <span>{{ $t('ministryLandfills.expiryLabel') }} {{ landfill.expiryYear }} {{ $t('ministryLandfills.yearSuffix') }}</span>
             </div>
           </div>
         </div>
@@ -554,14 +561,14 @@ const resetAllFilters = () => {
           <svg class="w-12 h-12 text-[#d1d5db] mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <p class="text-lg font-medium">Нет полигонов</p>
-          <p class="text-sm mt-1">Нет полигонов, соответствующих выбранным фильтрам</p>
+          <p class="text-lg font-medium">{{ $t('ministryLandfills.noLandfills') }}</p>
+          <p class="text-sm mt-1">{{ $t('ministryLandfills.noLandfillsHint') }}</p>
           <button
             v-if="isFiltersActive"
             @click="resetAllFilters"
             class="mt-4 px-4 py-2 text-sm text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors"
           >
-            Сбросить фильтры
+            {{ $t('ministryLandfills.resetFiltersBtn') }}
           </button>
         </div>
       </template>
@@ -596,15 +603,15 @@ const resetAllFilters = () => {
                     </h4>
                     <div class="space-y-1 text-xs text-[#64748b] mb-3">
                       <p>
-                        <span class="font-medium text-[#475569]">Тип:</span>
+                        <span class="font-medium text-[#475569]">{{ $t('ministryLandfills.mapPopupType') }}</span>
                         {{ getTypeLabel(landfill.type) }}
                       </p>
                       <p>
-                        <span class="font-medium text-[#475569]">Статус:</span>
+                        <span class="font-medium text-[#475569]">{{ $t('ministryLandfills.mapPopupStatus') }}</span>
                         {{ getStatusLabel(landfill.status) }}
                       </p>
                       <p>
-                        <span class="font-medium text-[#475569]">Заполненность:</span>
+                        <span class="font-medium text-[#475569]">{{ $t('ministryLandfills.mapPopupFill') }}</span>
                         {{ getFillPercent(landfill) }}%
                       </p>
                     </div>
@@ -612,7 +619,7 @@ const resetAllFilters = () => {
                       @click="goToDetail(landfill)"
                       class="text-xs text-[#2563eb] hover:text-[#1d4ed8] font-medium"
                     >
-                      Подробнее &rarr;
+                      {{ $t('ministryLandfills.moreDetails') }} &rarr;
                     </button>
                   </div>
                 </LPopup>
@@ -623,18 +630,18 @@ const resetAllFilters = () => {
           <!-- Map legend -->
           <div class="px-4 py-3 bg-[#f8fafc] border-t border-[#e2e8f0]">
             <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-[#64748b]">
-              <span class="font-medium text-[#475569]">Легенда:</span>
+              <span class="font-medium text-[#475569]">{{ $t('ministryLandfills.legend') }}</span>
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-[#22c55e] inline-block"></span>
-                <span>Действующий</span>
+                <span>{{ $t('ministryLandfills.statusActive') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-[#9ca3af] inline-block"></span>
-                <span>Закрыт</span>
+                <span>{{ $t('ministryLandfills.statusClosed') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="w-3 h-3 rounded-full bg-[#f97316] inline-block"></span>
-                <span>На рекультивации</span>
+                <span>{{ $t('ministryLandfills.statusRecultivation') }}</span>
               </div>
             </div>
           </div>
@@ -642,7 +649,7 @@ const resetAllFilters = () => {
 
         <!-- Filtered count -->
         <p class="text-sm text-[#94a3b8]">
-          Показано на карте: {{ filteredLandfills.length }} из {{ totalCount }}
+          {{ $t('ministryLandfills.shownOnMap') }} {{ filteredLandfills.length }} {{ $t('ministryLandfills.of') }} {{ totalCount }}
         </p>
       </template>
     </div>
@@ -657,7 +664,7 @@ const resetAllFilters = () => {
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <!-- Modal header -->
           <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-[#1e293b]">Добавить полигон</h3>
+            <h3 class="text-lg font-semibold text-[#1e293b]">{{ $t('ministryLandfills.addModalTitle') }}</h3>
             <button
               @click="cancelAdd"
               class="text-[#94a3b8] hover:text-[#64748b] transition-colors"
@@ -673,26 +680,26 @@ const resetAllFilters = () => {
             <!-- Name -->
             <div>
               <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                Название <span class="text-red-500">*</span>
+                {{ $t('ministryLandfills.labelName') }} <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="newLandfill.name"
                 type="text"
-                placeholder="Например: Бишкекский санитарный полигон ТБО"
+                :placeholder="$t('ministryLandfills.namePlaceholder')"
                 class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
               />
             </div>
 
             <!-- Type -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">Тип</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelType') }}</label>
               <select
                 v-model="newLandfill.type"
                 class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
               >
-                <option value="sanitary">Санитарный полигон</option>
-                <option value="unauthorized">Несанкционированная свалка</option>
-                <option value="sorting">Мусоросортировочная станция</option>
+                <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
+                <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
+                <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
               </select>
             </div>
 
@@ -700,30 +707,30 @@ const resetAllFilters = () => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  Регион <span class="text-red-500">*</span>
+                  {{ $t('ministryLandfills.labelRegion') }} <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="newLandfill.region"
                   type="text"
-                  placeholder="г. Бишкек"
+                  :placeholder="$t('ministryLandfills.regionPlaceholder')"
                   class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">Район</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelDistrict') }}</label>
                 <input
                   v-model="newLandfill.district"
                   type="text"
-                  placeholder="Свердловский район"
+                  :placeholder="$t('ministryLandfills.districtPlaceholder')"
                   class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">Населённый пункт</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelSettlement') }}</label>
                 <input
                   v-model="newLandfill.settlement"
                   type="text"
-                  placeholder="г. Бишкек"
+                  :placeholder="$t('ministryLandfills.settlementPlaceholder')"
                   class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                 />
               </div>
@@ -731,11 +738,11 @@ const resetAllFilters = () => {
 
             <!-- Operator -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">Оператор</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOperator') }}</label>
               <input
                 v-model="newLandfill.operator"
                 type="text"
-                placeholder="МП Тазалык"
+                :placeholder="$t('ministryLandfills.operatorPlaceholder')"
                 class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
               />
             </div>
@@ -744,7 +751,7 @@ const resetAllFilters = () => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  Проектная ёмкость, тыс. тонн
+                  {{ $t('ministryLandfills.labelDesignCapacity') }}
                 </label>
                 <input
                   v-model.number="newLandfill.designCapacity"
@@ -756,7 +763,7 @@ const resetAllFilters = () => {
               </div>
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  Текущий объём, тыс. тонн
+                  {{ $t('ministryLandfills.labelCurrentVolume') }}
                 </label>
                 <input
                   v-model.number="newLandfill.currentVolume"
@@ -771,7 +778,7 @@ const resetAllFilters = () => {
             <!-- Year row -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">Год открытия</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOpenYear') }}</label>
                 <input
                   v-model.number="newLandfill.openYear"
                   type="number"
@@ -781,7 +788,7 @@ const resetAllFilters = () => {
               </div>
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  Срок эксплуатации до
+                  {{ $t('ministryLandfills.labelExpiryYear') }}
                 </label>
                 <input
                   v-model.number="newLandfill.expiryYear"
@@ -795,14 +802,14 @@ const resetAllFilters = () => {
 
             <!-- Coordinates -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">Координаты</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelCoordinates') }}</label>
               <div class="flex items-end gap-3">
                 <div class="flex-1">
                   <input
                     v-model.number="newLandfill.lat"
                     type="number"
                     step="0.0001"
-                    placeholder="Широта (42.87)"
+                    :placeholder="$t('ministryLandfills.latPlaceholder')"
                     class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                   />
                 </div>
@@ -811,7 +818,7 @@ const resetAllFilters = () => {
                     v-model.number="newLandfill.lng"
                     type="number"
                     step="0.0001"
-                    placeholder="Долгота (74.59)"
+                    :placeholder="$t('ministryLandfills.lngPlaceholder')"
                     class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                   />
                 </div>
@@ -821,7 +828,7 @@ const resetAllFilters = () => {
                   class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2 whitespace-nowrap"
                 >
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  На карте
+                  {{ $t('ministryLandfills.pickOnMap') }}
                 </button>
               </div>
             </div>
@@ -833,7 +840,7 @@ const resetAllFilters = () => {
               @click="cancelAdd"
               class="px-4 py-2 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
             >
-              Отмена
+              {{ $t('ministryLandfills.cancelBtn') }}
             </button>
             <button
               @click="saveLandfill"
@@ -845,7 +852,7 @@ const resetAllFilters = () => {
                   : 'bg-[#94a3b8] cursor-not-allowed',
               ]"
             >
-              Сохранить
+              {{ $t('ministryLandfills.saveBtn') }}
             </button>
           </div>
         </div>

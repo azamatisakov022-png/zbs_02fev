@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
@@ -9,7 +10,9 @@ import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { validators, scrollToFirstError } from '../../utils/validators'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { CalcStatus } from '../../constants/statuses'
 
+const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -28,7 +31,7 @@ const selectedCalculationId = ref<number | null>(null)
 
 // Paid calculations
 const paidCalculations = computed(() =>
-  calculationStore.state.calculations.filter(c => c.status === 'Оплачено')
+  calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
 )
 
 // Selected calculation object
@@ -107,11 +110,11 @@ function getCorrNormStatus(row: CorrectionRow): CorrNormStatus | null {
   const totalTransferred = row.previousTransferred + row.additionalTransferred
   const totalExported = row.previousExported + row.additionalExported
   if (totalTransferred + totalExported >= row.volumeToRecycle) {
-    return { met: true, message: 'Норматив переработки выполнен. Утильсбор по данной позиции: 0 сом' }
+    return { met: true, message: t('businessCorrection.normMet') }
   }
   const newTaxable = getNewTaxableVolume(row)
   if (newTaxable > 0) {
-    return { met: false, message: `Норматив переработки не выполнен. Облагаемый объём: ${newTaxable.toFixed(2)} тонн` }
+    return { met: false, message: t('businessCorrection.normNotMet', { volume: newTaxable.toFixed(2) }) }
   }
   return null
 }
@@ -173,7 +176,7 @@ function getNewAmount(row: CorrectionRow): number {
 
 // Format amount
 function formatAmount(amount: number): string {
-  return amount.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' сом'
+  return amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ' + t('businessCorrection.som')
 }
 
 // Submit correction
@@ -223,40 +226,40 @@ const formErrors = computed(() => {
   const errors: Record<string, string> = {}
 
   // Comment / reason is required, minimum 10 characters
-  const commentRequired = validators.required(correctionComment.value.trim(), 'Основание корректировки')
+  const commentRequired = validators.required(correctionComment.value.trim(), t('businessCorrection.validatorCorrectionReason'))
   if (commentRequired) {
     errors.comment = commentRequired
   } else {
-    const commentMin = validators.minLength(correctionComment.value.trim(), 10, 'Основание корректировки')
+    const commentMin = validators.minLength(correctionComment.value.trim(), 10, t('businessCorrection.validatorCorrectionReason'))
     if (commentMin) errors.comment = commentMin
   }
 
   // Calculation must be selected
-  const calcRequired = validators.required(selectedCalculationId.value, 'Расчёт')
+  const calcRequired = validators.required(selectedCalculationId.value, t('businessCorrection.validatorCalculation'))
   if (calcRequired) errors.calculation = calcRequired
 
   // At least one row must have additional data
   if (selectedCalculationId.value && !hasAdditionalData.value) {
-    errors.items = 'Укажите дополнительные объёмы хотя бы по одной позиции'
+    errors.items = t('businessCorrection.validationSpecifyVolumes')
   }
 
   // Per-row validation: additionalTransferred and additionalExported must be non-negative
   correctionItems.value.forEach((row, index) => {
-    const transferredErr = validators.positiveNumber(row.additionalTransferred, 'Доп. переработка')
+    const transferredErr = validators.positiveNumber(row.additionalTransferred, t('businessCorrection.validatorAdditionalRecycling'))
     if (transferredErr) errors[`row_${index}_transferred`] = transferredErr
 
-    const exportedErr = validators.positiveNumber(row.additionalExported, 'Доп. вывоз')
+    const exportedErr = validators.positiveNumber(row.additionalExported, t('businessCorrection.validatorAdditionalExport'))
     if (exportedErr) errors[`row_${index}_exported`] = exportedErr
 
     // Sum must not exceed volume (Гр.5)
     if (!isRowValid(row)) {
-      errors[`row_${index}_overflow`] = `Сумма переработки и вывоза не может превышать общий объём (${row.volume} т)`
+      errors[`row_${index}_overflow`] = t('businessCorrection.validationSumExceedsRow', { volume: row.volume })
     }
   })
 
   // Correction amount must be positive
   if (selectedCalculationId.value && hasAdditionalData.value && totalCorrectionAmount.value <= 0) {
-    errors.amount = 'Сумма корректировки должна быть положительной'
+    errors.amount = t('businessCorrection.validationPositiveAmount')
   }
 
   return errors
@@ -287,15 +290,15 @@ const canSubmit = computed(() =>
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Назад к лицевому счёту
+          {{ $t('businessCorrection.backToAccount') }}
         </button>
         <div class="flex items-center justify-between gap-4">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Подача корректировки</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessCorrection.title') }}</h1>
           <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Инструкция
+            {{ $t('businessCorrection.instruction') }}
           </button>
         </div>
       </div>
@@ -304,14 +307,14 @@ const canSubmit = computed(() =>
       <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
           <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">1</span>
-          Выберите оплаченный расчёт
+          {{ $t('businessCorrection.step1Title') }}
         </h2>
         <select
           v-model="selectedCalculationId"
           @change="onCalculationSelect"
           :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] text-[#1e293b] bg-white', { 'vld-input--error': formSubmitted && formErrors['calculation'] }]"
         >
-          <option :value="null" disabled>-- Выберите расчёт --</option>
+          <option :value="null" disabled>{{ $t('businessCorrection.selectCalculation') }}</option>
           <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
             {{ calc.number }} от {{ calc.date }} -- {{ formatAmount(calc.totalAmount) }}
           </option>
@@ -320,7 +323,7 @@ const canSubmit = computed(() =>
           <span class="vld-error__icon">&#9888;</span> {{ formErrors['calculation'] }}
         </p>
         <p v-if="paidCalculations.length === 0" class="mt-3 text-sm text-[#f59e0b]">
-          Нет оплаченных расчётов для корректировки.
+          {{ $t('businessCorrection.noPaidCalculations') }}
         </p>
       </div>
 
@@ -329,9 +332,9 @@ const canSubmit = computed(() =>
         <div class="p-5 lg:p-6 border-b border-[#e2e8f0]">
           <h2 class="text-lg font-semibold text-[#1e293b] flex items-center gap-2">
             <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">2</span>
-            Позиции расчёта {{ selectedCalculation.number }}
+            {{ $t('businessCorrection.positionsOfCalc') }} {{ selectedCalculation.number }}
           </h2>
-          <p class="text-sm text-[#64748b] mt-1">Укажите дополнительные объёмы переработки или вывоза для перерасчёта</p>
+          <p class="text-sm text-[#64748b] mt-1">{{ $t('businessCorrection.specifyAdditionalVolumes') }}</p>
         </div>
 
         <div class="p-5 lg:p-6 pt-4 lg:pt-4">
@@ -347,55 +350,55 @@ const canSubmit = computed(() =>
               <div class="cf-info__subtitle">{{ row.subgroup ? getSubgroupLabel(row.group, row.subgroup) : '—' }}</div>
               <div class="cf-info__grid">
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.5 Объём</span>
-                  <span class="cf-info__value">{{ row.volume }} <span class="cf-info__unit">тонн</span></span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr5Volume') }}</span>
+                  <span class="cf-info__value">{{ row.volume }} <span class="cf-info__unit">{{ $t('businessCorrection.tons') }}</span></span>
                 </div>
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.6 Норматив</span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr6Standard') }}</span>
                   <span class="cf-info__value">{{ row.recyclingStandard }}<span class="cf-info__unit">%</span></span>
                 </div>
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.7 К переработке</span>
-                  <span class="cf-info__value">{{ row.volumeToRecycle.toFixed(2) }} <span class="cf-info__unit">тонн</span></span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr7ToRecycle') }}</span>
+                  <span class="cf-info__value">{{ row.volumeToRecycle.toFixed(2) }} <span class="cf-info__unit">{{ $t('businessCorrection.tons') }}</span></span>
                 </div>
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.8 Ранее передано</span>
-                  <span class="cf-info__value">{{ row.previousTransferred }} <span class="cf-info__unit">тонн</span></span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr8PrevTransferred') }}</span>
+                  <span class="cf-info__value">{{ row.previousTransferred }} <span class="cf-info__unit">{{ $t('businessCorrection.tons') }}</span></span>
                 </div>
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.9 Ранее вывезено</span>
-                  <span class="cf-info__value">{{ row.previousExported }} <span class="cf-info__unit">тонн</span></span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr9PrevExported') }}</span>
+                  <span class="cf-info__value">{{ row.previousExported }} <span class="cf-info__unit">{{ $t('businessCorrection.tons') }}</span></span>
                 </div>
                 <div class="cf-info__cell">
-                  <span class="cf-info__label">Гр.11 Ставка</span>
-                  <span class="cf-info__value">{{ row.rate.toLocaleString('ru-RU') }} <span class="cf-info__unit">сом/т</span></span>
+                  <span class="cf-info__label">{{ $t('businessCorrection.gr11Rate') }}</span>
+                  <span class="cf-info__value">{{ row.rate.toLocaleString() }} <span class="cf-info__unit">{{ $t('businessCorrection.somPerTon') }}</span></span>
                 </div>
               </div>
             </div>
 
             <!-- BLOCK 2: Correction inputs -->
             <div class="cf-correction">
-              <div class="cf-correction__header">Укажите дополнительные объёмы</div>
+              <div class="cf-correction__header">{{ $t('businessCorrection.specifyAdditionalVolumesHeader') }}</div>
               <div class="cf-correction__inputs">
                 <div class="cf-correction__field">
-                  <label class="cf-correction__label">Дополнительная переработка (тонн)</label>
+                  <label class="cf-correction__label">{{ $t('businessCorrection.additionalRecycling') }}</label>
                   <input
                     type="number"
                     v-model.number="row.additionalTransferred"
                     min="0" step="0.01" placeholder="0.00"
                     :class="['cf-correction__input', !isRowValid(row) ? 'cf-correction__input--error' : '']"
                   />
-                  <span class="cf-correction__hint">Объём товаров, дополнительно переданных на переработку</span>
+                  <span class="cf-correction__hint">{{ $t('businessCorrection.additionalRecyclingHint') }}</span>
                 </div>
                 <div class="cf-correction__field">
-                  <label class="cf-correction__label">Дополнительный вывоз из КР (тонн)</label>
+                  <label class="cf-correction__label">{{ $t('businessCorrection.additionalExportKR') }}</label>
                   <input
                     type="number"
                     v-model.number="row.additionalExported"
                     min="0" step="0.01" placeholder="0.00"
                     :class="['cf-correction__input', !isRowValid(row) ? 'cf-correction__input--error' : '']"
                   />
-                  <span class="cf-correction__hint">Объём товаров, дополнительно вывезенных за пределы КР</span>
+                  <span class="cf-correction__hint">{{ $t('businessCorrection.additionalExportHint') }}</span>
                 </div>
               </div>
 
@@ -404,7 +407,7 @@ const canSubmit = computed(() =>
                 <svg class="norm-msg__icon" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5: {{ row.volume }} т)
+                {{ $t('businessCorrection.sumExceedsVolume', { volume: row.volume }) }}
               </div>
 
               <!-- Norm status info -->
@@ -419,22 +422,22 @@ const canSubmit = computed(() =>
                 class="cf-correction__summary"
                 :class="getDifference(row) > 0 ? 'cf-correction__summary--positive' : getDifference(row) < 0 ? 'cf-correction__summary--negative' : 'cf-correction__summary--neutral'"
               >
-                <span class="cf-correction__summary-left">Новый облагаемый объём: <strong>{{ getNewTaxableVolume(row).toFixed(2) }} тонн</strong></span>
+                <span class="cf-correction__summary-left">{{ $t('businessCorrection.newTaxableVolume') }} <strong>{{ getNewTaxableVolume(row).toFixed(2) }} {{ $t('businessCorrection.tons') }}</strong></span>
                 <span
                   class="cf-correction__summary-right"
                   :style="{ color: getDifference(row) > 0 ? '#059669' : getDifference(row) < 0 ? '#EF4444' : '#64748B' }"
-                >Гр.12 Сумма: {{ getNewAmount(row).toLocaleString('ru-RU') }} сом</span>
+                >{{ $t('businessCorrection.gr12Sum', { amount: getNewAmount(row).toLocaleString() }) }}</span>
               </div>
             </div>
           </div>
 
           <!-- Total correction -->
           <div v-if="correctionItems.length > 0" class="cf-total">
-            <span class="cf-total__label">Итого по корректировке</span>
+            <span class="cf-total__label">{{ $t('businessCorrection.totalCorrection') }}</span>
             <span
               class="cf-total__value"
               :style="{ color: totalCorrectionAmount > 0 ? '#059669' : totalCorrectionAmount < 0 ? '#EF4444' : '#64748B' }"
-            >Разница: {{ totalCorrectionAmount > 0 ? '+' : '' }}{{ formatAmount(totalCorrectionAmount) }}</span>
+            >{{ $t('businessCorrection.difference') }} {{ totalCorrectionAmount > 0 ? '+' : '' }}{{ formatAmount(totalCorrectionAmount) }}</span>
           </div>
         </div>
 
@@ -444,7 +447,7 @@ const canSubmit = computed(() =>
             <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-            Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5).
+            {{ $t('businessCorrection.validationSumExceeds') }}
           </p>
         </div>
         <div v-if="formSubmitted && formErrors['items']" class="px-5 py-3">
@@ -458,18 +461,18 @@ const canSubmit = computed(() =>
       <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
           <span class="w-7 h-7 rounded-full bg-[#10b981] text-white text-sm font-bold flex items-center justify-center">3</span>
-          Подтверждающие документы
+          {{ $t('businessCorrection.step3Title') }}
         </h2>
 
         <!-- No data entered yet -->
         <p v-if="!hasAdditionalProcessing && !hasAdditionalExport" class="text-sm text-[#9ca3af] py-4">
-          Укажите объём дополнительной переработки или вывоза в таблице выше для загрузки подтверждающих документов
+          {{ $t('businessCorrection.noDataForDocs') }}
         </p>
 
         <!-- Processing documents -->
         <div v-if="hasAdditionalProcessing" class="doc-section mb-4">
-          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#9851; Переработка</p>
-          <p class="text-[13px] text-[#6b7280] mb-4">Для подтверждения передачи товаров/упаковки на переработку необходимо прикрепить:</p>
+          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#9851; {{ $t('businessCorrection.recyclingSection') }}</p>
+          <p class="text-[13px] text-[#6b7280] mb-4">{{ $t('businessCorrection.recyclingDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: Contract -->
@@ -483,19 +486,19 @@ const canSubmit = computed(() =>
                 <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
-                <p class="doc-card__title">Договор с перерабатывающей организацией</p>
-                <p class="doc-card__desc" v-if="!docs.processingContract">Действующий договор на оказание услуг по переработке (утилизации)</p>
+                <p class="doc-card__title">{{ $t('businessCorrection.docContract') }}</p>
+                <p class="doc-card__desc" v-if="!docs.processingContract">{{ $t('businessCorrection.docContractDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.processingContract }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.processingContract">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('processingContract')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('processingContract')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
 
@@ -510,19 +513,19 @@ const canSubmit = computed(() =>
                 <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
-                <p class="doc-card__title">Акт выполненных работ</p>
-                <p class="doc-card__desc" v-if="!docs.processingAct">Акт, подтверждающий фактическую передачу и переработку указанного объёма</p>
+                <p class="doc-card__title">{{ $t('businessCorrection.docAct') }}</p>
+                <p class="doc-card__desc" v-if="!docs.processingAct">{{ $t('businessCorrection.docActDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.processingAct }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.processingAct">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('processingAct')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('processingAct')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
 
@@ -538,21 +541,21 @@ const canSubmit = computed(() =>
               </div>
               <div class="doc-card__info">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <p class="doc-card__title" style="margin:0">Лицензия перерабатывающей организации</p>
-                  <span class="doc-optional-badge">необязательно</span>
+                  <p class="doc-card__title" style="margin:0">{{ $t('businessCorrection.docLicense') }}</p>
+                  <span class="doc-optional-badge">{{ $t('businessCorrection.optional') }}</span>
                 </div>
-                <p class="doc-card__desc" v-if="!docs.processingLicense">Копия лицензии на деятельность по переработке отходов (при наличии)</p>
+                <p class="doc-card__desc" v-if="!docs.processingLicense">{{ $t('businessCorrection.docLicenseDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.processingLicense }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.processingLicense">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('processingLicense')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('processingLicense')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
           </div>
@@ -560,8 +563,8 @@ const canSubmit = computed(() =>
 
         <!-- Export documents -->
         <div v-if="hasAdditionalExport" class="doc-section">
-          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#128666; Вывоз за пределы КР</p>
-          <p class="text-[13px] text-[#6b7280] mb-4">Для подтверждения вывоза товаров/упаковки с территории Кыргызской Республики необходимо прикрепить:</p>
+          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#128666; {{ $t('businessCorrection.exportSection') }}</p>
+          <p class="text-[13px] text-[#6b7280] mb-4">{{ $t('businessCorrection.exportDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: GTD -->
@@ -575,19 +578,19 @@ const canSubmit = computed(() =>
                 <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
-                <p class="doc-card__title">Грузовая таможенная декларация (ГТД)</p>
-                <p class="doc-card__desc" v-if="!docs.exportGtd">ГТД на вывоз с отметкой таможенного органа КР</p>
+                <p class="doc-card__title">{{ $t('businessCorrection.docGtd') }}</p>
+                <p class="doc-card__desc" v-if="!docs.exportGtd">{{ $t('businessCorrection.docGtdDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.exportGtd }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.exportGtd">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('exportGtd')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('exportGtd')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
 
@@ -602,19 +605,19 @@ const canSubmit = computed(() =>
                 <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
-                <p class="doc-card__title">Инвойс (счёт-фактура)</p>
-                <p class="doc-card__desc" v-if="!docs.exportInvoice">Коммерческий инвойс на отгрузку товара покупателю за рубежом</p>
+                <p class="doc-card__title">{{ $t('businessCorrection.docInvoice') }}</p>
+                <p class="doc-card__desc" v-if="!docs.exportInvoice">{{ $t('businessCorrection.docInvoiceDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.exportInvoice }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.exportInvoice">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('exportInvoice')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('exportInvoice')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
 
@@ -629,19 +632,19 @@ const canSubmit = computed(() =>
                 <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
-                <p class="doc-card__title">Транспортные документы</p>
-                <p class="doc-card__desc" v-if="!docs.exportTransport">CMR, коносамент, ж/д накладная или иной транспортный документ</p>
+                <p class="doc-card__title">{{ $t('businessCorrection.docTransport') }}</p>
+                <p class="doc-card__desc" v-if="!docs.exportTransport">{{ $t('businessCorrection.docTransportDesc') }}</p>
                 <p class="doc-card__desc doc-card__desc--done" v-else>{{ docs.exportTransport }}</p>
               </div>
               <div class="doc-card__action" v-if="!docs.exportTransport">
                 <span class="doc-card__upload-btn">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  Загрузить
+                  {{ $t('businessCorrection.upload') }}
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">Загружен</span>
-                <button @click.prevent="clearDoc('exportTransport')" class="doc-card__remove" title="Удалить">&times;</button>
+                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <button @click.prevent="clearDoc('exportTransport')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
           </div>
@@ -652,24 +655,24 @@ const canSubmit = computed(() =>
       <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
           <span class="w-7 h-7 rounded-full bg-[#f59e0b] text-white text-sm font-bold flex items-center justify-center">4</span>
-          Основание корректировки <span class="text-red-500">*</span>
+          {{ $t('businessCorrection.step4Title') }} <span class="text-red-500">*</span>
         </h2>
-        <p class="text-sm text-[#64748b] mb-3">Опишите причину подачи корректировки (минимум 10 символов)</p>
+        <p class="text-sm text-[#64748b] mb-3">{{ $t('businessCorrection.step4Desc') }}</p>
         <textarea
           v-model="correctionComment"
           rows="4"
-          placeholder="Например: Дополнительно передано на переработку 5.2 тонн бумажной упаковки по акту №123 от 15.01.2026"
+          :placeholder="$t('businessCorrection.step4Placeholder')"
           :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] text-[#1e293b] bg-white resize-y', { 'vld-input--error': formSubmitted && formErrors['comment'] }]"
         ></textarea>
         <p v-if="formSubmitted && formErrors['comment']" class="vld-error" data-validation-error>
           <span class="vld-error__icon">&#9888;</span> {{ formErrors['comment'] }}
         </p>
-        <p v-else class="text-xs text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 мин. символов</p>
+        <p v-else class="text-xs text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 {{ $t('businessCorrection.minChars') }}</p>
       </div>
 
       <!-- Total correction amount (visible only when data entered) -->
       <div v-if="selectedCalculation && hasAdditionalData" class="cf-total-banner mb-6">
-        <span class="cf-total-banner__label">Сумма корректировки:</span>
+        <span class="cf-total-banner__label">{{ $t('businessCorrection.correctionAmountLabel') }}</span>
         <span
           class="cf-total-banner__value"
           :style="{ color: totalCorrectionAmount > 0 ? '#059669' : totalCorrectionAmount < 0 ? '#EF4444' : '#64748B' }"
@@ -683,21 +686,21 @@ const canSubmit = computed(() =>
       <div v-if="selectedCalculation && hasAdditionalData" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
           <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">5</span>
-          Действие с суммой корректировки
+          {{ $t('businessCorrection.step5Title') }}
         </h2>
         <div class="space-y-3">
           <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'balance' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
             <input type="radio" v-model="correctionAction" value="balance" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
-              <p class="font-medium text-[#1e293b]">Зачислить на баланс (в счёт будущих оплат)</p>
-              <p class="text-sm text-[#64748b]">Сумма будет зачислена на лицевой счёт</p>
+              <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionBalance') }}</p>
+              <p class="text-sm text-[#64748b]">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
             </div>
           </label>
           <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'refund' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
             <input type="radio" v-model="correctionAction" value="refund" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
-              <p class="font-medium text-[#1e293b]">Запросить возврат денежных средств</p>
-              <p class="text-sm text-[#64748b]">Средства будут возвращены на расчётный счёт компании</p>
+              <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionRefund') }}</p>
+              <p class="text-sm text-[#64748b]">{{ $t('businessCorrection.actionRefundDesc') }}</p>
             </div>
           </label>
         </div>
@@ -713,13 +716,13 @@ const canSubmit = computed(() =>
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Отправить корректировку
+          {{ $t('businessCorrection.submitCorrection') }}
         </button>
         <button
           @click="router.push('/business/account')"
           class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] text-[#64748b] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors"
         >
-          Отмена
+          {{ $t('common.cancel') }}
         </button>
       </div>
     </template>
@@ -732,21 +735,21 @@ const canSubmit = computed(() =>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Корректировка отправлена</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
         <p class="text-[#64748b] mb-2 text-lg">
-          Корректировка отправлена на рассмотрение ГП Эко Оператора
+          {{ $t('businessCorrection.successMessage') }}
         </p>
         <p class="text-sm text-[#64748b] mb-8">
-          Вы получите уведомление о результатах рассмотрения
+          {{ $t('businessCorrection.successNotification') }}
         </p>
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Расчёт</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCorrection.calculation') }}</p>
               <p class="text-lg font-bold text-[#8b5cf6] font-mono">{{ selectedCalculation?.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Сумма корректировки</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
               <p class="text-lg font-bold text-[#10b981]">+{{ formatAmount(totalCorrectionAmount) }}</p>
             </div>
           </div>
@@ -758,12 +761,12 @@ const canSubmit = computed(() =>
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          Вернуться к лицевому счёту
+          {{ $t('businessCorrection.returnToAccount') }}
         </button>
       </div>
     </template>
 
-    <InstructionDrawer v-model="showInstruction" title="Инструкция — Расчёт утильсбора" :contentHtml="instructionCalculationHtml" />
+    <InstructionDrawer v-model="showInstruction" :title="$t('businessCorrection.instructionDrawerTitle')" :contentHtml="instructionCalculationHtml" />
   </DashboardLayout>
 </template>
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   title: string
@@ -33,14 +36,14 @@ function show() {
 <template>
   <!-- Restore button -->
   <div v-if="isHidden" class="sg-restore-wrap">
-    <button class="sg-restore" @click="show" title="Показать подсказку">
+    <button class="sg-restore" @click="show" :title="t('guide.showHint')">
       <span class="sg-restore-icon">💡</span>
     </button>
   </div>
 
   <!-- Guide banner -->
   <div v-else class="sg-banner">
-    <button class="sg-close" @click="hide">✕ Скрыть подсказку</button>
+    <button class="sg-close" @click="hide">{{ t('guide.hideHint') }}</button>
 
     <div class="sg-body">
       <div class="sg-icon">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -8,10 +9,12 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { declarationStore } from '../../stores/declarations'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { DeclStatus } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
@@ -24,9 +27,9 @@ const statusFilter = ref('')
 const yearFilter = ref('')
 
 // Stats
-const pendingCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'На рассмотрении').length)
-const approvedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'Одобрена').length)
-const rejectedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === 'Отклонена').length)
+const pendingCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.UNDER_REVIEW).length)
+const approvedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.APPROVED).length)
+const rejectedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.REJECTED).length)
 const totalCount = computed(() => declarationStore.state.declarations.length)
 
 // Filtered data
@@ -55,27 +58,26 @@ const resetFilters = () => {
 }
 
 // Table columns — explicit pixel widths to prevent squeezing
-const columns = [
-  { key: 'number', label: '\u2116 \u0434\u0435\u043A\u043B\u0430\u0440\u0430\u0446\u0438\u0438', width: '120px' },
-  { key: 'submittedAt', label: '\u0414\u0430\u0442\u0430 \u043F\u043E\u0434\u0430\u0447\u0438', width: '100px' },
-  { key: 'company', label: '\u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A', width: '160px' },
-  { key: 'inn', label: '\u0418\u041D\u041D', width: '130px' },
-  { key: 'reportingYear', label: '\u041E\u0442\u0447. \u0433\u043E\u0434', width: '60px' },
-  { key: 'totalCharged', label: '\u041D\u0430\u0447\u0438\u0441\u043B\u0435\u043D\u043E', width: '110px' },
-  { key: 'totalPaid', label: '\u041E\u043F\u043B\u0430\u0447\u0435\u043D\u043E', width: '110px' },
-  { key: 'balance', label: '\u0421\u0430\u043B\u044C\u0434\u043E', width: '110px' },
-  { key: 'status', label: '\u0421\u0442\u0430\u0442\u0443\u0441', width: '150px' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('ecoIncomingDecls.colNumber'), width: '120px' },
+  { key: 'submittedAt', label: t('ecoIncomingDecls.colSubmittedAt'), width: '100px' },
+  { key: 'company', label: t('ecoIncomingDecls.colPayer'), width: '160px' },
+  { key: 'inn', label: t('ecoIncomingDecls.colInn'), width: '130px' },
+  { key: 'reportingYear', label: t('ecoIncomingDecls.colReportingYear'), width: '60px' },
+  { key: 'totalCharged', label: t('ecoIncomingDecls.colCharged'), width: '110px' },
+  { key: 'totalPaid', label: t('ecoIncomingDecls.colPaid'), width: '110px' },
+  { key: 'balance', label: t('ecoIncomingDecls.colBalance'), width: '110px' },
+  { key: 'status', label: t('ecoIncomingDecls.colStatus'), width: '150px' },
+])
 
 // Shorten long status text for the table badge
 const shortStatus = (status: string) => {
-  if (status === 'На рассмотрении') return 'На проверке'
   return status
 }
 
 const formatBalance = (value: number) => {
   const sign = value > 0 ? '+' : ''
-  return sign + value.toLocaleString() + ' \u0441\u043E\u043C'
+  return sign + value.toLocaleString() + ' ' + t('ecoIncomingDecls.som')
 }
 </script>
 
@@ -89,20 +91,20 @@ const formatBalance = (value: number) => {
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Входящие декларации</h1>
-        <p class="text-[#64748b]">Просмотр и рассмотрение деклараций плательщиков утилизационного сбора</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('ecoIncomingDecls.title') }}</h1>
+        <p class="text-[#64748b]">{{ $t('ecoIncomingDecls.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
         <span v-if="pendingCount > 0" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-          {{ pendingCount }} на рассмотрении
+          {{ pendingCount }} {{ $t('ecoIncomingDecls.underReviewBadge') }}
         </span>
       </div>
     </div>
 
     <SectionGuide
-      title="Входящие декларации"
-      description="Годовые декларации от плательщиков утилизационного сбора."
-      :actions="['Просмотр поданных деклараций', 'Сверка с расчётами и платежами', 'Утверждение или отклонение', 'Просмотр прикреплённых документов']"
+      :title="$t('ecoIncomingDecls.title')"
+      :description="$t('ecoIncomingDecls.guideDescription')"
+      :actions="[$t('ecoIncomingDecls.guideAction1'), $t('ecoIncomingDecls.guideAction2'), $t('ecoIncomingDecls.guideAction3'), $t('ecoIncomingDecls.guideAction4')]"
       storageKey="eco-declarations"
     />
 
@@ -115,10 +117,10 @@ const formatBalance = (value: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-yellow-800">На рассмотрении</p>
+          <p class="text-sm font-medium text-yellow-800">{{ $t('ecoIncomingDecls.statPending') }}</p>
         </div>
         <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
-        <p class="text-xs text-yellow-600 mt-1">деклараций ожидают решения</p>
+        <p class="text-xs text-yellow-600 mt-1">{{ $t('ecoIncomingDecls.statPendingDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -127,10 +129,10 @@ const formatBalance = (value: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-green-800">Одобрено</p>
+          <p class="text-sm font-medium text-green-800">{{ $t('ecoIncomingDecls.statApproved') }}</p>
         </div>
         <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
-        <p class="text-xs text-green-600 mt-1">деклараций одобрено</p>
+        <p class="text-xs text-green-600 mt-1">{{ $t('ecoIncomingDecls.statApprovedDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -139,10 +141,10 @@ const formatBalance = (value: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-red-800">Отклонено</p>
+          <p class="text-sm font-medium text-red-800">{{ $t('ecoIncomingDecls.statRejected') }}</p>
         </div>
         <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
-        <p class="text-xs text-red-600 mt-1">деклараций отклонено</p>
+        <p class="text-xs text-red-600 mt-1">{{ $t('ecoIncomingDecls.statRejectedDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -151,10 +153,10 @@ const formatBalance = (value: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-blue-800">Всего деклараций</p>
+          <p class="text-sm font-medium text-blue-800">{{ $t('ecoIncomingDecls.statTotal') }}</p>
         </div>
         <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
-        <p class="text-xs text-blue-600 mt-1">всего деклараций в системе</p>
+        <p class="text-xs text-blue-600 mt-1">{{ $t('ecoIncomingDecls.statTotalDesc') }}</p>
       </div>
     </div>
 
@@ -166,8 +168,8 @@ const formatBalance = (value: number) => {
         </svg>
       </div>
       <div>
-        <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'декларация ожидает' : 'деклараций ожидают' }} рассмотрения. Проверьте данные и примите решение.</p>
+        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingDecls.attentionRequired') }}</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingDecls.declAwaitsSingular') : $t('ecoIncomingDecls.declAwaitsPlural') }} {{ $t('ecoIncomingDecls.reviewCheckDecide') }}</p>
       </div>
     </div>
 
@@ -183,18 +185,18 @@ const formatBalance = (value: number) => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск по наименованию компании или ИНН..."
+            :placeholder="$t('ecoIncomingDecls.searchPlaceholder')"
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
           <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все статусы</option>
-            <option value="На рассмотрении">На рассмотрении</option>
-            <option value="Одобрена">Одобрена</option>
-            <option value="Отклонена">Отклонена</option>
-            <option value="На доработке">На доработке</option>
+            <option value="">{{ $t('common.allStatuses') }}</option>
+            <option value="under_review">{{ $t('status.underReview') }}</option>
+            <option value="approved">{{ $t('status.approvedFem') }}</option>
+            <option value="rejected">{{ $t('status.rejectedFem') }}</option>
+            <option value="revision">{{ $t('status.revision') }}</option>
           </select>
           <select v-model="yearFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все годы</option>
+            <option value="">{{ $t('ecoIncomingDecls.allYears') }}</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
             <option value="2027">2027</option>
@@ -209,9 +211,9 @@ const formatBalance = (value: number) => {
       <div v-if="isFilteredEmpty" class="mb-6">
         <EmptyState
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-          title="Ничего не найдено"
-          description="По заданным фильтрам деклараций не найдено. Попробуйте изменить параметры поиска."
-          actionLabel="Сбросить фильтры"
+          :title="$t('ecoIncomingDecls.nothingFound')"
+          :description="$t('ecoIncomingDecls.nothingFoundDesc')"
+          :actionLabel="$t('ecoIncomingDecls.resetFilters')"
           @action="resetFilters"
         />
       </div>
@@ -229,13 +231,13 @@ const formatBalance = (value: number) => {
           <span class="font-mono text-sm text-[#64748b]">{{ value }}</span>
         </template>
         <template #cell-reportingYear="{ value }">
-          <span>{{ value }} год</span>
+          <span>{{ value }} {{ $t('ecoIncomingDecls.year') }}</span>
         </template>
         <template #cell-totalCharged="{ value }">
-          <span class="font-medium">{{ value.toLocaleString() }} сом</span>
+          <span class="font-medium">{{ value.toLocaleString() }} {{ $t('ecoIncomingDecls.som') }}</span>
         </template>
         <template #cell-totalPaid="{ value }">
-          <span class="font-medium text-[#10b981]">{{ value.toLocaleString() }} сом</span>
+          <span class="font-medium text-[#10b981]">{{ value.toLocaleString() }} {{ $t('ecoIncomingDecls.som') }}</span>
         </template>
         <template #cell-balance="{ value }">
           <span :class="['font-medium', value < 0 ? 'text-[#ef4444]' : 'text-[#10b981]']">{{ formatBalance(value) }}</span>
@@ -250,15 +252,15 @@ const formatBalance = (value: number) => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Рассмотреть
+              {{ $t('ecoIncomingDecls.review') }}
             </AppButton>
           </div>
         </template>
         <template #empty>
           <EmptyState
             icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
-            title="Нет входящих деклараций"
-            description="Декларации от плательщиков пока не поступали"
+            :title="$t('ecoIncomingDecls.noDeclarations')"
+            :description="$t('ecoIncomingDecls.noDeclarationsDesc')"
           />
         </template>
       </DataTable>

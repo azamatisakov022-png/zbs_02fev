@@ -1,32 +1,37 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Document {
   id: number
   title: string
   description: string
 }
 
-const documents: Document[] = [
+const documents = computed<Document[]>(() => [
   {
     id: 1,
-    title: 'Постановление №322',
-    description: 'О порядке взимания утилизационного сбора и ставках утилизационного сбора',
+    title: t('documents.items.title1'),
+    description: t('documents.items.desc1'),
   },
   {
     id: 2,
-    title: 'Постановление №730',
-    description: 'Об утверждении нормативов утилизации отходов от использования товаров',
+    title: t('documents.items.title2'),
+    description: t('documents.items.desc2'),
   },
   {
     id: 3,
-    title: 'Постановление №563',
-    description: 'О расширенной ответственности производителей и импортёров',
+    title: t('documents.items.title3'),
+    description: t('documents.items.desc3'),
   },
   {
     id: 4,
-    title: 'Постановление №561',
-    description: 'Порядок создания и ведения реестра переработчиков отходов',
+    title: t('documents.items.title4'),
+    description: t('documents.items.desc4'),
   },
-]
+])
 </script>
 
 <template>
@@ -35,10 +40,10 @@ const documents: Document[] = [
       <!-- Section header -->
       <div class="mb-10">
         <h2 class="text-3xl font-bold text-[#111827] tracking-tight mb-2">
-          Нормативные документы
+          {{ $t('documents.title') }}
         </h2>
         <p class="text-[#6B7280]">
-          Ключевые постановления, регулирующие сферу обращения с отходами и утилизационного сбора
+          {{ $t('documents.subtitle') }}
         </p>
       </div>
 
@@ -80,7 +85,7 @@ const documents: Document[] = [
             href="#"
             class="text-[#0e888d] text-sm font-semibold hover:opacity-80 transition-opacity mt-auto"
           >
-            Подробнее &rarr;
+            {{ $t('common.more') }} &rarr;
           </a>
         </div>
       </div>

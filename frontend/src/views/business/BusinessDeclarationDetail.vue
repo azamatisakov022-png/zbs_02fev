@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
@@ -12,6 +13,7 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const goBack = () => {
@@ -37,7 +39,7 @@ onMounted(() => {
 })
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ru-RU').format(value)
+  return new Intl.NumberFormat().format(value)
 }
 
 function formatWithSign(value: number): string {
@@ -48,7 +50,7 @@ function formatWithSign(value: number): string {
 }
 
 function getDeclarationBadgeVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-  if (status === 'На доработке') return 'warning'
+  if (status === 'revision') return 'warning'
   return getStatusBadgeVariant(status)
 }
 
@@ -64,7 +66,7 @@ function handleResubmit() {
   if (!declaration.value) return
   declarationStore.resubmitDeclaration(declaration.value.id)
   declaration.value = declarationStore.getById(declaration.value.id)
-  toastStore.show({ type: 'success', title: 'Декларация повторно подана', message: 'Статус изменён на «На рассмотрении».' })
+  toastStore.show({ type: 'success', title: t('businessDeclDetail.toastResubmittedTitle'), message: t('businessDeclDetail.toastResubmittedMessage') })
 }
 
 const printAreaRef = ref<HTMLElement | null>(null)
@@ -104,11 +106,11 @@ const previewDoc = ref<PreviewDocument | null>(null)
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">Декларация не найдена</h2>
-      <p class="text-[#64748b] mb-6">Запрашиваемая декларация не существует или была удалена.</p>
+      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('businessDeclDetail.notFound') }}</h2>
+      <p class="text-[#64748b] mb-6">{{ $t('businessDeclDetail.notFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -119,18 +121,18 @@ const previewDoc = ref<PreviewDocument | null>(null)
       <div class="mb-6">
         <button @click="goBack" class="btn-back mb-4 no-print">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
         <div class="flex flex-wrap items-center gap-3 mb-1">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Декларация {{ declaration.number }}</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessDeclDetail.declaration') }} {{ declaration.number }}</h1>
           <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ declaration.status }}</AppBadge>
         </div>
-        <p class="text-[#64748b]">Подана {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
+        <p class="text-[#64748b]">{{ $t('businessDeclDetail.submittedAt') }} {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
       </div>
 
       <!-- Status banners -->
       <div
-        v-if="declaration.status === 'Одобрена'"
+        v-if="declaration.status === 'approved'"
         class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3"
       >
         <div class="w-8 h-8 bg-[#22C55E] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -139,13 +141,13 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div>
-          <p class="text-sm font-semibold text-green-900">Декларация одобрена {{ declaration.reviewDate }} сотрудником {{ declaration.reviewer }}</p>
+          <p class="text-sm font-semibold text-green-900">{{ $t('businessDeclDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer }) }}</p>
           <p v-if="declaration.reviewComment" class="text-xs text-green-700 mt-1">{{ declaration.reviewComment }}</p>
         </div>
       </div>
 
       <div
-        v-if="declaration.status === 'Отклонена'"
+        v-if="declaration.status === 'rejected'"
         class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3"
       >
         <div class="w-8 h-8 bg-[#EF4444] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -154,20 +156,20 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm font-semibold text-red-900">Декларация отклонена {{ declaration.reviewDate }}: {{ declaration.reviewComment }}</p>
+          <p class="text-sm font-semibold text-red-900">{{ $t('businessDeclDetail.rejectedBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
           <div class="mt-3">
             <AppButton variant="danger" size="sm" @click="handleResubmit">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Подать повторно
+              {{ $t('businessDeclDetail.resubmit') }}
             </AppButton>
           </div>
         </div>
       </div>
 
       <div
-        v-if="declaration.status === 'На доработке'"
+        v-if="declaration.status === 'revision'"
         class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-start gap-3"
       >
         <div class="w-8 h-8 bg-[#F59E0B] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -176,20 +178,20 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm font-semibold text-orange-900">Возвращена на доработку {{ declaration.reviewDate }}: {{ declaration.reviewComment }}</p>
+          <p class="text-sm font-semibold text-orange-900">{{ $t('businessDeclDetail.revisionBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
           <div class="mt-3">
             <AppButton variant="primary" size="sm" @click="handleResubmit">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Подать повторно
+              {{ $t('businessDeclDetail.resubmit') }}
             </AppButton>
           </div>
         </div>
       </div>
 
       <div
-        v-if="declaration.status === 'На рассмотрении'"
+        v-if="declaration.status === 'under_review'"
         class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3"
       >
         <div class="w-8 h-8 bg-[#3B82F6] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -198,41 +200,41 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div>
-          <p class="text-sm font-semibold text-blue-900">Декларация находится на рассмотрении у эко-оператора</p>
-          <p class="text-xs text-blue-700 mt-1">Обычно рассмотрение занимает 3-5 рабочих дней. Вы получите уведомление о результате.</p>
+          <p class="text-sm font-semibold text-blue-900">{{ $t('businessDeclDetail.underReviewBanner') }}</p>
+          <p class="text-xs text-blue-700 mt-1">{{ $t('businessDeclDetail.underReviewBannerDesc') }}</p>
         </div>
       </div>
 
       <!-- BLOCK 1 - Данные плательщика -->
       <div class="bg-[#f8fafc] rounded-xl p-5 mb-6 border border-[#e2e8f0]">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">Данные плательщика</h2>
+        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.payerData') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
-            <span class="text-[#64748b]">Наименование:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.companyName') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.company }}</span>
           </div>
           <div>
-            <span class="text-[#64748b]">ОПФ:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.opf') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.opf }}</span>
           </div>
           <div>
-            <span class="text-[#64748b]">ИНН:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.inn') }}:</span>
             <span class="ml-2 font-mono font-medium text-[#1e293b]">{{ declaration.inn }}</span>
           </div>
           <div>
-            <span class="text-[#64748b]">Адрес:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.address') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.address }}</span>
           </div>
           <div>
-            <span class="text-[#64748b]">Контактное лицо:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.contactPerson') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.contactPerson }}</span>
           </div>
           <div>
-            <span class="text-[#64748b]">Телефон:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.phone') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.phone }}</span>
           </div>
           <div class="sm:col-span-2">
-            <span class="text-[#64748b]">Email:</span>
+            <span class="text-[#64748b]">{{ $t('businessDeclDetail.email') }}:</span>
             <span class="ml-2 font-medium text-[#2563eb]">{{ declaration.email }}</span>
           </div>
         </div>
@@ -240,7 +242,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
       <!-- BLOCK 2 - Сводные данные декларации -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">Сводные данные декларации</h2>
+        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.summaryData') }}</h2>
 
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -251,10 +253,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-blue-800">Расчётов за год</p>
+              <p class="text-sm font-medium text-blue-800">{{ $t('businessDeclDetail.calcPerYear') }}</p>
             </div>
             <p class="text-3xl font-bold text-blue-900">{{ declaration.calculationCount }}</p>
-            <p class="text-xs text-blue-600 mt-1">за {{ declaration.reportingYear }} год</p>
+            <p class="text-xs text-blue-600 mt-1">{{ $t('businessDeclDetail.forYear', { year: declaration.reportingYear }) }}</p>
           </div>
 
           <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-5 border border-orange-200 shadow-sm">
@@ -264,10 +266,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-orange-800">Итого начислено</p>
+              <p class="text-sm font-medium text-orange-800">{{ $t('businessDeclDetail.totalCharged') }}</p>
             </div>
             <p class="text-3xl font-bold text-orange-900">{{ formatCurrency(declaration.totalCharged) }}</p>
-            <p class="text-xs text-orange-600 mt-1">сом</p>
+            <p class="text-xs text-orange-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
           </div>
 
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
@@ -277,10 +279,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-green-800">Итого оплачено</p>
+              <p class="text-sm font-medium text-green-800">{{ $t('businessDeclDetail.totalPaid') }}</p>
             </div>
             <p class="text-3xl font-bold text-green-900">{{ formatCurrency(declaration.totalPaid) }}</p>
-            <p class="text-xs text-green-600 mt-1">сом</p>
+            <p class="text-xs text-green-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
           </div>
 
           <div :class="[
@@ -298,27 +300,27 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                 </svg>
               </div>
-              <p :class="['text-sm font-medium', declaration.balance >= 0 ? 'text-green-800' : 'text-red-800']">Сальдо</p>
+              <p :class="['text-sm font-medium', declaration.balance >= 0 ? 'text-green-800' : 'text-red-800']">{{ $t('businessDeclDetail.balance') }}</p>
             </div>
             <p :class="['text-3xl font-bold', declaration.balance >= 0 ? 'text-green-900' : 'text-red-900']">{{ formatWithSign(declaration.balance) }}</p>
-            <p :class="['text-xs mt-1', declaration.balance >= 0 ? 'text-green-600' : 'text-red-600']">сом</p>
+            <p :class="['text-xs mt-1', declaration.balance >= 0 ? 'text-green-600' : 'text-red-600']">{{ $t('businessDeclDetail.som') }}</p>
           </div>
         </div>
 
         <!-- Table: Расчёты -->
         <div class="mb-6">
-          <h3 class="font-semibold text-[#1e293b] mb-3">Расчёты, вошедшие в декларацию</h3>
+          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.calculationsInDecl') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-sm border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
-                  <th class="px-4 py-3 font-medium">&#8470; расчёта</th>
-                  <th class="px-4 py-3 font-medium">Период</th>
-                  <th class="px-4 py-3 font-medium">Категории</th>
-                  <th class="px-4 py-3 font-medium text-right">Масса (т)</th>
-                  <th class="px-4 py-3 font-medium text-right">Сумма (сом)</th>
-                  <th class="px-4 py-3 font-medium">Статус расчёта</th>
-                  <th class="px-4 py-3 font-medium">Дата принятия</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thCalcNumber') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thPeriod') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thCategories') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessDeclDetail.thMass') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessDeclDetail.thAmount') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thCalcStatus') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thAcceptedDate') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[#e2e8f0]">
@@ -340,18 +342,18 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
         <!-- Table: Отчёты о переработке -->
         <div v-if="declaration.reports.length > 0" class="mb-6">
-          <h3 class="font-semibold text-[#1e293b] mb-3">Отчёты о переработке</h3>
+          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.recyclingReports') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-sm border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
-                  <th class="px-4 py-3 font-medium">&#8470; отчёта</th>
-                  <th class="px-4 py-3 font-medium">Период</th>
-                  <th class="px-4 py-3 font-medium">Категории</th>
-                  <th class="px-4 py-3 font-medium text-right">Переработано (т)</th>
-                  <th class="px-4 py-3 font-medium text-right">Зачтено (сом)</th>
-                  <th class="px-4 py-3 font-medium">Статус</th>
-                  <th class="px-4 py-3 font-medium">Дата принятия</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thReportNumber') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thPeriod') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thCategories') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessDeclDetail.thProcessed') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessDeclDetail.thCredited') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thStatus') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thAcceptedDate') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[#e2e8f0]">
@@ -373,16 +375,16 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
         <!-- Table: Платежи за год -->
         <div v-if="declaration.payments.length > 0">
-          <h3 class="font-semibold text-[#1e293b] mb-3">Платежи за год</h3>
+          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.paymentsForYear') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-sm border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
-                  <th class="px-4 py-3 font-medium">Дата</th>
-                  <th class="px-4 py-3 font-medium">&#8470; платежа</th>
-                  <th class="px-4 py-3 font-medium text-right">Сумма (сом)</th>
-                  <th class="px-4 py-3 font-medium">Способ</th>
-                  <th class="px-4 py-3 font-medium">Статус</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thDate') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thPaymentNumber') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessDeclDetail.thAmount') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thMethod') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thStatus') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-[#e2e8f0]">
@@ -403,7 +405,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
       <!-- BLOCK 3 - Документы -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">Документы</h2>
+        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.documents') }}</h2>
         <template v-if="declaration.documents.length > 0">
           <div class="space-y-3">
             <div
@@ -424,23 +426,23 @@ const previewDoc = ref<PreviewDocument | null>(null)
                 <button
                   class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
                   @click="previewDoc = { name: doc.name, size: doc.size, source: doc.source }"
-                >Просмотр</button>
+                >{{ $t('businessDeclDetail.preview') }}</button>
                 <button
                   class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
-                  @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })"
-                >Скачать</button>
+                  @click="toastStore.show({ type: 'info', title: $t('businessDeclDetail.toastDownloadTitle'), message: $t('businessDeclDetail.toastDownloadMessage') })"
+                >{{ $t('businessDeclDetail.download') }}</button>
               </div>
             </div>
           </div>
         </template>
         <template v-else>
-          <p class="text-sm text-[#64748b]">Документы не прикреплены</p>
+          <p class="text-sm text-[#64748b]">{{ $t('businessDeclDetail.noDocuments') }}</p>
         </template>
       </div>
 
       <!-- BLOCK 4 - История -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">История рассмотрения</h2>
+        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.reviewHistory') }}</h2>
         <div class="space-y-0">
           <div
             v-for="(entry, idx) in declaration.history"
@@ -466,24 +468,24 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
 
       <!-- Action buttons at bottom -->
-      <div v-if="declaration.status === 'Одобрена'" class="flex flex-wrap items-center gap-3 mb-4">
+      <div v-if="declaration.status === 'approved'" class="flex flex-wrap items-center gap-3 mb-4">
         <AppButton variant="outline" @click="handleDownloadPdf">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          Скачать PDF
+          {{ $t('businessDeclDetail.downloadPdf') }}
         </AppButton>
         <AppButton variant="outline" @click="handlePrint">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
           </svg>
-          Печать
+          {{ $t('common.print') }}
         </AppButton>
       </div>
       <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;" class="mb-6">
         <button @click="goBack" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
       </div>
       </div>

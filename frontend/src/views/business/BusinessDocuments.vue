@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
@@ -10,6 +11,7 @@ import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
+const { t } = useI18n()
 
 // View state
 const showUploadModal = ref(false)
@@ -17,14 +19,14 @@ const activeCategory = ref('all')
 const searchQuery = ref('')
 
 // Document categories
-const categories = [
-  { id: 'all', name: 'Все документы', icon: 'folder', count: 24, color: 'gray' },
-  { id: 'declarations', name: 'Декларации', icon: 'document', count: 8, color: 'blue' },
-  { id: 'reports', name: 'Отчёты', icon: 'chart', count: 4, color: 'green' },
-  { id: 'calculations', name: 'Расчёты', icon: 'calculator', count: 5, color: 'amber' },
-  { id: 'contracts', name: 'Договоры', icon: 'contract', count: 3, color: 'purple' },
-  { id: 'acts', name: 'Акты', icon: 'clipboard', count: 4, color: 'teal' },
-]
+const categories = computed(() => [
+  { id: 'all', name: t('businessDocs.allDocuments'), icon: 'folder', count: 24, color: 'gray' },
+  { id: 'declarations', name: t('businessDocs.declarations'), icon: 'document', count: 8, color: 'blue' },
+  { id: 'reports', name: t('businessDocs.reports'), icon: 'chart', count: 4, color: 'green' },
+  { id: 'calculations', name: t('businessDocs.calculations'), icon: 'calculator', count: 5, color: 'amber' },
+  { id: 'contracts', name: t('businessDocs.contracts'), icon: 'contract', count: 3, color: 'purple' },
+  { id: 'acts', name: t('businessDocs.acts'), icon: 'clipboard', count: 4, color: 'teal' },
+])
 
 // Documents data
 interface Document {
@@ -134,8 +136,8 @@ const finishUpload = () => {
         category: 'acts',
         type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
         size: file.size,
-        uploadedAt: new Date().toLocaleDateString('ru-RU'),
-        status: 'Загружен'
+        uploadedAt: new Date().toLocaleDateString(),
+        status: t('businessDocs.statusUploaded')
       })
     }
   })
@@ -143,12 +145,12 @@ const finishUpload = () => {
 }
 
 const getCategoryColor = (category: string) => {
-  const cat = categories.find(c => c.id === category)
+  const cat = categories.value.find(c => c.id === category)
   return cat?.color || 'gray'
 }
 
 const getCategoryName = (category: string) => {
-  const cat = categories.find(c => c.id === category)
+  const cat = categories.value.find(c => c.id === category)
   return cat?.name || category
 }
 
@@ -168,7 +170,7 @@ const viewDocument = (doc: Document) => {
 }
 
 const downloadDocument = (doc: Document) => {
-  toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })
+  toastStore.show({ type: 'info', title: t('businessDocs.downloading'), message: t('businessDocs.downloadAvailableAfterStorage') })
 }
 
 // Confirm dialog state
@@ -177,7 +179,7 @@ const confirmDialog = ref({
   title: '',
   message: '',
   icon: 'danger' as 'warning' | 'danger' | 'info' | 'success',
-  confirmText: 'Удалить',
+  confirmText: '',
   confirmColor: 'red' as 'green' | 'red' | 'orange',
   onConfirm: () => {},
 })
@@ -192,10 +194,10 @@ const handleCancel = () => {
 const deleteDocument = (doc: Document) => {
   confirmDialog.value = {
     visible: true,
-    title: 'Удалить документ?',
-    message: `Документ «${doc.name}» будет удалён без возможности восстановления.`,
+    title: t('businessDocs.deleteDocTitle'),
+    message: t('businessDocs.deleteDocMessage', { name: doc.name }),
     icon: 'danger',
-    confirmText: 'Удалить',
+    confirmText: t('common.delete'),
     confirmColor: 'red',
     onConfirm: () => {
       documents.value = documents.value.filter(d => d.id !== doc.id)
@@ -224,8 +226,8 @@ const resetDocFilters = () => {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <div class="content__header mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Документы</h1>
-      <p class="text-[#64748b]">Управление документами компании</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDocs.title') }}</h1>
+      <p class="text-[#64748b]">{{ $t('businessDocs.subtitle') }}</p>
     </div>
 
     <!-- CTA Banner -->
@@ -239,8 +241,8 @@ const resetDocFilters = () => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-xl lg:text-2xl font-bold mb-2">Загрузить документы</h2>
-          <p class="text-white/80 text-sm lg:text-base">Загрузите договоры, акты и другие подтверждающие документы. Поддерживаются форматы PDF, DOC, DOCX, XLS, XLSX.</p>
+          <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
+          <p class="text-white/80 text-sm lg:text-base">{{ $t('businessDocs.uploadDescription') }}</p>
         </div>
         <button
           @click="showUploadModal = true"
@@ -249,7 +251,7 @@ const resetDocFilters = () => {
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Загрузить файлы
+          {{ $t('businessDocs.uploadFiles') }}
         </button>
       </div>
     </div>
@@ -257,19 +259,19 @@ const resetDocFilters = () => {
     <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Всего документов</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
         <p class="text-2xl font-bold text-[#1e293b]">{{ documents.length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Декларации</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.declarations') }}</p>
         <p class="text-2xl font-bold text-[#2563eb]">{{ documents.filter(d => d.category === 'declarations').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Отчёты</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.reports') }}</p>
         <p class="text-2xl font-bold text-[#10b981]">{{ documents.filter(d => d.category === 'reports').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Договоры</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.contracts') }}</p>
         <p class="text-2xl font-bold text-[#8b5cf6]">{{ documents.filter(d => d.category === 'contracts').length }}</p>
       </div>
     </div>
@@ -313,18 +315,18 @@ const resetDocFilters = () => {
           <input
             type="text"
             v-model="searchQuery"
-            placeholder="Поиск по названию документа..."
+            :placeholder="$t('businessDocs.searchPlaceholder')"
             class="w-full pl-10 pr-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]"
           />
         </div>
         <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]">
-          <option value="">Все типы</option>
+          <option value="">{{ $t('businessDocs.allTypes') }}</option>
           <option value="pdf">PDF</option>
           <option value="doc">DOC/DOCX</option>
           <option value="xls">XLS/XLSX</option>
         </select>
         <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]">
-          <option value="">За всё время</option>
+          <option value="">{{ $t('businessDocs.allTime') }}</option>
           <option value="2025">2025</option>
           <option value="2026">2026</option>
           <option value="2027">2027</option>
@@ -339,7 +341,7 @@ const resetDocFilters = () => {
     <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
       <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
         <h2 class="font-semibold text-[#1e293b]">
-          {{ activeCategory === 'all' ? 'Все документы' : getCategoryName(activeCategory) }}
+          {{ activeCategory === 'all' ? $t('businessDocs.allDocuments') : getCategoryName(activeCategory) }}
           <span class="text-[#64748b] font-normal">({{ filteredDocuments.length }})</span>
         </h2>
       </div>
@@ -399,19 +401,19 @@ const resetDocFilters = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Просмотреть
+              {{ $t('common.view') }}
             </AppButton>
             <AppButton variant="outline" size="sm" @click="downloadDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Скачать
+              {{ $t('common.download') }}
             </AppButton>
             <AppButton variant="danger" size="sm" @click="deleteDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              Удалить
+              {{ $t('common.delete') }}
             </AppButton>
           </div>
         </div>
@@ -445,11 +447,11 @@ const resetDocFilters = () => {
           <div class="flex gap-2">
             <AppButton variant="ghost" size="sm" class="flex-1" @click="viewDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-              Просмотр
+              {{ $t('businessDocs.preview') }}
             </AppButton>
             <AppButton variant="outline" size="sm" class="flex-1" @click="downloadDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              Скачать
+              {{ $t('common.download') }}
             </AppButton>
             <AppButton variant="danger" size="sm" @click="deleteDocument(doc)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -461,17 +463,17 @@ const resetDocFilters = () => {
       <div v-else-if="isFilteredEmpty">
         <EmptyState
           :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M35 35l-10-10m0 0A11.67 11.67 0 1025 25z&quot;/></svg>'"
-          title="Ничего не найдено"
-          description="Попробуйте изменить параметры поиска"
-          actionLabel="Сбросить фильтры"
+          :title="$t('businessDocs.nothingFound')"
+          :description="$t('businessDocs.tryChangeSearch')"
+          :actionLabel="$t('businessDocs.resetFilters')"
           @action="resetDocFilters"
         />
       </div>
       <div v-else-if="isAbsolutelyEmpty">
         <EmptyState
           :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 28.33h10m-10 6.67h10M28.33 35H11.67a3.33 3.33 0 01-3.34-3.33V8.33A3.33 3.33 0 0111.67 5h9.31a1.67 1.67 0 011.18.49l9.02 9.02a1.67 1.67 0 01.49 1.18v15.98A3.33 3.33 0 0128.33 35z&quot;/></svg>'"
-          title="Нет документов"
-          description="Документы появятся после завершения расчётов"
+          :title="$t('businessDocs.noDocuments')"
+          :description="$t('businessDocs.docsWillAppear')"
         />
       </div>
     </div>
@@ -488,7 +490,7 @@ const resetDocFilters = () => {
       <div class="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-[#1e293b]">Загрузка документов</h2>
+          <h2 class="text-xl font-semibold text-[#1e293b]">{{ $t('businessDocs.uploadingDocuments') }}</h2>
           <button @click="closeUploadModal" class="p-2 text-[#64748b] hover:bg-[#f1f5f9] rounded-lg">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -513,21 +515,21 @@ const resetDocFilters = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <p class="text-[#1e293b] font-medium mb-2">Перетащите файлы сюда</p>
-            <p class="text-sm text-[#64748b] mb-4">или</p>
+            <p class="text-[#1e293b] font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
+            <p class="text-sm text-[#64748b] mb-4">{{ $t('businessDocs.or') }}</p>
             <label class="inline-flex items-center gap-2 bg-[#0ea5e9] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#0284c7] transition-colors cursor-pointer">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              Выбрать файлы
+              {{ $t('businessDocs.selectFiles') }}
               <input type="file" multiple class="hidden" @change="handleFileSelect" />
             </label>
-            <p class="text-xs text-[#64748b] mt-4">PDF, DOC, DOCX, XLS, XLSX до 10 МБ</p>
+            <p class="text-xs text-[#64748b] mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
           </div>
 
           <!-- Uploaded Files -->
           <div v-if="uploadedFiles.length > 0" class="space-y-3">
-            <h3 class="text-sm font-medium text-[#1e293b]">Загружаемые файлы</h3>
+            <h3 class="text-sm font-medium text-[#1e293b]">{{ $t('businessDocs.uploadingFiles') }}</h3>
             <div
               v-for="file in uploadedFiles"
               :key="file.id"
@@ -570,14 +572,14 @@ const resetDocFilters = () => {
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-[#e2e8f0] flex justify-end gap-3">
           <AppButton variant="secondary" @click="closeUploadModal">
-            Отмена
+            {{ $t('common.cancel') }}
           </AppButton>
           <button
             @click="finishUpload"
             :disabled="uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'uploading')"
             class="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-lg font-medium hover:bg-[#0284c7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Загрузить
+            {{ $t('businessDocs.upload') }}
           </button>
         </div>
       </div>

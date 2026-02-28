@@ -1,47 +1,24 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
 interface StrategyItem {
   id: number
   title: string
   icon: string
 }
 
-const strategyItems: StrategyItem[] = [
-  {
-    id: 1,
-    title: 'Cоздание интегрированной системы управления отходами',
-    icon: '/images/strategy/category.svg',
-  },
-  {
-    id: 2,
-    title: 'Экономическая устойчивость переработки вторсырья',
-    icon: '/images/strategy/activity.svg',
-  },
-  {
-    id: 3,
-    title: 'Формирование экологичной культуры населения и бизнеса',
-    icon: '/images/strategy/star.svg',
-  },
-  {
-    id: 4,
-    title: 'Рост доли переработанных отходов',
-    icon: '/images/strategy/dashboard.svg',
-  },
-  {
-    id: 5,
-    title: 'Снижение объёмов захоронения',
-    icon: '/images/strategy/chart.svg',
-  },
-  {
-    id: 6,
-    title: 'Развитие партнёрств государство–бизнес–переработчики',
-    icon: '/images/strategy/users.svg',
-  },
-  {
-    id: 7,
-    title: 'Внедрение экологических инноваций',
-    icon: '/images/strategy/ecology.svg',
-  },
-]
+const { t } = useI18n()
+
+const strategyItems = computed<StrategyItem[]>(() => [
+  { id: 1, title: t('strategy.item1'), icon: '/images/strategy/category.svg' },
+  { id: 2, title: t('strategy.item2'), icon: '/images/strategy/activity.svg' },
+  { id: 3, title: t('strategy.item3'), icon: '/images/strategy/star.svg' },
+  { id: 4, title: t('strategy.item4'), icon: '/images/strategy/dashboard.svg' },
+  { id: 5, title: t('strategy.item5'), icon: '/images/strategy/chart.svg' },
+  { id: 6, title: t('strategy.item6'), icon: '/images/strategy/users.svg' },
+  { id: 7, title: t('strategy.item7'), icon: '/images/strategy/ecology.svg' },
+])
 </script>
 
 <template>
@@ -50,10 +27,10 @@ const strategyItems: StrategyItem[] = [
       <!-- Section header -->
       <div class="text-center mb-8 md:mb-10 lg:mb-[50px]">
         <h2 class="text-2xl md:text-4xl lg:text-[50px] lg:leading-[68px] font-bold text-[#415861] mb-4 lg:mb-[30px]">
-          Стратегия и миссия
+          {{ $t('strategy.title') }}
         </h2>
         <p class="text-[#415861] text-base md:text-lg lg:text-[28px] lg:leading-[38px] font-medium max-w-[1075px] mx-auto">
-          Миссия — создание современной системы обращения с отходами, обеспечивающей чистоту окружающей среды и устойчивое развитие страны.
+          {{ $t('strategy.mission') }}
         </p>
       </div>
 

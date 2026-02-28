@@ -1,16 +1,21 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
+import { CalcStatus, type CalcStatusType } from '../constants/statuses'
+import i18n from '../i18n'
 
 export type DocumentType = 'gtd' | 'act' | 'invoice_goods' | 'invoice' | 'contract' | 'other'
 
-export const documentTypeLabels: Record<DocumentType, string> = {
-  gtd: 'ГТД',
-  act: 'Акт приёма-передачи',
-  invoice_goods: 'Товарная накладная',
-  invoice: 'Инвойс',
-  contract: 'Договор с переработчиком',
-  other: 'Иное',
+export function getDocumentTypeLabel(type: DocumentType): string {
+  const key = {
+    gtd: 'documentType.gtd',
+    act: 'documentType.act',
+    invoice_goods: 'documentType.invoiceGoods',
+    invoice: 'documentType.invoice',
+    contract: 'documentType.contract',
+    other: 'documentType.other',
+  }[type]
+  return key ? i18n.global.t(key) : type
 }
 
 export interface AttachedDocument {
@@ -38,14 +43,7 @@ export interface ProductItem {
   amount: number          // Гр.12: Сумма = Гр.10 × Гр.11
 }
 
-export type CalculationStatus =
-  | 'Черновик'
-  | 'На проверке'
-  | 'Принято'
-  | 'Отклонено'
-  | 'Оплата на проверке'
-  | 'Оплачено'
-  | 'Оплата отклонена'
+export type CalculationStatus = CalcStatusType
 
 export interface PaymentData {
   paymentOrderNumber: string
@@ -92,15 +90,15 @@ const state = reactive<{ calculations: Calculation[]; loading: boolean }>({
   calculations: [],
 })
 
-// Backend status → Frontend display status
-const backendStatusToFrontend: Record<string, CalculationStatus> = {
-  draft: 'Черновик',
-  submitted: 'На проверке',
-  under_review: 'На проверке',
-  approved: 'Принято',
-  rejected: 'Отклонено',
-  paid: 'Оплачено',
-  partially_paid: 'Оплата на проверке',
+// Backend status → Frontend status
+const backendStatusToFrontend: Record<string, CalcStatusType> = {
+  draft: CalcStatus.DRAFT,
+  submitted: CalcStatus.UNDER_REVIEW,
+  under_review: CalcStatus.UNDER_REVIEW,
+  approved: CalcStatus.APPROVED,
+  rejected: CalcStatus.REJECTED,
+  paid: CalcStatus.PAID,
+  partially_paid: CalcStatus.PAYMENT_PENDING,
 }
 
 function mapBackendItem(i: any): ProductItem {
@@ -126,7 +124,7 @@ function mapBackendItem(i: any): ProductItem {
 }
 
 function mapBackendCalc(c: any): Calculation {
-  const status = backendStatusToFrontend[c.status] || 'Черновик'
+  const status = backendStatusToFrontend[c.status] || CalcStatus.DRAFT
   return {
     id: c.id,
     number: c.number || '',
@@ -139,9 +137,9 @@ function mapBackendCalc(c: any): Calculation {
     items: (c.items || []).map(mapBackendItem),
     totalAmount: parseFloat(c.totalAmount) || 0,
     status,
-    rejectionReason: status === 'Отклонено' ? c.reviewComment : undefined,
-    rejectedBy: status === 'Отклонено' ? c.reviewedBy : undefined,
-    rejectedAt: status === 'Отклонено' && c.reviewedAt
+    rejectionReason: status === CalcStatus.REJECTED ? c.reviewComment : undefined,
+    rejectedBy: status === CalcStatus.REJECTED ? c.reviewedBy : undefined,
+    rejectedAt: status === CalcStatus.REJECTED && c.reviewedAt
       ? new Date(c.reviewedAt).toLocaleDateString('ru-RU')
       : undefined,
     documents: (c.documents || []).map((d: any) => ({
@@ -185,7 +183,7 @@ function addCalculation(data: {
   address?: string
   items: ProductItem[]
   totalAmount: number
-}, status: CalculationStatus = 'Черновик'): Calculation {
+}, status: CalculationStatus = CalcStatus.DRAFT): Calculation {
   const pt = data.payerType || 'producer'
   const deadline = calculatePaymentDeadline(pt, {
     quarter: data.quarter,
@@ -240,7 +238,7 @@ function addCalculation(data: {
       calc.id = resp.data.id
       calc.number = resp.data.number || calc.number
       // If submitting immediately, trigger submit on backend
-      if (status === 'На проверке') {
+      if (status === CalcStatus.UNDER_REVIEW) {
         silentApi.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
       }
     }
@@ -251,8 +249,8 @@ function addCalculation(data: {
 
 function submitForReview(id: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && (calc.status === 'Черновик' || calc.status === 'Отклонено')) {
-    calc.status = 'На проверке'
+  if (calc && (calc.status === CalcStatus.DRAFT || calc.status === CalcStatus.REJECTED)) {
+    calc.status = CalcStatus.UNDER_REVIEW
     calc.rejectionReason = undefined
   }
   silentApi.post(`/calculations/${id}/submit`).catch(() => {})
@@ -260,16 +258,16 @@ function submitForReview(id: number) {
 
 function approveCalculation(id: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'На проверке') {
-    calc.status = 'Принято'
+  if (calc && calc.status === CalcStatus.UNDER_REVIEW) {
+    calc.status = CalcStatus.APPROVED
   }
   silentApi.post(`/calculations/${id}/approve`).catch(() => {})
 }
 
 function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'На проверке') {
-    calc.status = 'Отклонено'
+  if (calc && calc.status === CalcStatus.UNDER_REVIEW) {
+    calc.status = CalcStatus.REJECTED
     calc.rejectionReason = reason
     calc.rejectedAt = new Date().toLocaleDateString('ru-RU')
     calc.rejectedBy = rejectedBy
@@ -279,9 +277,9 @@ function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
 
 function submitPayment(id: number, payment: PaymentData) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && (calc.status === 'Принято' || calc.status === 'Оплата отклонена')) {
+  if (calc && (calc.status === CalcStatus.APPROVED || calc.status === CalcStatus.PAYMENT_REJECTED)) {
     calc.payment = payment
-    calc.status = 'Оплата на проверке'
+    calc.status = CalcStatus.PAYMENT_PENDING
     calc.paymentRejectionReason = undefined
   }
   silentApi.post(`/calculations/${id}/payment`, payment).catch(() => {})
@@ -289,8 +287,8 @@ function submitPayment(id: number, payment: PaymentData) {
 
 function approvePayment(id: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'Оплата на проверке') {
-    calc.status = 'Оплачено'
+  if (calc && calc.status === CalcStatus.PAYMENT_PENDING) {
+    calc.status = CalcStatus.PAID
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
   silentApi.post(`/calculations/${id}/payment/approve`).catch(() => {})
@@ -298,8 +296,8 @@ function approvePayment(id: number) {
 
 function rejectPayment(id: number, reason: string) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'Оплата на проверке') {
-    calc.status = 'Оплата отклонена'
+  if (calc && calc.status === CalcStatus.PAYMENT_PENDING) {
+    calc.status = CalcStatus.PAYMENT_REJECTED
     calc.paymentRejectionReason = reason
   }
   silentApi.post(`/calculations/${id}/payment/reject`, { reason }).catch(() => {})
@@ -307,8 +305,8 @@ function rejectPayment(id: number, reason: string) {
 
 function markAsPaid(id: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'Принято') {
-    calc.status = 'Оплачено'
+  if (calc && calc.status === CalcStatus.APPROVED) {
+    calc.status = CalcStatus.PAID
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
   silentApi.post(`/calculations/${id}/mark-paid`).catch(() => {})
@@ -316,8 +314,8 @@ function markAsPaid(id: number) {
 
 function resubmitCalculation(id: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && calc.status === 'Отклонено') {
-    calc.status = 'На проверке'
+  if (calc && calc.status === CalcStatus.REJECTED) {
+    calc.status = CalcStatus.UNDER_REVIEW
     calc.rejectionReason = undefined
   }
   silentApi.post(`/calculations/${id}/resubmit`).catch(() => {})
@@ -325,7 +323,7 @@ function resubmitCalculation(id: number) {
 
 function updateCalculationItems(id: number, items: ProductItem[], totalAmount: number) {
   const calc = state.calculations.find(c => c.id === id)
-  if (calc && (calc.status === 'Черновик' || calc.status === 'Отклонено')) {
+  if (calc && (calc.status === CalcStatus.DRAFT || calc.status === CalcStatus.REJECTED)) {
     calc.items = items
     calc.totalAmount = totalAmount
   }
@@ -362,7 +360,7 @@ function copyCalculation(sourceId: number): Calculation | undefined {
     dueDate: src.dueDate,
     items: src.items.map(i => ({ ...i })),
     totalAmount: src.totalAmount,
-    status: 'Черновик',
+    status: CalcStatus.DRAFT,
     parentId: sourceId,
     attachedFiles: src.attachedFiles ? [...src.attachedFiles] : undefined,
   }
@@ -379,15 +377,15 @@ function getBusinessCalculations(company: string) {
 }
 
 function getPendingCount() {
-  return state.calculations.filter(c => c.status === 'На проверке' || c.status === 'Оплата на проверке').length
+  return state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.PAYMENT_PENDING).length
 }
 
 function getPaymentPendingCount() {
-  return state.calculations.filter(c => c.status === 'Оплата на проверке').length
+  return state.calculations.filter(c => c.status === CalcStatus.PAYMENT_PENDING).length
 }
 
 function getCalcReviewCount() {
-  return state.calculations.filter(c => c.status === 'На проверке').length
+  return state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW).length
 }
 
 export const calculationStore = {

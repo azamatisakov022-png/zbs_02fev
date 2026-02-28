@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { watch, onMounted, onUnmounted } from 'vue'
+import { watch, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   visible: boolean
@@ -12,13 +13,19 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Подтвердите действие',
+  title: '',
   message: '',
   icon: 'warning',
-  confirmText: 'Подтвердить',
-  cancelText: 'Отмена',
+  confirmText: '',
+  cancelText: '',
   confirmColor: 'green',
 })
+
+const { t } = useI18n()
+
+const displayTitle = computed(() => props.title || t('common.confirm'))
+const displayConfirmText = computed(() => props.confirmText || t('common.confirm'))
+const displayCancelText = computed(() => props.cancelText || t('common.cancel'))
 
 const emit = defineEmits<{
   confirm: []
@@ -87,14 +94,14 @@ watch(() => props.visible, (val) => {
             </div>
 
             <!-- Title -->
-            <h3 class="cd-title">{{ title }}</h3>
+            <h3 class="cd-title">{{ displayTitle }}</h3>
 
             <!-- Message -->
             <p v-if="message" class="cd-message">{{ message }}</p>
 
             <!-- Buttons -->
             <div class="cd-buttons">
-              <button class="cd-btn cd-btn--cancel" @click="emit('cancel')">{{ cancelText }}</button>
+              <button class="cd-btn cd-btn--cancel" @click="emit('cancel')">{{ displayCancelText }}</button>
               <button
                 :class="[
                   'cd-btn cd-btn--confirm',
@@ -103,7 +110,7 @@ watch(() => props.visible, (val) => {
                   confirmColor === 'orange' ? 'cd-btn--orange' : '',
                 ]"
                 @click="emit('confirm')"
-              >{{ confirmText }}</button>
+              >{{ displayConfirmText }}</button>
             </div>
           </div>
         </Transition>

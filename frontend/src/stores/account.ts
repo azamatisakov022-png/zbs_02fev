@@ -1,6 +1,8 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { authStore } from './auth'
+import { CorrectionStatus, AccountStatus, type CorrectionStatusType, type AccountStatusType } from '../constants/statuses'
+import i18n from '../i18n'
 
 export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund'
 
@@ -27,7 +29,7 @@ export interface CorrectionRequest {
   items: CorrectionItem[]
   totalCorrectionAmount: number
   action: 'balance' | 'refund'
-  status: 'На рассмотрении' | 'Одобрена' | 'Отклонена'
+  status: CorrectionStatusType
   documents: string[]
 }
 
@@ -52,7 +54,7 @@ export interface CompanyAccount {
   company: string
   inn: string
   balance: number
-  status: 'Активен' | 'Заблокирован'
+  status: AccountStatusType
   transactions: AccountTransaction[]
 }
 
@@ -86,7 +88,7 @@ async function fetchAll() {
           company: data.companyName || '',
           inn: data.companyInn || '',
           balance: data.balance || 0,
-          status: 'Активен',
+          status: AccountStatus.ACTIVE,
           transactions: [],
         }
         const existing = state.accounts.find(a => a.inn === acc.inn)
@@ -144,7 +146,7 @@ function addCharge(calcId: number, calcNumber: string, amount: number): void {
   const acc = _getMyAccount()
   if (!acc) return
   acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString('ru-RU'), type: 'charge', calculationId: calcId, calculationNumber: calcNumber, description: 'Начисление утилизационного сбора', chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'charge', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.chargeDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
   silentApi.post(`/accounts/${acc.id}/charge`, { calculationId: calcId, amount }).catch(() => {})
 }
 
@@ -152,7 +154,7 @@ function addPayment(calcId: number, calcNumber: string, amount: number): void {
   const acc = _getMyAccount()
   if (!acc) return
   acc.balance += amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString('ru-RU'), type: 'payment', calculationId: calcId, calculationNumber: calcNumber, description: 'Оплата утилизационного сбора', chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.paymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
   silentApi.post(`/accounts/${acc.id}/payment`, { calculationId: calcId, amount }).catch(() => {})
 }
 
@@ -160,21 +162,21 @@ function addCorrection(calcId: number, calcNumber: string, correctionAmount: num
   const acc = _getMyAccount()
   if (!acc) return
   acc.balance += correctionAmount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString('ru-RU'), type: 'correction', calculationId: calcId, calculationNumber: calcNumber, description, chargeAmount: 0, paymentAmount: 0, offsetAmount: correctionAmount, balance: acc.balance })
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'correction', calculationId: calcId, calculationNumber: calcNumber, description, chargeAmount: 0, paymentAmount: 0, offsetAmount: correctionAmount, balance: acc.balance })
 }
 
 function addOffset(calcId: number, calcNumber: string, amount: number): void {
   const acc = _getMyAccount()
   if (!acc) return
   acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString('ru-RU'), type: 'offset', calculationId: calcId, calculationNumber: calcNumber, description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'offset', calculationId: calcId, calculationNumber: calcNumber, description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
 }
 
 function requestRefund(calcId: number, calcNumber: string, amount: number): void {
   const acc = _getMyAccount()
   if (!acc) return
   acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString('ru-RU'), type: 'refund', calculationId: calcId, calculationNumber: calcNumber, description: 'Возврат денежных средств', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'refund', calculationId: calcId, calculationNumber: calcNumber, description: 'Возврат денежных средств', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
 }
 
 function submitCorrection(data: {
@@ -187,7 +189,7 @@ function submitCorrection(data: {
   action: 'balance' | 'refund'
   documents: string[]
 }): CorrectionRequest {
-  const correction: CorrectionRequest = { id: nextCorrId++, date: new Date().toLocaleDateString('ru-RU'), ...data, status: 'На рассмотрении' }
+  const correction: CorrectionRequest = { id: nextCorrId++, date: new Date().toLocaleDateString(), ...data, status: CorrectionStatus.UNDER_REVIEW }
   state.corrections.unshift(correction)
   silentApi.post(`/accounts/${_getMyAccount()?.id}/corrections`, data).catch(() => {})
   return correction
@@ -195,8 +197,8 @@ function submitCorrection(data: {
 
 function approveCorrection(id: number): void {
   const corr = state.corrections.find(c => c.id === id)
-  if (corr && corr.status === 'На рассмотрении') {
-    corr.status = 'Одобрена'
+  if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
+    corr.status = CorrectionStatus.APPROVED
     addCorrection(corr.calculationId, corr.calculationNumber, corr.totalCorrectionAmount, `Корректировка по расчёту ${corr.calculationNumber}`)
   }
   silentApi.post(`/accounts/corrections/${id}/approve`).catch(() => {})
@@ -204,14 +206,14 @@ function approveCorrection(id: number): void {
 
 function rejectCorrection(id: number): void {
   const corr = state.corrections.find(c => c.id === id)
-  if (corr && corr.status === 'На рассмотрении') {
-    corr.status = 'Отклонена'
+  if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
+    corr.status = CorrectionStatus.REJECTED
   }
   silentApi.post(`/accounts/corrections/${id}/reject`).catch(() => {})
 }
 
 function getPendingCorrectionsCount(): number {
-  return state.corrections.filter(c => c.status === 'На рассмотрении').length
+  return state.corrections.filter(c => c.status === CorrectionStatus.UNDER_REVIEW).length
 }
 
 // === Eco-operator-facing (all companies) ===

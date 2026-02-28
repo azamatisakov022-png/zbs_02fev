@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Publication {
   id: number
   icon: string
@@ -78,10 +82,10 @@ const handleClick = (_publication: Publication) => {
     <!-- Page header -->
     <div class="container-main">
       <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[12px]">
-        Публикации
+        {{ $t('publications.title') }}
       </h1>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] pb-8 lg:pb-[60px]">
-        Новости, отчёты и пресс-релизы
+        {{ $t('publications.subtitle') }}
       </p>
     </div>
 

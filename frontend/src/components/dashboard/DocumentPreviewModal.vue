@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { AppButton, AppBadge } from '../ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { toastStore } from '../../stores/toast'
+
+const { t } = useI18n()
 
 export interface PreviewDocument {
   name: string
@@ -38,7 +41,7 @@ const typeStyle = computed(() => {
 })
 
 function handleDownload() {
-  toastStore.show({ type: 'info', title: 'Скачивание документа', message: 'Скачивание будет доступно после подключения файлового хранилища' })
+  toastStore.show({ type: 'info', title: t('documentPreview.downloadTitle'), message: t('documentPreview.downloadNotAvailable') })
 }
 </script>
 
@@ -88,19 +91,19 @@ function handleDownload() {
           <!-- Info grid -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
-              <p class="text-xs text-[#64748b] mb-1">Тип файла</p>
+              <p class="text-xs text-[#64748b] mb-1">{{ t('documentPreview.fileType') }}</p>
               <p class="font-medium text-[#1e293b]">{{ fileType }}</p>
             </div>
             <div v-if="doc.size" class="bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
-              <p class="text-xs text-[#64748b] mb-1">Размер</p>
+              <p class="text-xs text-[#64748b] mb-1">{{ t('documentPreview.size') }}</p>
               <p class="font-medium text-[#1e293b]">{{ doc.size }}</p>
             </div>
             <div v-if="doc.date" class="bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
-              <p class="text-xs text-[#64748b] mb-1">Дата загрузки</p>
+              <p class="text-xs text-[#64748b] mb-1">{{ t('documentPreview.uploadDate') }}</p>
               <p class="font-medium text-[#1e293b]">{{ doc.date }}</p>
             </div>
             <div v-if="doc.status" class="bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
-              <p class="text-xs text-[#64748b] mb-1">Статус</p>
+              <p class="text-xs text-[#64748b] mb-1">{{ t('common.status') }}</p>
               <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ doc.status }}</AppBadge>
             </div>
           </div>
@@ -113,20 +116,20 @@ function handleDownload() {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </div>
-            <p class="text-[#64748b] text-sm">Предпросмотр содержимого будет доступен после подключения файлового хранилища</p>
+            <p class="text-[#64748b] text-sm">{{ t('documentPreview.previewNotAvailable') }}</p>
           </div>
         </div>
 
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-[#e2e8f0] flex justify-end gap-3 flex-shrink-0">
           <AppButton variant="secondary" @click="emit('close')">
-            Закрыть
+            {{ t('common.close') }}
           </AppButton>
           <AppButton variant="primary" @click="handleDownload">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Скачать
+            {{ t('common.download') }}
           </AppButton>
         </div>
       </div>

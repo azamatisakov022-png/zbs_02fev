@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton } from '../../components/ui'
+import { LicenseStatus } from '../../constants/statuses'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
+const { t } = useI18n()
 
 // ─── Data types ───
 interface License {
@@ -39,27 +42,27 @@ const knownOrganizations = [
   'ОсОО «ЧистыйГород»',
 ]
 
-const licenseTypeOptions = [
-  'На сбор отходов',
-  'На транспортировку отходов',
-  'На переработку (утилизацию) отходов',
-  'На обезвреживание отходов',
-  'На размещение (захоронение) отходов',
-  'Комплексная',
-]
+const licenseTypeOptions = computed(() => [
+  t('employeeLicenses.typeCollection'),
+  t('employeeLicenses.typeTransport'),
+  t('employeeLicenses.typeRecycling'),
+  t('employeeLicenses.typeNeutralization'),
+  t('employeeLicenses.typePlacement'),
+  t('employeeLicenses.typeComplex'),
+])
 
-const activityOptions = [
-  'Сбор и сортировка',
-  'Переработка пластика',
-  'Переработка бумаги и картона',
-  'Переработка стекла',
-  'Переработка металла',
-  'Переработка электроники',
-  'Переработка шин и резины',
-  'Переработка аккумуляторов',
-  'Утилизация опасных отходов',
-  'Комплексная переработка',
-]
+const activityOptions = computed(() => [
+  t('employeeLicenses.actCollectSort'),
+  t('employeeLicenses.actPlastic'),
+  t('employeeLicenses.actPaperCardboard'),
+  t('employeeLicenses.actGlass'),
+  t('employeeLicenses.actMetal'),
+  t('employeeLicenses.actElectronics'),
+  t('employeeLicenses.actTiresRubber'),
+  t('employeeLicenses.actBatteries'),
+  t('employeeLicenses.actHazardous'),
+  t('employeeLicenses.actComplexRecycling'),
+])
 
 // ─── Mock licenses ───
 let nextId = 9
@@ -72,7 +75,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка пластика', 'Переработка бумаги и картона'],
     issuedAt: '15.03.2025', expiresAt: '15.03.2027',
     phone: '+996 312 545 678', email: 'info@ecopererabotka.kg', contactPerson: 'Асанов Бакыт Маратович',
-    status: 'Действует',
+    status: LicenseStatus.VALID,
   },
   {
     id: 2, number: 'ЛП-2025-0058', company: 'ОсОО «ГринРесайкл»',
@@ -81,7 +84,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка бумаги и картона'],
     issuedAt: '10.01.2025', expiresAt: '10.01.2027',
     phone: '+996 312 901 234', email: 'office@greenrecycle.kg', contactPerson: 'Жумабаев Эрлан Кубатович',
-    status: 'Действует',
+    status: LicenseStatus.VALID,
   },
   {
     id: 3, number: 'ЛП-2024-0045', company: 'ОАО «ЭкоТех»',
@@ -90,7 +93,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка стекла', 'Сбор и сортировка', 'Переработка металла'],
     issuedAt: '20.06.2024', expiresAt: '20.02.2026',
     phone: '+996 3222 5 43 21', email: 'ecotech@mail.kg', contactPerson: 'Токтогулов Самат Абдиевич',
-    status: 'Истекает',
+    status: LicenseStatus.EXPIRING,
   },
   {
     id: 4, number: 'ЛП-2024-0041', company: 'ОсОО «МеталлПром»',
@@ -99,7 +102,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка металла', 'Переработка аккумуляторов'],
     issuedAt: '05.04.2024', expiresAt: '05.04.2026',
     phone: '+996 312 667 890', email: 'mp@metallprom.kg', contactPerson: 'Иванов Пётр Сергеевич',
-    status: 'Действует',
+    status: LicenseStatus.VALID,
   },
   {
     id: 5, number: 'ЛП-2023-0035', company: 'ОАО «ГринТех»',
@@ -108,7 +111,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка электроники', 'Утилизация опасных отходов'],
     issuedAt: '01.09.2023', expiresAt: '01.09.2025',
     phone: '+996 3922 5 01 02', email: 'greentech@inbox.kg', contactPerson: 'Мамбетова Гульнара Алиевна',
-    status: 'Истекла',
+    status: LicenseStatus.EXPIRED,
   },
   {
     id: 6, number: 'ЛП-2025-0070', company: 'ОсОО «ПластПром»',
@@ -117,7 +120,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка пластика'],
     issuedAt: '28.01.2026', expiresAt: '28.01.2028',
     phone: '+996 557 123 456', email: 'plastprom@bk.ru', contactPerson: 'Касымов Нурлан Бейшенович',
-    status: 'Действует',
+    status: LicenseStatus.VALID,
   },
   {
     id: 7, number: 'ЛП-2025-0068', company: 'ОсОО «АвтоУтиль»',
@@ -126,7 +129,7 @@ const licenses = ref<License[]>([
     activities: ['Переработка шин и резины', 'Сбор и сортировка'],
     issuedAt: '12.11.2025', expiresAt: '12.11.2027',
     phone: '+996 700 987 654', email: 'autoutil@gmail.com', contactPerson: 'Абдуллаев Тимур Ринатович',
-    status: 'Действует',
+    status: LicenseStatus.VALID,
   },
   {
     id: 8, number: 'ЛП-2026-0003', company: 'ОсОО «ЧистыйГород»',
@@ -135,7 +138,7 @@ const licenses = ref<License[]>([
     activities: ['Комплексная переработка', 'Сбор и сортировка'],
     issuedAt: '', expiresAt: '',
     phone: '+996 772 111 222', email: 'clean@city.kg', contactPerson: 'Сулайманов Алмаз Бакирович',
-    status: 'На рассмотрении',
+    status: LicenseStatus.UNDER_REVIEW,
   },
 ])
 
@@ -176,11 +179,11 @@ function expiryClass(expiresAt: string): string {
 // ─── Status helpers ───
 function getStatusClass(status: string): string {
   switch (status) {
-    case 'Действует': return 'bg-green-100 text-green-800'
-    case 'Истекает': return 'bg-orange-100 text-orange-800'
-    case 'Истекла': return 'bg-red-100 text-red-800'
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Аннулирована': return 'bg-gray-100 text-gray-600'
+    case 'valid': return 'bg-green-100 text-green-800'
+    case 'expiring': return 'bg-orange-100 text-orange-800'
+    case 'expired': return 'bg-red-100 text-red-800'
+    case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'revoked': return 'bg-gray-100 text-gray-600'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -301,7 +304,7 @@ function saveForm() {
       phone: form.value.phone,
       email: form.value.email,
       contactPerson: form.value.contactPerson,
-      status: 'Действует',
+      status: LicenseStatus.VALID,
     })
   }
   resetForm()
@@ -319,7 +322,7 @@ const confirmDialog = ref({
   title: '',
   message: '',
   icon: 'danger' as 'warning' | 'danger' | 'info' | 'success',
-  confirmText: 'Подтвердить',
+  confirmText: '',
   confirmColor: 'red' as 'green' | 'red' | 'orange',
   onConfirm: () => {},
 })
@@ -334,13 +337,13 @@ const handleCancel = () => {
 function annulLicense(lic: License) {
   confirmDialog.value = {
     visible: true,
-    title: 'Аннулировать лицензию?',
-    message: `Лицензия ${lic.number} будет аннулирована. Это действие необратимо.`,
+    title: t('employeeLicenses.annulTitle'),
+    message: t('employeeLicenses.annulMessage', { number: lic.number }),
     icon: 'danger',
-    confirmText: 'Аннулировать',
+    confirmText: t('employeeLicenses.annulBtn'),
     confirmColor: 'red',
     onConfirm: () => {
-      lic.status = 'Аннулирована'
+      lic.status = LicenseStatus.REVOKED
     },
   }
 }
@@ -391,42 +394,42 @@ const hoveredContact = ref<number | null>(null)
     </div>
 
     <SectionGuide
-      title="Управление лицензиями"
-      description="Реестр лицензий на деятельность по обращению с отходами."
-      :actions="['Просмотр действующих лицензий', 'Контроль сроков истечения', 'Проверка документов', 'Приостановка/отзыв лицензий']"
+      :title="$t('employeeLicenses.guideTitle')"
+      :description="$t('employeeLicenses.guideDescription')"
+      :actions="[$t('employeeLicenses.guideAction1'), $t('employeeLicenses.guideAction2'), $t('employeeLicenses.guideAction3'), $t('employeeLicenses.guideAction4')]"
       storageKey="employee-licenses"
     />
 
     <!-- ══ Form (add / edit) ══ -->
     <div v-if="showForm" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
       <h3 class="text-lg font-bold text-[#1e293b] mb-5">
-        {{ editingId ? 'Редактирование лицензии' : 'Новая лицензия' }}
+        {{ editingId ? $t('employeeLicenses.editTitle') : $t('employeeLicenses.newTitle') }}
       </h3>
 
       <!-- Row 1: Company + Number -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">Наименование предприятия <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.companyName') }} <span class="text-red-500">*</span></label>
           <div class="flex gap-2">
             <select
               v-if="companyMode === 'select'"
               v-model="form.company"
               class="lic-input flex-1 min-w-0"
             >
-              <option value="">Выберите организацию</option>
+              <option value="">{{ $t('employeeLicenses.selectOrg') }}</option>
               <option v-for="org in knownOrganizations" :key="org" :value="org">{{ org }}</option>
             </select>
             <input
               v-else
               v-model="form.companyManual"
               type="text"
-              placeholder="Введите название организации"
+              :placeholder="$t('employeeLicenses.enterOrgName')"
               class="lic-input flex-1 min-w-0"
             />
             <button
               @click="companyMode = companyMode === 'select' ? 'manual' : 'select'"
               class="flex-shrink-0 px-3 py-2.5 border border-[#e2e8f0] rounded-xl hover:bg-gray-50 transition-colors"
-              :title="companyMode === 'select' ? 'Ввести вручную' : 'Выбрать из списка'"
+              :title="companyMode === 'select' ? $t('employeeLicenses.enterManually') : $t('employeeLicenses.selectFromList')"
             >
               <svg class="w-5 h-5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path v-if="companyMode === 'select'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -436,7 +439,7 @@ const hoveredContact = ref<number | null>(null)
           </div>
         </div>
         <div>
-          <label class="lic-label">№ лицензии <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.licenseNumber') }} <span class="text-red-500">*</span></label>
           <input v-model="form.number" type="text" placeholder="ЛП-2026-0001" class="lic-input w-full" />
         </div>
       </div>
@@ -444,15 +447,15 @@ const hoveredContact = ref<number | null>(null)
       <!-- Row 2: Addresses -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">Юридический адрес <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.legalAddress') }} <span class="text-red-500">*</span></label>
           <input v-model="form.legalAddress" type="text" placeholder="г. Бишкек, ул. ..." class="lic-input w-full" />
         </div>
         <div>
           <label class="lic-label flex items-center gap-3">
-            Фактический адрес
+            {{ $t('employeeLicenses.actualAddress') }}
             <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-normal text-[#64748b]">
               <input type="checkbox" v-model="sameAddress" @change="onSameAddressChange" class="rounded border-gray-300" />
-              Совпадает с юридическим
+              {{ $t('employeeLicenses.sameAsLegal') }}
             </label>
           </label>
           <input
@@ -469,14 +472,14 @@ const hoveredContact = ref<number | null>(null)
       <!-- Row 3: License type + Activities -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">Вид лицензии <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.licenseType') }} <span class="text-red-500">*</span></label>
           <select v-model="form.licenseType" class="lic-input w-full">
-            <option value="">Выберите вид</option>
+            <option value="">{{ $t('employeeLicenses.selectType') }}</option>
             <option v-for="lt in licenseTypeOptions" :key="lt" :value="lt">{{ lt }}</option>
           </select>
         </div>
         <div>
-          <label class="lic-label">Вид деятельности <span class="text-red-500">*</span> <span class="text-xs font-normal text-[#94a3b8]">(можно несколько)</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.activityType') }} <span class="text-red-500">*</span> <span class="text-xs font-normal text-[#94a3b8]">({{ $t('employeeLicenses.multipleAllowed') }})</span></label>
           <div class="relative">
             <button
               type="button"
@@ -484,7 +487,7 @@ const hoveredContact = ref<number | null>(null)
               class="lic-input w-full text-left flex items-center justify-between"
             >
               <span :class="form.activities.length ? 'text-[#1e293b]' : 'text-[#94a3b8]'">
-                {{ form.activities.length ? form.activities.length + ' выбрано' : 'Выберите виды деятельности' }}
+                {{ form.activities.length ? form.activities.length + ' ' + $t('employeeLicenses.selected') : $t('employeeLicenses.selectActivities') }}
               </span>
               <svg class="w-4 h-4 text-[#94a3b8] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
@@ -521,11 +524,11 @@ const hoveredContact = ref<number | null>(null)
       <!-- Row 4: Dates -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">Дата выдачи <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.issuedDate') }} <span class="text-red-500">*</span></label>
           <input v-model="form.issuedAt" type="date" class="lic-input w-full" />
         </div>
         <div>
-          <label class="lic-label">Срок действия до <span class="text-red-500">*</span></label>
+          <label class="lic-label">{{ $t('employeeLicenses.expiryDate') }} <span class="text-red-500">*</span></label>
           <input v-model="form.expiresAt" type="date" class="lic-input w-full" />
         </div>
       </div>
@@ -533,16 +536,16 @@ const hoveredContact = ref<number | null>(null)
       <!-- Row 5: Contacts -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         <div>
-          <label class="lic-label">Контактный телефон</label>
+          <label class="lic-label">{{ $t('employeeLicenses.contactPhone') }}</label>
           <input v-model="form.phone" type="text" placeholder="+996 XXX XXX XXX" class="lic-input w-full" />
         </div>
         <div>
-          <label class="lic-label">Email</label>
+          <label class="lic-label">{{ $t('employeeLicenses.email') }}</label>
           <input v-model="form.email" type="text" placeholder="info@company.kg" class="lic-input w-full" />
         </div>
         <div>
-          <label class="lic-label">Контактное лицо</label>
-          <input v-model="form.contactPerson" type="text" placeholder="ФИО ответственного лица" class="lic-input w-full" />
+          <label class="lic-label">{{ $t('employeeLicenses.contactPerson') }}</label>
+          <input v-model="form.contactPerson" type="text" :placeholder="$t('employeeLicenses.contactPersonPlaceholder')" class="lic-input w-full" />
         </div>
       </div>
 
@@ -561,20 +564,20 @@ const hoveredContact = ref<number | null>(null)
     <!-- ══ Stats ══ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Всего лицензий</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeLicenses.totalLicenses') }}</p>
         <p class="text-2xl font-bold text-[#1e293b]">{{ licenses.length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Действующих</p>
-        <p class="text-2xl font-bold text-[#10b981]">{{ licenses.filter(l => l.status === 'Действует').length }}</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeLicenses.validCount') }}</p>
+        <p class="text-2xl font-bold text-[#10b981]">{{ licenses.filter(l => l.status === 'valid').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Истекают скоро</p>
-        <p class="text-2xl font-bold text-[#f59e0b]">{{ licenses.filter(l => l.status === 'Истекает').length }}</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeLicenses.expiringSoon') }}</p>
+        <p class="text-2xl font-bold text-[#f59e0b]">{{ licenses.filter(l => l.status === 'expiring').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">На рассмотрении</p>
-        <p class="text-2xl font-bold text-[#2563eb]">{{ licenses.filter(l => l.status === 'На рассмотрении').length }}</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeLicenses.underReview') }}</p>
+        <p class="text-2xl font-bold text-[#2563eb]">{{ licenses.filter(l => l.status === 'under_review').length }}</p>
       </div>
     </div>
 
@@ -588,16 +591,16 @@ const hoveredContact = ref<number | null>(null)
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="filterType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все виды лицензий</option>
+          <option value="">{{ $t('employeeLicenses.allLicenseTypes') }}</option>
           <option v-for="lt in licenseTypeOptions" :key="lt" :value="lt">{{ lt }}</option>
         </select>
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все статусы</option>
-          <option value="Действует">Действует</option>
-          <option value="Истекает">Истекает</option>
-          <option value="Истекла">Истекла</option>
-          <option value="На рассмотрении">На рассмотрении</option>
-          <option value="Аннулирована">Аннулирована</option>
+          <option value="">{{ $t('employeeLicenses.allStatuses') }}</option>
+          <option value="valid">{{ $t('status.valid') }}</option>
+          <option value="expiring">{{ $t('status.expiring') }}</option>
+          <option value="expired">{{ $t('status.expired') }}</option>
+          <option value="under_review">{{ $t('status.underReview') }}</option>
+          <option value="revoked">{{ $t('status.revoked') }}</option>
         </select>
       </div>
     </div>
@@ -609,14 +612,14 @@ const hoveredContact = ref<number | null>(null)
           <thead>
             <tr>
               <th class="lic-th" style="width:36px">№</th>
-              <th class="lic-th">Предприятие</th>
-              <th class="lic-th">Местоположение</th>
-              <th class="lic-th">№ лицензии</th>
-              <th class="lic-th">Дата выдачи</th>
-              <th class="lic-th">Вид лицензии</th>
-              <th class="lic-th">Вид деятельности</th>
-              <th class="lic-th">Срок действия</th>
-              <th class="lic-th">Контакты</th>
+              <th class="lic-th">{{ $t('employeeLicenses.thCompany') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.thLocation') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.licenseNumber') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.issuedDate') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.licenseType') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.activityType') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.thValidity') }}</th>
+              <th class="lic-th">{{ $t('employeeLicenses.thContacts') }}</th>
               <th class="lic-th" style="width:170px">{{ $t('common.actions') }}</th>
             </tr>
           </thead>
@@ -632,7 +635,7 @@ const hoveredContact = ref<number | null>(null)
                   v-if="hoveredAddress === lic.id && lic.actualAddress && lic.actualAddress !== lic.legalAddress"
                   class="lic-tooltip"
                 >
-                  <span class="text-[#94a3b8] text-[10px] uppercase">Фактический адрес:</span><br/>
+                  <span class="text-[#94a3b8] text-[10px] uppercase">{{ $t('employeeLicenses.actualAddress') }}:</span><br/>
                   {{ lic.actualAddress }}
                 </div>
               </td>
@@ -660,28 +663,28 @@ const hoveredContact = ref<number | null>(null)
                   class="lic-tooltip"
                 >
                   <template v-if="lic.email"><span class="text-[#94a3b8] text-[10px] uppercase">Email:</span> {{ lic.email }}<br/></template>
-                  <template v-if="lic.contactPerson"><span class="text-[#94a3b8] text-[10px] uppercase">Контакт:</span> {{ lic.contactPerson }}</template>
+                  <template v-if="lic.contactPerson"><span class="text-[#94a3b8] text-[10px] uppercase">{{ $t('employeeLicenses.contactLabel') }}:</span> {{ lic.contactPerson }}</template>
                 </div>
               </td>
               <td class="lic-td">
                 <div class="flex items-center gap-1.5">
                   <AppButton variant="ghost" size="sm" @click="openEditForm(lic)">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    Редактировать
+                    {{ $t('common.edit') }}
                   </AppButton>
                   <AppButton
-                    v-if="lic.status !== 'Аннулирована' && lic.status !== 'Истекла'"
+                    v-if="lic.status !== 'revoked' && lic.status !== 'expired'"
                     variant="danger" size="sm"
                     @click="annulLicense(lic)"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                    Аннулировать
+                    {{ $t('employeeLicenses.annulBtn') }}
                   </AppButton>
                 </div>
               </td>
             </tr>
             <tr v-if="filteredLicenses.length === 0">
-              <td colspan="10" class="py-12 text-center text-[#94a3b8]">Нет лицензий, соответствующих фильтрам</td>
+              <td colspan="10" class="py-12 text-center text-[#94a3b8]">{{ $t('employeeLicenses.noLicensesFound') }}</td>
             </tr>
           </tbody>
         </table>

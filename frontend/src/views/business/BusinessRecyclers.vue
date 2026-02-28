@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { recyclerStore, type Recycler } from '../../stores/recyclers'
 import { toastStore } from '../../stores/toast'
 import { productGroups } from '../../data/product-groups'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 // View mode
@@ -16,18 +18,18 @@ const searchQuery = ref('')
 const selectedRegion = ref('all')
 const selectedWasteType = ref('all')
 
-const regions = [
-  { id: 'all', name: 'Все регионы' },
-  { id: 'bishkek', name: 'г. Бишкек' },
-  { id: 'chui', name: 'Чуйская область' },
-  { id: 'osh', name: 'г. Ош' },
-  { id: 'osh-region', name: 'Ошская область' },
-  { id: 'jalal-abad', name: 'Джалал-Абадская область' },
-  { id: 'issyk-kul', name: 'Иссык-Кульская область' },
-  { id: 'naryn', name: 'Нарынская область' },
-  { id: 'talas', name: 'Таласская область' },
-  { id: 'batken', name: 'Баткенская область' },
-]
+const regions = computed(() => [
+  { id: 'all', name: t('businessRecyclers.regionAll') },
+  { id: 'bishkek', name: t('businessRecyclers.regionBishkek') },
+  { id: 'chui', name: t('businessRecyclers.regionChui') },
+  { id: 'osh', name: t('businessRecyclers.regionOsh') },
+  { id: 'osh-region', name: t('businessRecyclers.regionOshRegion') },
+  { id: 'jalal-abad', name: t('businessRecyclers.regionJalalAbad') },
+  { id: 'issyk-kul', name: t('businessRecyclers.regionIssykKul') },
+  { id: 'naryn', name: t('businessRecyclers.regionNaryn') },
+  { id: 'talas', name: t('businessRecyclers.regionTalas') },
+  { id: 'batken', name: t('businessRecyclers.regionBatken') },
+])
 
 // Helper: get short label for a waste type group value
 const getGroupShortLabel = (value: string) => {
@@ -104,7 +106,7 @@ const requestForm = ref({
 })
 
 const submitRequest = () => {
-  toastStore.show({ type: 'success', title: 'Заявка отправлена', message: `Заявка отправлена в компанию «${selectedRecycler.value?.name}»` })
+  toastStore.show({ type: 'success', title: t('businessRecyclers.toastRequestSent'), message: t('businessRecyclers.toastRequestMessage', { name: selectedRecycler.value?.name }) })
   closeRequestModal()
   requestForm.value = { wasteType: '', volume: '', frequency: 'once', message: '' }
 }
@@ -127,8 +129,8 @@ const getStars = (rating: number) => {
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Переработчики отходов</h1>
-        <p class="text-gray-600 mt-1">Найдите лицензированных партнёров для переработки ваших отходов</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $t('businessRecyclers.title') }}</h1>
+        <p class="text-gray-600 mt-1">{{ $t('businessRecyclers.subtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
@@ -141,10 +143,9 @@ const getStars = (rating: number) => {
               </svg>
             </div>
             <div>
-              <h2 class="text-xl font-bold">Каталог лицензированных переработчиков</h2>
+              <h2 class="text-xl font-bold">{{ $t('businessRecyclers.catalogTitle') }}</h2>
               <p class="text-emerald-100 mt-1 max-w-2xl">
-                Выберите надёжного партнёра для выполнения нормативов утилизации.
-                Все компании в каталоге имеют действующие лицензии и проверены системой.
+                {{ $t('businessRecyclers.catalogDesc') }}
               </p>
             </div>
           </div>
@@ -154,19 +155,19 @@ const getStars = (rating: number) => {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div class="bg-white/10 rounded-xl p-4">
             <p class="text-3xl font-bold">{{ stats.total }}</p>
-            <p class="text-emerald-100 text-sm">Переработчиков</p>
+            <p class="text-emerald-100 text-sm">{{ $t('businessRecyclers.statRecyclers') }}</p>
           </div>
           <div class="bg-white/10 rounded-xl p-4">
             <p class="text-3xl font-bold">{{ stats.partners }}</p>
-            <p class="text-emerald-100 text-sm">Ваших партнёров</p>
+            <p class="text-emerald-100 text-sm">{{ $t('businessRecyclers.statPartners') }}</p>
           </div>
           <div class="bg-white/10 rounded-xl p-4">
             <p class="text-3xl font-bold">{{ (stats.totalCapacity / 1000).toFixed(0) }}K</p>
-            <p class="text-emerald-100 text-sm">тонн/год мощности</p>
+            <p class="text-emerald-100 text-sm">{{ $t('businessRecyclers.statCapacity') }}</p>
           </div>
           <div class="bg-white/10 rounded-xl p-4">
             <p class="text-3xl font-bold">{{ stats.regions }}</p>
-            <p class="text-emerald-100 text-sm">Регионов</p>
+            <p class="text-emerald-100 text-sm">{{ $t('businessRecyclers.statRegions') }}</p>
           </div>
         </div>
       </div>
@@ -183,7 +184,7 @@ const getStars = (rating: number) => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по названию, полному наименованию или ИНН..."
+                :placeholder="$t('businessRecyclers.searchPlaceholder')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
@@ -202,7 +203,7 @@ const getStars = (rating: number) => {
             v-model="selectedWasteType"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           >
-            <option value="all">Все виды отходов</option>
+            <option value="all">{{ $t('businessRecyclers.allWasteTypes') }}</option>
             <option v-for="group in productGroups" :key="group.value" :value="group.value">{{ group.label }}</option>
           </select>
         </div>
@@ -210,7 +211,7 @@ const getStars = (rating: number) => {
         <!-- View mode toggle -->
         <div class="flex items-center justify-end mt-4 pt-4 border-t border-gray-200">
           <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500">Вид:</span>
+            <span class="text-sm text-gray-500">{{ $t('businessRecyclers.viewLabel') }}</span>
             <button
               @click="viewMode = 'grid'"
               :class="[
@@ -240,7 +241,7 @@ const getStars = (rating: number) => {
       <!-- Results count -->
       <div class="flex items-center justify-between">
         <p class="text-gray-600">
-          Найдено: <span class="font-semibold text-gray-900">{{ filteredRecyclers.length }}</span> переработчиков
+          {{ $t('businessRecyclers.foundCount') }} <span class="font-semibold text-gray-900">{{ filteredRecyclers.length }}</span> {{ $t('businessRecyclers.recyclersCount') }}
         </p>
       </div>
 
@@ -315,7 +316,7 @@ const getStars = (rating: number) => {
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span>Мощность: {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} т/год</span>
+              <span>{{ $t('businessRecyclers.capacity') }} {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} {{ $t('businessRecyclers.tonsPerYear') }}</span>
             </div>
           </div>
 
@@ -325,13 +326,13 @@ const getStars = (rating: number) => {
               @click="openDetails(recycler)"
               class="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Подробнее
+              {{ $t('businessRecyclers.details') }}
             </button>
             <button
               @click="openRequestModal(recycler)"
               class="flex-1 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              Отправить заявку
+              {{ $t('businessRecyclers.sendRequest') }}
             </button>
           </div>
         </div>
@@ -373,7 +374,7 @@ const getStars = (rating: number) => {
                       </svg>
                       <span class="text-sm font-medium">{{ recycler.rating }}</span>
                     </div>
-                    <span class="text-sm text-gray-500">Мощность: {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} т/год</span>
+                    <span class="text-sm text-gray-500">{{ $t('businessRecyclers.capacity') }} {{ recyclerStore.getTotalCapacity(recycler).toLocaleString() }} {{ $t('businessRecyclers.tonsPerYear') }}</span>
                   </div>
                 </div>
                 <div class="flex gap-2 flex-shrink-0">
@@ -381,13 +382,13 @@ const getStars = (rating: number) => {
                     @click="openDetails(recycler)"
                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    Подробнее
+                    {{ $t('businessRecyclers.details') }}
                   </button>
                   <button
                     @click="openRequestModal(recycler)"
                     class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
                   >
-                    Заявка
+                    {{ $t('businessRecyclers.requestShort') }}
                   </button>
                 </div>
               </div>
@@ -401,8 +402,8 @@ const getStars = (rating: number) => {
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-1">Переработчики не найдены</h3>
-        <p class="text-gray-500">Попробуйте изменить параметры поиска</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('businessRecyclers.emptyTitle') }}</h3>
+        <p class="text-gray-500">{{ $t('businessRecyclers.emptyDesc') }}</p>
       </div>
     </div>
 
@@ -411,7 +412,7 @@ const getStars = (rating: number) => {
       <div v-if="showDetailsModal && selectedRecycler" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-            <h3 class="text-lg font-semibold text-gray-900">Информация о компании</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessRecyclers.companyInfo') }}</h3>
             <button @click="closeDetails" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -443,7 +444,7 @@ const getStars = (rating: number) => {
             <!-- Info grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-xl p-4">
-                <h5 class="text-sm font-medium text-gray-500 mb-3">Контакты</h5>
+                <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('businessRecyclers.contacts') }}</h5>
                 <div class="space-y-2">
                   <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -474,22 +475,22 @@ const getStars = (rating: number) => {
               </div>
 
               <div class="bg-gray-50 rounded-xl p-4">
-                <h5 class="text-sm font-medium text-gray-500 mb-3">О компании</h5>
+                <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('businessRecyclers.aboutCompany') }}</h5>
                 <div class="space-y-2">
                   <div class="flex justify-between">
-                    <span class="text-sm text-gray-500">Сотрудников:</span>
+                    <span class="text-sm text-gray-500">{{ $t('businessRecyclers.employees') }}</span>
                     <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.employeesCount }}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-sm text-gray-500">Мощность:</span>
-                    <span class="text-sm font-medium text-gray-700">{{ recyclerStore.getTotalCapacity(selectedRecycler).toLocaleString() }} т/год</span>
+                    <span class="text-sm text-gray-500">{{ $t('businessRecyclers.capacityLabel') }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ recyclerStore.getTotalCapacity(selectedRecycler).toLocaleString() }} {{ $t('businessRecyclers.tonsPerYear') }}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-sm text-gray-500">Регион:</span>
+                    <span class="text-sm text-gray-500">{{ $t('businessRecyclers.regionLabel') }}</span>
                     <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.region }}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-sm text-gray-500">ИНН:</span>
+                    <span class="text-sm text-gray-500">{{ $t('businessRecyclers.innLabel') }}</span>
                     <span class="text-sm font-medium text-gray-700">{{ selectedRecycler.inn }}</span>
                   </div>
                 </div>
@@ -498,7 +499,7 @@ const getStars = (rating: number) => {
 
             <!-- Waste types -->
             <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-3">Виды принимаемых отходов</h5>
+              <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('businessRecyclers.acceptedWasteTypes') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="wt in selectedRecycler.wasteTypes"
@@ -512,7 +513,7 @@ const getStars = (rating: number) => {
 
             <!-- Processing methods -->
             <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-3">Методы переработки</h5>
+              <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('businessRecyclers.processingMethods') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="method in selectedRecycler.processingMethods"
@@ -526,7 +527,7 @@ const getStars = (rating: number) => {
 
             <!-- Certifications -->
             <div v-if="selectedRecycler.certifications.length > 0">
-              <h5 class="text-sm font-medium text-gray-500 mb-3">Сертификаты</h5>
+              <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('businessRecyclers.certificates') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="cert in selectedRecycler.certifications"
@@ -547,13 +548,13 @@ const getStars = (rating: number) => {
                 @click="closeDetails(); openRequestModal(selectedRecycler)"
                 class="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
               >
-                Отправить заявку
+                {{ $t('businessRecyclers.sendRequest') }}
               </button>
               <button
                 @click="closeDetails"
                 class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
               >
-                Закрыть
+                {{ $t('common.close') }}
               </button>
             </div>
           </div>
@@ -567,7 +568,7 @@ const getStars = (rating: number) => {
         <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Заявка на сотрудничество</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessRecyclers.requestTitle') }}</h3>
               <p class="text-sm text-gray-500">{{ selectedRecycler.name }}</p>
             </div>
             <button @click="closeRequestModal" class="text-gray-400 hover:text-gray-600">
@@ -578,50 +579,50 @@ const getStars = (rating: number) => {
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Вид отходов *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('businessRecyclers.wasteTypeLabel') }}</label>
               <select
                 v-model="requestForm.wasteType"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               >
-                <option value="">Выберите вид отходов</option>
+                <option value="">{{ $t('businessRecyclers.selectWasteType') }}</option>
                 <option v-for="wt in selectedRecycler.wasteTypes" :key="wt" :value="wt">{{ getGroupShortLabel(wt) }}</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Примерный объём *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('businessRecyclers.approxVolume') }}</label>
               <input
                 v-model="requestForm.volume"
                 type="text"
-                placeholder="Например: 500 кг/месяц"
+                :placeholder="$t('businessRecyclers.volumePlaceholder')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Периодичность</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('businessRecyclers.frequency') }}</label>
               <div class="flex gap-3">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="radio" v-model="requestForm.frequency" value="once" class="text-emerald-600" />
-                  <span class="text-sm text-gray-700">Разовый вывоз</span>
+                  <span class="text-sm text-gray-700">{{ $t('businessRecyclers.frequencyOnce') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="radio" v-model="requestForm.frequency" value="regular" class="text-emerald-600" />
-                  <span class="text-sm text-gray-700">Регулярно</span>
+                  <span class="text-sm text-gray-700">{{ $t('businessRecyclers.frequencyRegular') }}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="radio" v-model="requestForm.frequency" value="contract" class="text-emerald-600" />
-                  <span class="text-sm text-gray-700">Договор</span>
+                  <span class="text-sm text-gray-700">{{ $t('businessRecyclers.frequencyContract') }}</span>
                 </label>
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('businessRecyclers.comment') }}</label>
               <textarea
                 v-model="requestForm.message"
                 rows="3"
-                placeholder="Дополнительная информация..."
+                :placeholder="$t('businessRecyclers.commentPlaceholder')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               ></textarea>
             </div>
@@ -632,8 +633,7 @@ const getStars = (rating: number) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p class="text-sm text-gray-600">
-                  Ваши контактные данные будут отправлены из профиля компании.
-                  Переработчик свяжется с вами для уточнения деталей.
+                  {{ $t('businessRecyclers.requestInfoText') }}
                 </p>
               </div>
             </div>
@@ -643,14 +643,14 @@ const getStars = (rating: number) => {
               @click="closeRequestModal"
               class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="submitRequest"
               :disabled="!requestForm.wasteType || !requestForm.volume"
               class="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Отправить заявку
+              {{ $t('businessRecyclers.sendRequest') }}
             </button>
           </div>
         </div>

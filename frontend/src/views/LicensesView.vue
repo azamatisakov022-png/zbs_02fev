@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface License {
   id: string
   organization: string
@@ -30,9 +34,9 @@ const licenses: License[] = [
 
 const getStatusLabel = (status: License['status']) => {
   switch (status) {
-    case 'active': return 'Действующая'
-    case 'pending': return 'На рассмотрении'
-    case 'expired': return 'Истекшая'
+    case 'active': return t('status.valid')
+    case 'pending': return t('status.review')
+    case 'expired': return t('status.expired')
   }
 }
 
@@ -56,10 +60,10 @@ const handleView = (_license: License) => {
     <div class="container-main">
       <div>
         <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[8px]">
-          Реестр лицензий
+          {{ $t('publicLicenses.title') }}
         </h1>
         <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] mb-6 lg:mb-[30px]">
-          Лицензии на деятельность по обращению с отходами
+          {{ $t('publicLicenses.subtitle') }}
         </p>
       </div>
     </div>
@@ -70,22 +74,22 @@ const handleView = (_license: License) => {
         <!-- Total -->
         <div class="bg-white border-2 border-[#e5e5e5] rounded-[30px] p-6 text-center">
           <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.total }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">Всего лицензий</div>
+          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.totalLicenses') }}</div>
         </div>
         <!-- Active -->
         <div class="bg-[#fff1d1] rounded-[30px] p-6 text-center">
           <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.active }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">Действующие</div>
+          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.activeLicenses') }}</div>
         </div>
         <!-- Pending -->
         <div class="bg-[#d4f5e9] rounded-[30px] p-6 text-center">
           <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.pending }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">На рассмотрении</div>
+          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.pendingLicenses') }}</div>
         </div>
         <!-- Expired -->
         <div class="bg-[#ffdddc] rounded-[30px] p-6 text-center">
           <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.expired }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">Истекшие</div>
+          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.expiredLicenses') }}</div>
         </div>
       </div>
     </div>
@@ -101,22 +105,22 @@ const handleView = (_license: License) => {
               <span class="text-[18px] font-medium text-black">№</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center px-5 py-4 w-[200px]">
-              <span class="text-[18px] font-medium text-black">Организация</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.organization') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center px-5 py-4 flex-1">
-              <span class="text-[18px] font-medium text-black">Тип лицензий</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.licenseType') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[18px] font-medium text-black">Дата выдачи</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.issueDate') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[18px] font-medium text-black">Срок действий</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.validityPeriod') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[140px]">
-              <span class="text-[18px] font-medium text-black">Статус</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.status') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[120px]">
-              <span class="text-[18px] font-medium text-black">Действия</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.actions') }}</span>
             </div>
           </div>
 
@@ -154,7 +158,7 @@ const handleView = (_license: License) => {
                 @click="handleView(license)"
                 class="text-[#0e888d] text-[14px] font-medium hover:underline"
               >
-                Просмотр
+                {{ $t('publicLicenses.view') }}
               </button>
             </div>
           </div>
@@ -183,17 +187,17 @@ const handleView = (_license: License) => {
           <p class="text-[#415861] text-sm mb-3">{{ license.type }}</p>
           <div class="flex items-center gap-4 text-sm text-[#415861] mb-4">
             <div>
-              <span class="opacity-60">Выдана:</span> {{ license.issueDate }}
+              <span class="opacity-60">{{ $t('publicLicenses.issued') }}</span> {{ license.issueDate }}
             </div>
             <div>
-              <span class="opacity-60">До:</span> {{ license.expiryDate }}
+              <span class="opacity-60">{{ $t('publicLicenses.until') }}</span> {{ license.expiryDate }}
             </div>
           </div>
           <button
             @click="handleView(license)"
             class="w-full bg-[#0e888d] text-white text-sm font-medium py-2 rounded-[12px] hover:bg-[#0a6d71] transition-colors"
           >
-            Просмотр
+            {{ $t('publicLicenses.view') }}
           </button>
         </div>
       </div>

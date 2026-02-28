@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -7,6 +8,7 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { authStore } from '../../stores/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
@@ -25,15 +27,15 @@ const userData = ref({
 })
 
 // Permissions
-const permissions = ref([
-  { name: 'Просмотр заявок', granted: true },
-  { name: 'Обработка заявок', granted: true },
-  { name: 'Выдача лицензий', granted: true },
-  { name: 'Управление организациями', granted: true },
-  { name: 'Редактирование реестров', granted: false },
-  { name: 'Доступ к аналитике', granted: true },
-  { name: 'Экспорт данных', granted: true },
-  { name: 'Администрирование системы', granted: false },
+const permissions = computed(() => [
+  { name: t('employeeProfile.permViewApplications'), granted: true },
+  { name: t('employeeProfile.permProcessApplications'), granted: true },
+  { name: t('employeeProfile.permIssueLicenses'), granted: true },
+  { name: t('employeeProfile.permManageOrganizations'), granted: true },
+  { name: t('employeeProfile.permEditRegistries'), granted: false },
+  { name: t('employeeProfile.permAccessAnalytics'), granted: true },
+  { name: t('employeeProfile.permExportData'), granted: true },
+  { name: t('employeeProfile.permSystemAdmin'), granted: false },
 ])
 
 // Activity log
@@ -81,19 +83,19 @@ const saveSection = async () => {
 }
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('ru-RU')
+  return new Date(dateStr).toLocaleDateString()
 }
 
 const changePassword = async () => {
   if (securityData.value.newPassword !== securityData.value.confirmPassword) {
-    toastStore.show({ type: 'error', title: 'Ошибка', message: 'Пароли не совпадают' })
+    toastStore.show({ type: 'error', title: t('employeeProfile.toastErrorTitle'), message: t('employeeProfile.toastPasswordMismatch') })
     return
   }
   saving.value = true
   await new Promise(resolve => setTimeout(resolve, 1000))
   saving.value = false
   securityData.value = { currentPassword: '', newPassword: '', confirmPassword: '', twoFactorEnabled: securityData.value.twoFactorEnabled }
-  toastStore.show({ type: 'success', title: 'Пароль успешно изменён' })
+  toastStore.show({ type: 'success', title: t('employeeProfile.toastPasswordChanged') })
 }
 </script>
 
@@ -112,9 +114,9 @@ const changePassword = async () => {
       </div>
 
       <SectionGuide
-        title="Профиль сотрудника"
-        description="Управление личными данными и настройками учётной записи."
-        :actions="['Редактирование личных данных', 'Смена пароля', 'Настройки уведомлений']"
+        :title="$t('employeeProfile.sectionGuideTitle')"
+        :description="$t('employeeProfile.sectionGuideDesc')"
+        :actions="[$t('employeeProfile.actionEditPersonal'), $t('employeeProfile.actionChangePassword'), $t('employeeProfile.actionNotificationSettings')]"
         storageKey="employee-profile"
       />
 
@@ -130,17 +132,17 @@ const changePassword = async () => {
             <p class="text-sky-200 text-sm">{{ userData.department }}</p>
             <div class="flex items-center gap-4 mt-3">
               <span class="px-3 py-1 bg-white/20 rounded-full text-sm">ID: {{ userData.employeeId }}</span>
-              <span class="px-3 py-1 bg-white/20 rounded-full text-sm">С {{ formatDate(userData.startDate) }}</span>
+              <span class="px-3 py-1 bg-white/20 rounded-full text-sm">{{ $t('employeeProfile.since') }} {{ formatDate(userData.startDate) }}</span>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="text-center p-4 bg-white/10 rounded-xl">
               <p class="text-3xl font-bold">{{ stats.applicationsProcessed }}</p>
-              <p class="text-xs text-sky-100">Заявок обработано</p>
+              <p class="text-xs text-sky-100">{{ $t('employeeProfile.applicationsProcessed') }}</p>
             </div>
             <div class="text-center p-4 bg-white/10 rounded-xl">
               <p class="text-3xl font-bold">{{ stats.licensesIssued }}</p>
-              <p class="text-xs text-sky-100">Лицензий выдано</p>
+              <p class="text-xs text-sky-100">{{ $t('employeeProfile.licensesIssued') }}</p>
             </div>
           </div>
         </div>
@@ -152,19 +154,19 @@ const changePassword = async () => {
           <!-- Personal Info -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <h3 class="font-semibold text-gray-900">Личные данные</h3>
+              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.personalData') }}</h3>
               <button
                 v-if="editingSection !== 'personal'"
                 @click="editingSection = 'personal'"
                 class="text-sky-600 hover:text-sky-700 text-sm font-medium"
               >
-                Редактировать
+                {{ $t('common.edit') }}
               </button>
             </div>
             <div class="p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Фамилия</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.lastName') }}</label>
                   <input
                     v-if="editingSection === 'personal'"
                     v-model="userData.lastName"
@@ -174,7 +176,7 @@ const changePassword = async () => {
                   <p v-else class="text-gray-900">{{ userData.lastName }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Имя</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.firstName') }}</label>
                   <input
                     v-if="editingSection === 'personal'"
                     v-model="userData.firstName"
@@ -184,7 +186,7 @@ const changePassword = async () => {
                   <p v-else class="text-gray-900">{{ userData.firstName }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Отчество</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.middleName') }}</label>
                   <input
                     v-if="editingSection === 'personal'"
                     v-model="userData.middleName"
@@ -194,15 +196,15 @@ const changePassword = async () => {
                   <p v-else class="text-gray-900">{{ userData.middleName }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Должность</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.position') }}</label>
                   <p class="text-gray-900">{{ userData.position }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.email') }}</label>
                   <p class="text-gray-900">{{ userData.email }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Рабочий телефон</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.workPhone') }}</label>
                   <input
                     v-if="editingSection === 'personal'"
                     v-model="userData.phone"
@@ -212,7 +214,7 @@ const changePassword = async () => {
                   <p v-else class="text-gray-900">{{ userData.phone }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Мобильный телефон</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.mobilePhone') }}</label>
                   <input
                     v-if="editingSection === 'personal'"
                     v-model="userData.mobilePhone"
@@ -222,7 +224,7 @@ const changePassword = async () => {
                   <p v-else class="text-gray-900">{{ userData.mobilePhone }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Дата начала работы</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.startDate') }}</label>
                   <p class="text-gray-900">{{ formatDate(userData.startDate) }}</p>
                 </div>
               </div>
@@ -236,13 +238,13 @@ const changePassword = async () => {
           <!-- Notification Settings -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">Настройки уведомлений</h3>
+              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.notificationSettings') }}</h3>
             </div>
             <div class="p-6 space-y-4">
               <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                 <div>
-                  <p class="font-medium text-gray-900">Email-уведомления</p>
-                  <p class="text-sm text-gray-500">Получать уведомления на email</p>
+                  <p class="font-medium text-gray-900">{{ $t('employeeProfile.emailNotifications') }}</p>
+                  <p class="text-sm text-gray-500">{{ $t('employeeProfile.emailNotificationsDesc') }}</p>
                 </div>
                 <div class="relative">
                   <input type="checkbox" v-model="notificationSettings.emailNotifications" class="sr-only" />
@@ -253,8 +255,8 @@ const changePassword = async () => {
               </label>
               <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                 <div>
-                  <p class="font-medium text-gray-900">Новые заявки</p>
-                  <p class="text-sm text-gray-500">Уведомлять о новых входящих заявках</p>
+                  <p class="font-medium text-gray-900">{{ $t('employeeProfile.newApplications') }}</p>
+                  <p class="text-sm text-gray-500">{{ $t('employeeProfile.newApplicationsDesc') }}</p>
                 </div>
                 <div class="relative">
                   <input type="checkbox" v-model="notificationSettings.newApplications" class="sr-only" />
@@ -265,8 +267,8 @@ const changePassword = async () => {
               </label>
               <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                 <div>
-                  <p class="font-medium text-gray-900">Напоминания о сроках</p>
-                  <p class="text-sm text-gray-500">Напоминать о приближающихся дедлайнах</p>
+                  <p class="font-medium text-gray-900">{{ $t('employeeProfile.deadlineReminders') }}</p>
+                  <p class="text-sm text-gray-500">{{ $t('employeeProfile.deadlineRemindersDesc') }}</p>
                 </div>
                 <div class="relative">
                   <input type="checkbox" v-model="notificationSettings.deadlineReminders" class="sr-only" />
@@ -281,35 +283,35 @@ const changePassword = async () => {
           <!-- Security -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">Безопасность</h3>
+              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.security') }}</h3>
             </div>
             <div class="p-6 space-y-6">
               <div>
-                <h4 class="font-medium text-gray-900 mb-4">Изменение пароля</h4>
+                <h4 class="font-medium text-gray-900 mb-4">{{ $t('employeeProfile.changePassword') }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Текущий пароль</label>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.currentPassword') }}</label>
                     <input v-model="securityData.currentPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Новый пароль</label>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.newPassword') }}</label>
                     <input v-model="securityData.newPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">Подтверждение</label>
+                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.confirmPassword') }}</label>
                     <input v-model="securityData.confirmPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                   </div>
                 </div>
-                <button @click="changePassword" :disabled="!securityData.currentPassword || !securityData.newPassword" class="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">Изменить пароль</button>
+                <button @click="changePassword" :disabled="!securityData.currentPassword || !securityData.newPassword" class="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">{{ $t('employeeProfile.changePasswordBtn') }}</button>
               </div>
 
               <div class="pt-6 border-t border-gray-200">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h4 class="font-medium text-gray-900">Двухфакторная аутентификация</h4>
-                    <p class="text-sm text-gray-500">Дополнительная защита аккаунта</p>
+                    <h4 class="font-medium text-gray-900">{{ $t('employeeProfile.twoFactorAuth') }}</h4>
+                    <p class="text-sm text-gray-500">{{ $t('employeeProfile.twoFactorAuthDesc') }}</p>
                   </div>
-                  <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Включена</span>
+                  <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">{{ $t('employeeProfile.twoFactorEnabled') }}</span>
                 </div>
               </div>
             </div>
@@ -321,7 +323,7 @@ const changePassword = async () => {
           <!-- Permissions -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">Права доступа</h3>
+              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.accessRights') }}</h3>
             </div>
             <div class="p-4">
               <div class="space-y-2">
@@ -345,7 +347,7 @@ const changePassword = async () => {
           <!-- Activity Log -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">Последние действия</h3>
+              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.recentActions') }}</h3>
             </div>
             <div class="p-4">
               <div class="space-y-4">
@@ -360,15 +362,15 @@ const changePassword = async () => {
                   </div>
                 </div>
               </div>
-              <button @click="toastStore.show({ type: 'info', title: 'Журнал', message: 'Полный журнал активности будет доступен в следующем обновлении' })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
-                Показать все
+              <button @click="toastStore.show({ type: 'info', title: $t('employeeProfile.toastLogTitle'), message: $t('employeeProfile.toastLogMessage') })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
+                {{ $t('employeeProfile.showAll') }}
               </button>
             </div>
           </div>
 
           <!-- Session Info -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-900 mb-4">Текущая сессия</h3>
+            <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeProfile.currentSession') }}</h3>
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
@@ -378,12 +380,12 @@ const changePassword = async () => {
                 </div>
                 <div>
                   <p class="text-sm font-medium text-gray-900">Windows — Chrome</p>
-                  <p class="text-xs text-gray-500">Бишкек · Активна сейчас</p>
+                  <p class="text-xs text-gray-500">{{ $t('employeeProfile.sessionLocation') }}</p>
                 </div>
               </div>
             </div>
             <button @click="authStore.logout(); router.push('/login')" class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
-              Выйти из системы
+              {{ $t('employeeProfile.logoutBtn') }}
             </button>
           </div>
         </div>

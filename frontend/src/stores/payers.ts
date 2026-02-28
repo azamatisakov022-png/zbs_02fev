@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
+import i18n from '../i18n'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -92,56 +93,43 @@ export interface Payer {
 
 // ── Labels ─────────────────────────────────────────────────
 
-export const categoryLabels: Record<PayerCategory, string> = {
-  importer: 'Импортер',
-  producer: 'Производитель',
-  both: 'Импортер и производитель',
+export function getCategoryLabel(cat: PayerCategory): string {
+  return i18n.global.t(`payer.category.${cat}`)
 }
 export const categoryColors: Record<PayerCategory, string> = {
   importer: 'bg-blue-100 text-blue-800',
   producer: 'bg-purple-100 text-purple-800',
   both: 'bg-indigo-100 text-indigo-800',
 }
-export const subcategoryLabels: Record<PayerSubcategory, string> = {
-  eaeu: 'Страны ЕАЭС',
-  thirdCountry: 'Третьи страны',
+export function getSubcategoryLabel(sub: PayerSubcategory): string {
+  return i18n.global.t(`payer.subcategory.${sub}`)
 }
-export const reportingLabels: Record<ReportingStatus, string> = {
-  onTime: 'Сдана вовремя',
-  expected: 'Ожидается',
-  overdue: 'Просрочена',
+export function getReportingLabel(status: ReportingStatus): string {
+  return i18n.global.t(`payer.reporting.${status}`)
 }
 export const reportingColors: Record<ReportingStatus, string> = {
   onTime: 'bg-green-100 text-green-800',
   expected: 'bg-yellow-100 text-yellow-800',
   overdue: 'bg-red-100 text-red-800',
 }
-export const settlementLabels: Record<SettlementStatus, string> = {
-  clear: 'Без задолженности',
-  overpaid: 'Переплата',
-  debt: 'Задолженность',
+export function getSettlementLabel(status: SettlementStatus): string {
+  return i18n.global.t(`payer.settlement.${status}`)
 }
 export const settlementColors: Record<SettlementStatus, string> = {
   clear: 'bg-green-100 text-green-800',
   overpaid: 'bg-blue-100 text-blue-800',
   debt: 'bg-red-100 text-red-800',
 }
-export const systemStatusLabels: Record<SystemStatus, string> = {
-  active: 'Активен',
-  suspended: 'Приостановлен',
-  excluded: 'Исключён',
+export function getSystemStatusLabel(status: SystemStatus): string {
+  return i18n.global.t(`payer.systemStatus.${status}`)
 }
 export const systemStatusColors: Record<SystemStatus, string> = {
   active: 'bg-green-100 text-green-800',
   suspended: 'bg-yellow-100 text-yellow-800',
   excluded: 'bg-red-100 text-red-800',
 }
-export const declarationStatusLabels: Record<DeclarationStatus, string> = {
-  draft: 'Черновик',
-  review: 'На рассмотрении',
-  approved: 'Одобрена',
-  rejected: 'Отклонена',
-  paid: 'Оплачена',
+export function getDeclarationStatusLabel(status: DeclarationStatus): string {
+  return i18n.global.t(`payer.declarationStatus.${status}`)
 }
 export const declarationStatusColors: Record<DeclarationStatus, string> = {
   draft: 'bg-gray-100 text-gray-700',
@@ -150,10 +138,8 @@ export const declarationStatusColors: Record<DeclarationStatus, string> = {
   rejected: 'bg-red-100 text-red-800',
   paid: 'bg-blue-100 text-blue-800',
 }
-export const paymentStatusLabels: Record<PaymentStatus, string> = {
-  completed: 'Проведён',
-  pending: 'Ожидает подтверждения',
-  rejected: 'Отклонён',
+export function getPaymentStatusLabel(status: PaymentStatus): string {
+  return i18n.global.t(`payer.paymentStatus.${status}`)
 }
 export const paymentStatusColors: Record<PaymentStatus, string> = {
   completed: 'bg-green-100 text-green-800',

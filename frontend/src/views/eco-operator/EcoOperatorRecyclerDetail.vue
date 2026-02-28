@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
@@ -13,6 +14,7 @@ import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -243,20 +245,20 @@ const onGroupChange = () => { currentPage.value = 1 }
 // Edit mode for capacities
 const isEditingCapacities = ref(false)
 
-const technologyOptions = [
-  'Механическая переработка',
-  'Термическая переработка',
-  'Экструзия вторсырья',
-  'Прессование и пакетирование',
-  'Роспуск и прессование',
-  'Химическая переработка',
-  'Компостирование',
-  'Пиролиз',
-  'Измельчение (шредирование)',
-  'Сортировка',
-  'Грануляция',
-  'Другое',
-]
+const technologyOptions = computed(() => [
+  t('ecoRecyclerDetail.techMechanical'),
+  t('ecoRecyclerDetail.techThermal'),
+  t('ecoRecyclerDetail.techExtrusion'),
+  t('ecoRecyclerDetail.techPressing'),
+  t('ecoRecyclerDetail.techDissolving'),
+  t('ecoRecyclerDetail.techChemical'),
+  t('ecoRecyclerDetail.techComposting'),
+  t('ecoRecyclerDetail.techPyrolysis'),
+  t('ecoRecyclerDetail.techShredding'),
+  t('ecoRecyclerDetail.techSorting'),
+  t('ecoRecyclerDetail.techGranulation'),
+  t('ecoRecyclerDetail.techOther'),
+])
 
 interface EditCapacityRow {
   id: number
@@ -275,10 +277,10 @@ const parseTechnologies = (raw: string): { techs: string[], custom: string } => 
   const techs: string[] = []
   let custom = ''
   for (const p of parts) {
-    if (technologyOptions.includes(p) && p !== 'Другое') {
+    if (technologyOptions.value.includes(p) && p !== t('ecoRecyclerDetail.techOther')) {
       techs.push(p)
     } else {
-      if (!techs.includes('Другое')) techs.push('Другое')
+      if (!techs.includes(t('ecoRecyclerDetail.techOther'))) techs.push(t('ecoRecyclerDetail.techOther'))
       custom = p
     }
   }
@@ -287,8 +289,8 @@ const parseTechnologies = (raw: string): { techs: string[], custom: string } => 
 
 /** Build technology string for saving */
 const buildTechnologyString = (row: EditCapacityRow): string => {
-  const parts = row.technologies.filter(t => t !== 'Другое')
-  if (row.technologies.includes('Другое') && row.customTechnology.trim()) {
+  const parts = row.technologies.filter(v => v !== t('ecoRecyclerDetail.techOther'))
+  if (row.technologies.includes(t('ecoRecyclerDetail.techOther')) && row.customTechnology.trim()) {
     parts.push(row.customTechnology.trim())
   }
   return parts.join(' | ')
@@ -300,7 +302,7 @@ const toggleTech = (row: EditCapacityRow, tech: string) => {
   const idx = row.technologies.indexOf(tech)
   if (idx >= 0) {
     row.technologies.splice(idx, 1)
-    if (tech === 'Другое') row.customTechnology = ''
+    if (tech === t('ecoRecyclerDetail.techOther')) row.customTechnology = ''
   } else {
     row.technologies.push(tech)
   }
@@ -310,16 +312,16 @@ const removeTech = (row: EditCapacityRow, tech: string) => {
   const idx = row.technologies.indexOf(tech)
   if (idx >= 0) {
     row.technologies.splice(idx, 1)
-    if (tech === 'Другое') row.customTechnology = ''
+    if (tech === t('ecoRecyclerDetail.techOther')) row.customTechnology = ''
   }
 }
 
 const getDisplayTechs = (row: EditCapacityRow): string[] => {
-  return row.technologies.filter(t => t !== 'Другое').slice(0, 2)
+  return row.technologies.filter(v => v !== t('ecoRecyclerDetail.techOther')).slice(0, 2)
 }
 
 const getExtraCount = (row: EditCapacityRow): number => {
-  const visible = row.technologies.filter(t => t !== 'Другое')
+  const visible = row.technologies.filter(v => v !== t('ecoRecyclerDetail.techOther'))
   return Math.max(0, visible.length - 2)
 }
 
@@ -365,7 +367,7 @@ const editTotalCapacity = computed(() => editRows.value.reduce((s, r) => s + (r.
 const saveCapacityEdits = () => {
   if (!recycler.value) return
   const validRows = editRows.value.filter(r => r.group && r.capacityTons > 0)
-  if (validRows.length === 0) { toastStore.show({ type: 'warning', title: 'Ошибка валидации', message: 'Добавьте хотя бы одну мощность с указанной группой и объёмом > 0' }); return }
+  if (validRows.length === 0) { toastStore.show({ type: 'warning', title: t('ecoRecyclerDetail.validationError'), message: t('ecoRecyclerDetail.addAtLeastOneCapacity') }); return }
 
   const newCapacities = validRows.map(r => ({
     wasteType: r.group,
@@ -476,10 +478,10 @@ const goToGisMap = () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
       </div>
-      <h2 class="text-xl font-semibold text-[#1e293b] mb-2">Переработчик не найден</h2>
-      <p class="text-[#64748b] mb-6">Переработчик с указанным ID не существует в реестре.</p>
+      <h2 class="text-xl font-semibold text-[#1e293b] mb-2">{{ $t('ecoRecyclerDetail.recyclerNotFound') }}</h2>
+      <p class="text-[#64748b] mb-6">{{ $t('ecoRecyclerDetail.recyclerNotFoundDesc') }}</p>
       <button @click="router.push('/eco-operator/recyclers')" class="px-6 py-2.5 bg-[#22C55E] text-white rounded-lg font-medium hover:bg-[#16a34a] transition-colors">
-        Вернуться в реестр
+        {{ $t('ecoRecyclerDetail.backToRegistry') }}
       </button>
     </div>
 
@@ -488,7 +490,7 @@ const goToGisMap = () => {
       <!-- Back button -->
       <button @click="router.push('/eco-operator/recyclers')" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-6 transition-colors">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        <span class="font-medium">Реестр переработчиков</span>
+        <span class="font-medium">{{ $t('ecoRecyclerDetail.recyclersRegistry') }}</span>
       </button>
 
       <!-- Header card -->
@@ -502,61 +504,61 @@ const goToGisMap = () => {
             </div>
             <div>
               <h1 class="text-2xl font-bold text-[#1e293b]">{{ recycler.name }}</h1>
-              <p class="text-sm text-[#64748b] mt-1">{{ recycler.opf }} | ИНН: {{ recycler.inn }}</p>
+              <p class="text-sm text-[#64748b] mt-1">{{ recycler.opf }} | {{ $t('ecoRecyclerDetail.inn') }}: {{ recycler.inn }}</p>
             </div>
           </div>
           <div class="text-right flex flex-col items-end gap-2">
             <span :class="['inline-flex items-center px-3 py-1 rounded-full text-sm font-medium', getStatusClass(recycler.status)]">
               {{ getStatusLabel(recycler.status) }}
             </span>
-            <p class="text-sm text-[#64748b]">Зарегистрирован: {{ recycler.addedDate }}</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.registered') }}: {{ recycler.addedDate }}</p>
           </div>
         </div>
       </div>
 
       <!-- BLOCK 1 - Общая информация -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Общая информация</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.generalInfo') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Полное наименование</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.fullName') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.fullName || recycler.name }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">ОПФ</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.opf }} — Общество с ограниченной ответственностью</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.opf') }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.opf }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">ИНН</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.inn') }}</p>
             <p class="text-sm font-medium text-[#1e293b] font-mono">{{ recycler.inn }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Юридический адрес</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.legalAddress') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.legalAddress || recycler.address }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Фактический адрес</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.actualAddress') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.actualAddress || recycler.address }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Телефон</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.phone') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.contactPhone }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Email</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.email') }}</p>
             <p class="text-sm font-medium text-[#2563eb]">{{ recycler.contactEmail }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Веб-сайт</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.website') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.website || '—' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Руководитель</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.director') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.directorName || '—' }}</p>
             <p class="text-xs text-[#64748b]" v-if="recycler.directorPosition">{{ recycler.directorPosition }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.contactPerson">
-            <p class="text-sm text-[#64748b]">Контактное лицо</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.contactPerson') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.contactPerson }}</p>
             <p class="text-xs text-[#64748b]" v-if="recycler.contactPosition">{{ recycler.contactPosition }}</p>
           </div>
@@ -565,22 +567,22 @@ const goToGisMap = () => {
 
       <!-- BLOCK 2 - Лицензия и разрешения -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Лицензия и разрешения</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.licenseAndPermits') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Номер лицензии</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.licenseNumber') }}</p>
             <p class="text-sm font-medium text-[#1e293b] font-mono">{{ recycler.licenseNumber }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата выдачи</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.issueDate') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.licenseDate }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Срок действия</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.validUntil') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.licenseExpiry }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Статус лицензии</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.licenseStatus') }}</p>
             <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1', getStatusClass(recycler.status)]">
               {{ getStatusLabel(recycler.status) }}
             </span>
@@ -588,12 +590,12 @@ const goToGisMap = () => {
         </div>
 
         <div class="bg-[#f8fafc] rounded-lg p-3 mb-4" v-if="recycler.licenseAuthority">
-          <p class="text-sm text-[#64748b]">Орган выдачи</p>
+          <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.issuingAuthority') }}</p>
           <p class="text-sm font-medium text-[#1e293b]">{{ recycler.licenseAuthority }}</p>
         </div>
 
         <div v-if="recycler.licenseActivities?.length">
-          <p class="text-sm font-medium text-[#1e293b] mb-3">Виды разрешённой деятельности</p>
+          <p class="text-sm font-medium text-[#1e293b] mb-3">{{ $t('ecoRecyclerDetail.permittedActivities') }}</p>
           <ul class="space-y-2">
             <li v-for="(activity, idx) in recycler.licenseActivities" :key="idx" class="flex items-start gap-2">
               <svg class="w-5 h-5 text-[#22C55E] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -607,52 +609,52 @@ const goToGisMap = () => {
 
       <!-- BLOCK - Экологический паспорт -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.ecoPassportNumber">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Экологический паспорт</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.ecoPassport') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Номер паспорта</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.passportNumber') }}</p>
             <p class="text-sm font-medium text-[#1e293b] font-mono">{{ recycler.ecoPassportNumber }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата выдачи</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.issueDate') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.ecoPassportDate }}</p>
           </div>
         </div>
       </div>
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-else>
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Экологический паспорт</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.ecoPassport') }}</h2>
         <div class="flex items-center gap-3 p-4 bg-[#fef3c7] rounded-lg border border-[#fbbf24]">
           <svg class="w-5 h-5 text-[#f59e0b] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
-          <span class="text-sm text-[#92400e]">Экологический паспорт не оформлен</span>
+          <span class="text-sm text-[#92400e]">{{ $t('ecoRecyclerDetail.ecoPassportNotIssued') }}</span>
         </div>
       </div>
 
       <!-- BLOCK - Производственные данные -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Производственные данные</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.productionData') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.equipment">
-            <p class="text-sm text-[#64748b]">Оборудование</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.equipment') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.equipment }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.productionArea">
-            <p class="text-sm text-[#64748b]">Площадь территории</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.productionArea.toLocaleString() }} м²</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.territoryArea') }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.productionArea.toLocaleString() }} {{ $t('ecoRecyclerDetail.sqMeters') }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Количество сотрудников</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.employeesCount') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.employeesCount || '—' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.certifications.length > 0">
-            <p class="text-sm text-[#64748b]">Сертификаты</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.certificates') }}</p>
             <div class="flex flex-wrap gap-1 mt-1">
               <span v-for="cert in recycler.certifications" :key="cert" class="inline-block px-2 py-0.5 bg-[#dbeafe] text-[#1d4ed8] rounded text-xs font-medium">{{ cert }}</span>
             </div>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.processingMethods.length > 0">
-            <p class="text-sm text-[#64748b]">Методы переработки</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.processingMethods') }}</p>
             <div class="flex flex-wrap gap-1 mt-1">
               <span v-for="method in recycler.processingMethods" :key="method" class="inline-block px-2 py-0.5 bg-[#f0fdf4] text-[#166534] rounded text-xs font-medium">{{ method }}</span>
             </div>
@@ -663,7 +665,7 @@ const goToGisMap = () => {
       <!-- BLOCK 3 - Мощности переработки -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Мощности переработки</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.processingCapacities') }}</h2>
           <button
             v-if="!isEditingCapacities"
             @click="startEditCapacities"
@@ -672,7 +674,7 @@ const goToGisMap = () => {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            Редактировать мощности
+            {{ $t('ecoRecyclerDetail.editCapacities') }}
           </button>
         </div>
 
@@ -681,12 +683,12 @@ const goToGisMap = () => {
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-[#64748b] bg-[#f8fafc] border-b border-[#e2e8f0]">
-                <th class="px-4 py-3 font-medium">Группа отходов</th>
-                <th class="px-4 py-3 font-medium">Технология переработки</th>
-                <th class="px-4 py-3 font-medium text-right">Мощность (т/год)</th>
-                <th class="px-4 py-3 font-medium text-right">Загрузка (т/год)</th>
-                <th class="px-4 py-3 font-medium text-right">Свободно (т/год)</th>
-                <th class="px-4 py-3 font-medium" style="min-width: 160px">Загруженность (%)</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.wasteGroup') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.processingTechnology') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.capacityTonsYear') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.loadTonsYear') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.availableTonsYear') }}</th>
+                <th class="px-4 py-3 font-medium" style="min-width: 160px">{{ $t('ecoRecyclerDetail.loadPercent') }}</th>
               </tr>
             </thead>
             <tbody class="text-[#1e293b]">
@@ -721,7 +723,7 @@ const goToGisMap = () => {
             </tbody>
             <tfoot>
               <tr class="border-t-2 border-[#e2e8f0] bg-[#f8fafc] font-semibold text-[#1e293b]">
-                <td class="px-4 py-3">Итого</td>
+                <td class="px-4 py-3">{{ $t('ecoRecyclerDetail.total') }}</td>
                 <td class="px-4 py-3"></td>
                 <td class="px-4 py-3 text-right font-mono">{{ recyclerStore.getTotalCapacity(recycler) }}</td>
                 <td class="px-4 py-3 text-right font-mono">{{ recyclerStore.getTotalLoad(recycler) }}</td>
@@ -758,18 +760,18 @@ const goToGisMap = () => {
             <svg class="w-5 h-5 text-[#f59e0b] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="text-sm text-[#92400e]">Режим редактирования мощностей. Внесите изменения и нажмите «Сохранить изменения».</span>
+            <span class="text-sm text-[#92400e]">{{ $t('ecoRecyclerDetail.editModeWarning') }}</span>
           </div>
 
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left text-[#64748b] bg-[#f8fafc] border-b border-[#e2e8f0]">
-                  <th class="px-3 py-3 font-medium">Группа отходов</th>
-                  <th class="px-3 py-3 font-medium">Подгруппа</th>
-                  <th class="px-3 py-3 font-medium">Технология</th>
-                  <th class="px-3 py-3 font-medium text-right" style="min-width: 130px">Мощность т/год</th>
-                  <th class="px-3 py-3 font-medium">Документ</th>
+                  <th class="px-3 py-3 font-medium">{{ $t('ecoRecyclerDetail.wasteGroup') }}</th>
+                  <th class="px-3 py-3 font-medium">{{ $t('ecoRecyclerDetail.subgroup') }}</th>
+                  <th class="px-3 py-3 font-medium">{{ $t('ecoRecyclerDetail.technology') }}</th>
+                  <th class="px-3 py-3 font-medium text-right" style="min-width: 130px">{{ $t('ecoRecyclerDetail.capacityTonsYearShort') }}</th>
+                  <th class="px-3 py-3 font-medium">{{ $t('ecoRecyclerDetail.document') }}</th>
                   <th class="px-3 py-3 font-medium w-10"></th>
                 </tr>
               </thead>
@@ -780,7 +782,7 @@ const goToGisMap = () => {
                       v-model="row.group"
                       class="w-full px-2.5 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] bg-white"
                     >
-                      <option value="" disabled>Выберите группу</option>
+                      <option value="" disabled>{{ $t('ecoRecyclerDetail.selectGroup') }}</option>
                       <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
                     </select>
                   </td>
@@ -790,7 +792,7 @@ const goToGisMap = () => {
                       :disabled="!row.group || getSubgroups(row.group).length === 0"
                       class="w-full px-2.5 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] bg-white disabled:bg-[#f1f5f9] disabled:text-[#94a3b8]"
                     >
-                      <option value="">Все подгруппы</option>
+                      <option value="">{{ $t('ecoRecyclerDetail.allSubgroups') }}</option>
                       <option v-for="sg in getSubgroups(row.group)" :key="sg.value" :value="sg.value">{{ sg.label }}</option>
                     </select>
                   </td>
@@ -802,7 +804,7 @@ const goToGisMap = () => {
                         :class="openTechDropdown === row.id ? 'border-[#2563eb] ring-1 ring-[#2563eb]/20' : 'border-[#e2e8f0]'"
                       >
                         <template v-if="row.technologies.length === 0">
-                          <span class="text-[#94a3b8] text-sm">Выберите технологии</span>
+                          <span class="text-[#94a3b8] text-sm">{{ $t('ecoRecyclerDetail.selectTechnologies') }}</span>
                         </template>
                         <template v-else>
                           <span
@@ -813,9 +815,9 @@ const goToGisMap = () => {
                             <span class="truncate">{{ tech }}</span>
                             <button type="button" @click.stop="removeTech(row, tech)" class="ml-0.5 text-[#2563eb]/60 hover:text-red-500 flex-shrink-0">&times;</button>
                           </span>
-                          <span v-if="row.technologies.includes('Другое')" class="inline-flex items-center gap-0.5 bg-[#f0fdf4] text-[#16a34a] px-2 py-0.5 rounded text-xs leading-tight">
-                            <span class="truncate">{{ row.customTechnology || 'Другое' }}</span>
-                            <button type="button" @click.stop="removeTech(row, 'Другое')" class="ml-0.5 text-[#16a34a]/60 hover:text-red-500 flex-shrink-0">&times;</button>
+                          <span v-if="row.technologies.includes($t('ecoRecyclerDetail.techOther'))" class="inline-flex items-center gap-0.5 bg-[#f0fdf4] text-[#16a34a] px-2 py-0.5 rounded text-xs leading-tight">
+                            <span class="truncate">{{ row.customTechnology || $t('ecoRecyclerDetail.techOther') }}</span>
+                            <button type="button" @click.stop="removeTech(row, $t('ecoRecyclerDetail.techOther'))" class="ml-0.5 text-[#16a34a]/60 hover:text-red-500 flex-shrink-0">&times;</button>
                           </span>
                           <span v-if="getExtraCount(row) > 0" class="text-[#64748b] text-xs whitespace-nowrap">+{{ getExtraCount(row) }}</span>
                         </template>
@@ -841,10 +843,10 @@ const goToGisMap = () => {
                         </label>
                       </div>
                       <input
-                        v-if="row.technologies.includes('Другое')"
+                        v-if="row.technologies.includes($t('ecoRecyclerDetail.techOther'))"
                         v-model="row.customTechnology"
                         type="text"
-                        placeholder="Укажите свою технологию"
+                        :placeholder="$t('ecoRecyclerDetail.specifyYourTechnology')"
                         class="w-full mt-1.5 px-2.5 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
                         @click.stop
                       />
@@ -865,7 +867,7 @@ const goToGisMap = () => {
                       <svg class="w-4 h-4 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <span class="text-xs text-[#64748b] truncate">{{ row.documentName || 'Прикрепить' }}</span>
+                      <span class="text-xs text-[#64748b] truncate">{{ row.documentName || $t('ecoRecyclerDetail.attach') }}</span>
                       <input type="file" class="hidden" @change="row.documentName = ($event.target as HTMLInputElement)?.files?.[0]?.name || ''" />
                     </label>
                   </td>
@@ -873,7 +875,7 @@ const goToGisMap = () => {
                     <button
                       @click="removeEditRow(row.id)"
                       class="p-1.5 text-[#ef4444] hover:bg-[#fee2e2] rounded-lg transition-colors"
-                      title="Удалить строку"
+                      :title="$t('ecoRecyclerDetail.deleteRow')"
                     >
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -884,7 +886,7 @@ const goToGisMap = () => {
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-[#e2e8f0] bg-[#f8fafc] font-semibold text-[#1e293b]">
-                  <td class="px-3 py-3" colspan="3">Итого мощность</td>
+                  <td class="px-3 py-3" colspan="3">{{ $t('ecoRecyclerDetail.totalCapacity') }}</td>
                   <td class="px-3 py-3 text-right font-mono">{{ editTotalCapacity }}</td>
                   <td class="px-3 py-3" colspan="2"></td>
                 </tr>
@@ -900,7 +902,7 @@ const goToGisMap = () => {
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              + Добавить мощность
+              {{ $t('ecoRecyclerDetail.addCapacity') }}
             </button>
           </div>
 
@@ -909,13 +911,13 @@ const goToGisMap = () => {
               @click="saveCapacityEdits"
               class="px-6 py-2.5 text-sm font-medium text-white bg-[#22C55E] rounded-lg hover:bg-[#16a34a] transition-colors"
             >
-              Сохранить изменения
+              {{ $t('ecoRecyclerDetail.saveChanges') }}
             </button>
             <button
               @click="cancelEditCapacities"
               class="px-6 py-2.5 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
           </div>
         </div>
@@ -924,7 +926,7 @@ const goToGisMap = () => {
       <!-- BLOCK 3.5 - История изменений мощностей -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="capacityHistory.length > 0">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">История изменений мощностей</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.capacityChangeHistory') }}</h2>
           <button
             @click="showHistory = !showHistory"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#64748b] border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
@@ -936,7 +938,7 @@ const goToGisMap = () => {
             >
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
-            {{ showHistory ? 'Скрыть историю' : 'Показать историю' }}
+            {{ showHistory ? $t('ecoRecyclerDetail.hideHistory') : $t('ecoRecyclerDetail.showHistory') }}
           </button>
         </div>
 
@@ -944,12 +946,12 @@ const goToGisMap = () => {
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-[#64748b] bg-[#f8fafc] border-b border-[#e2e8f0]">
-                <th class="px-4 py-3 font-medium">Дата</th>
-                <th class="px-4 py-3 font-medium">Группа отходов</th>
-                <th class="px-4 py-3 font-medium text-right">Было (т/год)</th>
-                <th class="px-4 py-3 font-medium text-right">Стало (т/год)</th>
-                <th class="px-4 py-3 font-medium text-right">Изменение</th>
-                <th class="px-4 py-3 font-medium">Кто изменил</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.date') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.wasteGroup') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.wasTonsYear') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.becameTonsYear') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.change') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.changedBy') }}</th>
               </tr>
             </thead>
             <tbody class="text-[#1e293b]">
@@ -977,25 +979,25 @@ const goToGisMap = () => {
 
       <!-- BLOCK - Инспекции и проверки -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Инспекции и проверки</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.inspections') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Статус проверки</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.inspectionStatus') }}</p>
             <span v-if="recycler.inspectionStatus" :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1', recycler.inspectionStatus === 'compliant' ? 'bg-green-100 text-green-800' : recycler.inspectionStatus === 'violations' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800']">
               {{ recyclerStore.getInspectionStatusLabel(recycler.inspectionStatus) }}
             </span>
-            <p v-else class="text-sm font-medium text-[#94a3b8] mt-1">Не проводилась</p>
+            <p v-else class="text-sm font-medium text-[#94a3b8] mt-1">{{ $t('ecoRecyclerDetail.notConducted') }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата последней проверки</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.lastInspectionDate') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.lastInspectionDate || '—' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата следующей проверки</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.nextInspectionDate') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.nextInspectionDate || '—' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Рейтинг</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.rating') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.rating }} / 5.0</p>
           </div>
         </div>
@@ -1005,7 +1007,7 @@ const goToGisMap = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <div>
-              <p class="text-sm font-medium text-[#991b1b]">Замечания проверки</p>
+              <p class="text-sm font-medium text-[#991b1b]">{{ $t('ecoRecyclerDetail.inspectionRemarks') }}</p>
               <p class="text-sm text-[#7f1d1d] mt-1">{{ recycler.inspectionRemarks }}</p>
             </div>
           </div>
@@ -1014,31 +1016,31 @@ const goToGisMap = () => {
 
       <!-- BLOCK - Объёмы переработки -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Объёмы переработки</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.processingVolumes') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
-            <p class="text-sm text-[#64748b] mb-1">Текущий год (2026)</p>
-            <p class="text-2xl font-bold text-[#1e293b]">{{ recycler.processedCurrentYear.toLocaleString() }} т</p>
-            <p class="text-xs text-[#64748b] mt-1">~ {{ recyclerStore.toMonthly(recycler.processedCurrentYear) }} т/мес</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoRecyclerDetail.currentYear') }}</p>
+            <p class="text-2xl font-bold text-[#1e293b]">{{ recycler.processedCurrentYear.toLocaleString() }} {{ $t('ecoRecyclerDetail.tons') }}</p>
+            <p class="text-xs text-[#64748b] mt-1">~ {{ recyclerStore.toMonthly(recycler.processedCurrentYear) }} {{ $t('ecoRecyclerDetail.tonsPerMonth') }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-            <p class="text-sm text-[#64748b] mb-1">Предыдущий год (2025)</p>
-            <p class="text-2xl font-bold text-[#1e293b]">{{ recycler.processedPreviousYear.toLocaleString() }} т</p>
-            <p class="text-xs text-[#64748b] mt-1">~ {{ recyclerStore.toMonthly(recycler.processedPreviousYear) }} т/мес</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoRecyclerDetail.previousYear') }}</p>
+            <p class="text-2xl font-bold text-[#1e293b]">{{ recycler.processedPreviousYear.toLocaleString() }} {{ $t('ecoRecyclerDetail.tons') }}</p>
+            <p class="text-xs text-[#64748b] mt-1">~ {{ recyclerStore.toMonthly(recycler.processedPreviousYear) }} {{ $t('ecoRecyclerDetail.tonsPerMonth') }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-            <p class="text-sm text-[#64748b] mb-1">Динамика</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoRecyclerDetail.dynamics') }}</p>
             <p class="text-2xl font-bold" :class="recyclerStore.getVolumeChangePercent(recycler) >= 0 ? 'text-[#10b981]' : 'text-[#ef4444]'">
               {{ recyclerStore.getVolumeChangePercent(recycler) >= 0 ? '+' : '' }}{{ recyclerStore.getVolumeChangePercent(recycler) }}%
             </p>
-            <p class="text-xs text-[#64748b] mt-1">по сравнению с 2025</p>
+            <p class="text-xs text-[#64748b] mt-1">{{ $t('ecoRecyclerDetail.comparedToPreviousYear') }}</p>
           </div>
         </div>
       </div>
 
       <!-- BLOCK - Причина приостановки/исключения -->
       <div v-if="recycler.suspensionReason" class="bg-white rounded-2xl p-6 shadow-sm border border-[#fecaca]">
-        <h2 class="text-lg font-semibold text-[#ef4444] mb-4">Причина {{ recycler.status === 'revoked' ? 'исключения' : 'приостановки' }}</h2>
+        <h2 class="text-lg font-semibold text-[#ef4444] mb-4">{{ recycler.status === 'revoked' ? $t('ecoRecyclerDetail.revocationReason') : $t('ecoRecyclerDetail.suspensionReason') }}</h2>
         <div class="p-4 bg-[#fef2f2] rounded-lg">
           <p class="text-sm text-[#7f1d1d]">{{ recycler.suspensionReason }}</p>
         </div>
@@ -1047,24 +1049,24 @@ const goToGisMap = () => {
       <!-- BLOCK 4 - Принятые отходы (история) -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Принятые отходы (история)</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.acceptedWasteHistory') }}</h2>
           <div class="flex flex-wrap gap-3">
             <select
               v-model="periodFilter"
               @change="onPeriodChange"
               class="px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
             >
-              <option value="3m">За 3 месяца</option>
-              <option value="6m">За 6 месяцев</option>
-              <option value="1y">За год</option>
-              <option value="all">Все</option>
+              <option value="3m">{{ $t('ecoRecyclerDetail.period3m') }}</option>
+              <option value="6m">{{ $t('ecoRecyclerDetail.period6m') }}</option>
+              <option value="1y">{{ $t('ecoRecyclerDetail.period1y') }}</option>
+              <option value="all">{{ $t('ecoRecyclerDetail.periodAll') }}</option>
             </select>
             <select
               v-model="groupFilter"
               @change="onGroupChange"
               class="px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
             >
-              <option value="">Все группы</option>
+              <option value="">{{ $t('ecoRecyclerDetail.allGroups') }}</option>
               <option v-for="wt in recycler.wasteTypes" :key="wt" :value="wt">
                 {{ getGroupLabel(wt) }}
               </option>
@@ -1076,11 +1078,11 @@ const goToGisMap = () => {
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-[#64748b] bg-[#f8fafc] border-b border-[#e2e8f0]">
-                <th class="px-4 py-3 font-medium">Дата</th>
-                <th class="px-4 py-3 font-medium">Плательщик</th>
-                <th class="px-4 py-3 font-medium">Группа товаров</th>
-                <th class="px-4 py-3 font-medium text-right">Объём (тонн)</th>
-                <th class="px-4 py-3 font-medium">Акт приёма</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.date') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.payer') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.productGroup') }}</th>
+                <th class="px-4 py-3 font-medium text-right">{{ $t('ecoRecyclerDetail.volumeTons') }}</th>
+                <th class="px-4 py-3 font-medium">{{ $t('ecoRecyclerDetail.acceptanceAct') }}</th>
               </tr>
             </thead>
             <tbody class="text-[#1e293b]">
@@ -1095,7 +1097,7 @@ const goToGisMap = () => {
                 <td class="px-4 py-3 text-right font-mono">{{ entry.volume.toFixed(1) }}</td>
                 <td class="px-4 py-3">
                   <button
-                    @click="previewDoc = { name: 'Акт ' + entry.actNumber }"
+                    @click="previewDoc = { name: $t('ecoRecyclerDetail.act') + ' ' + entry.actNumber }"
                     class="text-[#2563eb] hover:underline text-sm font-medium"
                   >
                     {{ entry.actNumber }}
@@ -1103,12 +1105,12 @@ const goToGisMap = () => {
                 </td>
               </tr>
               <tr v-if="paginatedWaste.length === 0" class="border-t border-[#e2e8f0]">
-                <td colspan="5" class="px-4 py-8 text-center text-[#64748b]">Нет данных за выбранный период</td>
+                <td colspan="5" class="px-4 py-8 text-center text-[#64748b]">{{ $t('ecoRecyclerDetail.noDataForPeriod') }}</td>
               </tr>
             </tbody>
             <tfoot v-if="filteredWaste.length > 0">
               <tr class="border-t-2 border-[#e2e8f0] bg-[#f8fafc] font-semibold text-[#1e293b]">
-                <td class="px-4 py-3" colspan="3">Итого за период ({{ filteredWaste.length }} записей)</td>
+                <td class="px-4 py-3" colspan="3">{{ $t('ecoRecyclerDetail.totalForPeriod') }} ({{ filteredWaste.length }} {{ $t('ecoRecyclerDetail.records') }})</td>
                 <td class="px-4 py-3 text-right font-mono">{{ totalVolume.toFixed(1) }}</td>
                 <td class="px-4 py-3"></td>
               </tr>
@@ -1150,7 +1152,7 @@ const goToGisMap = () => {
 
       <!-- BLOCK 5 - Документы -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.documents?.length">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Документы</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.documents') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div
             v-for="(doc, idx) in recycler.documents"
@@ -1182,13 +1184,13 @@ const goToGisMap = () => {
                 @click="previewDoc = { name: doc.name, type: doc.type.toUpperCase(), size: doc.size, date: doc.date }"
                 class="px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-[#eff6ff] rounded-lg hover:bg-[#dbeafe] transition-colors"
               >
-                Просмотр
+                {{ $t('ecoRecyclerDetail.preview') }}
               </button>
               <button
-                @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })"
+                @click="toastStore.show({ type: 'info', title: $t('ecoRecyclerDetail.downloading'), message: $t('ecoRecyclerDetail.downloadAvailableAfterStorage') })"
                 class="px-3 py-1.5 text-xs font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
               >
-                Скачать
+                {{ $t('common.download') }}
               </button>
             </div>
           </div>
@@ -1198,7 +1200,7 @@ const goToGisMap = () => {
       <!-- BLOCK 6 - География -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.coordinates">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Расположение предприятия</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.enterpriseLocation') }}</h2>
           <button
             @click="goToGisMap"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#22C55E] rounded-lg hover:bg-[#16a34a] transition-colors"
@@ -1206,7 +1208,7 @@ const goToGisMap = () => {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
-            Показать на карте
+            {{ $t('ecoRecyclerDetail.showOnMap') }}
           </button>
         </div>
         <div class="rounded-xl overflow-hidden border border-[#e2e8f0]">
@@ -1241,23 +1243,23 @@ const goToGisMap = () => {
 
       <!-- BLOCK - Дополнительная информация -->
       <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">Дополнительная информация</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.additionalInfo') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата последнего обновления</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.lastUpdateDate') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.updatedAt }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Дата добавления в реестр</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.dateAddedToRegistry') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.addedDate }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
-            <p class="text-sm text-[#64748b]">Добавил</p>
+            <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.addedBy') }}</p>
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.addedBy }}</p>
           </div>
         </div>
         <div v-if="recycler.notes" class="mt-3 p-4 bg-[#fffbeb] rounded-lg border border-[#fbbf24]">
-          <p class="text-sm font-medium text-[#92400e]">Примечания</p>
+          <p class="text-sm font-medium text-[#92400e]">{{ $t('ecoRecyclerDetail.notes') }}</p>
           <p class="text-sm text-[#78350f] mt-1">{{ recycler.notes }}</p>
         </div>
       </div>

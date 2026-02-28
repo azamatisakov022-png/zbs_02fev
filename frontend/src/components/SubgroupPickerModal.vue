@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   productGroups,
   productSubgroups,
   isPackagingGroup,
   type ProductSubgroup,
 } from '../data/product-groups'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   groupId: string
@@ -108,7 +111,7 @@ watch(() => props.groupId, () => {
       @click="openModal"
     >
       <span class="spm-trigger-text" :title="selectedSubgroupData ? selectedSubgroupData.label : ''">
-        {{ selectedSubgroupData ? selectedSubgroupData.label : 'Нажмите для выбора подгруппы' }}
+        {{ selectedSubgroupData ? selectedSubgroupData.label : $t('subgroupPicker.clickToSelect') }}
       </span>
       <svg class="spm-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
@@ -126,7 +129,7 @@ watch(() => props.groupId, () => {
           <!-- Header -->
           <div class="spm-header">
             <div>
-              <h2 class="spm-title">Выбор подгруппы товара</h2>
+              <h2 class="spm-title">{{ $t('subgroupPicker.title') }}</h2>
               <p v-if="groupData" class="spm-subtitle">{{ groupData.label }}</p>
             </div>
             <button class="spm-close" @click="closeModal">
@@ -146,7 +149,7 @@ watch(() => props.groupId, () => {
               v-model="searchQuery"
               type="text"
               class="spm-search"
-              placeholder="Поиск по наименованию или коду..."
+              :placeholder="$t('subgroupPicker.searchPlaceholder')"
             />
             <button v-if="searchQuery" class="spm-search-clear" @click="searchQuery = ''">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -161,19 +164,19 @@ watch(() => props.groupId, () => {
               <thead>
                 <tr v-if="!isPackaging">
                   <th class="spm-th spm-th-num">#</th>
-                  <th class="spm-th spm-th-name">Наименование подгруппы</th>
-                  <th class="spm-th spm-th-code">Код ГСКП</th>
-                  <th class="spm-th spm-th-code">Код ТН ВЭД</th>
-                  <th class="spm-th spm-th-tnved">Наименование ТН ВЭД</th>
-                  <th class="spm-th spm-th-rate">Ставка</th>
+                  <th class="spm-th spm-th-name">{{ $t('subgroupPicker.subgroupName') }}</th>
+                  <th class="spm-th spm-th-code">{{ $t('productGroup.gskpCode') }}</th>
+                  <th class="spm-th spm-th-code">{{ $t('productGroup.tnvedCode') }}</th>
+                  <th class="spm-th spm-th-tnved">{{ $t('productGroup.tnvedName') }}</th>
+                  <th class="spm-th spm-th-rate">{{ $t('subgroupPicker.rate') }}</th>
                 </tr>
                 <tr v-else>
                   <th class="spm-th spm-th-num">#</th>
-                  <th class="spm-th spm-th-name">Наименование подгруппы</th>
-                  <th class="spm-th spm-th-material">Материал упаковки</th>
-                  <th class="spm-th spm-th-code">Код по ТР ТС</th>
-                  <th class="spm-th spm-th-code">Обозначение по ТР ТС</th>
-                  <th class="spm-th spm-th-rate">Ставка</th>
+                  <th class="spm-th spm-th-name">{{ $t('subgroupPicker.subgroupName') }}</th>
+                  <th class="spm-th spm-th-material">{{ $t('productGroup.packagingMaterial') }}</th>
+                  <th class="spm-th spm-th-code">{{ $t('productGroup.trtsCode') }}</th>
+                  <th class="spm-th spm-th-code">{{ $t('productGroup.trtsDesignation') }}</th>
+                  <th class="spm-th spm-th-rate">{{ $t('subgroupPicker.rate') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,7 +208,7 @@ watch(() => props.groupId, () => {
                 </template>
                 <tr v-else>
                   <td :colspan="6" class="spm-td text-center py-8 text-[#94a3b8]">
-                    Ничего не найдено
+                    {{ $t('ui.nothingFound') }}
                   </td>
                 </tr>
               </tbody>
@@ -214,8 +217,8 @@ watch(() => props.groupId, () => {
 
           <!-- Footer -->
           <div class="spm-footer">
-            <span class="spm-footer-count">{{ filteredSubgroups.length }} из {{ availableSubgroups.length }} позиций</span>
-            <button class="spm-cancel" @click="closeModal">Отмена</button>
+            <span class="spm-footer-count">{{ $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: availableSubgroups.length }) }}</span>
+            <button class="spm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
           </div>
         </div>
       </div>

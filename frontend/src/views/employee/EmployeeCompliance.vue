@@ -6,7 +6,9 @@ import { AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ========== TYPES ==========
@@ -35,13 +37,13 @@ type TabId = 'norms' | 'licenses'
 
 const activeTab = ref<TabId>('norms')
 
-const tabs: { id: TabId; label: string }[] = [
-  { id: 'norms', label: 'Нормативы переработки' },
-  { id: 'licenses', label: 'Лицензии и разрешения' },
-]
+const tabs = computed<{ id: TabId; label: string }[]>(() => [
+  { id: 'norms', label: t('employeeCompliance.tabNorms') },
+  { id: 'licenses', label: t('employeeCompliance.tabLicenses') },
+])
 
 // ========== HELPER ==========
-const formatNumber = (num: number): string => num.toLocaleString('ru-RU')
+const formatNumber = (num: number): string => num.toLocaleString()
 
 // ========== TAB 1: RECYCLING NORMS ==========
 const normsData = ref<RecyclingNorm[]>([
@@ -77,9 +79,9 @@ const getNormProgressWidth = (norm: RecyclingNorm): string => {
 
 const getNormStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    fulfilled: 'Выполнен',
-    close: 'Близко к норме',
-    failed: 'Не выполнен',
+    fulfilled: t('employeeCompliance.fulfilled'),
+    close: t('employeeCompliance.closeToNorm'),
+    failed: t('employeeCompliance.notFulfilled'),
   }
   return labels[status] || status
 }
@@ -107,10 +109,10 @@ const licensesData = ref<LicenseRecord[]>([
 
 const getLicenseStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    active: 'Действует',
-    expiring: 'Истекает',
-    expired: 'Истекла',
-    pending: 'На рассмотрении',
+    active: t('employeeCompliance.licActive'),
+    expiring: t('employeeCompliance.licExpiring'),
+    expired: t('employeeCompliance.licExpired'),
+    pending: t('employeeCompliance.licPending'),
   }
   return labels[status] || status
 }
@@ -127,11 +129,11 @@ const getLicenseStatusColor = (status: string): string => {
 
 const getDaysRemainingDisplay = (license: LicenseRecord): string => {
   if (license.status === 'pending') return '\u2014'
-  if (license.status === 'expired') return 'Истекла'
+  if (license.status === 'expired') return t('employeeCompliance.licExpired')
   if (license.daysRemaining !== null) {
-    if (license.daysRemaining === 1) return '1 день'
-    if (license.daysRemaining >= 2 && license.daysRemaining <= 4) return `${license.daysRemaining} дня`
-    return `${license.daysRemaining} дней`
+    if (license.daysRemaining === 1) return `1 ${t('employeeCompliance.day')}`
+    if (license.daysRemaining >= 2 && license.daysRemaining <= 4) return `${license.daysRemaining} ${t('employeeCompliance.daysShort')}`
+    return `${license.daysRemaining} ${t('employeeCompliance.days')}`
   }
   return '\u2014'
 }
@@ -159,9 +161,9 @@ const summaryStats = computed(() => {
       </div>
 
       <SectionGuide
-        title="Контроль исполнения"
-        description="Мониторинг выполнения обязательств переработчиками и операторами."
-        :actions="['Проверка выполнения нормативов', 'Контроль сроков лицензий', 'Формирование предписаний']"
+        :title="$t('employeeCompliance.guideTitle')"
+        :description="$t('employeeCompliance.guideDescription')"
+        :actions="[$t('employeeCompliance.guideAction1'), $t('employeeCompliance.guideAction2'), $t('employeeCompliance.guideAction3')]"
         storageKey="employee-compliance"
       />
 
@@ -171,7 +173,7 @@ const summaryStats = computed(() => {
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-500">Нормативов не выполнено</p>
+              <p class="text-sm font-medium text-gray-500">{{ $t('employeeCompliance.normsNotFulfilled') }}</p>
               <p class="text-3xl font-bold text-red-600 mt-1">{{ summaryStats.normsNotFulfilled }}</p>
             </div>
             <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
@@ -180,14 +182,14 @@ const summaryStats = computed(() => {
               </svg>
             </div>
           </div>
-          <p class="text-xs text-gray-400 mt-2">из {{ normsData.length }} контролируемых видов</p>
+          <p class="text-xs text-gray-400 mt-2">{{ $t('employeeCompliance.outOfControlled', { count: normsData.length }) }}</p>
         </div>
 
         <!-- Licenses expiring -->
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-500">Лицензий истекает</p>
+              <p class="text-sm font-medium text-gray-500">{{ $t('employeeCompliance.licensesExpiring') }}</p>
               <p class="text-3xl font-bold text-yellow-600 mt-1">{{ summaryStats.licensesExpiring }}</p>
             </div>
             <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
@@ -196,7 +198,7 @@ const summaryStats = computed(() => {
               </svg>
             </div>
           </div>
-          <p class="text-xs text-gray-400 mt-2">лицензий истекает или уже истекли</p>
+          <p class="text-xs text-gray-400 mt-2">{{ $t('employeeCompliance.licensesExpiringOrExpired') }}</p>
         </div>
       </div>
 
@@ -222,18 +224,18 @@ const summaryStats = computed(() => {
       <!-- ========== TAB 1: RECYCLING NORMS ========== -->
       <div v-if="activeTab === 'norms'" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="font-semibold text-gray-900">Выполнение нормативов переработки отходов</h3>
-          <p class="text-sm text-gray-500 mt-1">Данные за текущий отчётный период</p>
+          <h3 class="font-semibold text-gray-900">{{ $t('employeeCompliance.normsTitle') }}</h3>
+          <p class="text-sm text-gray-500 mt-1">{{ $t('employeeCompliance.normsSubtitle') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Вид отхода</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Норматив (%)</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Факт (%)</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-48">Прогресс</th>
-                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Объём (т)</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.wasteType') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.normPercent') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.factPercent') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-48">{{ $t('employeeCompliance.progress') }}</th>
+                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.volumeT') }}</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('common.status') }}</th>
               </tr>
             </thead>
@@ -242,7 +244,7 @@ const summaryStats = computed(() => {
                 <td colspan="6">
                   <EmptyState
                     :title="$t('common.noData')"
-                    description="Данные о нормативах переработки за текущий период пока отсутствуют"
+                    :description="$t('employeeCompliance.normsEmpty')"
                   />
                 </td>
               </tr>
@@ -269,7 +271,7 @@ const summaryStats = computed(() => {
                 </td>
                 <td class="px-6 py-4 text-right text-gray-700 font-medium">{{ norm.volumeTons.toFixed(1) }}</td>
                 <td class="px-6 py-4 text-center">
-                  <AppBadge :variant="getStatusBadgeVariant(getNormStatusLabel(norm.status))">
+                  <AppBadge :variant="getStatusBadgeVariant(norm.status)">
                     {{ getNormStatusLabel(norm.status) }}
                   </AppBadge>
                 </td>
@@ -277,7 +279,7 @@ const summaryStats = computed(() => {
             </tbody>
             <tfoot class="bg-gray-50 border-t-2 border-gray-300">
               <tr>
-                <td class="px-6 py-4 font-bold text-gray-900">ИТОГО / Среднее</td>
+                <td class="px-6 py-4 font-bold text-gray-900">{{ $t('employeeCompliance.totalAverage') }}</td>
                 <td class="px-6 py-4 text-center font-bold text-gray-700">{{ normsTotals.avgNorm.toFixed(1) }}%</td>
                 <td class="px-6 py-4 text-center font-bold text-gray-700">{{ normsTotals.avgFact.toFixed(1) }}%</td>
                 <td class="px-6 py-4">
@@ -291,7 +293,7 @@ const summaryStats = computed(() => {
                     <span class="text-xs text-gray-500 w-10 text-right">{{ ((normsTotals.avgFact / normsTotals.avgNorm) * 100).toFixed(0) }}%</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 text-right font-bold text-gray-900">{{ formatNumber(parseFloat(normsTotals.volumeTons.toFixed(1))) }} т</td>
+                <td class="px-6 py-4 text-right font-bold text-gray-900">{{ formatNumber(parseFloat(normsTotals.volumeTons.toFixed(1))) }} {{ $t('employeeCompliance.tons') }}</td>
                 <td class="px-6 py-4"></td>
               </tr>
             </tfoot>
@@ -302,19 +304,19 @@ const summaryStats = computed(() => {
       <!-- ========== TAB 2: LICENSES ========== -->
       <div v-if="activeTab === 'licenses'" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="font-semibold text-gray-900">Лицензии и разрешения на обращение с отходами</h3>
-          <p class="text-sm text-gray-500 mt-1">Мониторинг сроков действия лицензий</p>
+          <h3 class="font-semibold text-gray-900">{{ $t('employeeCompliance.licensesTitle') }}</h3>
+          <p class="text-sm text-gray-500 mt-1">{{ $t('employeeCompliance.licensesSubtitle') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Организация</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">&#8470; лицензии</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Вид лицензии</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Дата выдачи</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Срок действия</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Дни до истечения</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.organization') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.licenseNumber') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.licenseType') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.issueDate') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.expiryDate') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.daysUntilExpiry') }}</th>
                 <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('common.status') }}</th>
               </tr>
             </thead>
@@ -323,7 +325,7 @@ const summaryStats = computed(() => {
                 <td colspan="7">
                   <EmptyState
                     :title="$t('common.noData')"
-                    description="Данные о лицензиях и разрешениях пока отсутствуют"
+                    :description="$t('employeeCompliance.licensesEmpty')"
                   />
                 </td>
               </tr>
@@ -347,7 +349,7 @@ const summaryStats = computed(() => {
                   </span>
                 </td>
                 <td class="px-6 py-4 text-center">
-                  <AppBadge :variant="getStatusBadgeVariant(getLicenseStatusLabel(license.status))">
+                  <AppBadge :variant="getStatusBadgeVariant(license.status)">
                     {{ getLicenseStatusLabel(license.status) }}
                   </AppBadge>
                 </td>

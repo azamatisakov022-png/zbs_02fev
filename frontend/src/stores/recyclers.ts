@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
+import i18n from '../i18n'
 
 // ═══ Types ═══
 
@@ -209,20 +210,17 @@ function getVolumeChangePercent(recycler: Recycler): number {
 
 /** Status labels per TZ */
 function getStatusLabel(status: RecyclerStatus): string {
-  switch (status) {
-    case 'active': return 'Активен'
-    case 'suspended': return 'Приостановлен'
-    case 'revoked': return 'Исключён'
-  }
+  return i18n.global.t(`recycler.status${status.charAt(0).toUpperCase() + status.slice(1)}`)
 }
 
 /** Inspection status labels */
 function getInspectionStatusLabel(status: InspectionStatus): string {
-  switch (status) {
-    case 'compliant': return 'Соответствует требованиям'
-    case 'violations': return 'Выявлены нарушения'
-    case 'reinspection_required': return 'Требуется повторная проверка'
+  const keyMap: Record<InspectionStatus, string> = {
+    compliant: 'recycler.inspectionCompliant',
+    violations: 'recycler.inspectionViolations',
+    reinspection_required: 'recycler.inspectionReinspection',
   }
+  return i18n.global.t(keyMap[status])
 }
 
 export const recyclerStore = {

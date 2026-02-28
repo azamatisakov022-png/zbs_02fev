@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -11,12 +12,14 @@ import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { ReportStatus } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import { notificationStore } from '../../stores/notifications'
 
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
@@ -26,15 +29,15 @@ onMounted(async () => {
   isLoading.value = false
 })
 
-const columns = [
-  { key: 'number', label: 'Номер', width: '9%' },
-  { key: 'company', label: 'Организация', width: '15%' },
-  { key: 'inn', label: 'ИНН', width: '11%' },
-  { key: 'year', label: 'Период', width: '7%' },
-  { key: 'date', label: 'Дата подачи', width: '9%' },
-  { key: 'processingPercent', label: '% выполн.', width: '8%' },
-  { key: 'status', label: 'Статус', width: '10%' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('ecoIncomingReports.colNumber'), width: '9%' },
+  { key: 'company', label: t('ecoIncomingReports.colOrganization'), width: '15%' },
+  { key: 'inn', label: t('ecoIncomingReports.colInn'), width: '11%' },
+  { key: 'year', label: t('ecoIncomingReports.colPeriod'), width: '7%' },
+  { key: 'date', label: t('ecoIncomingReports.colDateSubmitted'), width: '9%' },
+  { key: 'processingPercent', label: t('ecoIncomingReports.colCompletion'), width: '8%' },
+  { key: 'status', label: t('ecoIncomingReports.colStatus'), width: '10%' },
+])
 
 // Filters
 const searchQuery = ref('')
@@ -42,7 +45,7 @@ const statusFilter = ref('')
 const periodFilter = ref('')
 
 const filteredReports = computed(() => {
-  let list = reportStore.state.reports.filter(r => r.status !== 'Черновик')
+  let list = reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT)
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(r => r.number.toLowerCase().includes(q) || r.company.toLowerCase().includes(q) || r.inn.includes(q))
@@ -57,17 +60,17 @@ const filteredReports = computed(() => {
 })
 
 // Stats
-const totalCount = computed(() => reportStore.state.reports.filter(r => r.status !== 'Черновик').length)
-const pendingCount = computed(() => reportStore.state.reports.filter(r => r.status === 'На проверке').length)
-const approvedCount = computed(() => reportStore.state.reports.filter(r => r.status === 'Принят').length)
-const rejectedCount = computed(() => reportStore.state.reports.filter(r => r.status === 'Отклонён').length)
+const totalCount = computed(() => reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT).length)
+const pendingCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.UNDER_REVIEW).length)
+const approvedCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.APPROVED).length)
+const rejectedCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принят': return 'bg-green-100 text-green-800'
-    case 'Отклонён': return 'bg-red-100 text-red-800'
+    case 'draft': return 'bg-gray-100 text-gray-800'
+    case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'approved': return 'bg-green-100 text-green-800'
+    case 'rejected': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -133,13 +136,13 @@ const confirmApprove = () => {
     reportStore.approveReport(selectedReport.value.id, approveComment.value.trim() || undefined)
     notificationStore.add({
       type: 'success',
-      title: 'Отчёт принят',
-      message: `Ваш отчёт ${selectedReport.value.number} принят.`,
+      title: t('ecoIncomingReports.notifReportApproved'),
+      message: t('ecoIncomingReports.notifReportApprovedMsg', { number: selectedReport.value.number }),
       role: 'business'
     })
     showApproveConfirm.value = false
     closeDetail()
-    displayToast('Отчёт о переработке принят', 'success')
+    displayToast(t('ecoIncomingReports.toastReportApproved'), 'success')
   }
 }
 
@@ -153,7 +156,7 @@ const confirmReturn = () => {
     reportStore.returnReportForRevision(selectedReport.value.id, returnComment.value.trim())
     showReturnModal.value = false
     closeDetail()
-    displayToast('Отчёт возвращён на доработку', 'warning')
+    displayToast(t('ecoIncomingReports.toastReturnedForRevision'), 'warning')
   }
 }
 
@@ -162,13 +165,13 @@ const rejectReport = () => {
     reportStore.rejectReport(selectedReport.value.id, rejectionReason.value.trim())
     notificationStore.add({
       type: 'warning',
-      title: 'Отчёт отклонён',
-      message: `Ваш отчёт ${selectedReport.value.number} отклонён. Причина: ${rejectionReason.value.trim()}`,
+      title: t('ecoIncomingReports.notifReportRejected'),
+      message: t('ecoIncomingReports.notifReportRejectedMsg', { number: selectedReport.value.number, reason: rejectionReason.value.trim() }),
       role: 'business'
     })
     showRejectForm.value = false
     closeDetail()
-    displayToast('Отчёт о переработке отклонён', 'danger')
+    displayToast(t('ecoIncomingReports.toastReportRejected'), 'danger')
   }
 }
 
@@ -182,7 +185,7 @@ const downloadReportExcel = () => {
 }
 
 // Empty state helpers
-const allReports = computed(() => reportStore.state.reports.filter(r => r.status !== 'Черновик'))
+const allReports = computed(() => reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT))
 const isFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
 
 const resetFilters = () => {
@@ -205,9 +208,9 @@ const resetFilters = () => {
     </div>
 
     <SectionGuide
-      title="Отчёты о переработке"
-      description="Отчёты от переработчиков о фактических объёмах переработанных отходов."
-      :actions="['Просмотр поступивших отчётов', 'Проверка объёмов переработки', 'Сверка с нормативами', 'Утверждение или отклонение']"
+      :title="$t('ecoIncomingReports.guideTitle')"
+      :description="$t('ecoIncomingReports.guideDescription')"
+      :actions="[$t('ecoIncomingReports.guideAction1'), $t('ecoIncomingReports.guideAction2'), $t('ecoIncomingReports.guideAction3'), $t('ecoIncomingReports.guideAction4')]"
       storageKey="eco-recycling-reports"
     />
 
@@ -220,10 +223,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-yellow-800">На проверке</p>
+          <p class="text-sm font-medium text-yellow-800">{{ $t('ecoIncomingReports.statUnderReview') }}</p>
         </div>
         <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
-        <p class="text-xs text-yellow-600 mt-1">отчётов о переработке на проверке</p>
+        <p class="text-xs text-yellow-600 mt-1">{{ $t('ecoIncomingReports.statReportsUnderReview') }}</p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -232,10 +235,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-green-800">Принято</p>
+          <p class="text-sm font-medium text-green-800">{{ $t('ecoIncomingReports.statApproved') }}</p>
         </div>
         <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
-        <p class="text-xs text-green-600 mt-1">отчётов о переработке принято</p>
+        <p class="text-xs text-green-600 mt-1">{{ $t('ecoIncomingReports.statReportsApproved') }}</p>
       </div>
       <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -244,10 +247,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-red-800">Отклонено</p>
+          <p class="text-sm font-medium text-red-800">{{ $t('ecoIncomingReports.statRejected') }}</p>
         </div>
         <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
-        <p class="text-xs text-red-600 mt-1">отчётов о переработке отклонено</p>
+        <p class="text-xs text-red-600 mt-1">{{ $t('ecoIncomingReports.statReportsRejected') }}</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -256,10 +259,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-blue-800">Всего отчётов</p>
+          <p class="text-sm font-medium text-blue-800">{{ $t('ecoIncomingReports.statTotalReports') }}</p>
         </div>
         <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
-        <p class="text-xs text-blue-600 mt-1">всего отчётов о переработке</p>
+        <p class="text-xs text-blue-600 mt-1">{{ $t('ecoIncomingReports.statTotalReportsDesc') }}</p>
       </div>
     </div>
 
@@ -271,8 +274,8 @@ const resetFilters = () => {
         </svg>
       </div>
       <div>
-        <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'новый отчёт о переработке' : 'новых отчёта о переработке' }} на проверке. Проверьте данные и примите решение.</p>
+        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingReports.attentionRequired') }}</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingReports.newReportSingular') : $t('ecoIncomingReports.newReportPlural') }} {{ $t('ecoIncomingReports.alertCheckAndDecide') }}</p>
       </div>
     </div>
 
@@ -288,18 +291,18 @@ const resetFilters = () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск по номеру, компании или ИНН..."
+          :placeholder="$t('ecoIncomingReports.searchPlaceholder')"
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все статусы</option>
-          <option value="На проверке">На проверке</option>
-          <option value="Принят">Принят</option>
-          <option value="Отклонён">Отклонён</option>
-          <option value="На доработке">На доработке</option>
+          <option value="">{{ $t('common.allStatuses') }}</option>
+          <option value="under_review">{{ $t('status.underReview') }}</option>
+          <option value="approved">{{ $t('status.approvedMasc') }}</option>
+          <option value="rejected">{{ $t('status.rejectedMasc') }}</option>
+          <option value="revision">{{ $t('status.revision') }}</option>
         </select>
         <select v-model="periodFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все периоды</option>
+          <option value="">{{ $t('ecoIncomingReports.allPeriods') }}</option>
           <option value="2024">2024</option>
           <option value="2025">2025</option>
           <option value="2026">2026</option>
@@ -316,7 +319,7 @@ const resetFilters = () => {
         <span class="font-medium text-[#1e293b]">{{ value }}</span>
       </template>
       <template #cell-year="{ value }">
-        <span>{{ value }} год</span>
+        <span>{{ value }} {{ $t('ecoIncomingReports.yearSuffix') }}</span>
       </template>
       <template #cell-processingPercent="{ value }">
         <span :class="getPercentClass(value)">{{ value }}%</span>
@@ -331,17 +334,17 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            Детали
+            {{ $t('ecoIncomingReports.details') }}
           </AppButton>
           <AppButton
-            v-if="row.status === 'На проверке'"
+            v-if="row.status === 'under_review'"
             variant="secondary" size="sm"
             @click="openDetail(row)"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
-            Проверить
+            {{ $t('ecoIncomingReports.review') }}
           </AppButton>
         </div>
       </template>
@@ -357,8 +360,8 @@ const resetFilters = () => {
         <EmptyState
           v-else
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>'
-          title="Нет входящих отчётов"
-          description="Все отчёты обработаны"
+          :title="$t('ecoIncomingReports.emptyReportsTitle')"
+          :description="$t('ecoIncomingReports.emptyReportsDesc')"
         />
       </template>
     </DataTable>
@@ -371,8 +374,8 @@ const resetFilters = () => {
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-6 border-b border-[#e2e8f0]">
             <div>
-              <h2 class="text-xl font-bold text-[#1e293b]">Отчёт {{ selectedReport.number }}</h2>
-              <p class="text-sm text-[#64748b]">от {{ selectedReport.date }}</p>
+              <h2 class="text-xl font-bold text-[#1e293b]">{{ $t('ecoIncomingReports.reportNumber') }} {{ selectedReport.number }}</h2>
+              <p class="text-sm text-[#64748b]">{{ $t('ecoIncomingReports.fromDate') }} {{ selectedReport.date }}</p>
             </div>
             <div class="flex items-center gap-3">
               <AppBadge :variant="getStatusBadgeVariant(selectedReport.status)">{{ selectedReport.status }}</AppBadge>
@@ -388,22 +391,22 @@ const resetFilters = () => {
           <div class="p-6 space-y-6">
             <!-- Company Info -->
             <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-              <h3 class="font-semibold text-[#1e293b] mb-3">Данные организации</h3>
+              <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingReports.organizationData') }}</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span class="text-[#64748b]">Организация:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingReports.organizationLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedReport.company }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">ИНН:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingReports.innLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedReport.inn }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">Отчётный период:</span>
-                  <span class="ml-2 font-medium text-[#1e293b]">{{ selectedReport.year }} год</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingReports.reportingPeriodLabel') }}</span>
+                  <span class="ml-2 font-medium text-[#1e293b]">{{ selectedReport.year }} {{ $t('ecoIncomingReports.yearSuffix') }}</span>
                 </div>
                 <div>
-                  <span class="text-[#64748b]">Дата подачи:</span>
+                  <span class="text-[#64748b]">{{ $t('ecoIncomingReports.submissionDateLabel') }}</span>
                   <span class="ml-2 font-medium text-[#1e293b]">{{ selectedReport.date }}</span>
                 </div>
               </div>
@@ -412,18 +415,18 @@ const resetFilters = () => {
             <!-- Processing Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
-                <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
+                <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoIncomingReports.declared') }}</p>
                 <p class="text-xl font-bold text-[#2563eb]">{{ selectedReport.totalDeclared }} т</p>
               </div>
               <div class="bg-green-50 rounded-xl p-4 text-center border border-green-100">
-                <p class="text-xs text-[#64748b] mb-1">Переработано</p>
+                <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoIncomingReports.processed') }}</p>
                 <p class="text-xl font-bold text-[#10b981]">{{ selectedReport.totalProcessed }} т</p>
               </div>
               <div :class="[
                 'rounded-xl p-4 text-center border',
                 selectedReport.processingPercent >= 100 ? 'bg-green-50 border-green-100' : selectedReport.processingPercent >= 80 ? 'bg-yellow-50 border-yellow-100' : 'bg-red-50 border-red-100'
               ]">
-                <p class="text-xs text-[#64748b] mb-1">Выполнение</p>
+                <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoIncomingReports.completion') }}</p>
                 <p :class="[
                   'text-xl font-bold',
                   selectedReport.processingPercent >= 100 ? 'text-[#10b981]' : selectedReport.processingPercent >= 80 ? 'text-[#f59e0b]' : 'text-[#ef4444]'
@@ -433,19 +436,19 @@ const resetFilters = () => {
 
             <!-- Processing Items Table -->
             <div>
-              <h3 class="font-semibold text-[#1e293b] mb-3">Детализация переработки</h3>
+              <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingReports.processingDetails') }}</h3>
               <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
                 <table class="w-full text-sm border-collapse">
                   <thead class="bg-[#f8fafc]">
                     <tr class="text-left text-[#64748b]">
-                      <th class="px-4 py-3 font-medium" style="min-width: 200px">Группа товаров</th>
-                      <th class="px-4 py-3 font-medium" style="min-width: 120px">Код ГСКП / Материал</th>
-                      <th class="px-4 py-3 font-medium" style="min-width: 120px">Код ТН ВЭД / ТР ТС</th>
-                      <th class="px-4 py-3 font-medium" style="min-width: 150px">Наименование</th>
-                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">Деклар. (т)</th>
-                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">Перераб. (т)</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 200px">{{ $t('ecoIncomingReports.thProductGroup') }}</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 120px">{{ $t('ecoIncomingReports.thGskpMaterial') }}</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 120px">{{ $t('ecoIncomingReports.thTnvedTrts') }}</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 150px">{{ $t('ecoIncomingReports.thName') }}</th>
+                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">{{ $t('ecoIncomingReports.thDeclared') }}</th>
+                      <th class="px-4 py-3 font-medium text-right" style="min-width: 100px">{{ $t('ecoIncomingReports.thProcessed') }}</th>
                       <th class="px-4 py-3 font-medium text-right" style="min-width: 80px">%</th>
-                      <th class="px-4 py-3 font-medium" style="min-width: 150px">Переработчик</th>
+                      <th class="px-4 py-3 font-medium" style="min-width: 150px">{{ $t('ecoIncomingReports.thRecycler') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[#e2e8f0]">
@@ -471,7 +474,7 @@ const resetFilters = () => {
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">
                     <tr>
-                      <td colspan="4" class="px-4 py-3">Итого</td>
+                      <td colspan="4" class="px-4 py-3">{{ $t('ecoIncomingReports.total') }}</td>
                       <td class="px-4 py-3 text-right">{{ selectedReport.totalDeclared }} т</td>
                       <td class="px-4 py-3 text-right text-[#10b981]">{{ selectedReport.totalProcessed }} т</td>
                       <td class="px-4 py-3 text-right" :class="selectedReport.processingPercent >= (getNormativeForGroup(selectedReport.items[0]?.wasteType || 'group_5', parseInt(selectedReport.year)) * 100) ? 'text-[#10b981]' : 'text-[#ef4444]'">{{ selectedReport.processingPercent }}%</td>
@@ -484,7 +487,7 @@ const resetFilters = () => {
 
             <!-- Documents -->
             <div v-if="selectedReport.files.length > 0" class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-              <h3 class="font-semibold text-[#1e293b] mb-3">Прикреплённые документы ({{ selectedReport.files.length }})</h3>
+              <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingReports.attachedDocuments') }} ({{ selectedReport.files.length }})</h3>
               <div class="space-y-2">
                 <div v-for="file in selectedReport.files" :key="file.id" class="flex items-center gap-3 bg-white rounded-lg px-4 py-3 border border-[#e2e8f0]">
                   <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -496,69 +499,69 @@ const resetFilters = () => {
                     <p class="text-sm font-medium text-[#1e293b]">{{ file.name }}</p>
                     <p class="text-xs text-[#64748b]">{{ file.size }}</p>
                   </div>
-                  <button @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
+                  <button @click="toastStore.show({ type: 'info', title: $t('ecoIncomingReports.downloadTitle'), message: $t('ecoIncomingReports.downloadUnavailableMsg') })" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium">{{ $t('common.download') }}</button>
                 </div>
               </div>
             </div>
             <div v-else class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
-              <h3 class="font-semibold text-[#1e293b] mb-2">Прикреплённые документы</h3>
-              <p class="text-sm text-[#64748b]">Документы не прикреплены</p>
+              <h3 class="font-semibold text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.attachedDocuments') }}</h3>
+              <p class="text-sm text-[#64748b]">{{ $t('ecoIncomingReports.noDocumentsAttached') }}</p>
             </div>
 
             <!-- Excel Export Button -->
             <div class="flex justify-end">
               <AppButton variant="primary" size="sm" @click="downloadReportExcel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Скачать отчёт (Excel)
+                {{ $t('ecoIncomingReports.downloadExcel') }}
               </AppButton>
             </div>
 
             <!-- Rejection reason if rejected -->
-            <div v-if="selectedReport.status === 'Отклонён' && selectedReport.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">Причина отклонения</p>
+            <div v-if="selectedReport.status === 'rejected' && selectedReport.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingReports.rejectionReason') }}</p>
               <p class="text-sm text-red-700">{{ selectedReport.rejectionReason }}</p>
             </div>
 
             <!-- Reject Form -->
             <div v-if="showRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <h3 class="font-semibold text-red-800 mb-3">Укажите причину отклонения</h3>
+              <h3 class="font-semibold text-red-800 mb-3">{{ $t('ecoIncomingReports.specifyRejectionReason') }}</h3>
               <textarea
                 v-model="rejectionReason"
                 rows="3"
-                placeholder="Опишите причину отклонения отчёта..."
+                :placeholder="$t('ecoIncomingReports.rejectionPlaceholder')"
                 class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
               ></textarea>
-              <p class="text-xs text-[#94a3b8] mt-1 mb-3">Минимум 10 символов</p>
+              <p class="text-xs text-[#94a3b8] mt-1 mb-3">{{ $t('ecoIncomingReports.minChars') }}</p>
               <div class="flex justify-end gap-3">
                 <AppButton variant="secondary" @click="showRejectForm = false">
-                  Отмена
+                  {{ $t('common.cancel') }}
                 </AppButton>
                 <AppButton
                   variant="danger"
                   @click="rejectReport"
                   :disabled="rejectionReason.trim().length < 10"
                 >
-                  Отклонить отчёт
+                  {{ $t('ecoIncomingReports.rejectReport') }}
                 </AppButton>
               </div>
             </div>
           </div>
 
           <!-- Review result banner for processed reports -->
-          <div v-if="selectedReport.status === 'Принят' && selectedReport.reviewDate" class="mx-6 mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+          <div v-if="selectedReport.status === 'approved' && selectedReport.reviewDate" class="mx-6 mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
             <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             <div>
-              <p class="font-medium text-green-800">Отчёт принят {{ selectedReport.reviewDate }} сотрудником {{ selectedReport.reviewer }}</p>
+              <p class="font-medium text-green-800">{{ $t('ecoIncomingReports.reportApprovedBy', { date: selectedReport.reviewDate, reviewer: selectedReport.reviewer }) }}</p>
             </div>
           </div>
-          <div v-if="selectedReport.status === 'На доработке' && selectedReport.rejectionReason" class="mx-6 mb-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
-            <p class="font-medium text-orange-800 mb-1">Возвращён на доработку {{ selectedReport.reviewDate }}</p>
+          <div v-if="selectedReport.status === 'revision' && selectedReport.rejectionReason" class="mx-6 mb-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <p class="font-medium text-orange-800 mb-1">{{ $t('ecoIncomingReports.returnedForRevision', { date: selectedReport.reviewDate }) }}</p>
             <p class="text-sm text-orange-700">{{ selectedReport.rejectionReason }}</p>
           </div>
 
           <!-- History log -->
           <div v-if="selectedReport.history && selectedReport.history.length > 0" class="mx-6 mb-4">
-            <h3 class="font-semibold text-[#1e293b] mb-3">История рассмотрения</h3>
+            <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('ecoIncomingReports.reviewHistory') }}</h3>
             <div class="space-y-3">
               <div v-for="entry in selectedReport.history" :key="entry.id" class="flex items-start gap-3">
                 <div :class="[
@@ -577,29 +580,29 @@ const resetFilters = () => {
           </div>
 
           <!-- Modal Footer: Review actions -->
-          <div v-if="selectedReport.status === 'На проверке' && !showRejectForm" class="flex flex-wrap justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+          <div v-if="selectedReport.status === 'under_review' && !showRejectForm" class="flex flex-wrap justify-end gap-3 p-6 border-t border-[#e2e8f0]">
             <AppButton variant="danger" @click="showRejectForm = true">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              Отклонить
+              {{ $t('ecoIncomingReports.reject') }}
             </AppButton>
             <button @click="openReturnModal" class="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
-              На доработку
+              {{ $t('ecoIncomingReports.forRevision') }}
             </button>
             <button @click="openApproveConfirm" class="flex items-center gap-2 px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
-              Принять отчёт
+              {{ $t('ecoIncomingReports.approveReport') }}
             </button>
           </div>
 
           <!-- Close button for other statuses -->
-          <div v-else-if="selectedReport.status !== 'На проверке'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
+          <div v-else-if="selectedReport.status !== 'under_review'" class="flex justify-end p-6 border-t border-[#e2e8f0]">
             <AppButton variant="secondary" @click="closeDetail">
               {{ $t('common.close') }}
             </AppButton>
@@ -612,17 +615,17 @@ const resetFilters = () => {
       <div v-if="showApproveConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showApproveConfirm = false"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">Принять отчёт?</h3>
-          <p class="text-sm text-[#64748b] mb-4">Вы уверены, что хотите принять отчёт {{ selectedReport?.number }}?</p>
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.approveReportQuestion') }}</h3>
+          <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.approveReportConfirm', { number: selectedReport?.number }) }}</p>
           <textarea
             v-model="approveComment"
             rows="3"
-            placeholder="Комментарий (необязательно)"
+            :placeholder="$t('ecoIncomingReports.commentOptional')"
             class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#22C55E] focus:ring-2 focus:ring-[#22C55E]/20 resize-none mb-4 text-sm"
           ></textarea>
           <div class="flex justify-end gap-3">
-            <button @click="showApproveConfirm = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">Отмена</button>
-            <button @click="confirmApprove" class="px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">Подтвердить</button>
+            <button @click="showApproveConfirm = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">{{ $t('common.cancel') }}</button>
+            <button @click="confirmApprove" class="px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">{{ $t('common.confirm') }}</button>
           </div>
         </div>
       </div>
@@ -633,19 +636,19 @@ const resetFilters = () => {
       <div v-if="showReturnModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showReturnModal = false"></div>
         <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">Возврат на доработку</h3>
-          <p class="text-sm text-[#64748b] mb-4">Отчёт {{ selectedReport?.number }} от {{ selectedReport?.company }}</p>
-          <label class="block text-sm font-medium text-[#1e293b] mb-2">Укажите что нужно исправить *</label>
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.returnForRevisionTitle') }}</h3>
+          <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.reportFromCompany', { number: selectedReport?.number, company: selectedReport?.company }) }}</p>
+          <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.specifyWhatToFix') }}</label>
           <textarea
             v-model="returnComment"
             rows="4"
-            placeholder="Опишите что нужно исправить или дополнить..."
+            :placeholder="$t('ecoIncomingReports.returnPlaceholder')"
             class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 resize-none mb-1 text-sm"
           ></textarea>
-          <p class="text-xs text-[#94a3b8] mb-4">Минимум 10 символов</p>
+          <p class="text-xs text-[#94a3b8] mb-4">{{ $t('ecoIncomingReports.minChars') }}</p>
           <div class="flex justify-end gap-3">
-            <button @click="showReturnModal = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">Отмена</button>
-            <button @click="confirmReturn" :disabled="returnComment.trim().length < 10" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">Вернуть на доработку</button>
+            <button @click="showReturnModal = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">{{ $t('common.cancel') }}</button>
+            <button @click="confirmReturn" :disabled="returnComment.trim().length < 10" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">{{ $t('ecoIncomingReports.returnForRevisionBtn') }}</button>
           </div>
         </div>
       </div>

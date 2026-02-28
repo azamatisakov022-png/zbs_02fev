@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import IconArrowRight from '../icons/IconArrowRight.vue'
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -19,25 +22,25 @@ import IconArrowRight from '../icons/IconArrowRight.vue'
           <!-- Badge -->
           <div class="inline-flex items-center bg-white/10 backdrop-blur-sm px-5 py-3.5 rounded-[25px] mb-6 lg:mb-0 w-fit">
             <span class="text-white text-sm md:text-base font-medium uppercase tracking-wide">
-              🌱 Устойчивое развитие
+              {{ $t('hero.badge') }}
             </span>
           </div>
 
           <!-- Title -->
           <h1 class="text-white text-3xl md:text-4xl lg:text-[50px] lg:leading-[1.2] font-bold uppercase mt-6 lg:mt-[94px] mb-6 lg:mb-[77px]">
-            О нас
+            {{ $t('hero.title') }}
           </h1>
 
           <!-- Description -->
           <div class="text-white text-sm md:text-base lg:text-[18px] lg:leading-[1.6] font-medium max-w-[506px] space-y-4">
             <p>
-              Эко Оператор Кыргызстан — национальный оператор в сфере управления отходами, созданный для развития экологически устойчивой системы переработки и утилизации отходов на территории страны.
+              {{ $t('hero.description1') }}
             </p>
             <p class="hidden md:block">
-              Мы объединяем государственные органы, бизнес-сообщество, перерабатывающие предприятия и общественность с целью создания эффективной и прозрачной экосистемы обращения с отходами.
+              {{ $t('hero.description2') }}
             </p>
             <p class="hidden lg:block">
-              Наша деятельность направлена на внедрение современных стандартов переработки, поддержку экологической инфраструктуры и реализацию механизмов расширенной ответственности производителей. Мы стремимся обеспечить переход Кыргызстана к «зеленой экономике» и снизить негативное воздействие отходов на окружающую среду.
+              {{ $t('hero.description3') }}
             </p>
           </div>
 
@@ -58,12 +61,11 @@ import IconArrowRight from '../icons/IconArrowRight.vue'
             <!-- Card inner content -->
             <div class="bg-[rgba(243,244,245,0.3)] m-[10px] rounded-[20px] h-[calc(100%-20px)] lg:h-[190px] p-6 lg:p-[30px] flex flex-col justify-center">
               <h3 class="text-white text-lg lg:text-[20px] lg:leading-[25px] font-black uppercase mb-4 lg:mb-[61px]">
-                ПОДАТЬ<br/>
-                ОТЧЕТ
+                {{ $t('hero.submitReportTitle') }}
               </h3>
 
               <a href="/login" class="inline-flex items-center gap-[10px] text-white text-xs font-black uppercase hover:text-[#fea629] transition-colors">
-                Подать отчет
+                {{ $t('hero.submitReportLink') }}
                 <IconArrowRight class="w-[21px] h-[9px]" />
               </a>
             </div>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { CalcStatus } from '../constants/statuses'
+import { getStatusBadgeVariant } from '../utils/statusVariant'
 import type { CalculationStatus } from '../stores/calculations'
+
+const { t } = useI18n()
 
 interface TimelineDates {
   created?: string
@@ -29,34 +34,34 @@ interface Step {
 }
 
 const steps = computed<Step[]>(() => {
-  const isRejected = props.status === 'Отклонено'
+  const isRejected = props.status === CalcStatus.REJECTED
 
   const baseSteps = [
-    { key: 'created', label: 'Создан' },
-    { key: 'submitted', label: 'Отправлен' },
-    { key: 'reviewed', label: 'На проверке' },
+    { key: 'created', label: t('timeline.created') },
+    { key: 'submitted', label: t('timeline.submitted') },
+    { key: 'reviewed', label: t('timeline.underReview') },
   ]
 
   if (isRejected) {
-    baseSteps.push({ key: 'rejected', label: 'Отклонён' })
+    baseSteps.push({ key: 'rejected', label: t('timeline.rejected') })
   } else {
     baseSteps.push(
-      { key: 'approved', label: 'Принят' },
-      { key: 'invoiced', label: 'Счёт' },
-      { key: 'paid', label: 'Оплачен' },
+      { key: 'approved', label: t('timeline.approved') },
+      { key: 'invoiced', label: t('timeline.invoice') },
+      { key: 'paid', label: t('timeline.paid') },
     )
   }
 
   // Determine current step index
   let currentIdx: number
   switch (props.status) {
-    case 'Черновик': currentIdx = 0; break
-    case 'На проверке': currentIdx = 2; break
-    case 'Принято': currentIdx = 3; break
-    case 'Оплата на проверке': currentIdx = 4; break
-    case 'Оплачено': currentIdx = 5; break
-    case 'Оплата отклонена': currentIdx = 3; break
-    case 'Отклонено': currentIdx = 3; break
+    case CalcStatus.DRAFT: currentIdx = 0; break
+    case CalcStatus.UNDER_REVIEW: currentIdx = 2; break
+    case CalcStatus.APPROVED: currentIdx = 3; break
+    case CalcStatus.PAYMENT_PENDING: currentIdx = 4; break
+    case CalcStatus.PAID: currentIdx = 5; break
+    case CalcStatus.PAYMENT_REJECTED: currentIdx = 3; break
+    case CalcStatus.REJECTED: currentIdx = 3; break
     default: currentIdx = 0
   }
 
@@ -65,7 +70,7 @@ const steps = computed<Step[]>(() => {
     if (isRejected) {
       if (i < 3) state = 'completed'
       else state = 'rejected'
-    } else if (props.status === 'Оплачено') {
+    } else if (props.status === CalcStatus.PAID) {
       state = 'completed'
     } else if (i < currentIdx) {
       state = 'completed'
@@ -136,7 +141,7 @@ const getLineClass = (stepIndex: number) => {
         </div>
       </template>
       <!-- After rejected: retry hint -->
-      <template v-if="status === 'Отклонено'">
+      <template v-if="status === 'rejected'">
         <div class="tl__line tl__line--gray"></div>
         <div class="tl__step">
           <div class="tl__circle tl__circle--retry">
@@ -144,7 +149,7 @@ const getLineClass = (stepIndex: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </div>
-          <span class="tl__label tl__label--retry">Исправить</span>
+          <span class="tl__label tl__label--retry">{{ $t('timeline.retry') }}</span>
         </div>
       </template>
     </div>
@@ -189,7 +194,7 @@ const getLineClass = (stepIndex: number) => {
         </div>
       </template>
       <!-- After rejected: retry -->
-      <template v-if="status === 'Отклонено'">
+      <template v-if="status === 'rejected'">
         <div class="tl-vert__row">
           <div class="tl-vert__track">
             <div class="tl__circle tl__circle--sm tl__circle--retry">
@@ -199,7 +204,7 @@ const getLineClass = (stepIndex: number) => {
             </div>
           </div>
           <div class="tl-vert__content">
-            <span class="tl__label tl__label--retry">Исправить</span>
+            <span class="tl__label tl__label--retry">{{ $t('timeline.retry') }}</span>
           </div>
         </div>
       </template>

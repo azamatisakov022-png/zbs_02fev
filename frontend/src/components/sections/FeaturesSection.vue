@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Feature {
   id: number
   title: string
@@ -6,38 +11,38 @@ interface Feature {
   image: string
 }
 
-const features: Feature[] = [
+const features = computed<Feature[]>(() => [
   {
     id: 1,
-    title: 'Администрирование утилизационного сбора',
-    description: 'Обеспечиваем сбор, распределение и целевое использование средств, уплачиваемых производителями и импортёрами за последующую переработку и утилизацию их продукции и упаковки.',
+    title: t('features.items.title1'),
+    description: t('features.items.desc1'),
     image: '/images/features/administration.svg',
   },
   {
     id: 2,
-    title: 'Развитие инфраструктуры обращения с отходами',
-    description: 'Финансируем и поддерживаем создание пунктов сортировки, переработки, временного хранения отходов и логистических решений во вторичном сырье.',
+    title: t('features.items.title2'),
+    description: t('features.items.desc2'),
     image: '/images/features/infrastructure.svg',
   },
   {
     id: 3,
-    title: 'Повышение уровня переработки',
-    description: 'Стимулируем перерабатывающие предприятия, способствуем внедрению новых технологий и программ поддержки рынка переработки.',
+    title: t('features.items.title3'),
+    description: t('features.items.desc3'),
     image: '/images/features/recycling.svg',
   },
   {
     id: 4,
-    title: 'Экологическое просвещение',
-    description: 'Повышаем осведомлённость населения о важности сортировки, переработки и сокращения отходов.',
+    title: t('features.items.title4'),
+    description: t('features.items.desc4'),
     image: '/images/features/education.svg',
   },
   {
     id: 5,
-    title: 'Мониторинг и контроль эффективности',
-    description: 'Обеспечиваем прозрачность использования средств, ведём учет объемов переработки и публикуем отчётность.',
+    title: t('features.items.title5'),
+    description: t('features.items.desc5'),
     image: '/images/features/monitoring.svg',
   },
-]
+])
 </script>
 
 <template>
@@ -46,7 +51,7 @@ const features: Feature[] = [
       <!-- Section header -->
       <div class="mb-8 md:mb-10 lg:mb-[63px]">
         <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px]">
-          Основные направления деятельности
+          {{ $t('features.title') }}
         </h2>
         <div class="section-title-underline"></div>
       </div>
@@ -75,7 +80,7 @@ const features: Feature[] = [
               {{ feature.description }}
             </p>
             <a href="#" class="text-[#fea629] text-xs font-black uppercase hover:opacity-80 transition-opacity mt-auto">
-              Подробнее
+              {{ $t('common.more') }}
             </a>
           </div>
 
@@ -108,7 +113,7 @@ const features: Feature[] = [
               {{ feature.description }}
             </p>
             <a href="#" class="text-[#fea629] text-xs font-black uppercase hover:opacity-80 transition-opacity mt-auto">
-              Подробнее
+              {{ $t('common.more') }}
             </a>
           </div>
 

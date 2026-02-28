@@ -27,12 +27,15 @@ const showMapSearchResults = ref(false)
 
 type LayerType = 'recyclers' | 'reception' | 'landfills' | 'dumps' | 'payers'
 
-const layers = ref([
-  { id: 'landfills' as LayerType, name: 'Полигоны ТБО', icon: '🟢', visible: true, color: '#22c55e' },
-  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '🔵', visible: true, color: '#2563EB' },
-  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '🟡', visible: true, color: '#EAB308' },
-  { id: 'dumps' as LayerType, name: 'Несанкц. свалки', icon: '🟠', visible: true, color: '#DC2626' },
-  { id: 'payers' as LayerType, name: 'Плательщики', icon: '🟣', visible: false, color: '#9333EA' },
+const layerVisibility = ref<Record<LayerType, boolean>>({
+  landfills: true, recyclers: true, reception: true, dumps: true, payers: false,
+})
+const layers = computed(() => [
+  { id: 'landfills' as LayerType, name: t('employeeMap.layerLandfills'), icon: '🟢', visible: layerVisibility.value.landfills, color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: t('employeeMap.layerRecyclers'), icon: '🔵', visible: layerVisibility.value.recyclers, color: '#2563EB' },
+  { id: 'reception' as LayerType, name: t('employeeMap.layerReception'), icon: '🟡', visible: layerVisibility.value.reception, color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: t('employeeMap.layerDumps'), icon: '🟠', visible: layerVisibility.value.dumps, color: '#DC2626' },
+  { id: 'payers' as LayerType, name: t('employeeMap.layerPayers'), icon: '🟣', visible: layerVisibility.value.payers, color: '#9333EA' },
 ])
 
 interface MapPoint {
@@ -74,13 +77,13 @@ const onPickerConfirm = (coords: { lat: number; lng: number }) => {
   }
 }
 
-const registries = [
-  { id: 'landfills' as LayerType, name: 'Полигоны ТБО', icon: '🟢', color: '#22c55e' },
-  { id: 'recyclers' as LayerType, name: 'Переработчики', icon: '🔵', color: '#2563EB' },
-  { id: 'reception' as LayerType, name: 'Пункты приёма', icon: '🟡', color: '#EAB308' },
-  { id: 'dumps' as LayerType, name: 'Несанкц. свалки', icon: '🟠', color: '#DC2626' },
-  { id: 'payers' as LayerType, name: 'Плательщики', icon: '🟣', color: '#9333EA' },
-]
+const registries = computed(() => [
+  { id: 'landfills' as LayerType, name: t('employeeMap.layerLandfills'), icon: '🟢', color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: t('employeeMap.layerRecyclers'), icon: '🔵', color: '#2563EB' },
+  { id: 'reception' as LayerType, name: t('employeeMap.layerReception'), icon: '🟡', color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: t('employeeMap.layerDumps'), icon: '🟠', color: '#DC2626' },
+  { id: 'payers' as LayerType, name: t('employeeMap.layerPayers'), icon: '🟣', color: '#9333EA' },
+])
 
 const regions = ['г. Бишкек', 'г. Ош', 'Чуйская обл.', 'Ошская обл.', 'Джалал-Абадская обл.', 'Иссык-Кульская обл.', 'Нарынская обл.', 'Таласская обл.', 'Баткенская обл.']
 const wasteTypeOptions = ['Пластик', 'Бумага', 'Картон', 'Стекло', 'Металл', 'Алюминий', 'Электроника', 'Батарейки', 'Текстиль', 'Органика', 'Шины', 'Масла', 'Строительные', 'Бытовые']
@@ -97,7 +100,7 @@ const landfills = computed(() => landfillStore.state.landfills.map(l => ({
   name: l.name,
   region: l.region,
   district: l.district,
-  type: l.type === 'sanitary' ? 'Санкционированный' : 'Несанкционированный',
+  type: l.type === 'sanitary' ? t('employeeMap.statusSanctioned') : t('employeeMap.statusUnsanctioned'),
   area: l.designCapacity / 100,
   volume: l.currentVolume * 1000,
   wasteTypes: l.wasteAcceptance.map(w => w.category),
@@ -106,13 +109,13 @@ const landfills = computed(() => landfillStore.state.landfills.map(l => ({
   address: l.address,
   organization: l.operator,
   discoveryDate: '01.01.' + l.openYear,
-  status: l.status === 'active' ? 'Активен' : l.status === 'closed' ? 'Закрыт' : 'На реконструкции',
+  status: l.status === 'active' ? t('employeeMap.statusActive') : l.status === 'closed' ? t('employeeMap.statusClosed') : t('employeeMap.statusReconstruction'),
   photo: '',
   notes: '',
 })))
 
 const selectedLandfill = ref<Landfill | null>(null)
-const landfillForm = ref<Landfill>({ id: 0, name: '', region: '', district: '', type: 'Санкционированный', area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: 'Активен', photo: '', notes: '' })
+const landfillForm = ref<Landfill>({ id: 0, name: '', region: '', district: '', type: '', area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: '', photo: '', notes: '' })
 
 const filteredLandfills = computed(() => {
   if (!registrySearchQuery.value) return landfills.value
@@ -139,12 +142,12 @@ const receptionPoints = computed(() => collectionPointStore.state.points.map(p =
   phone: p.phone,
   email: p.email,
   organization: p.organization,
-  status: p.status === 'active' ? 'Работает' : p.status === 'paused' ? 'Временно закрыт' : 'Закрыт',
+  status: p.status === 'active' ? t('employeeMap.statusWorking') : p.status === 'paused' ? t('employeeMap.statusTempClosed') : t('employeeMap.statusClosed'),
   notes: p.notes,
 })))
 
 const selectedReception = ref<ReceptionPoint | null>(null)
-const receptionForm = ref<ReceptionPoint>({ id: 0, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: 'Работает', notes: '' })
+const receptionForm = ref<ReceptionPoint>({ id: 0, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: '', notes: '' })
 
 const filteredReception = computed(() => {
   if (!registrySearchQuery.value) return receptionPoints.value
@@ -176,12 +179,12 @@ const recyclers = computed(() => recyclerStore.state.recyclers.map(r => ({
   licenseNumber: r.licenseNumber,
   licenseExpiry: r.licenseExpiry,
   region: r.region || '',
-  status: r.status === 'active' ? 'Активен' : r.status === 'suspended' ? 'Приостановлен' : 'Неактивен',
+  status: r.status === 'active' ? t('employeeMap.statusActive') : r.status === 'suspended' ? t('employeeMap.statusSuspended') : t('employeeMap.statusInactive'),
   notes: r.notes || '',
 })))
 
 const selectedRecycler = ref<Recycler | null>(null)
-const recyclerForm = ref<Recycler>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: 'Активен', notes: '' })
+const recyclerForm = ref<Recycler>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: '', notes: '' })
 
 const filteredRecyclers = computed(() => {
   if (!registrySearchQuery.value) return recyclers.value
@@ -205,7 +208,7 @@ const producers = ref<Producer[]>([
 ])
 
 const selectedProducer = ref<Producer | null>(null)
-const producerForm = ref<Producer>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: 'Активен', notes: '' })
+const producerForm = ref<Producer>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: '', notes: '' })
 
 const filteredProducers = computed(() => {
   if (!registrySearchQuery.value) return producers.value
@@ -233,7 +236,7 @@ const dumps = computed(() => dumpStore.state.dumps.map(d => ({
 })))
 
 const selectedDump = ref<Dump | null>(null)
-const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' })
+const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: '', notes: '' })
 
 const dumpPhotos = ref<Array<{ name: string; data: string; size: string }>>([])
 
@@ -249,7 +252,7 @@ const handleDumpPhotoUpload = (event: Event) => {
       dumpPhotos.value.push({
         name: file.name,
         data: reader.result as string,
-        size: sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' МБ' : sizeKB + ' КБ',
+        size: sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' ' + t('employeeMap.mb') : sizeKB + ' ' + t('employeeMap.kb'),
       })
     }
     reader.readAsDataURL(file)
@@ -433,20 +436,20 @@ const createClusterIcon = (count: number) => {
 }
 
 const getStatusInfo = (status: string) => {
-  const map: Record<string, { label: string; color: string }> = {
-    'Активен': { label: 'Активен', color: 'bg-green-100 text-green-700' },
-    'Работает': { label: 'Работает', color: 'bg-green-100 text-green-700' },
-    'Закрыт': { label: 'Закрыт', color: 'bg-gray-100 text-gray-700' },
-    'Временно закрыт': { label: 'Временно закрыт', color: 'bg-yellow-100 text-yellow-700' },
-    'На проверке': { label: 'На проверке', color: 'bg-yellow-100 text-yellow-700' },
-    'На реконструкции': { label: 'На реконструкции', color: 'bg-blue-100 text-blue-700' },
-    'Обнаружена': { label: 'Обнаружена', color: 'bg-red-100 text-red-700' },
-    'Ликвидируется': { label: 'Ликвидируется', color: 'bg-orange-100 text-orange-700' },
-    'Ликвидирована': { label: 'Ликвидирована', color: 'bg-green-100 text-green-700' },
-    'Оплачен': { label: 'Оплачен', color: 'bg-green-100 text-green-700' },
-    'Просрочен': { label: 'Просрочен', color: 'bg-red-100 text-red-700' },
+  const colorMap: Record<string, string> = {
+    [t('employeeMap.statusActive')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusWorking')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusClosed')]: 'bg-gray-100 text-gray-700',
+    [t('employeeMap.statusTempClosed')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusOnCheck')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusReconstruction')]: 'bg-blue-100 text-blue-700',
+    [t('employeeMap.statusDiscovered')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusLiquidating')]: 'bg-orange-100 text-orange-700',
+    [t('employeeMap.statusLiquidated')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusPaid')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusOverdue')]: 'bg-red-100 text-red-700',
   }
-  return map[status] || { label: status, color: 'bg-gray-100 text-gray-700' }
+  return { label: status, color: colorMap[status] || 'bg-gray-100 text-gray-700' }
 }
 
 const getTypeLabel = (type: LayerType) => {
@@ -455,8 +458,7 @@ const getTypeLabel = (type: LayerType) => {
 }
 
 const toggleLayer = (layerId: LayerType) => {
-  const layer = layers.value.find(l => l.id === layerId)
-  if (layer) layer.visible = !layer.visible
+  layerVisibility.value[layerId] = !layerVisibility.value[layerId]
 }
 
 const performMapSearch = () => {
@@ -481,8 +483,7 @@ const goToMapPoint = (point: MapPoint) => {
   showMapSearchResults.value = false
   mapSearchQuery.value = point.name
 
-  const layer = layers.value.find(l => l.id === point.type)
-  if (layer && !layer.visible) layer.visible = true
+  if (!layerVisibility.value[point.type]) layerVisibility.value[point.type] = true
 }
 
 // Click on table row to go to map
@@ -493,8 +494,7 @@ const onTableRowClick = (item: any, type: LayerType) => {
     if (!isNaN(lat) && !isNaN(lng)) {
       mapCenter.value = [lat, lng]
       mapZoom.value = 14
-      const layer = layers.value.find(l => l.id === type)
-      if (layer && !layer.visible) layer.visible = true
+      if (!layerVisibility.value[type]) layerVisibility.value[type] = true
 
       // Scroll to map
       nextTick(() => {
@@ -507,15 +507,19 @@ const onTableRowClick = (item: any, type: LayerType) => {
 // ==================== REGISTRY CRUD FUNCTIONS ====================
 const getStatusClass = (status: string) => {
   const map: Record<string, string> = {
-    'Активен': 'bg-green-100 text-green-700', 'Работает': 'bg-green-100 text-green-700',
-    'Закрыт': 'bg-gray-100 text-gray-700', 'Временно закрыт': 'bg-yellow-100 text-yellow-700',
-    'На проверке': 'bg-yellow-100 text-yellow-700', 'На реконструкции': 'bg-blue-100 text-blue-700',
-    'Приостановлен': 'bg-red-100 text-red-700', 'Рекультивирован': 'bg-teal-100 text-teal-700',
-    'Обнаружена': 'bg-red-100 text-red-700',
-    'Ликвидируется': 'bg-orange-100 text-orange-700',
-    'Ликвидирована': 'bg-green-100 text-green-700',
-    'Оплачен': 'bg-green-100 text-green-700',
-    'Просрочен': 'bg-red-100 text-red-700',
+    [t('employeeMap.statusActive')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusWorking')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusClosed')]: 'bg-gray-100 text-gray-700',
+    [t('employeeMap.statusTempClosed')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusOnCheck')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusReconstruction')]: 'bg-blue-100 text-blue-700',
+    [t('employeeMap.statusSuspended')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusRecultivated')]: 'bg-teal-100 text-teal-700',
+    [t('employeeMap.statusDiscovered')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusLiquidating')]: 'bg-orange-100 text-orange-700',
+    [t('employeeMap.statusLiquidated')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusPaid')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusOverdue')]: 'bg-red-100 text-red-700',
   }
   return map[status] || 'bg-gray-100 text-gray-700'
 }
@@ -544,15 +548,15 @@ const openEdit = (item: any) => {
 const openCreate = () => {
   isCreating.value = true
   if (activeRegistry.value === 'landfills') {
-    landfillForm.value = { id: Math.max(0, ...landfills.value.map(l => l.id)) + 1, name: '', region: '', district: '', type: 'Санкционированный', area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: 'Активен', photo: '', notes: '' }
+    landfillForm.value = { id: Math.max(0, ...landfills.value.map(l => l.id)) + 1, name: '', region: '', district: '', type: t('employeeMap.statusSanctioned'), area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: t('employeeMap.statusActive'), photo: '', notes: '' }
   } else if (activeRegistry.value === 'reception') {
-    receptionForm.value = { id: Math.max(0, ...receptionPoints.value.map(r => r.id)) + 1, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: 'Работает', notes: '' }
+    receptionForm.value = { id: Math.max(0, ...receptionPoints.value.map(r => r.id)) + 1, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: t('employeeMap.statusWorking'), notes: '' }
   } else if (activeRegistry.value === 'recyclers') {
-    recyclerForm.value = { id: Math.max(0, ...recyclers.value.map(r => r.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: 'Активен', notes: '' }
+    recyclerForm.value = { id: Math.max(0, ...recyclers.value.map(r => r.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: t('employeeMap.statusActive'), notes: '' }
   } else if (activeRegistry.value === 'producers') {
-    producerForm.value = { id: Math.max(0, ...producers.value.map(p => p.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: 'Активен', notes: '' }
+    producerForm.value = { id: Math.max(0, ...producers.value.map(p => p.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: t('employeeMap.statusActive'), notes: '' }
   } else if (activeRegistry.value === 'dumps') {
-    dumpForm.value = { id: Math.max(0, ...dumps.value.map(d => d.id)) + 1, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: 'Обнаружена', notes: '' }
+    dumpForm.value = { id: Math.max(0, ...dumps.value.map(d => d.id)) + 1, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: t('employeeMap.statusDiscovered'), notes: '' }
   } else if (activeRegistry.value === 'payers') {
     payerForm.value = { id: Math.max(0, ...payers.value.map(p => p.id)) + 1, name: '', inn: '', region: '', address: '', gpsLat: '', gpsLng: '', phone: '', category: '', calcStatus: '' }
   }
@@ -573,8 +577,8 @@ const mapLandfillFormToStore = (form: Landfill): Omit<StoreLandfill, 'id'> => {
   const existing = landfillStore.getLandfillById(form.id)
   return {
     name: form.name, region: form.region, district: form.district,
-    type: form.type === 'Санкционированный' ? 'sanitary' : 'unauthorized',
-    status: form.status === 'Активен' ? 'active' : form.status === 'Закрыт' ? 'closed' : 'recultivation',
+    type: form.type === t('employeeMap.statusSanctioned') ? 'sanitary' : 'unauthorized',
+    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusClosed') ? 'closed' : 'recultivation',
     operator: form.organization, address: form.address,
     lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
     designCapacity: form.area * 100, currentVolume: form.volume / 1000,
@@ -600,14 +604,14 @@ const mapReceptionFormToStore = (form: ReceptionPoint): Omit<CollectionPoint, 'i
   lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
   wasteTypes: form.wasteTypes, workingHours: form.workingHours,
   phone: form.phone, email: form.email, organization: form.organization,
-  status: form.status === 'Работает' ? 'active' : form.status === 'Временно закрыт' ? 'paused' : 'closed',
+  status: form.status === t('employeeMap.statusWorking') ? 'active' : form.status === t('employeeMap.statusTempClosed') ? 'paused' : 'closed',
   notes: form.notes,
 })
 
 const mapDumpFormToStore = (form: Dump): Omit<StoreDump, 'id'> => {
   const existing = dumpStore.getDumpById(form.id)
   const statusMap: Record<string, 'discovered' | 'liquidating' | 'liquidated'> = {
-    'Обнаружена': 'discovered', 'Ликвидируется': 'liquidating', 'Ликвидирована': 'liquidated',
+    [t('employeeMap.statusDiscovered')]: 'discovered', [t('employeeMap.statusLiquidating')]: 'liquidating', [t('employeeMap.statusLiquidated')]: 'liquidated',
   }
   return {
     name: form.name, region: form.region, address: form.address,
@@ -627,7 +631,7 @@ const mapRecyclerFormToStore = (form: Recycler): Partial<StoreRecycler> => {
     directorName: form.director, contactPerson: form.contactPerson || null,
     contactPhone: form.phone, contactEmail: form.email,
     wasteTypes: form.wasteTypes, licenseNumber: form.licenseNumber, licenseExpiry: form.licenseExpiry,
-    status: form.status === 'Активен' ? 'active' : form.status === 'Приостановлен' ? 'suspended' : 'revoked',
+    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusSuspended') ? 'suspended' : 'revoked',
     notes: form.notes || null,
     ...(existing ? {} : {
       fullName: form.name, opf: 'ОсОО', legalAddress: form.address, actualAddress: form.address,
@@ -638,8 +642,8 @@ const mapRecyclerFormToStore = (form: Recycler): Partial<StoreRecycler> => {
       employeesCount: '0', certifications: [], processingMethods: [],
       inspectionStatus: null, lastInspectionDate: null, inspectionRemarks: null, nextInspectionDate: null,
       processedCurrentYear: 0, processedPreviousYear: 0,
-      suspensionReason: null, updatedAt: new Date().toLocaleDateString('ru-RU'),
-      addedDate: new Date().toLocaleDateString('ru-RU'), addedBy: '',
+      suspensionReason: null, updatedAt: new Date().toLocaleDateString(),
+      addedDate: new Date().toLocaleDateString(), addedBy: '',
       documents: [], rating: 0,
     }),
   }
@@ -670,7 +674,7 @@ const saveItem = () => {
     else { const idx = payers.value.findIndex(p => p.id === payerForm.value.id); if (idx !== -1) payers.value[idx] = { ...payerForm.value } }
   }
   showEditModal.value = false
-  notificationMessage.value = isCreating.value ? 'Запись успешно создана' : 'Данные обновлены'
+  notificationMessage.value = isCreating.value ? t('employeeMap.recordCreated') : t('employeeMap.dataUpdated')
   showNotification.value = true
   setTimeout(() => { showNotification.value = false }, 3000)
 }
@@ -689,7 +693,7 @@ const deleteItem = () => {
   else if (activeRegistry.value === 'dumps' && selectedDump.value) dumpStore.deleteDump(selectedDump.value.id)
   else if (activeRegistry.value === 'payers' && selectedPayer.value) payers.value = payers.value.filter(p => p.id !== selectedPayer.value!.id)
   showDeleteConfirm.value = false
-  notificationMessage.value = 'Запись удалена'
+  notificationMessage.value = t('employeeMap.recordDeleted')
   showNotification.value = true
   setTimeout(() => { showNotification.value = false }, 3000)
 }
@@ -736,7 +740,7 @@ const countByType = computed(() => ({
           <p class="text-gray-600 mt-1">{{ $t('pages.employee.mapSubtitle') }}</p>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="toastStore.show({ type: 'info', title: 'Экспорт', message: 'Экспорт данных карты будет доступен в следующем обновлении' })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeMap.exportNotReady') })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             {{ $t('common.export') }}
           </button>
@@ -748,9 +752,9 @@ const countByType = computed(() => ({
       </div>
 
       <SectionGuide
-        title="Интерактивная ГИС-карта"
-        description="Карта объектов обращения с отходами Кыргызской Республики."
-        :actions="['Просмотр объектов на карте', 'Фильтрация по типам объектов', 'Добавление новых объектов', 'Управление координатами']"
+        :title="$t('employeeMap.guideTitle')"
+        :description="$t('employeeMap.guideDescription')"
+        :actions="[$t('employeeMap.guideAction1'), $t('employeeMap.guideAction2'), $t('employeeMap.guideAction3'), $t('employeeMap.guideAction4')]"
         storageKey="employee-gis-map"
       />
 
@@ -763,7 +767,7 @@ const countByType = computed(() => ({
             <input
               v-model="mapSearchQuery"
               type="text"
-              placeholder="Поиск объекта..."
+              :placeholder="$t('employeeMap.searchObject')"
               class="w-full h-9 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent"
               @focus="showMapSearchResults = mapSearchResults.length > 0"
               @blur="setTimeout(() => showMapSearchResults = false, 200)"
@@ -821,10 +825,10 @@ const countByType = computed(() => ({
                       <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(item.point.status).color]">{{ getStatusInfo(item.point.status).label }}</span>
                     </div>
                     <div class="space-y-1 text-xs">
-                      <p class="flex items-start gap-2"><span class="text-gray-400">Тип:</span><span class="text-gray-700">{{ getTypeLabel(item.point.type) }}</span></p>
-                      <p class="flex items-start gap-2"><span class="text-gray-400">Адрес:</span><span class="text-gray-700">{{ item.point.address }}</span></p>
-                      <p v-if="item.point.phone" class="flex items-start gap-2"><span class="text-gray-400">Тел:</span><span class="text-gray-700">{{ item.point.phone }}</span></p>
-                      <p v-if="item.point.description" class="flex items-start gap-2"><span class="text-gray-400">Инфо:</span><span class="text-gray-700">{{ item.point.description }}</span></p>
+                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('common.type') }}:</span><span class="text-gray-700">{{ getTypeLabel(item.point.type) }}</span></p>
+                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.address') }}:</span><span class="text-gray-700">{{ item.point.address }}</span></p>
+                      <p v-if="item.point.phone" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.phoneShort') }}:</span><span class="text-gray-700">{{ item.point.phone }}</span></p>
+                      <p v-if="item.point.description" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.info') }}:</span><span class="text-gray-700">{{ item.point.description }}</span></p>
                     </div>
                   </div>
                 </LPopup>
@@ -866,15 +870,15 @@ const countByType = computed(() => ({
 
       <!-- LANDFILLS TABLE -->
       <div v-if="activeRegistry === 'landfills'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр полигонов и свалок</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryLandfills') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Площадь</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.type') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.area') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
@@ -888,8 +892,8 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>Просмотр</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>Изменить</button>
+                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ $t('common.view') }}</button>
+                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>{{ $t('common.edit') }}</button>
                     <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</button>
                   </div>
                 </td>
@@ -901,15 +905,15 @@ const countByType = computed(() => ({
 
       <!-- RECEPTION TABLE -->
       <div v-if="activeRegistry === 'reception'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр пунктов приёма</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryReception') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Адрес</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Виды отходов</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.address') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.wasteTypes') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
@@ -936,15 +940,15 @@ const countByType = computed(() => ({
 
       <!-- RECYCLERS TABLE -->
       <div v-if="activeRegistry === 'recyclers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр переработчиков</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryRecyclers') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид деятельности</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.activityType') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
@@ -971,15 +975,15 @@ const countByType = computed(() => ({
 
       <!-- PRODUCERS TABLE -->
       <div v-if="activeRegistry === 'producers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр производителей</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryProducers') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид продукции</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.productType') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
@@ -1006,17 +1010,17 @@ const countByType = computed(() => ({
 
       <!-- DUMPS TABLE -->
       <div v-if="activeRegistry === 'dumps'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр несанкционированных свалок</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryDumps') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Название</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Площадь (га)</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата обнаружения</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.areaHa') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.discoveryDate') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -1028,9 +1032,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.dumpStatus)]">{{ item.dumpStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">Просмотр</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">Изменить</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">Удалить</button>
+                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
+                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
+                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">{{ $t('common.delete') }}</button>
                   </div>
                 </td>
               </tr>
@@ -1041,17 +1045,17 @@ const countByType = computed(() => ({
 
       <!-- PAYERS TABLE -->
       <div v-if="activeRegistry === 'payers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">Реестр плательщиков утильсбора</h3></div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryPayers') }}</h3></div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Категория</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус расчётов</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.category') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.calcStatus') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -1063,8 +1067,8 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.calcStatus)]">{{ item.calcStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">Просмотр</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">Изменить</button>
+                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
+                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
                   </div>
                 </td>
               </tr>
@@ -1079,78 +1083,78 @@ const countByType = computed(() => ({
       <div v-if="showViewModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
           <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">Просмотр записи</h3>
+            <h3 class="text-xl font-bold text-gray-900">{{ $t('employeeMap.viewRecord') }}</h3>
             <button @click="showViewModal = false" class="p-2 text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
           <div class="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
             <!-- Landfill view -->
             <div v-if="activeRegistry === 'landfills' && selectedLandfill" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm text-gray-500">Название</label><p class="font-medium">{{ selectedLandfill.name }}</p></div>
-                <div><label class="text-sm text-gray-500">Статус</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedLandfill.status)]">{{ selectedLandfill.status }}</span></p></div>
-                <div><label class="text-sm text-gray-500">Регион</label><p>{{ selectedLandfill.region }}</p></div>
-                <div><label class="text-sm text-gray-500">Район</label><p>{{ selectedLandfill.district }}</p></div>
-                <div><label class="text-sm text-gray-500">Тип</label><p>{{ selectedLandfill.type }}</p></div>
-                <div><label class="text-sm text-gray-500">Площадь</label><p>{{ selectedLandfill.area }} га</p></div>
-                <div><label class="text-sm text-gray-500">Объём</label><p>{{ selectedLandfill.volume?.toLocaleString() }} т</p></div>
-                <div><label class="text-sm text-gray-500">Организация</label><p>{{ selectedLandfill.organization || '—' }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Адрес</label><p>{{ selectedLandfill.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedLandfill.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedLandfill.status)]">{{ selectedLandfill.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedLandfill.region }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.district') }}</label><p>{{ selectedLandfill.district }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.type') }}</label><p>{{ selectedLandfill.type }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.area') }}</label><p>{{ selectedLandfill.area }} {{ $t('employeeMap.ha') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.volume') }}</label><p>{{ selectedLandfill.volume?.toLocaleString() }} {{ $t('common.tons') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedLandfill.organization || '—' }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedLandfill.address }}</p></div>
                 <div><label class="text-sm text-gray-500">GPS</label><p class="font-mono text-sm">{{ selectedLandfill.gpsLat }}, {{ selectedLandfill.gpsLng }}</p></div>
-                <div><label class="text-sm text-gray-500">Дата обнаружения</label><p>{{ selectedLandfill.discoveryDate || '—' }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Виды отходов</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedLandfill.wasteTypes" :key="wt" class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">{{ wt }}</span></div></div>
-                <div class="col-span-2" v-if="selectedLandfill.notes"><label class="text-sm text-gray-500">Примечания</label><p>{{ selectedLandfill.notes }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.discoveryDate') }}</label><p>{{ selectedLandfill.discoveryDate || '—' }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedLandfill.wasteTypes" :key="wt" class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">{{ wt }}</span></div></div>
+                <div class="col-span-2" v-if="selectedLandfill.notes"><label class="text-sm text-gray-500">{{ $t('employeeMap.notes') }}</label><p>{{ selectedLandfill.notes }}</p></div>
               </div>
             </div>
             <!-- Reception view -->
             <div v-if="activeRegistry === 'reception' && selectedReception" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm text-gray-500">Название</label><p class="font-medium">{{ selectedReception.name }}</p></div>
-                <div><label class="text-sm text-gray-500">Статус</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedReception.status)]">{{ selectedReception.status }}</span></p></div>
-                <div><label class="text-sm text-gray-500">Регион</label><p>{{ selectedReception.region }}</p></div>
-                <div><label class="text-sm text-gray-500">Район</label><p>{{ selectedReception.district }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Адрес</label><p>{{ selectedReception.address }}</p></div>
-                <div><label class="text-sm text-gray-500">Режим работы</label><p>{{ selectedReception.workingHours }}</p></div>
-                <div><label class="text-sm text-gray-500">Телефон</label><p>{{ selectedReception.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedReception.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedReception.status)]">{{ selectedReception.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedReception.region }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.district') }}</label><p>{{ selectedReception.district }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedReception.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.workingHours') }}</label><p>{{ selectedReception.workingHours }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedReception.phone }}</p></div>
                 <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedReception.email }}</p></div>
-                <div><label class="text-sm text-gray-500">Организация</label><p>{{ selectedReception.organization }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedReception.organization }}</p></div>
                 <div><label class="text-sm text-gray-500">GPS</label><p class="font-mono text-sm">{{ selectedReception.gpsLat }}, {{ selectedReception.gpsLng }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Виды отходов</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedReception.wasteTypes" :key="wt" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">{{ wt }}</span></div></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedReception.wasteTypes" :key="wt" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">{{ wt }}</span></div></div>
               </div>
             </div>
             <!-- Recycler view -->
             <div v-if="activeRegistry === 'recyclers' && selectedRecycler" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm text-gray-500">Наименование</label><p class="font-medium">{{ selectedRecycler.name }}</p></div>
-                <div><label class="text-sm text-gray-500">Статус</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedRecycler.status)]">{{ selectedRecycler.status }}</span></p></div>
-                <div><label class="text-sm text-gray-500">ИНН</label><p class="font-mono">{{ selectedRecycler.inn }}</p></div>
-                <div><label class="text-sm text-gray-500">Регион</label><p>{{ selectedRecycler.region }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Адрес</label><p>{{ selectedRecycler.address }}</p></div>
-                <div><label class="text-sm text-gray-500">Директор</label><p>{{ selectedRecycler.director }}</p></div>
-                <div><label class="text-sm text-gray-500">Контактное лицо</label><p>{{ selectedRecycler.contactPerson }}</p></div>
-                <div><label class="text-sm text-gray-500">Телефон</label><p>{{ selectedRecycler.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedRecycler.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedRecycler.status)]">{{ selectedRecycler.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.inn') }}</label><p class="font-mono">{{ selectedRecycler.inn }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedRecycler.region }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedRecycler.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.director') }}</label><p>{{ selectedRecycler.director }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.contactPerson') }}</label><p>{{ selectedRecycler.contactPerson }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedRecycler.phone }}</p></div>
                 <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedRecycler.email }}</p></div>
-                <div><label class="text-sm text-gray-500">Вид деятельности</label><p>{{ selectedRecycler.activityType }}</p></div>
-                <div><label class="text-sm text-gray-500">Мощность</label><p>{{ selectedRecycler.capacity?.toLocaleString() }} т/год</p></div>
-                <div><label class="text-sm text-gray-500">Лицензия</label><p class="font-mono text-sky-600">{{ selectedRecycler.licenseNumber }}</p></div>
-                <div><label class="text-sm text-gray-500">Срок действия</label><p>{{ selectedRecycler.licenseExpiry }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Виды отходов</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedRecycler.wasteTypes" :key="wt" class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">{{ wt }}</span></div></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.activityType') }}</label><p>{{ selectedRecycler.activityType }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.capacity') }}</label><p>{{ selectedRecycler.capacity?.toLocaleString() }} {{ $t('employeeMap.tonsPerYear') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.license') }}</label><p class="font-mono text-sky-600">{{ selectedRecycler.licenseNumber }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.validUntil') }}</label><p>{{ selectedRecycler.licenseExpiry }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedRecycler.wasteTypes" :key="wt" class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">{{ wt }}</span></div></div>
               </div>
             </div>
             <!-- Producer view -->
             <div v-if="activeRegistry === 'producers' && selectedProducer" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-sm text-gray-500">Наименование</label><p class="font-medium">{{ selectedProducer.name }}</p></div>
-                <div><label class="text-sm text-gray-500">Статус</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedProducer.status)]">{{ selectedProducer.status }}</span></p></div>
-                <div><label class="text-sm text-gray-500">ИНН</label><p class="font-mono">{{ selectedProducer.inn }}</p></div>
-                <div><label class="text-sm text-gray-500">Регион</label><p>{{ selectedProducer.region }}</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Адрес</label><p>{{ selectedProducer.address }}</p></div>
-                <div><label class="text-sm text-gray-500">Директор</label><p>{{ selectedProducer.director }}</p></div>
-                <div><label class="text-sm text-gray-500">Контактное лицо</label><p>{{ selectedProducer.contactPerson }}</p></div>
-                <div><label class="text-sm text-gray-500">Телефон</label><p>{{ selectedProducer.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedProducer.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedProducer.status)]">{{ selectedProducer.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.inn') }}</label><p class="font-mono">{{ selectedProducer.inn }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedProducer.region }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedProducer.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.director') }}</label><p>{{ selectedProducer.director }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.contactPerson') }}</label><p>{{ selectedProducer.contactPerson }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedProducer.phone }}</p></div>
                 <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedProducer.email }}</p></div>
-                <div><label class="text-sm text-gray-500">Вид продукции</label><p>{{ selectedProducer.productType }}</p></div>
-                <div><label class="text-sm text-gray-500">Годовой объём</label><p>{{ selectedProducer.annualVolume?.toLocaleString() }} т</p></div>
-                <div class="col-span-2"><label class="text-sm text-gray-500">Типы упаковки</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="pt in selectedProducer.packagingTypes" :key="pt" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">{{ pt }}</span></div></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.productType') }}</label><p>{{ selectedProducer.productType }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.annualVolume') }}</label><p>{{ selectedProducer.annualVolume?.toLocaleString() }} {{ $t('common.tons') }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="pt in selectedProducer.packagingTypes" :key="pt" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">{{ pt }}</span></div></div>
               </div>
             </div>
           </div>
@@ -1164,104 +1168,104 @@ const countByType = computed(() => ({
       <div v-if="showEditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
           <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">{{ isCreating ? 'Создание записи' : 'Редактирование' }}</h3>
+            <h3 class="text-xl font-bold text-gray-900">{{ isCreating ? $t('employeeMap.createRecord') : $t('employeeMap.editRecord') }}</h3>
             <button @click="showEditModal = false" class="p-2 text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
           <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)] space-y-4">
             <!-- Landfill form -->
             <template v-if="activeRegistry === 'landfills'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Название *</label><input v-model="landfillForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="landfillForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Район</label><input v-model="landfillForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Тип</label><select v-model="landfillForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Санкционированный</option><option>Несанкционированный</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="landfillForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Активен</option><option>Закрыт</option><option>На реконструкции</option><option>Рекультивирован</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Площадь (га)</label><input v-model.number="landfillForm.area" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Объём (т)</label><input v-model.number="landfillForm.volume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="landfillForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="landfillForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="landfillForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(landfillForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Организация</label><input v-model="landfillForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Виды отходов</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(landfillForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', landfillForm.wasteTypes.includes(wt) ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Примечания</label><textarea v-model="landfillForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="landfillForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="landfillForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.district') }}</label><input v-model="landfillForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.type') }}</label><select v-model="landfillForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusSanctioned')">{{ $t('employeeMap.statusSanctioned') }}</option><option :value="$t('employeeMap.statusUnsanctioned')">{{ $t('employeeMap.statusUnsanctioned') }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="landfillForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option><option :value="$t('employeeMap.statusReconstruction')">{{ $t('employeeMap.statusReconstruction') }}</option><option :value="$t('employeeMap.statusRecultivated')">{{ $t('employeeMap.statusRecultivated') }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.areaHa') }}</label><input v-model.number="landfillForm.area" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.volumeT') }}</label><input v-model.number="landfillForm.volume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="landfillForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="landfillForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="landfillForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(landfillForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.organization') }}</label><input v-model="landfillForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(landfillForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', landfillForm.wasteTypes.includes(wt) ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.notes') }}</label><textarea v-model="landfillForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
               </div>
             </template>
             <!-- Reception form -->
             <template v-if="activeRegistry === 'reception'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Название *</label><input v-model="receptionForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="receptionForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Район</label><input v-model="receptionForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="receptionForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="receptionForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="receptionForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(receptionForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Режим работы</label><input v-model="receptionForm.workingHours" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="09:00-18:00" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="receptionForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Работает</option><option>Временно закрыт</option><option>Закрыт</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="receptionForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="receptionForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="receptionForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.district') }}</label><input v-model="receptionForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="receptionForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="receptionForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="receptionForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(receptionForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.workingHours') }}</label><input v-model="receptionForm.workingHours" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="09:00-18:00" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="receptionForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusWorking')">{{ $t('employeeMap.statusWorking') }}</option><option :value="$t('employeeMap.statusTempClosed')">{{ $t('employeeMap.statusTempClosed') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="receptionForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="receptionForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Организация</label><input v-model="receptionForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Виды отходов</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(receptionForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', receptionForm.wasteTypes.includes(wt) ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.organization') }}</label><input v-model="receptionForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(receptionForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', receptionForm.wasteTypes.includes(wt) ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
               </div>
             </template>
             <!-- Recycler form -->
             <template v-if="activeRegistry === 'recyclers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Наименование *</label><input v-model="recyclerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label><input v-model="recyclerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="recyclerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="recyclerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="recyclerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="recyclerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(recyclerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Директор</label><input v-model="recyclerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Контактное лицо</label><input v-model="recyclerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="recyclerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="recyclerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="recyclerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="recyclerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="recyclerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="recyclerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="recyclerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(recyclerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.director') }}</label><input v-model="recyclerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.contactPerson') }}</label><input v-model="recyclerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="recyclerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="recyclerForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Вид деятельности</label><input v-model="recyclerForm.activityType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Мощность (т/год)</label><input v-model.number="recyclerForm.capacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Лицензия</label><input v-model="recyclerForm.licenseNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="recyclerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Активен</option><option>На проверке</option><option>Приостановлен</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Виды отходов</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(recyclerForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', recyclerForm.wasteTypes.includes(wt) ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.activityType') }}</label><input v-model="recyclerForm.activityType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.capacityTonsYear') }}</label><input v-model.number="recyclerForm.capacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.license') }}</label><input v-model="recyclerForm.licenseNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="recyclerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(recyclerForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', recyclerForm.wasteTypes.includes(wt) ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
               </div>
             </template>
             <!-- Producer form -->
             <template v-if="activeRegistry === 'producers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Наименование *</label><input v-model="producerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label><input v-model="producerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="producerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="producerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="producerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="producerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(producerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Директор</label><input v-model="producerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Контактное лицо</label><input v-model="producerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="producerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="producerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="producerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="producerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="producerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="producerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="producerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(producerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.director') }}</label><input v-model="producerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.contactPerson') }}</label><input v-model="producerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="producerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="producerForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Вид продукции</label><input v-model="producerForm.productType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Годовой объём (т)</label><input v-model.number="producerForm.annualVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="producerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Активен</option><option>На проверке</option><option>Приостановлен</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Типы упаковки</label><div class="flex flex-wrap gap-2"><button v-for="pt in ['ПЭТ-бутылки', 'Стеклянные бутылки', 'Алюминиевые банки', 'Тетрапак', 'Пластиковые контейнеры', 'Пластиковые стаканы', 'Картонная упаковка']" :key="pt" @click="toggleWasteType(producerForm, pt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', producerForm.packagingTypes.includes(pt) ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ pt }}</button></div></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.productType') }}</label><input v-model="producerForm.productType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.annualVolumeT') }}</label><input v-model.number="producerForm.annualVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="producerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="pt in ['ПЭТ-бутылки', 'Стеклянные бутылки', 'Алюминиевые банки', 'Тетрапак', 'Пластиковые контейнеры', 'Пластиковые стаканы', 'Картонная упаковка']" :key="pt" @click="toggleWasteType(producerForm, pt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', producerForm.packagingTypes.includes(pt) ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ pt }}</button></div></div>
               </div>
             </template>
             <!-- Dump form -->
             <template v-if="activeRegistry === 'dumps'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Название *</label><input v-model="dumpForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="dumpForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Статус</label><select v-model="dumpForm.dumpStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option>Обнаружена</option><option>Ликвидируется</option><option>Ликвидирована</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес / Местоположение</label><input v-model="dumpForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="dumpForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="dumpForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(dumpForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Площадь (га)</label><input v-model.number="dumpForm.area" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Дата обнаружения</label><input v-model="dumpForm.discoveryDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Примечания</label><textarea v-model="dumpForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="dumpForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="dumpForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="dumpForm.dumpStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusDiscovered')">{{ $t('employeeMap.statusDiscovered') }}</option><option :value="$t('employeeMap.statusLiquidating')">{{ $t('employeeMap.statusLiquidating') }}</option><option :value="$t('employeeMap.statusLiquidated')">{{ $t('employeeMap.statusLiquidated') }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.addressLocation') }}</label><input v-model="dumpForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="dumpForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="dumpForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(dumpForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.areaHa') }}</label><input v-model.number="dumpForm.area" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.discoveryDate') }}</label><input v-model="dumpForm.discoveryDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.notes') }}</label><textarea v-model="dumpForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
                 <!-- Photo upload -->
                 <div class="col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Фотографии (макс. 5)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.photosMax5') }}</label>
                   <div class="flex flex-wrap gap-3 mb-3">
                     <div v-for="(photo, idx) in dumpPhotos" :key="idx" class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
                       <img :src="photo.data" :alt="photo.name" class="w-full h-full object-cover" />
@@ -1270,7 +1274,7 @@ const countByType = computed(() => ({
                     </div>
                     <label v-if="dumpPhotos.length < 5" class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition-colors">
                       <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                      <span class="text-[10px] text-gray-400 mt-0.5">Фото</span>
+                      <span class="text-[10px] text-gray-400 mt-0.5">{{ $t('employeeMap.photo') }}</span>
                       <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" @change="handleDumpPhotoUpload" />
                     </label>
                   </div>
@@ -1280,15 +1284,15 @@ const countByType = computed(() => ({
             <!-- Payer form -->
             <template v-if="activeRegistry === 'payers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Наименование *</label><input v-model="payerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">ИНН</label><input v-model="payerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Регион</label><select v-model="payerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">Выберите</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label><input v-model="payerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Широта</label><input v-model="payerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">GPS Долгота</label><input v-model="payerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(payerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Указать на карте</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефон</label><input v-model="payerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Категория</label><input v-model="payerForm.category" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="payerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="payerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="payerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="payerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="payerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="payerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><button type="button" @click="openCoordPicker(payerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="payerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.category') }}</label><input v-model="payerForm.category" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
               </div>
             </template>
           </div>
@@ -1306,8 +1310,8 @@ const countByType = computed(() => ({
         <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
           <div class="text-center">
             <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Удалить запись?</h3>
-            <p class="text-gray-600 mb-6">Вы уверены, что хотите удалить "{{ getSelectedItemName() }}"? Это действие нельзя отменить.</p>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('employeeMap.deleteRecordTitle') }}</h3>
+            <p class="text-gray-600 mb-6">{{ $t('employeeMap.deleteRecordConfirm', { name: getSelectedItemName() }) }}</p>
             <div class="flex gap-3 justify-center">
               <button @click="showDeleteConfirm = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('common.cancel') }}</button>
               <button @click="deleteItem" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">{{ $t('common.delete') }}</button>

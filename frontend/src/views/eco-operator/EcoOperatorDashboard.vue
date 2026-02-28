@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
@@ -9,33 +10,35 @@ import { icons, statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { CalcStatus, DeclStatus } from '../../constants/statuses'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const allCalcs = computed(() => calculationStore.state.calculations)
 
 const stats = computed(() => [
   {
-    title: 'Входящих расчётов',
-    value: String(allCalcs.value.filter(c => c.status === 'На проверке').length),
+    title: t('ecoDashboard.incomingCalcs'),
+    value: String(allCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW).length),
     icon: statsIcons.pending,
     color: 'orange' as const
   },
   {
-    title: 'Принято за месяц',
-    value: String(allCalcs.value.filter(c => c.status === 'Принято' || c.status === 'Оплачено').length),
+    title: t('ecoDashboard.acceptedMonth'),
+    value: String(allCalcs.value.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID).length),
     icon: statsIcons.approved,
     color: 'green' as const
   },
   {
-    title: 'Оплат на проверке',
-    value: String(allCalcs.value.filter(c => c.status === 'Оплата на проверке').length),
+    title: t('ecoDashboard.paymentsOnReview'),
+    value: String(allCalcs.value.filter(c => c.status === CalcStatus.PAYMENT_PENDING).length),
     icon: statsIcons.payment,
     color: 'purple' as const
   },
   {
-    title: 'Сумма за месяц',
-    value: allCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString('ru-RU') + ' сом',
+    title: t('ecoDashboard.amountMonth'),
+    value: allCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString() + ' ' + t('ecoDashboard.som'),
     icon: statsIcons.money,
     color: 'blue' as const
   },
@@ -62,17 +65,17 @@ const topOrganizations = [
 ]
 
 const recentDeclarations = [
-  { company: 'ОсОО «ТехПром»', type: 'Декларация о товарах', date: '20.01.2025', status: 'Новая' },
-  { company: 'ОАО «СтройМаркет»', type: 'Декларация об упаковке', date: '19.01.2025', status: 'На рассмотрении' },
-  { company: 'ОсОО «ПищеПром»', type: 'Декларация о товарах', date: '18.01.2025', status: 'Принята' },
+  { company: 'ОсОО «ТехПром»', type: 'Декларация о товарах', date: '20.01.2025', status: DeclStatus.DRAFT },
+  { company: 'ОАО «СтройМаркет»', type: 'Декларация об упаковке', date: '19.01.2025', status: DeclStatus.UNDER_REVIEW },
+  { company: 'ОсОО «ПищеПром»', type: 'Декларация о товарах', date: '18.01.2025', status: DeclStatus.APPROVED },
 ]
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Новая': return 'badge badge-info'
-    case 'На рассмотрении': return 'badge badge-warning'
-    case 'Принята': return 'badge badge-success'
-    case 'Отклонена': return 'badge badge-danger'
+    case 'draft': return 'badge badge-info'
+    case 'under_review': return 'badge badge-warning'
+    case 'approved': return 'badge badge-success'
+    case 'rejected': return 'badge badge-danger'
     default: return 'badge badge-neutral'
   }
 }
@@ -87,7 +90,7 @@ onMounted(() => {
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="ОсОО «ЭкоПереработка»"
+    :userName="$t('ecoDashboard.userName')"
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
@@ -96,9 +99,9 @@ onMounted(() => {
     </div>
 
     <SectionGuide
-      title="Панель управления Эко Оператора"
-      description="Общий обзор деятельности по управлению утилизационным сбором."
-      :actions="['Просмотр ключевых показателей', 'Мониторинг поступлений', 'Контроль задолженностей']"
+      :title="$t('ecoDashboard.guideTitle')"
+      :description="$t('ecoDashboard.guideDescription')"
+      :actions="[$t('ecoDashboard.guideAction1'), $t('ecoDashboard.guideAction2'), $t('ecoDashboard.guideAction3')]"
       storageKey="eco-dashboard"
     />
 
@@ -133,81 +136,81 @@ onMounted(() => {
           :data="monthlyAccepted"
           color="#0e888d"
           :height="280"
-          title="Принято расчётов по месяцам"
+          :title="$t('ecoDashboard.chartAcceptedByMonth')"
         />
         <BarChart
           :data="topOrganizations"
           :height="280"
-          title="Топ-5 организаций по сумме утильсбора"
+          :title="$t('ecoDashboard.chartTopOrgs')"
         />
       </div>
 
       <!-- Quick Actions & Statistics -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">Быстрые действия</h3>
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoDashboard.quickActions') }}</h3>
           <div class="space-y-3">
             <router-link to="/eco-operator/incoming-declarations" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#2563eb] flex items-center justify-center text-white" v-html="icons.document"></div>
               <div>
-                <span class="font-medium text-[#1e293b] block">Входящие декларации</span>
-                <span class="text-sm text-[#64748b]">12 новых</span>
+                <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.incomingDeclarations') }}</span>
+                <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.newCount12') }}</span>
               </div>
             </router-link>
             <router-link to="/eco-operator/incoming-reports" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#10b981] flex items-center justify-center text-white" v-html="icons.report"></div>
               <div>
-                <span class="font-medium text-[#1e293b] block">Отчёты о переработке</span>
-                <span class="text-sm text-[#64748b]">5 новых</span>
+                <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.recyclingReports') }}</span>
+                <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.newCount5') }}</span>
               </div>
             </router-link>
             <router-link to="/eco-operator/analytics" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#f59e0b] flex items-center justify-center text-white" v-html="icons.registries"></div>
               <div>
-                <span class="font-medium text-[#1e293b] block">Подать отчёт о переработке</span>
-                <span class="text-sm text-[#64748b]">Отчётность за период</span>
+                <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.submitRecyclingReport') }}</span>
+                <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.reportingForPeriod') }}</span>
               </div>
             </router-link>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">Статистика переработки</h3>
+          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoDashboard.recyclingStats') }}</h3>
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <span class="text-[#64748b]">Пластик</span>
+              <span class="text-[#64748b]">{{ $t('ecoDashboard.plastic') }}</span>
               <div class="flex items-center gap-3">
                 <div class="w-32 h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
                   <div class="h-full bg-[#2563eb] rounded-full" style="width: 75%"></div>
                 </div>
-                <span class="font-medium text-[#1e293b]">189 т</span>
+                <span class="font-medium text-[#1e293b]">189 {{ $t('ecoDashboard.tons') }}</span>
               </div>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-[#64748b]">Бумага/картон</span>
+              <span class="text-[#64748b]">{{ $t('ecoDashboard.paperCardboard') }}</span>
               <div class="flex items-center gap-3">
                 <div class="w-32 h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
                   <div class="h-full bg-[#10b981] rounded-full" style="width: 60%"></div>
                 </div>
-                <span class="font-medium text-[#1e293b]">124 т</span>
+                <span class="font-medium text-[#1e293b]">124 {{ $t('ecoDashboard.tons') }}</span>
               </div>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-[#64748b]">Стекло</span>
+              <span class="text-[#64748b]">{{ $t('ecoDashboard.glass') }}</span>
               <div class="flex items-center gap-3">
                 <div class="w-32 h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
                   <div class="h-full bg-[#f59e0b] rounded-full" style="width: 35%"></div>
                 </div>
-                <span class="font-medium text-[#1e293b]">52 т</span>
+                <span class="font-medium text-[#1e293b]">52 {{ $t('ecoDashboard.tons') }}</span>
               </div>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-[#64748b]">Металл</span>
+              <span class="text-[#64748b]">{{ $t('ecoDashboard.metal') }}</span>
               <div class="flex items-center gap-3">
                 <div class="w-32 h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
                   <div class="h-full bg-[#6366f1] rounded-full" style="width: 20%"></div>
                 </div>
-                <span class="font-medium text-[#1e293b]">22 т</span>
+                <span class="font-medium text-[#1e293b]">22 {{ $t('ecoDashboard.tons') }}</span>
               </div>
             </div>
           </div>
@@ -217,9 +220,9 @@ onMounted(() => {
       <!-- Recent Declarations Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-8">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Последние декларации</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoDashboard.recentDeclarations') }}</h2>
           <router-link to="/eco-operator/incoming-declarations" class="text-[#2563eb] text-sm font-medium hover:underline">
-            Все декларации →
+            {{ $t('ecoDashboard.allDeclarations') }}
           </router-link>
         </div>
         <div class="divide-y divide-[#f1f5f9]">
@@ -238,7 +241,7 @@ onMounted(() => {
               </div>
             </div>
             <span :class="getStatusClass(decl.status)">
-              {{ decl.status }}
+              {{ decl.status === 'draft' ? $t('status.draft') : decl.status === 'under_review' ? $t('status.underReview') : decl.status === 'approved' ? $t('status.approvedFem') : decl.status === 'rejected' ? $t('status.rejectedFem') : decl.status }}
             </span>
           </div>
         </div>

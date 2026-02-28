@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { analyticsStore } from '../../stores/analytics'
 
 const { roleTitle, menuItems } = useAdminMenu()
+const { t } = useI18n()
 
 onMounted(() => {
   analyticsStore.fetchAll('month')
@@ -17,17 +19,17 @@ const selectedPeriod = ref('year')
 const metrics = computed(() => {
   const s = analyticsStore.state.summary
   if (!s) return [
-    { label: 'Всего собрано', value: '456.7 млн', subvalue: 'сом', change: '+15.2%', trend: 'up' },
-    { label: 'Переработано отходов', value: '67,890', subvalue: 'тонн', change: '+12.4%', trend: 'up' },
-    { label: 'Активных организаций', value: '2,456', subvalue: '', change: '+234', trend: 'up' },
-    { label: 'Выдано лицензий', value: '189', subvalue: '', change: '+28', trend: 'up' },
+    { label: t('analyticsPage.totalCollected'), value: '456.7 млн', subvalue: t('analyticsPage.som'), change: '+15.2%', trend: 'up' },
+    { label: t('analyticsPage.wasteRecycled'), value: '67,890', subvalue: t('analyticsPage.tons'), change: '+12.4%', trend: 'up' },
+    { label: t('analyticsPage.activeOrgs'), value: '2,456', subvalue: '', change: '+234', trend: 'up' },
+    { label: t('analyticsPage.licensesIssued'), value: '189', subvalue: '', change: '+28', trend: 'up' },
   ]
-  const fmtMln = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + ' млн' : n.toLocaleString('ru-RU')
+  const fmtMln = (n: number) => n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + ' ' + t('analyticsPage.mln') : n.toLocaleString()
   return [
-    { label: 'Всего собрано', value: fmtMln(s.totalCollected), subvalue: 'сом', change: `${s.collectionRate}%`, trend: 'up' },
-    { label: 'Переработано отходов', value: s.totalRecycled.toLocaleString('ru-RU'), subvalue: 'тонн', change: `${s.recyclingRate}%`, trend: s.recyclingRate >= 0 ? 'up' : 'down' },
-    { label: 'Активных организаций', value: s.activePayers.toLocaleString('ru-RU'), subvalue: '', change: `${s.totalPayers}`, trend: 'up' },
-    { label: 'Выдано лицензий', value: '189', subvalue: '', change: '+28', trend: 'up' },
+    { label: t('analyticsPage.totalCollected'), value: fmtMln(s.totalCollected), subvalue: t('analyticsPage.som'), change: `${s.collectionRate}%`, trend: 'up' },
+    { label: t('analyticsPage.wasteRecycled'), value: s.totalRecycled.toLocaleString(), subvalue: t('analyticsPage.tons'), change: `${s.recyclingRate}%`, trend: s.recyclingRate >= 0 ? 'up' : 'down' },
+    { label: t('analyticsPage.activeOrgs'), value: s.activePayers.toLocaleString(), subvalue: '', change: `${s.totalPayers}`, trend: 'up' },
+    { label: t('analyticsPage.licensesIssued'), value: '189', subvalue: '', change: '+28', trend: 'up' },
   ]
 })
 
@@ -45,33 +47,35 @@ const systemStats = computed(() => {
 })
 
 // Monthly revenue data
-const monthLabels: Record<string, string> = {
-  '01': 'Янв', '02': 'Фев', '03': 'Мар', '04': 'Апр', '05': 'Май', '06': 'Июн',
-  '07': 'Июл', '08': 'Авг', '09': 'Сен', '10': 'Окт', '11': 'Ноя', '12': 'Дек',
-}
+const monthLabels = computed(() => ({
+  '01': t('analyticsPage.jan'), '02': t('analyticsPage.feb'), '03': t('analyticsPage.mar'),
+  '04': t('analyticsPage.apr'), '05': t('analyticsPage.may'), '06': t('analyticsPage.jun'),
+  '07': t('analyticsPage.jul'), '08': t('analyticsPage.aug'), '09': t('analyticsPage.sep'),
+  '10': t('analyticsPage.oct'), '11': t('analyticsPage.nov'), '12': t('analyticsPage.dec'),
+}))
 
-const monthlyDataFallback = [
-  { month: 'Янв', revenue: 32.5, target: 30 },
-  { month: 'Фев', revenue: 34.2, target: 32 },
-  { month: 'Мар', revenue: 38.6, target: 35 },
-  { month: 'Апр', revenue: 41.2, target: 38 },
-  { month: 'Май', revenue: 39.8, target: 40 },
-  { month: 'Июн', revenue: 43.5, target: 42 },
-  { month: 'Июл', revenue: 45.1, target: 44 },
-  { month: 'Авг', revenue: 42.8, target: 45 },
-  { month: 'Сен', revenue: 48.2, target: 46 },
-  { month: 'Окт', revenue: 51.4, target: 48 },
-  { month: 'Ноя', revenue: 49.6, target: 50 },
-  { month: 'Дек', revenue: 53.8, target: 52 },
-]
+const monthlyDataFallback = computed(() => [
+  { month: t('analyticsPage.jan'), revenue: 32.5, target: 30 },
+  { month: t('analyticsPage.feb'), revenue: 34.2, target: 32 },
+  { month: t('analyticsPage.mar'), revenue: 38.6, target: 35 },
+  { month: t('analyticsPage.apr'), revenue: 41.2, target: 38 },
+  { month: t('analyticsPage.may'), revenue: 39.8, target: 40 },
+  { month: t('analyticsPage.jun'), revenue: 43.5, target: 42 },
+  { month: t('analyticsPage.jul'), revenue: 45.1, target: 44 },
+  { month: t('analyticsPage.aug'), revenue: 42.8, target: 45 },
+  { month: t('analyticsPage.sep'), revenue: 48.2, target: 46 },
+  { month: t('analyticsPage.oct'), revenue: 51.4, target: 48 },
+  { month: t('analyticsPage.nov'), revenue: 49.6, target: 50 },
+  { month: t('analyticsPage.dec'), revenue: 53.8, target: 52 },
+])
 
 const monthlyData = computed(() => {
   const income = analyticsStore.state.income
-  if (!income.length) return monthlyDataFallback
+  if (!income.length) return monthlyDataFallback.value
   return income.map(d => {
     const mk = d.period.length >= 7 ? d.period.slice(5, 7) : d.period
     return {
-      month: monthLabels[mk] || d.period,
+      month: monthLabels.value[mk] || d.period,
       revenue: d.collected / 1_000_000, // convert to millions
       target: d.charged / 1_000_000,
     }
@@ -113,7 +117,7 @@ const categoryData = ref([
   { category: 'Прочее', amount: 23.9, percentage: 5.2, color: 'bg-gray-500' },
 ])
 
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 const maxRevenue = computed(() => Math.max(...monthlyData.value.map(d => Math.max(d.revenue, d.target))))
 
 // Compliance circles from recycling data
@@ -139,36 +143,36 @@ const complianceItems = computed(() => {
 // Export report
 const exportReport = () => {
   const bom = '\uFEFF'
-  let csv = bom + 'Раздел;Показатель;Значение\n'
+  let csv = bom + `${t('analyticsPage.csvSection')};${t('analyticsPage.csvMetric')};${t('analyticsPage.csvValue')}\n`
 
   // Metrics
   metrics.value.forEach(m => {
-    csv += `Ключевые показатели;${m.label};${m.value} ${m.subvalue} (${m.change})\n`
+    csv += `${t('analyticsPage.csvKeyMetrics')};${m.label};${m.value} ${m.subvalue} (${m.change})\n`
   })
 
   // Monthly data
   monthlyData.value.forEach(d => {
-    csv += `Динамика по месяцам;${d.month} — Факт;${d.revenue} млн сом\n`
-    csv += `Динамика по месяцам;${d.month} — План;${d.target} млн сом\n`
+    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} — ${t('analyticsPage.csvFact')};${d.revenue} ${t('analyticsPage.mlnSom')}\n`
+    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} — ${t('analyticsPage.csvPlan')};${d.target} ${t('analyticsPage.mlnSom')}\n`
   })
 
   // Regional data
   regionalData.value.forEach(r => {
-    csv += `По регионам;${r.region};${r.revenue} млн сом / ${r.organizations} орг. / ${r.share}%\n`
+    csv += `${t('analyticsPage.csvRegional')};${r.region};${r.revenue} ${t('analyticsPage.mlnSom')} / ${r.organizations} орг. / ${r.share}%\n`
   })
 
   // Category data
   categoryData.value.forEach(c => {
-    csv += `По категориям;${c.category};${c.amount} млн сом (${c.percentage}%)\n`
+    csv += `${t('analyticsPage.csvCategories')};${c.category};${c.amount} ${t('analyticsPage.mlnSom')} (${c.percentage}%)\n`
   })
 
   // System stats
-  csv += `Система;Всего пользователей;${systemStats.value.totalUsers}\n`
-  csv += `Система;Активных пользователей;${systemStats.value.activeUsers}\n`
-  csv += `Система;Всего деклараций;${systemStats.value.totalDeclarations}\n`
-  csv += `Система;Всего отчётов;${systemStats.value.totalReports}\n`
-  csv += `Система;Среднее время обработки;${systemStats.value.avgProcessingTime} дней\n`
-  csv += `Система;Аптайм;${systemStats.value.systemUptime}%\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvTotalUsers')};${systemStats.value.totalUsers}\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvActiveUsers')};${systemStats.value.activeUsers}\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvTotalDeclarations')};${systemStats.value.totalDeclarations}\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvTotalReports')};${systemStats.value.totalReports}\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvAvgProcessingTime')};${systemStats.value.avgProcessingTime} ${t('analyticsPage.days')}\n`
+  csv += `${t('analyticsPage.csvSystem')};${t('analyticsPage.csvUptime')};${systemStats.value.systemUptime}%\n`
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -191,20 +195,20 @@ const exportReport = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Аналитика системы</h1>
-          <p class="text-gray-600 mt-1">Сводная статистика и показатели эффективности</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('analyticsPage.title') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('analyticsPage.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <select v-model="selectedPeriod" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500">
-            <option value="month">Месяц</option>
-            <option value="quarter">Квартал</option>
-            <option value="year">Год</option>
+            <option value="month">{{ $t('analyticsPage.month') }}</option>
+            <option value="quarter">{{ $t('analyticsPage.quarter') }}</option>
+            <option value="year">{{ $t('analyticsPage.year') }}</option>
           </select>
           <button @click="exportReport" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            Экспорт отчёта
+            {{ $t('analyticsPage.exportReport') }}
           </button>
         </div>
       </div>
@@ -224,7 +228,7 @@ const exportReport = () => {
               </svg>
               {{ metric.change }}
             </span>
-            <span class="text-xs text-gray-500">vs прошлый год</span>
+            <span class="text-xs text-gray-500">{{ $t('analyticsPage.vsLastYear') }}</span>
           </div>
         </div>
       </div>
@@ -233,15 +237,15 @@ const exportReport = () => {
         <!-- Revenue Chart -->
         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="font-semibold text-gray-900">Динамика сборов по месяцам</h3>
+            <h3 class="font-semibold text-gray-900">{{ $t('analyticsPage.monthlyDynamics') }}</h3>
             <div class="flex items-center gap-4 text-sm">
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-rose-500"></div>
-                <span class="text-gray-600">Факт</span>
+                <span class="text-gray-600">{{ $t('analyticsPage.fact') }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-gray-300"></div>
-                <span class="text-gray-600">План</span>
+                <span class="text-gray-600">{{ $t('analyticsPage.plan') }}</span>
               </div>
             </div>
           </div>
@@ -265,12 +269,12 @@ const exportReport = () => {
 
         <!-- Category Breakdown -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-6">Структура по категориям</h3>
+          <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.categoryBreakdown') }}</h3>
           <div class="space-y-4">
             <div v-for="cat in categoryData" :key="cat.category">
               <div class="flex items-center justify-between text-sm mb-1">
                 <span class="text-gray-600">{{ cat.category }}</span>
-                <span class="font-medium text-gray-900">{{ cat.amount }} млн</span>
+                <span class="font-medium text-gray-900">{{ cat.amount }} {{ $t('analyticsPage.mln') }}</span>
               </div>
               <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div :class="cat.color" class="h-full rounded-full" :style="{ width: `${cat.percentage}%` }"></div>
@@ -284,16 +288,16 @@ const exportReport = () => {
         <!-- Regional Performance -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="font-semibold text-gray-900">Сборы по регионам</h3>
+            <h3 class="font-semibold text-gray-900">{{ $t('analyticsPage.regionRevenue') }}</h3>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Сборы (млн)</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Орг-ции</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Доля</th>
+                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('analyticsPage.region') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('analyticsPage.revenue') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('analyticsPage.orgs') }}</th>
+                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('analyticsPage.share') }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
@@ -317,32 +321,32 @@ const exportReport = () => {
 
         <!-- System Stats -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-6">Показатели системы</h3>
+          <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.systemMetrics') }}</h3>
           <div class="grid grid-cols-2 gap-4">
             <div class="p-4 bg-gray-50 rounded-xl">
-              <p class="text-sm text-gray-500">Всего пользователей</p>
+              <p class="text-sm text-gray-500">{{ $t('analyticsPage.totalUsers') }}</p>
               <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatNumber(systemStats.totalUsers) }}</p>
-              <p class="text-xs text-green-600 mt-1">{{ formatNumber(systemStats.activeUsers) }} активных</p>
+              <p class="text-xs text-green-600 mt-1">{{ formatNumber(systemStats.activeUsers) }} {{ $t('analyticsPage.activeUsersLabel') }}</p>
             </div>
             <div class="p-4 bg-gray-50 rounded-xl">
-              <p class="text-sm text-gray-500">Всего деклараций</p>
+              <p class="text-sm text-gray-500">{{ $t('analyticsPage.totalDeclarations') }}</p>
               <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatNumber(systemStats.totalDeclarations) }}</p>
-              <p class="text-xs text-gray-500 mt-1">за всё время</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('analyticsPage.allTime') }}</p>
             </div>
             <div class="p-4 bg-gray-50 rounded-xl">
-              <p class="text-sm text-gray-500">Всего отчётов</p>
+              <p class="text-sm text-gray-500">{{ $t('analyticsPage.totalReports') }}</p>
               <p class="text-2xl font-bold text-gray-900 mt-1">{{ formatNumber(systemStats.totalReports) }}</p>
-              <p class="text-xs text-gray-500 mt-1">за всё время</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('analyticsPage.allTime') }}</p>
             </div>
             <div class="p-4 bg-gray-50 rounded-xl">
-              <p class="text-sm text-gray-500">Среднее время обработки</p>
+              <p class="text-sm text-gray-500">{{ $t('analyticsPage.avgProcessingTime') }}</p>
               <p class="text-2xl font-bold text-gray-900 mt-1">{{ systemStats.avgProcessingTime }}</p>
-              <p class="text-xs text-gray-500 mt-1">дней</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('analyticsPage.days') }}</p>
             </div>
             <div class="p-4 bg-green-50 rounded-xl col-span-2">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-500">Аптайм системы</p>
+                  <p class="text-sm text-gray-500">{{ $t('analyticsPage.systemUptime') }}</p>
                   <p class="text-2xl font-bold text-green-600 mt-1">{{ systemStats.systemUptime }}%</p>
                 </div>
                 <div class="w-16 h-16 relative">
@@ -359,7 +363,7 @@ const exportReport = () => {
 
       <!-- Compliance Overview -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="font-semibold text-gray-900 mb-6">Выполнение нормативов переработки (по стране)</h3>
+        <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.complianceOverview') }}</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="item in complianceItems" :key="item.label" class="text-center p-4 bg-gray-50 rounded-xl">
             <p class="text-sm text-gray-500 mb-2">{{ item.label }}</p>

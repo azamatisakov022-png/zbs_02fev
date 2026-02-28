@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 export interface SimpleSelectOption {
   value: string | number | null
@@ -14,7 +17,7 @@ const props = withDefaults(defineProps<{
   compact?: boolean
 }>(), {
   disabled: false,
-  placeholder: 'Выберите...',
+  placeholder: '',
   compact: false,
 })
 
@@ -28,7 +31,7 @@ const dropdownRef = ref<HTMLElement | null>(null)
 
 const selectedLabel = computed(() => {
   const opt = props.options.find(o => o.value === props.modelValue)
-  return opt ? opt.label : props.placeholder
+  return opt ? opt.label : (props.placeholder || t('ui.selectDefault'))
 })
 
 const isPlaceholder = computed(() => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { validators, scrollToFirstError } from '../../utils/validators'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -14,6 +15,8 @@ import { generateCalculationExcel } from '../../utils/excelExport'
 import { tnvedNotes, tnvedNotesSource } from '../../data/tnved-notes'
 import { calculationStore, type CalculationStatus, type PaymentData } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
+import { CalcStatus, statusI18nKey } from '../../constants/statuses'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
@@ -23,6 +26,7 @@ import { notificationStore } from '../../stores/notifications'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
+const { t } = useI18n()
 
 const router = useRouter()
 
@@ -43,11 +47,11 @@ const viewMode = ref<ViewMode>('list')
 const currentStep = ref(1)
 const totalSteps = 3
 
-const steps = [
-  { number: 1, title: 'Период и данные' },
-  { number: 2, title: 'Товары и упаковка' },
-  { number: 3, title: 'Результат расчёта' },
-]
+const steps = computed(() => [
+  { number: 1, title: t('businessCalc.stepPeriod') },
+  { number: 2, title: t('businessCalc.stepProducts') },
+  { number: 3, title: t('businessCalc.stepResult') },
+])
 
 // Draft saved notification
 const showDraftNotification = ref(false)
@@ -58,17 +62,17 @@ const confirmDialog = ref({
   title: '',
   message: '',
   icon: 'warning' as 'warning' | 'danger' | 'info' | 'success',
-  confirmText: 'Подтвердить',
+  confirmText: '',
   confirmColor: 'green' as 'green' | 'red' | 'orange',
   onConfirm: () => {},
 })
 const openConfirm = (opts: Partial<typeof confirmDialog.value> & { onConfirm: () => void }) => {
   Object.assign(confirmDialog.value, {
     visible: true,
-    title: opts.title || 'Подтвердите действие',
+    title: opts.title || t('businessCalc.confirmDefaultTitle'),
     message: opts.message || '',
     icon: opts.icon || 'warning',
-    confirmText: opts.confirmText || 'Подтвердить',
+    confirmText: opts.confirmText || t('businessCalc.confirmDefaultText'),
     confirmColor: opts.confirmColor || 'green',
     onConfirm: opts.onConfirm,
   })
@@ -247,7 +251,7 @@ const getVolumeError = (item: ProductItem): string => {
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
   if (vol > 0 && (transferred + exported) > vol) {
-    return 'Сумма переработки и вывоза не может превышать общий объём ввоза/производства (Гр.5)'
+    return t('businessCalc.volumeExceedError')
   }
   return ''
 }
@@ -260,11 +264,11 @@ const getNormStatus = (item: ProductItem): NormStatus | null => {
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
   if (transferred + exported >= item.volumeToRecycle) {
-    return { met: true, message: 'Норматив переработки выполнен. Утильсбор по данной позиции: 0 сом' }
+    return { met: true, message: t('businessCalc.normMet') }
   }
   const taxable = item.taxableVolume
   if (taxable > 0) {
-    return { met: false, message: `Норматив переработки не выполнен. Облагаемый объём: ${taxable.toFixed(2)} тонн` }
+    return { met: false, message: t('businessCalc.normNotMet', { volume: taxable.toFixed(2) }) }
   }
   return null
 }
@@ -366,7 +370,7 @@ const totalAmount = computed(() => {
 })
 
 const formattedTotalAmount = computed(() => {
-  return totalAmount.value.toLocaleString('ru-RU') + ' сом'
+  return totalAmount.value.toLocaleString() + ' ' + t('businessCalc.som')
 })
 
 const tnvedNotesOpen = ref(false)
@@ -414,7 +418,7 @@ const performCalculation = () => {
 
   calculationResult.value = {
     number: `РС-${now.getFullYear()}-${num}`,
-    date: now.toLocaleDateString('ru-RU'),
+    date: now.toLocaleDateString(),
     dueDate: deadline ? formatDateShort(deadline) : '—'
   }
   currentStep.value = 3
@@ -436,7 +440,7 @@ const backToList = () => {
 }
 
 const createDeclaration = () => {
-  toastStore.show({ type: 'info', title: 'Декларация', message: 'Автоматическое создание декларации на основе расчёта будет доступно в следующем обновлении' })
+  toastStore.show({ type: 'info', title: t('businessCalc.declarationTitle'), message: t('businessCalc.declarationToast') })
 }
 
 // Form validation
@@ -448,35 +452,35 @@ const formErrors = computed(() => {
 
   // Period validation
   if (payerType.value === 'producer') {
-    const quarterErr = validators.required(calculationQuarter.value, 'Расчётный период')
-    if (quarterErr) errors.quarter = 'Выберите отчётный период'
+    const quarterErr = validators.required(calculationQuarter.value, t('businessCalc.calcPeriodLabel'))
+    if (quarterErr) errors.quarter = t('businessCalc.errSelectPeriod')
   } else {
-    const dateErr = validators.required(importDate.value, 'Дата ввоза')
-    if (dateErr) errors.importDate = 'Выберите дату ввоза'
+    const dateErr = validators.required(importDate.value, t('businessCalc.importDateLabel'))
+    if (dateErr) errors.importDate = t('businessCalc.errSelectImportDate')
   }
 
   // Items array must have at least 1 item with group and volume
   const validItems = productItems.value.filter(i => i.group && i.volume && parseFloat(i.volume) > 0)
   if (validItems.length === 0) {
-    errors.products = 'Добавьте хотя бы одну позицию'
+    errors.products = t('businessCalc.errAddPosition')
   }
 
   // Per-item field validations
   productItems.value.forEach((item, index) => {
     // Group required
-    const groupErr = validators.required(item.group, 'Группа товара')
-    if (groupErr) errors[`product_${index}_group`] = 'Выберите группу товара'
+    const groupErr = validators.required(item.group, t('businessCalc.errSelectGroup'))
+    if (groupErr) errors[`product_${index}_group`] = t('businessCalc.errSelectGroup')
 
     // Volume (Гр.5): required + positiveNumber
-    const volRequired = validators.required(item.volume, 'Объём (Гр.5)')
+    const volRequired = validators.required(item.volume, t('businessCalc.volumeLabel'))
     if (volRequired) {
-      errors[`product_${index}_volume`] = 'Введите объём (Гр.5)'
+      errors[`product_${index}_volume`] = t('businessCalc.errEnterVolume')
     } else {
-      const volPositive = validators.positiveNumber(item.volume, 'Объём (Гр.5)')
+      const volPositive = validators.positiveNumber(item.volume, t('businessCalc.volumeLabel'))
       if (volPositive) {
         errors[`product_${index}_volume`] = volPositive
       } else if (parseFloat(item.volume) <= 0) {
-        errors[`product_${index}_volume`] = 'Объём должен быть больше 0'
+        errors[`product_${index}_volume`] = t('businessCalc.errVolumePositive')
       }
     }
 
@@ -508,7 +512,7 @@ const formErrors = computed(() => {
     const transferred = parseFloat(item.transferredToRecycling) || 0
     const exported = parseFloat(item.exportedFromKR) || 0
     if (vol > 0 && (transferred + exported) > vol) {
-      errors[`product_${index}_sum`] = 'Гр.8 + Гр.9 не может превышать Гр.5'
+      errors[`product_${index}_sum`] = t('businessCalc.errSumExceedsVolume')
     }
   })
 
@@ -521,11 +525,11 @@ const validateStep1 = (): boolean => {
   const errors: Record<string, string> = {}
   if (payerType.value === 'producer') {
     if (!calculationQuarter.value) {
-      errors.quarter = 'Выберите квартал'
+      errors.quarter = t('businessCalc.errSelectQuarter')
     }
   } else {
     if (!importDate.value) {
-      errors.importDate = 'Выберите дату ввоза'
+      errors.importDate = t('businessCalc.errSelectImportDateShort')
     }
   }
   validationErrors.value = errors
@@ -538,10 +542,10 @@ const validateStep2 = (): boolean => {
 
   productItems.value.forEach((item, index) => {
     if (!item.group) {
-      errors[`product_${index}_group`] = 'Выберите группу товара'
+      errors[`product_${index}_group`] = t('businessCalc.errSelectGroup')
     }
     if (!item.volume || parseFloat(item.volume) <= 0) {
-      errors[`product_${index}_volume`] = 'Введите объём больше 0'
+      errors[`product_${index}_volume`] = t('businessCalc.errEnterVolumeAboveZero')
     }
     if (item.group && item.volume && parseFloat(item.volume) > 0) {
       hasValidProduct = true
@@ -549,7 +553,7 @@ const validateStep2 = (): boolean => {
   })
 
   if (!hasValidProduct) {
-    errors.products = 'Добавьте хотя бы один товар с заполненной группой и массой'
+    errors.products = t('businessCalc.errAddProductWithData')
   }
 
   validationErrors.value = errors
@@ -590,7 +594,7 @@ const handleStep2Calculate = () => {
 
 // Export / Print handlers
 const handleDownloadPdf = () => {
-  toastStore.show({ type: 'info', title: 'PDF', message: 'Генерация PDF будет доступна в следующем обновлении' })
+  toastStore.show({ type: 'info', title: 'PDF', message: t('businessCalc.pdfToast') })
 }
 
 const handlePrint = () => {
@@ -616,20 +620,20 @@ watch(calculationYear, () => {
 })
 
 // Table data for history
-const columns = [
-  { key: 'number', label: 'Номер', width: '10%' },
-  { key: 'period', label: 'Период', width: '8%' },
-  { key: 'amount', label: 'Сумма', width: '12%' },
-  { key: 'createdAt', label: 'Дата расчёта', width: '10%' },
-  { key: 'status', label: 'Статус', width: '12%' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('businessCalc.colNumber'), width: '10%' },
+  { key: 'period', label: t('businessCalc.colPeriod'), width: '8%' },
+  { key: 'amount', label: t('businessCalc.colAmount'), width: '12%' },
+  { key: 'createdAt', label: t('businessCalc.colCalcDate'), width: '10%' },
+  { key: 'status', label: t('businessCalc.colStatus'), width: '12%' },
+])
 
 const calculations = computed(() => {
   return calculationStore.getBusinessCalculations(companyData.name).map(c => ({
     id: c.id,
     number: c.number,
     period: c.period,
-    amount: c.totalAmount.toLocaleString('ru-RU') + ' сом',
+    amount: c.totalAmount.toLocaleString() + ' ' + t('businessCalc.som'),
     createdAt: c.date,
     status: c.status,
     rejectionReason: c.rejectionReason,
@@ -643,26 +647,26 @@ const calculations = computed(() => {
 })
 
 const statusStyles: Record<string, string> = {
-  'Черновик': 'background:#F3F4F6;color:#6B7280',
-  'На проверке': 'background:#FEF3C7;color:#92400E',
-  'Принято': 'background:#D1FAE5;color:#065F46',
-  'Оплачено': 'background:#DBEAFE;color:#1D4ED8',
-  'Отклонено': 'background:#FEE2E2;color:#991B1B',
-  'Оплата на проверке': 'background:#EDE9FE;color:#6D28D9',
-  'Оплата отклонена': 'background:#FEE2E2;color:#991B1B',
+  [CalcStatus.DRAFT]: 'background:#F3F4F6;color:#6B7280',
+  [CalcStatus.UNDER_REVIEW]: 'background:#FEF3C7;color:#92400E',
+  [CalcStatus.APPROVED]: 'background:#D1FAE5;color:#065F46',
+  [CalcStatus.PAID]: 'background:#DBEAFE;color:#1D4ED8',
+  [CalcStatus.REJECTED]: 'background:#FEE2E2;color:#991B1B',
+  [CalcStatus.PAYMENT_PENDING]: 'background:#EDE9FE;color:#6D28D9',
+  [CalcStatus.PAYMENT_REJECTED]: 'background:#FEE2E2;color:#991B1B',
 }
 const getStatusStyle = (status: string) => statusStyles[status] || 'background:#F3F4F6;color:#6B7280'
 
 // Row class for colored left indicator
 const calcRowClass = (row: Record<string, any>) => {
   const map: Record<string, string> = {
-    'Оплачено': 'calc-row--paid',
-    'Принято': 'calc-row--accepted',
-    'На проверке': 'calc-row--review',
-    'Черновик': 'calc-row--draft',
-    'Отклонено': 'calc-row--rejected',
-    'Оплата на проверке': 'calc-row--pay-review',
-    'Оплата отклонена': 'calc-row--pay-rejected',
+    [CalcStatus.PAID]: 'calc-row--paid',
+    [CalcStatus.APPROVED]: 'calc-row--accepted',
+    [CalcStatus.UNDER_REVIEW]: 'calc-row--review',
+    [CalcStatus.DRAFT]: 'calc-row--draft',
+    [CalcStatus.REJECTED]: 'calc-row--rejected',
+    [CalcStatus.PAYMENT_PENDING]: 'calc-row--pay-review',
+    [CalcStatus.PAYMENT_REJECTED]: 'calc-row--pay-rejected',
   }
   return map[row.status] || ''
 }
@@ -704,7 +708,7 @@ const saveDraft = () => {
   const num = String(Math.floor(Math.random() * 900) + 100)
   const calcData = {
     number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
-    date: calculationResult.value.date || now.toLocaleDateString('ru-RU'),
+    date: calculationResult.value.date || now.toLocaleDateString(),
     company: companyData.name,
     inn: companyData.inn,
     address: companyData.address,
@@ -715,7 +719,7 @@ const saveDraft = () => {
     items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
     totalAmount: totalAmount.value,
   }
-  calculationStore.addCalculation(calcData, 'Черновик')
+  calculationStore.addCalculation(calcData, CalcStatus.DRAFT)
   viewMode.value = 'list'
   currentStep.value = 1
   showDraftNotification.value = true
@@ -731,16 +735,16 @@ const submitForReview = () => {
   }
   openConfirm({
     icon: 'warning',
-    title: 'Отправить на проверку?',
-    message: 'Расчёт будет отправлен на проверку Эко Оператору. После отправки редактирование будет недоступно.',
-    confirmText: 'Отправить',
+    title: t('businessCalc.confirmSendTitle'),
+    message: t('businessCalc.confirmSendMessage'),
+    confirmText: t('businessCalc.confirmSendBtn'),
     confirmColor: 'green',
     onConfirm: () => {
       const now = new Date()
       const num = String(Math.floor(Math.random() * 900) + 100)
       const calcData = {
         number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
-        date: calculationResult.value.date || now.toLocaleDateString('ru-RU'),
+        date: calculationResult.value.date || now.toLocaleDateString(),
         company: companyData.name,
         inn: companyData.inn,
         address: companyData.address,
@@ -751,17 +755,17 @@ const submitForReview = () => {
         items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
         totalAmount: totalAmount.value,
       }
-      calculationStore.addCalculation(calcData, 'На проверке')
+      calculationStore.addCalculation(calcData, CalcStatus.UNDER_REVIEW)
       notificationStore.add({
         type: 'info',
-        title: 'Новый входящий расчёт',
-        message: `Поступил расчёт утилизационного сбора от ${companyData.name}. Требуется проверка.`,
+        title: t('businessCalc.notifNewCalc'),
+        message: t('businessCalc.notifNewCalcMessage', { company: companyData.name }),
         role: 'eco-operator'
       })
       notificationStore.add({
         type: 'success',
-        title: 'Расчёт отправлен',
-        message: 'Ваш расчёт утилизационного сбора отправлен на проверку.',
+        title: t('businessCalc.notifCalcSent'),
+        message: t('businessCalc.notifCalcSentMessage'),
         role: 'business',
         link: '/business/calculator'
       })
@@ -774,9 +778,9 @@ const submitForReview = () => {
 const resubmitCalculation = (id: number) => {
   openConfirm({
     icon: 'warning',
-    title: 'Отправить повторно?',
-    message: 'Расчёт будет повторно отправлен на проверку Эко Оператору.',
-    confirmText: 'Отправить',
+    title: t('businessCalc.confirmResendTitle'),
+    message: t('businessCalc.confirmResendMessage'),
+    confirmText: t('businessCalc.confirmResendBtn'),
     confirmColor: 'green',
     onConfirm: () => {
       calculationStore.resubmitCalculation(id)
@@ -788,7 +792,7 @@ const resubmitCalculation = (id: number) => {
 const copyAndFixCalculation = (sourceId: number) => {
   const copy = calculationStore.copyCalculation(sourceId)
   if (copy) {
-    toastStore.show({ type: 'success', title: 'Создана копия расчёта', message: 'Внесите исправления и отправьте повторно.' })
+    toastStore.show({ type: 'success', title: t('businessCalc.copyCreated'), message: t('businessCalc.copyCreatedMessage') })
     router.push({ path: '/business/calculations/' + copy.id, query: { from: 'calculations' } })
   }
 }
@@ -834,7 +838,7 @@ const validatePaymentAmount = () => {
     return
   }
   if (amount !== paymentCalcAmount.value) {
-    paymentAmountError.value = `Сумма не совпадает с суммой расчёта (${paymentCalcAmount.value.toLocaleString('ru-RU')} сом)`
+    paymentAmountError.value = t('businessCalc.paymentAmountMismatch', { amount: paymentCalcAmount.value.toLocaleString() })
   } else {
     paymentAmountError.value = ''
   }
@@ -855,11 +859,11 @@ const handlePaymentFileSelect = (e: Event) => {
 const processPaymentFile = (file: File) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
   if (!allowedTypes.includes(file.type)) {
-    toastStore.show({ type: 'warning', title: 'Недопустимый формат', message: 'Допустимые форматы: PDF, JPG, PNG' })
+    toastStore.show({ type: 'warning', title: t('businessCalc.invalidFormat'), message: t('businessCalc.allowedFormats') })
     return
   }
   if (file.size > 10 * 1024 * 1024) {
-    toastStore.show({ type: 'warning', title: 'Файл слишком большой', message: 'Максимальный размер файла: 10 МБ' })
+    toastStore.show({ type: 'warning', title: t('businessCalc.fileTooLarge'), message: t('businessCalc.maxFileSize') })
     return
   }
   const reader = new FileReader()
@@ -942,7 +946,7 @@ const downloadReceipt = () => {
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          Черновик сохранён
+          {{ $t('businessCalc.draftSaved') }}
         </div>
       </Transition>
     </Teleport>
@@ -950,8 +954,8 @@ const downloadReceipt = () => {
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Расчёт утилизационного сбора</h1>
-        <p class="text-[#64748b]">Расчёт суммы утилизационного сбора за товары и упаковку</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessCalc.pageTitle') }}</h1>
+        <p class="text-[#64748b]">{{ $t('businessCalc.pageSubtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
@@ -965,8 +969,8 @@ const downloadReceipt = () => {
             </svg>
           </div>
           <div class="flex-1">
-            <h2 class="text-xl lg:text-2xl font-bold mb-2">Рассчитать утилизационный сбор</h2>
-            <p class="text-white/80 text-sm lg:text-base">Узнайте сумму утилизационного сбора на основе массы товаров и упаковки. Ставки и нормативы переработки применяются автоматически согласно группы товара.</p>
+            <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessCalc.bannerTitle') }}</h2>
+            <p class="text-white/80 text-sm lg:text-base">{{ $t('businessCalc.bannerDescription') }}</p>
           </div>
           <button
             @click="startWizard"
@@ -975,7 +979,7 @@ const downloadReceipt = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            Начать расчёт
+            {{ $t('businessCalc.startCalc') }}
           </button>
         </div>
       </div>
@@ -988,11 +992,11 @@ const downloadReceipt = () => {
           </svg>
         </div>
         <div>
-          <p class="font-medium text-[#1e293b]">Информация о расчёте</p>
-          <p class="text-sm text-[#64748b]">Утилизационный сбор рассчитывается на основе массы товаров и упаковки товаров согласно ставкам утверждённым постановлением Кабинета Министров Кыргызской Республики №730 от 3 декабря 2024 г. Приложение 2, и нормативам переработки утверждённым постановлением Кабинета Министров Кыргызской Республики №322 от 19 июня 2024 г. Приложение 3.
+          <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.infoTitle') }}</p>
+          <p class="text-sm text-[#64748b]">{{ $t('businessCalc.infoDescription') }}
             <button @click="showInstruction = true" class="text-[#2D8B4E] hover:underline font-medium inline-flex items-center gap-1 mt-1">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Инструкция по заполнению
+              {{ $t('businessCalc.instructionLink') }}
             </button>
           </p>
         </div>
@@ -1007,41 +1011,41 @@ const downloadReceipt = () => {
       <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">Всего расчётов</p>
+          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.totalCalcs') }}</p>
           <p class="text-2xl font-bold text-[#1e293b]">12</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">Оплачено за год</p>
-          <p class="text-2xl font-bold text-[#10b981]">161 050 сом</p>
+          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.paidForYear') }}</p>
+          <p class="text-2xl font-bold text-[#10b981]">161 050 {{ $t('businessCalc.som') }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">К оплате</p>
-          <p class="text-2xl font-bold text-[#f59e0b]">0 сом</p>
+          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.toPay') }}</p>
+          <p class="text-2xl font-bold text-[#f59e0b]">0 {{ $t('businessCalc.som') }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">Последний расчёт</p>
+          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.lastCalc') }}</p>
           <p class="text-2xl font-bold text-[#2563eb]">Q4 2025</p>
         </div>
       </div>
 
       <!-- History Table -->
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История расчётов</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('businessCalc.historyTitle') }}</h2>
       </div>
 
       <DataTable :columns="columns" :data="calculations" :actions="true" :rowClass="calcRowClass">
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 11.67h10m0 16.66v-5m-5 5h.017M15 28.33h.017M15 23.33h.017M20 23.33h.017M25 18.33h.017M20 18.33h.017M15 18.33h.017M11.67 35h16.66A3.33 3.33 0 0031.67 31.67V8.33A3.33 3.33 0 0028.33 5H11.67A3.33 3.33 0 008.33 8.33v23.34A3.33 3.33 0 0011.67 35z&quot;/></svg>'"
-            title="У вас пока нет расчётов"
-            description="Создайте первый расчёт утилизационного сбора"
-            actionLabel="Создать расчёт"
+            :title="$t('businessCalc.emptyTitle')"
+            :description="$t('businessCalc.emptyDescription')"
+            :actionLabel="$t('businessCalc.emptyAction')"
             @action="startWizard()"
           />
         </template>
         <template #cell-number="{ value, row }">
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
-          <div v-if="row.parentNumber" class="text-[11px] text-amber-600 mt-0.5">Повторно (на основе {{ row.parentNumber }})</div>
+          <div v-if="row.parentNumber" class="text-[11px] text-amber-600 mt-0.5">{{ $t('businessCalc.resubmitted', { number: row.parentNumber }) }}</div>
         </template>
         <template #cell-amount="{ value }">
           <span class="font-semibold text-[#1e293b]">{{ value }}</span>
@@ -1049,7 +1053,7 @@ const downloadReceipt = () => {
         <template #cell-status="{ value, row }">
           <!-- Отклонено: badge + warning icon + tooltip on hover -->
           <div
-            v-if="value === 'Отклонено'"
+            v-if="value === 'rejected'"
             class="status-badge-wrap"
             @mouseenter="showTooltip(row.id, $event)"
             @mouseleave="hideTooltip()"
@@ -1068,7 +1072,7 @@ const downloadReceipt = () => {
               :style="{ top: tooltipPos.top + 'px', left: tooltipPos.left + 'px' }"
             >
               <div class="status-tooltip__arrow"></div>
-              <div class="status-tooltip__title">Причина отклонения</div>
+              <div class="status-tooltip__title">{{ $t('businessCalc.rejectionReason') }}</div>
               <div class="status-tooltip__text">{{ row.rejectionReason }}</div>
               <div v-if="row.rejectedBy || row.rejectedAt" class="status-tooltip__meta">
                 <template v-if="row.rejectedBy">{{ row.rejectedBy }}</template>
@@ -1079,7 +1083,7 @@ const downloadReceipt = () => {
           </div>
           <!-- Оплачено: checkmark badge -->
           <span
-            v-else-if="value === 'Оплачено'"
+            v-else-if="value === 'paid'"
             :style="getStatusStyle(value)"
             style="display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
           >
@@ -1096,103 +1100,103 @@ const downloadReceipt = () => {
         <template #actions="{ row }">
           <div class="act-wrap">
             <!-- Черновик: [Отправить (filled green)] [Редактировать (outline)] [⋯ → Удалить] -->
-            <template v-if="row.status === 'Черновик'">
+            <template v-if="row.status === 'draft'">
               <button @click="calculationStore.submitForReview(row.id)" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                Отправить
+                {{ $t('businessCalc.sendBtn') }}
               </button>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Редактировать
+                {{ $t('businessCalc.editBtn') }}
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
-                  <button class="act-dropdown__item act-dropdown__item--red" @click="mockAction('Удаление расчёта ' + row.number); closeMenu()">
+                  <button class="act-dropdown__item act-dropdown__item--red" @click="mockAction($t('businessCalc.deleteBtn') + ' ' + row.number); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    Удалить
+                    {{ $t('businessCalc.deleteBtn') }}
                   </button>
                 </div>
               </div>
             </template>
             <!-- На проверке: [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'На проверке'">
+            <template v-else-if="row.status === 'under_review'">
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
             <!-- Принято: [Оплатить (filled green)] [Просмотреть (outline)] [⋯ → PDF, Excel] -->
-            <template v-else-if="row.status === 'Принято'">
+            <template v-else-if="row.status === 'approved'">
               <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                Оплатить {{ row.totalAmount.toLocaleString('ru-RU') }} сом
+                {{ $t('businessCalc.payBtn') }} {{ row.totalAmount.toLocaleString() }} {{ $t('businessCalc.som') }}
               </button>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
                   <button class="act-dropdown__item" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } }); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Скачать PDF
+                    {{ $t('businessCalc.downloadPdf') }}
                   </button>
                   <button class="act-dropdown__item" @click="downloadExcel(row.id); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Скачать Excel
+                    {{ $t('businessCalc.downloadExcel') }}
                   </button>
                 </div>
               </div>
             </template>
             <!-- Оплачено: [Просмотреть (outline)] [⋯ → PDF, Excel] -->
-            <template v-else-if="row.status === 'Оплачено'">
+            <template v-else-if="row.status === 'paid'">
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
                   <button class="act-dropdown__item" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } }); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Скачать PDF
+                    {{ $t('businessCalc.downloadPdf') }}
                   </button>
                   <button class="act-dropdown__item" @click="downloadExcel(row.id); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Скачать Excel
+                    {{ $t('businessCalc.downloadExcel') }}
                   </button>
                 </div>
               </div>
             </template>
             <!-- Отклонено: [Исправить (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'Отклонено'">
+            <template v-else-if="row.status === 'rejected'">
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Исправить
+                {{ $t('businessCalc.fixBtn') }}
               </router-link>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
             <!-- Оплата на проверке: [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'Оплата на проверке'">
+            <template v-else-if="row.status === 'payment_pending'">
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
             <!-- Оплата отклонена: [Подтвердить оплату (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'Оплата отклонена'">
+            <template v-else-if="row.status === 'payment_rejected'">
               <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                Подтвердить оплату
+                {{ $t('businessCalc.confirmPayment') }}
               </button>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
           </div>
@@ -1210,8 +1214,8 @@ const downloadReceipt = () => {
             <svg class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="font-medium text-[#64748b]">Актуальные ставки утилизационного сбора (сом/тонна)</span>
-            <span v-if="!showRates" class="text-xs text-[#94a3b8] ml-2 hidden sm:inline">— нажмите чтобы развернуть</span>
+            <span class="font-medium text-[#64748b]">{{ $t('businessCalc.ratesTitle') }}</span>
+            <span v-if="!showRates" class="text-xs text-[#94a3b8] ml-2 hidden sm:inline">{{ $t('businessCalc.ratesExpand') }}</span>
           </div>
           <svg
             :class="['w-5 h-5 text-[#94a3b8] transition-transform duration-300', showRates ? 'rotate-180' : '']"
@@ -1233,7 +1237,7 @@ const downloadReceipt = () => {
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div v-for="group in productGroups" :key="group.value" class="bg-[#f8fafc] rounded-lg p-3">
                   <p class="text-xs text-[#64748b] mb-1">{{ group.label }}</p>
-                  <p class="font-bold text-[#1e293b]">{{ group.baseRate.toLocaleString() }} сом</p>
+                  <p class="font-bold text-[#1e293b]">{{ group.baseRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
                 </div>
               </div>
             </div>
@@ -1252,15 +1256,15 @@ const downloadReceipt = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Назад к списку
+            {{ $t('businessCalc.backToList') }}
           </button>
           <div class="flex items-center justify-between gap-4">
-            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Расчёт утилизационного сбора</h1>
+            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessCalc.pageTitle') }}</h1>
             <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Инструкция
+              {{ $t('businessCalc.instructionBtn') }}
             </button>
           </div>
         </div>
@@ -1315,12 +1319,12 @@ const downloadReceipt = () => {
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Период и данные плательщика</h2>
+            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessCalc.periodAndPayerTitle') }}</h2>
 
             <div class="space-y-6">
               <!-- Payer Type Toggle -->
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-3">Тип плательщика</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('businessCalc.payerTypeLabel') }}</label>
                 <div class="inline-flex rounded-xl border border-[#e2e8f0] overflow-hidden bg-[#f8fafc]">
                   <button
                     type="button"
@@ -1331,7 +1335,7 @@ const downloadReceipt = () => {
                         ? 'bg-[#f59e0b] text-white shadow-sm'
                         : 'text-[#64748b] hover:text-[#1e293b] hover:bg-white'
                     ]"
-                  >Производитель</button>
+                  >{{ $t('businessCalc.producer') }}</button>
                   <button
                     type="button"
                     @click="payerType = 'importer'"
@@ -1341,14 +1345,14 @@ const downloadReceipt = () => {
                         ? 'bg-[#f59e0b] text-white shadow-sm'
                         : 'text-[#64748b] hover:text-[#1e293b] hover:bg-white'
                     ]"
-                  >Импортёр</button>
+                  >{{ $t('businessCalc.importer') }}</button>
                 </div>
               </div>
 
               <!-- Producer: Quarter + Year -->
               <div v-if="payerType === 'producer'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Расчётный период <span class="text-[#EF4444]">*</span></label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.calcPeriodLabel') }} <span class="text-[#EF4444]">*</span></label>
                   <select
                     v-model="calculationQuarter"
                     :class="[
@@ -1359,11 +1363,11 @@ const downloadReceipt = () => {
                     ]"
                     @change="validationErrors.quarter && delete validationErrors.quarter"
                   >
-                    <option value="">Выберите квартал</option>
-                    <option value="Q1">I квартал</option>
-                    <option value="Q2">II квартал</option>
-                    <option value="Q3">III квартал</option>
-                    <option value="Q4">IV квартал</option>
+                    <option value="">{{ $t('businessCalc.selectQuarter') }}</option>
+                    <option value="Q1">{{ $t('businessCalc.quarterI') }}</option>
+                    <option value="Q2">{{ $t('businessCalc.quarterII') }}</option>
+                    <option value="Q3">{{ $t('businessCalc.quarterIII') }}</option>
+                    <option value="Q4">{{ $t('businessCalc.quarterIV') }}</option>
                   </select>
                   <p v-if="validationErrors.quarter" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors.quarter }}</p>
                   <p v-else-if="formSubmitted && formErrors.quarter" class="vld-error" data-validation-error>
@@ -1371,7 +1375,7 @@ const downloadReceipt = () => {
                   </p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Год *</label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.yearLabel') }}</label>
                   <select
                     v-model="calculationYear"
                     class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
@@ -1394,15 +1398,15 @@ const downloadReceipt = () => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b]">Срок подачи расчёта и оплаты</p>
-                  <p class="text-sm text-[#64748b]">до {{ producerDeadlineFormatted }}</p>
+                  <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.deadlineTitle') }}</p>
+                  <p class="text-sm text-[#64748b]">{{ $t('businessCalc.deadlineBefore', { date: producerDeadlineFormatted }) }}</p>
                 </div>
               </div>
 
               <!-- Importer: Date picker + Year -->
               <div v-if="payerType === 'importer'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Дата ввоза товаров на территорию КР <span class="text-[#EF4444]">*</span></label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.importDateLabel') }} <span class="text-[#EF4444]">*</span></label>
                   <input
                     type="date"
                     v-model="importDate"
@@ -1420,7 +1424,7 @@ const downloadReceipt = () => {
                   </p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">Год *</label>
+                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.yearLabel') }}</label>
                   <select
                     v-model="calculationYear"
                     class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
@@ -1443,8 +1447,8 @@ const downloadReceipt = () => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b]">Срок подачи расчёта и оплаты</p>
-                  <p class="text-sm text-[#64748b]">до {{ importerDeadlineFormatted }}. Осталось {{ importerDaysLeft }} рабочих дней</p>
+                  <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.deadlineTitle') }}</p>
+                  <p class="text-sm text-[#64748b]">{{ $t('businessCalc.deadlineBeforeWithDays', { date: importerDeadlineFormatted, days: importerDaysLeft }) }}</p>
                 </div>
               </div>
 
@@ -1456,8 +1460,8 @@ const downloadReceipt = () => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-red-800">Срок подачи истёк. Просрочка.</p>
-                  <p class="text-sm text-red-600">Крайний срок был: {{ importerDeadlineFormatted }}</p>
+                  <p class="font-medium text-red-800">{{ $t('businessCalc.deadlineExpired') }}</p>
+                  <p class="text-sm text-red-600">{{ $t('businessCalc.deadlineWas', { date: importerDeadlineFormatted }) }}</p>
                 </div>
               </div>
 
@@ -1466,19 +1470,19 @@ const downloadReceipt = () => {
                   <svg class="w-5 h-5 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <h3 class="font-medium text-[#1e293b]">Данные плательщика (из профиля)</h3>
+                  <h3 class="font-medium text-[#1e293b]">{{ $t('businessCalc.payerDataTitle') }}</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Наименование</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.companyNameLabel') }}</label>
                     <input type="text" :value="companyData.name" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">ИНН</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.innLabel') }}</label>
                     <input type="text" :value="companyData.inn" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                   <div class="sm:col-span-2">
-                    <label class="block text-xs text-[#64748b] mb-1">Адрес</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.addressLabel') }}</label>
                     <input type="text" :value="companyData.address" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                 </div>
@@ -1491,8 +1495,8 @@ const downloadReceipt = () => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b]">Сроки уплаты утилизационного сбора</p>
-                  <p class="text-sm text-[#64748b]">а) производителями товаров, упаковки товаров — ежеквартально, не позднее 15 числа месяца, следующего за кварталом;<br/>б) импортёрами товаров, упаковки товаров — по факту ввоза товаров, упаковки товаров на территорию Кыргызской Республики, не позднее 15 рабочих дней с момента возникновения такого факта.</p>
+                  <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.paymentTermsTitle') }}</p>
+                  <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentTermsText')"></p>
                 </div>
               </div>
             </div>
@@ -1501,12 +1505,12 @@ const downloadReceipt = () => {
           <!-- Step 2: Products -->
           <div v-if="currentStep === 2" class="p-6 lg:p-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 class="text-xl font-semibold text-[#1e293b]">Товары и упаковка</h2>
+              <h2 class="text-xl font-semibold text-[#1e293b]">{{ $t('businessCalc.productsTitle') }}</h2>
               <button @click="importFromDeclaration" class="flex items-center gap-2 text-[#f59e0b] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                Импорт из декларации
+                {{ $t('businessCalc.importFromDeclaration') }}
               </button>
             </div>
 
@@ -1518,8 +1522,8 @@ const downloadReceipt = () => {
               <div v-for="(item, index) in productItems" :key="item.id" class="cf-card">
                 <!-- Card header -->
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-sm font-semibold text-[#64748b]">Позиция {{ index + 1 }}</span>
-                  <button v-if="productItems.length > 1" @click="removeProductItem(item.id)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Удалить позицию">
+                  <span class="text-sm font-semibold text-[#64748b]">{{ $t('businessCalc.positionN', { n: index + 1 }) }}</span>
+                  <button v-if="productItems.length > 1" @click="removeProductItem(item.id)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors" :title="$t('businessCalc.deletePosition')">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -1543,11 +1547,11 @@ const downloadReceipt = () => {
 
                   <!-- ГСКП code for producers -->
                   <div v-if="payerType === 'producer' && item.group" class="mt-3">
-                    <label class="block text-xs text-[#64748b] mb-1">Гр.3: Код ГСКП</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.gskpCodeLabel') }}</label>
                     <input
                       type="text"
                       v-model="item.gskpCode"
-                      placeholder="Введите код ГСКП"
+                      :placeholder="$t('businessCalc.gskpCodePlaceholder')"
                       class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm"
                     />
                   </div>
@@ -1555,12 +1559,12 @@ const downloadReceipt = () => {
 
                 <!-- BLOCK 2: Data entry (amber top border) -->
                 <div class="cf-data" v-if="item.group">
-                  <div class="cf-data__header">Данные расчёта</div>
+                  <div class="cf-data__header">{{ $t('businessCalc.calcDataHeader') }}</div>
 
                   <!-- Volume input (Гр.5) -->
                   <div class="cf-data__fields">
                     <div class="cf-data__field">
-                      <label class="cf-data__label">Гр.5: Объём (масса), тонн</label>
+                      <label class="cf-data__label">{{ $t('businessCalc.volumeLabel') }}</label>
                       <input
                         type="number"
                         v-model="item.volume"
@@ -1568,14 +1572,14 @@ const downloadReceipt = () => {
                         step="0.01" min="0" placeholder="0.00"
                         :class="['cf-data__input', (validationErrors[`product_${index}_volume`] || (formSubmitted && formErrors[`product_${index}_volume`])) ? 'cf-data__input--error' : '']"
                       />
-                      <span class="cf-data__hint">Масса товаров или упаковки в тоннах</span>
+                      <span class="cf-data__hint">{{ $t('businessCalc.volumeHint') }}</span>
                       <p v-if="validationErrors[`product_${index}_volume`]" class="text-xs text-[#EF4444] mt-1">{{ validationErrors[`product_${index}_volume`] }}</p>
                       <p v-else-if="formSubmitted && formErrors[`product_${index}_volume`]" class="vld-error" data-validation-error>
                         <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_volume`] }}
                       </p>
                     </div>
                     <div class="cf-data__field">
-                      <label class="cf-data__label">Гр.8: Передано на переработку, тонн</label>
+                      <label class="cf-data__label">{{ $t('businessCalc.transferredLabel') }}</label>
                       <input
                         type="number"
                         v-model="item.transferredToRecycling"
@@ -1583,13 +1587,13 @@ const downloadReceipt = () => {
                         step="0.01" min="0" placeholder="0.00"
                         :class="['cf-data__input', (getVolumeError(item) || (formSubmitted && formErrors[`product_${index}_transferred`])) ? 'cf-data__input--error' : '']"
                       />
-                      <span class="cf-data__hint">Объём переданный на переработку лицензированному переработчику</span>
+                      <span class="cf-data__hint">{{ $t('businessCalc.transferredHint') }}</span>
                       <p v-if="formSubmitted && formErrors[`product_${index}_transferred`]" class="vld-error" data-validation-error>
                         <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_transferred`] }}
                       </p>
                     </div>
                     <div class="cf-data__field">
-                      <label class="cf-data__label">Гр.9: Вывезено из КР, тонн</label>
+                      <label class="cf-data__label">{{ $t('businessCalc.exportedLabel') }}</label>
                       <input
                         type="number"
                         v-model="item.exportedFromKR"
@@ -1597,7 +1601,7 @@ const downloadReceipt = () => {
                         step="0.01" min="0" placeholder="0.00"
                         :class="['cf-data__input', (getVolumeError(item) || (formSubmitted && formErrors[`product_${index}_exported`])) ? 'cf-data__input--error' : '']"
                       />
-                      <span class="cf-data__hint">Объём вывезенный за пределы Кыргызской Республики</span>
+                      <span class="cf-data__hint">{{ $t('businessCalc.exportedHint') }}</span>
                       <p v-if="formSubmitted && formErrors[`product_${index}_exported`]" class="vld-error" data-validation-error>
                         <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_exported`] }}
                       </p>
@@ -1613,12 +1617,12 @@ const downloadReceipt = () => {
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </div>
                       <div class="fc-card__text">
-                        <span class="fc-card__title">Договор на переработку</span>
-                        <span class="fc-card__desc">PDF, DOC до 10 МБ</span>
+                        <span class="fc-card__title">{{ $t('businessCalc.recyclingContract') }}</span>
+                        <span class="fc-card__desc">{{ $t('businessCalc.fileHint') }}</span>
                       </div>
                       <span class="fc-card__btn">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        Загрузить
+                        {{ $t('businessCalc.uploadBtn') }}
                       </span>
                     </label>
                     <div v-else class="fc-card fc-card--done">
@@ -1627,9 +1631,9 @@ const downloadReceipt = () => {
                       </div>
                       <div class="fc-card__text">
                         <span class="fc-card__title">{{ item.recycledFile.name }}</span>
-                        <span class="fc-card__desc fc-card__desc--green">Загружен</span>
+                        <span class="fc-card__desc fc-card__desc--green">{{ $t('businessCalc.uploaded') }}</span>
                       </div>
-                      <button @click="removeRecycledFile(item)" class="fc-card__remove" title="Удалить файл">
+                      <button @click="removeRecycledFile(item)" class="fc-card__remove" :title="$t('businessCalc.deleteFile')">
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
@@ -1641,12 +1645,12 @@ const downloadReceipt = () => {
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                       </div>
                       <div class="fc-card__text">
-                        <span class="fc-card__title">ГТД на вывоз</span>
-                        <span class="fc-card__desc">PDF, DOC до 10 МБ</span>
+                        <span class="fc-card__title">{{ $t('businessCalc.gtdExport') }}</span>
+                        <span class="fc-card__desc">{{ $t('businessCalc.fileHint') }}</span>
                       </div>
                       <span class="fc-card__btn">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                        Загрузить
+                        {{ $t('businessCalc.uploadBtn') }}
                       </span>
                     </label>
                     <div v-else class="fc-card fc-card--done">
@@ -1655,9 +1659,9 @@ const downloadReceipt = () => {
                       </div>
                       <div class="fc-card__text">
                         <span class="fc-card__title">{{ item.exportedFile.name }}</span>
-                        <span class="fc-card__desc fc-card__desc--green">Загружен</span>
+                        <span class="fc-card__desc fc-card__desc--green">{{ $t('businessCalc.uploaded') }}</span>
                       </div>
-                      <button @click="removeExportedFile(item)" class="fc-card__remove" title="Удалить файл">
+                      <button @click="removeExportedFile(item)" class="fc-card__remove" :title="$t('businessCalc.deleteFile')">
                         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
@@ -1682,31 +1686,31 @@ const downloadReceipt = () => {
                   <!-- Computed values grid -->
                   <div class="cf-data__computed">
                     <div class="cf-data__computed-cell">
-                      <span class="cf-data__computed-label">Гр.6 Норматив</span>
+                      <span class="cf-data__computed-label">{{ $t('businessCalc.normLabel') }}</span>
                       <span class="cf-data__computed-value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '—' }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
-                      <span class="cf-data__computed-label">Гр.7 К переработке</span>
-                      <span class="cf-data__computed-value" style="color:#6366f1">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' т' : '0.00 т' }}</span>
+                      <span class="cf-data__computed-label">{{ $t('businessCalc.toRecycleLabel') }}</span>
+                      <span class="cf-data__computed-value" style="color:#6366f1">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' ' + $t('businessCalc.ton') : '0.00 ' + $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
-                      <span class="cf-data__computed-label">Гр.10 Облагаемый объём</span>
-                      <span class="cf-data__computed-value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' т' : '0.00 т' }}</span>
+                      <span class="cf-data__computed-label">{{ $t('businessCalc.taxableVolumeLabel') }}</span>
+                      <span class="cf-data__computed-value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' ' + $t('businessCalc.ton') : '0.00 ' + $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
-                      <span class="cf-data__computed-label">Остаток к переработке</span>
-                      <span class="cf-data__computed-value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b' }">{{ getRemaining(item).toFixed(2) }} т</span>
+                      <span class="cf-data__computed-label">{{ $t('businessCalc.remainingLabel') }}</span>
+                      <span class="cf-data__computed-value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b' }">{{ getRemaining(item).toFixed(2) }} {{ $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
-                      <span class="cf-data__computed-label">Гр.11 Ставка</span>
-                      <span class="cf-data__computed-value">{{ item.rate.toLocaleString('ru-RU') }} сом/т</span>
+                      <span class="cf-data__computed-label">{{ $t('businessCalc.rateLabel') }}</span>
+                      <span class="cf-data__computed-value">{{ item.rate.toLocaleString() }} {{ $t('businessCalc.somPerTon') }}</span>
                     </div>
                   </div>
 
                   <!-- Summary: Amount -->
                   <div class="cf-data__summary">
-                    <span class="cf-data__summary-label">Гр.12 Сумма утилизационного сбора</span>
-                    <span class="cf-data__summary-value">{{ item.amount.toLocaleString('ru-RU') }} сом</span>
+                    <span class="cf-data__summary-label">{{ $t('businessCalc.amountLabel') }}</span>
+                    <span class="cf-data__summary-value">{{ item.amount.toLocaleString() }} {{ $t('businessCalc.som') }}</span>
                   </div>
                 </div>
               </div>
@@ -1716,35 +1720,35 @@ const downloadReceipt = () => {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
-              Добавить позицию
+              {{ $t('businessCalc.addPosition') }}
             </button>
 
             <!-- Total banner -->
             <div class="cf-total-banner mt-8">
               <div class="cf-total-banner__grid">
                 <div class="cf-total-banner__cell">
-                  <span class="cf-total-banner__cell-label">Гр.5: Общий объём</span>
-                  <span class="cf-total-banner__cell-value">{{ totalVolume }} т</span>
+                  <span class="cf-total-banner__cell-label">{{ $t('businessCalc.totalVolumeLabel') }}</span>
+                  <span class="cf-total-banner__cell-value">{{ totalVolume }} {{ $t('businessCalc.ton') }}</span>
                 </div>
                 <div class="cf-total-banner__cell">
-                  <span class="cf-total-banner__cell-label">Гр.7: К переработке</span>
-                  <span class="cf-total-banner__cell-value" style="color:#6366f1">{{ totalVolumeToRecycle }} т</span>
+                  <span class="cf-total-banner__cell-label">{{ $t('businessCalc.totalToRecycleLabel') }}</span>
+                  <span class="cf-total-banner__cell-value" style="color:#6366f1">{{ totalVolumeToRecycle }} {{ $t('businessCalc.ton') }}</span>
                 </div>
                 <div class="cf-total-banner__cell">
-                  <span class="cf-total-banner__cell-label">Гр.8: Передано</span>
-                  <span class="cf-total-banner__cell-value" style="color:#10b981">{{ totalTransferred }} т</span>
+                  <span class="cf-total-banner__cell-label">{{ $t('businessCalc.totalTransferredLabel') }}</span>
+                  <span class="cf-total-banner__cell-value" style="color:#10b981">{{ totalTransferred }} {{ $t('businessCalc.ton') }}</span>
                 </div>
                 <div class="cf-total-banner__cell">
-                  <span class="cf-total-banner__cell-label">Гр.9: Вывезено</span>
-                  <span class="cf-total-banner__cell-value" style="color:#2563eb">{{ totalExported }} т</span>
+                  <span class="cf-total-banner__cell-label">{{ $t('businessCalc.totalExportedLabel') }}</span>
+                  <span class="cf-total-banner__cell-value" style="color:#2563eb">{{ totalExported }} {{ $t('businessCalc.ton') }}</span>
                 </div>
                 <div class="cf-total-banner__cell">
-                  <span class="cf-total-banner__cell-label">Гр.10: Облагаемый объём</span>
-                  <span class="cf-total-banner__cell-value">{{ totalTaxableVolume }} т</span>
+                  <span class="cf-total-banner__cell-label">{{ $t('businessCalc.totalTaxableLabel') }}</span>
+                  <span class="cf-total-banner__cell-value">{{ totalTaxableVolume }} {{ $t('businessCalc.ton') }}</span>
                 </div>
               </div>
               <div class="cf-total-banner__bottom">
-                <span class="cf-total-banner__label">Итого к оплате</span>
+                <span class="cf-total-banner__label">{{ $t('businessCalc.totalToPay') }}</span>
                 <span class="cf-total-banner__value" style="color:#f59e0b">{{ formattedTotalAmount }}</span>
               </div>
             </div>
@@ -1752,26 +1756,26 @@ const downloadReceipt = () => {
 
           <!-- Step 3: Result -->
           <div v-if="currentStep === 3" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Результат расчёта</h2>
+            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessCalc.resultTitle') }}</h2>
 
             <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0] mb-6">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <p class="text-sm text-[#64748b] mb-1">Номер расчёта</p>
+                  <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.calcNumberLabel') }}</p>
                   <p class="font-bold text-[#1e293b] font-mono">{{ calculationResult.number }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-[#64748b] mb-1">Дата расчёта</p>
+                  <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.calcDateLabel') }}</p>
                   <p class="font-bold text-[#1e293b]">{{ calculationResult.date }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-[#64748b] mb-1">Срок оплаты</p>
+                  <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.paymentDueLabel') }}</p>
                   <p class="font-bold" :style="{ color: deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? '#DC2626' : '#f59e0b' }">
                     {{ calculationResult.dueDate }}
                   </p>
                   <p v-if="deadlineStatus" class="text-xs mt-0.5" :style="{ color: deadlineStatus.overdue ? '#DC2626' : '#94a3b8' }">
-                    <template v-if="deadlineStatus.overdue">Просрочено на {{ deadlineStatus.days }} дн.!</template>
-                    <template v-else>Осталось {{ deadlineStatus.days }} дн.</template>
+                    <template v-if="deadlineStatus.overdue">{{ $t('businessCalc.overdueDays', { days: deadlineStatus.days }) }}</template>
+                    <template v-else>{{ $t('businessCalc.remainingDays', { days: deadlineStatus.days }) }}</template>
                   </p>
                 </div>
               </div>
@@ -1780,12 +1784,12 @@ const downloadReceipt = () => {
             <div class="bg-gradient-to-r from-[#f59e0b] to-[#d97706] rounded-2xl p-6 text-white mb-6">
               <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p class="text-white/80 mb-1">Сумма утилизационного сбора</p>
+                  <p class="text-white/80 mb-1">{{ $t('businessCalc.feeAmountLabel') }}</p>
                   <p class="text-3xl lg:text-4xl font-bold">{{ formattedTotalAmount }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="px-4 py-2 bg-white/20 rounded-lg text-sm font-medium">
-                    {{ payerType === 'producer' ? calculationQuarter + ' ' + calculationYear : 'Ввоз ' + (importDate ? new Date(importDate).toLocaleDateString('ru-RU') : '') }}
+                    {{ payerType === 'producer' ? calculationQuarter + ' ' + calculationYear : $t('businessCalc.importPrefix') + ' ' + (importDate ? new Date(importDate).toLocaleDateString() : '') }}
                   </span>
                 </div>
               </div>
@@ -1793,21 +1797,21 @@ const downloadReceipt = () => {
 
             <div class="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden mb-6">
               <div class="px-5 py-4 border-b border-[#e2e8f0]">
-                <h3 class="font-semibold text-[#1e293b]">Детализация расчёта</h3>
+                <h3 class="font-semibold text-[#1e293b]">{{ $t('businessCalc.detailsTitle') }}</h3>
               </div>
               <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                   <thead class="bg-[#f8fafc]">
                     <tr class="text-left text-[#64748b]">
-                      <th class="px-4 py-3 font-medium">Группа / подгруппа</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.5 Объём (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.6 Норм. (%)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.7 К перер. (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.8 Передано (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.9 Вывезено (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.10 Облаг. (т)</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.11 Ставка</th>
-                      <th class="px-4 py-3 font-medium text-right">Гр.12 Сумма</th>
+                      <th class="px-4 py-3 font-medium">{{ $t('businessCalc.thGroupSubgroup') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thVolumeT') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thNormPct') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thToRecycleT') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thTransferredT') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thExportedT') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thTaxableT') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thRate') }}</th>
+                      <th class="px-4 py-3 font-medium text-right">{{ $t('businessCalc.thAmount') }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[#e2e8f0]">
@@ -1829,7 +1833,7 @@ const downloadReceipt = () => {
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">
                     <tr>
-                      <td class="px-4 py-3">Итого</td>
+                      <td class="px-4 py-3">{{ $t('businessCalc.totalRow') }}</td>
                       <td class="px-4 py-3 text-right">{{ totalVolume }}</td>
                       <td class="px-4 py-3 text-right">—</td>
                       <td class="px-4 py-3 text-right text-[#6366f1]">{{ totalVolumeToRecycle }}</td>
@@ -1854,7 +1858,7 @@ const downloadReceipt = () => {
                   <svg class="w-4 h-4 text-[#3B82F6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span class="text-sm font-medium text-[#1e293b]">Примечания к кодам ТН ВЭД</span>
+                  <span class="text-sm font-medium text-[#1e293b]">{{ $t('businessCalc.tnvedNotesTitle') }}</span>
                 </div>
                 <svg
                   class="w-4 h-4 text-[#94a3b8] transition-transform duration-200"
@@ -1884,36 +1888,36 @@ const downloadReceipt = () => {
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-[#1e293b]">Реквизиты для оплаты</p>
-                <p class="text-sm text-[#64748b]">Получатель: Государственный экологический фонд КР<br/>ИНН: 00000000000000 | Р/с: 1234567890123456 | Банк: НБКР</p>
+                <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.paymentDetailsTitle') }}</p>
+                <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentDetailsText')"></p>
               </div>
             </div>
 
             <!-- Графа 13: Сверка платежей -->
             <div class="g13-container mt-4">
               <div class="g13-header">
-                <h3 class="g13-title">Графа 13. Сверка платежей за отчётный период</h3>
+                <h3 class="g13-title">{{ $t('businessCalc.g13Title') }}</h3>
                 <div class="g13-tooltip-wrap">
                   <svg class="w-4 h-4 text-[#94a3b8] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <div class="g13-tooltip">Заполняется автоматически на основании данных лицевого счёта. Для производителей — по суммам ежеквартальных платежей, для импортёров — по суммам платежей при фактическом ввозе товаров.</div>
+                  <div class="g13-tooltip">{{ $t('businessCalc.g13Tooltip') }}</div>
                 </div>
               </div>
               <div class="g13-cards">
                 <div class="g13-card">
-                  <span class="g13-card__label">Начислено за период</span>
-                  <span class="g13-card__value">0 сом</span>
-                  <span class="g13-card__sub">Расчёт ещё не подан</span>
+                  <span class="g13-card__label">{{ $t('businessCalc.g13Charged') }}</span>
+                  <span class="g13-card__value">0 {{ $t('businessCalc.som') }}</span>
+                  <span class="g13-card__sub">{{ $t('businessCalc.g13NotSubmitted') }}</span>
                 </div>
                 <div class="g13-card">
-                  <span class="g13-card__label">Уплачено за период</span>
-                  <span class="g13-card__value g13-card__value--green">0 сом</span>
-                  <span class="g13-card__sub">Расчёт ещё не подан</span>
+                  <span class="g13-card__label">{{ $t('businessCalc.g13Paid') }}</span>
+                  <span class="g13-card__value g13-card__value--green">0 {{ $t('businessCalc.som') }}</span>
+                  <span class="g13-card__sub">{{ $t('businessCalc.g13NotSubmitted') }}</span>
                 </div>
                 <div class="g13-card g13-card--diff g13-card--zero">
-                  <span class="g13-card__label">Разница (начислено − уплачено)</span>
-                  <span class="g13-card__value g13-card__value--gray">Задолженность отсутствует</span>
+                  <span class="g13-card__label">{{ $t('businessCalc.g13Difference') }}</span>
+                  <span class="g13-card__value g13-card__value--gray">{{ $t('businessCalc.g13NoDebt') }}</span>
                 </div>
               </div>
             </div>
@@ -1929,7 +1933,7 @@ const downloadReceipt = () => {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Назад
+              {{ $t('businessCalc.backBtn') }}
             </button>
             <div v-else></div>
 
@@ -1939,7 +1943,7 @@ const downloadReceipt = () => {
                 @click="handleStep1Next"
                 class="btn-action btn-action-primary"
               >
-                Далее
+                {{ $t('businessCalc.nextBtn') }}
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
@@ -1950,12 +1954,12 @@ const downloadReceipt = () => {
                 @click="handleStep2Calculate"
                 class="btn-action btn-action-primary"
                 :disabled="formSubmitted && hasErrors"
-                :title="formSubmitted && hasErrors ? 'Исправьте ошибки в форме' : ''"
+                :title="formSubmitted && hasErrors ? $t('businessCalc.fixFormErrors') : ''"
               >
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
-                Рассчитать
+                {{ $t('businessCalc.calculateBtn') }}
               </button>
 
               <!-- Step 3: Actions -->
@@ -1967,19 +1971,19 @@ const downloadReceipt = () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                   </svg>
-                  Сохранить черновик
+                  {{ $t('businessCalc.saveDraftBtn') }}
                 </button>
 
                 <button
                   @click="submitForReview"
                   class="btn-action btn-action-primary"
                   :disabled="formSubmitted && hasErrors"
-                  :title="formSubmitted && hasErrors ? 'Исправьте ошибки в форме' : ''"
+                  :title="formSubmitted && hasErrors ? $t('businessCalc.fixFormErrors') : ''"
                 >
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
-                  Отправить на проверку
+                  {{ $t('businessCalc.submitForReview') }}
                 </button>
               </template>
             </div>
@@ -1997,20 +2001,20 @@ const downloadReceipt = () => {
           </svg>
         </div>
 
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Расчёт отправлен на проверку!</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessCalc.sentTitle') }}</h1>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Номер расчёта</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.sentCalcNumber') }}</p>
               <p class="text-lg font-bold text-[#f59e0b] font-mono">{{ calculationResult.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Сумма</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.sentAmount') }}</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ formattedTotalAmount }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Дата отправки</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.sentDate') }}</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ calculationResult.date }}</p>
             </div>
           </div>
@@ -2020,12 +2024,12 @@ const downloadReceipt = () => {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 text-left">
           <h3 class="font-semibold text-[#1e293b] mb-3 flex items-center gap-2">
             <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Что дальше?
+            {{ $t('businessCalc.whatsNext') }}
           </h3>
           <ol class="text-sm text-[#475569] space-y-2 list-decimal list-inside">
-            <li>Эко Оператор проверит ваш расчёт в течение 3 рабочих дней</li>
-            <li>Вы получите уведомление о результате проверки</li>
-            <li>После принятия расчёта вам будет доступен счёт на оплату</li>
+            <li>{{ $t('businessCalc.nextStep1') }}</li>
+            <li>{{ $t('businessCalc.nextStep2') }}</li>
+            <li>{{ $t('businessCalc.nextStep3') }}</li>
           </ol>
         </div>
 
@@ -2037,7 +2041,7 @@ const downloadReceipt = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
-            К списку расчётов
+            {{ $t('businessCalc.goToList') }}
           </button>
         </div>
       </div>
@@ -2051,32 +2055,32 @@ const downloadReceipt = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Назад к списку
+            {{ $t('businessCalc.backToList') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Подтверждение оплаты</h1>
-          <p class="text-[#64748b]">Расчёт {{ paymentCalcNumber }} | Сумма: {{ paymentCalcAmount.toLocaleString('ru-RU') }} сом</p>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessCalc.paymentConfirmTitle') }}</h1>
+          <p class="text-[#64748b]">{{ $t('businessCalc.paymentCalcInfo', { number: paymentCalcNumber, amount: paymentCalcAmount.toLocaleString() }) }}</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 lg:p-8">
           <div class="space-y-5">
             <!-- Payment order number -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Номер платёжного поручения *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.paymentOrderLabel') }}</label>
               <input
                 v-model="paymentForm.paymentOrderNumber"
                 type="text"
-                placeholder="Например: ПП-00412"
+                :placeholder="$t('businessCalc.paymentOrderPlaceholder')"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>
 
             <!-- Payment date -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Дата оплаты *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.paymentDateLabel') }}</label>
               <input
                 v-model="paymentForm.paymentDate"
                 type="text"
-                placeholder="дд.мм.гггг"
+                :placeholder="$t('businessCalc.paymentDatePlaceholder')"
                 onfocus="this.type='date'"
                 onblur="if(!this.value)this.type='text'"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
@@ -2085,23 +2089,23 @@ const downloadReceipt = () => {
 
             <!-- Payer bank -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Банк плательщика *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.payerBankLabel') }}</label>
               <input
                 v-model="paymentForm.payerBank"
                 type="text"
-                placeholder="Например: Оптима Банк"
+                :placeholder="$t('businessCalc.payerBankPlaceholder')"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>
 
             <!-- Transfer amount -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Сумма перевода (сом) *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.transferAmountLabel') }}</label>
               <input
                 v-model="paymentForm.transferAmount"
                 @input="validatePaymentAmount"
                 type="number"
-                :placeholder="paymentCalcAmount.toLocaleString('ru-RU')"
+                :placeholder="paymentCalcAmount.toLocaleString()"
                 class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2"
                 :class="paymentAmountError ? 'border-red-300 focus:border-red-400 focus:ring-red-200' : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'"
               />
@@ -2110,7 +2114,7 @@ const downloadReceipt = () => {
 
             <!-- File upload -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Скан/фото платёжного поручения *</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.paymentScanLabel') }}</label>
               <div
                 v-if="!paymentFile"
                 @dragover.prevent="paymentDragOver = true"
@@ -2125,8 +2129,8 @@ const downloadReceipt = () => {
                 <svg class="w-10 h-10 mx-auto mb-3 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <p class="text-[#1e293b] font-medium mb-1">Перетащите файл сюда или нажмите для выбора</p>
-                <p class="text-sm text-[#64748b]">PDF, JPG, PNG — до 10 МБ</p>
+                <p class="text-[#1e293b] font-medium mb-1">{{ $t('businessCalc.dropFileHere') }}</p>
+                <p class="text-sm text-[#64748b]">{{ $t('businessCalc.fileFormats') }}</p>
                 <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handlePaymentFileSelect" />
               </div>
               <div v-else class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0] flex items-center justify-between">
@@ -2151,11 +2155,11 @@ const downloadReceipt = () => {
 
             <!-- Comment -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-2">Комментарий</label>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.commentLabel') }}</label>
               <textarea
                 v-model="paymentForm.comment"
                 rows="3"
-                placeholder="Дополнительная информация (необязательно)"
+                :placeholder="$t('businessCalc.commentPlaceholder')"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               ></textarea>
             </div>
@@ -2167,7 +2171,7 @@ const downloadReceipt = () => {
               @click="cancelPayment"
               class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
             >
-              Отмена
+              {{ $t('businessCalc.cancelBtn') }}
             </button>
             <button
               @click="submitPayment"
@@ -2177,13 +2181,13 @@ const downloadReceipt = () => {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
-              Отправить на проверку
+              {{ $t('businessCalc.submitPaymentBtn') }}
             </button>
           </div>
         </div>
       </div>
     </template>
-    <InstructionDrawer v-model="showInstruction" title="Инструкция — Расчёт утильсбора" :contentHtml="instructionCalculationHtml" />
+    <InstructionDrawer v-model="showInstruction" :title="$t('businessCalc.instructionDrawerTitle')" :contentHtml="instructionCalculationHtml" />
     <ConfirmDialog
       :visible="confirmDialog.visible"
       :title="confirmDialog.title"

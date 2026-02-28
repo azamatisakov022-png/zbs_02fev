@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Column {
   key: string
   label: string
@@ -33,7 +37,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
               {{ col.label }}
             </th>
             <th v-if="actions" style="width: 100px" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
-              Действия
+              {{ t('common.actions') }}
             </th>
           </tr>
         </thead>
@@ -62,8 +66,8 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                       <button
                         @click="$emit('view', row)"
                         class="btn-action btn-action-secondary text-xs px-3 py-1.5"
-                        aria-label="Просмотреть"
-                        data-tooltip="Просмотреть"
+                        :aria-label="t('common.view')"
+                        :data-tooltip="t('common.view')"
                       >
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -84,8 +88,8 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                   <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#94a3b8]">
                     <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                   </div>
-                  <h3 class="text-lg font-semibold text-[#64748b] mb-2">Нет данных</h3>
-                  <p class="text-sm text-[#94a3b8]">Данные пока отсутствуют</p>
+                  <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
+                  <p class="text-sm text-[#94a3b8]">{{ t('common.noData') }}</p>
                 </div>
               </slot>
             </td>
@@ -122,13 +126,13 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
               <button
                 @click="$emit('view', row)"
                 class="btn-action btn-action-secondary w-full text-sm py-2"
-                aria-label="Просмотреть"
+                :aria-label="t('common.view')"
               >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                Просмотреть
+                {{ t('common.view') }}
               </button>
             </slot>
           </div>
@@ -140,8 +144,8 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
             <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#94a3b8]">
               <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
             </div>
-            <h3 class="text-lg font-semibold text-[#64748b] mb-2">Нет данных</h3>
-            <p class="text-sm text-[#94a3b8]">Данные пока отсутствуют</p>
+            <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
+            <p class="text-sm text-[#94a3b8]">{{ t('common.noData') }}</p>
           </div>
         </slot>
       </template>

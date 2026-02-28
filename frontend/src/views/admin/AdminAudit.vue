@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { AppButton } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { roleTitle, menuItems } = useAdminMenu()
+const { t } = useI18n()
 
 interface AuditEntry {
   id: number
@@ -73,35 +75,35 @@ const selectedEntity = ref('')
 const selectedStatus = ref('')
 const searchQuery = ref('')
 
-const actionTypes = [
-  { value: 'create', label: 'Создание' },
-  { value: 'update', label: 'Изменение' },
-  { value: 'delete', label: 'Удаление' },
-  { value: 'login', label: 'Вход' },
-  { value: 'logout', label: 'Выход' },
-  { value: 'view', label: 'Просмотр' },
-  { value: 'export', label: 'Экспорт' },
-  { value: 'import', label: 'Импорт' },
-]
+const actionTypes = computed(() => [
+  { value: 'create', label: t('audit.actionCreate') },
+  { value: 'update', label: t('audit.actionUpdate') },
+  { value: 'delete', label: t('audit.actionDelete') },
+  { value: 'login', label: t('audit.actionLogin') },
+  { value: 'logout', label: t('audit.actionLogout') },
+  { value: 'view', label: t('audit.actionView') },
+  { value: 'export', label: t('audit.actionExport') },
+  { value: 'import', label: t('audit.actionImport') },
+])
 
-const entities = [
-  'Пользователи',
-  'Организации',
-  'Декларации',
-  'Отчёты',
-  'Ставки утильсбора',
-  'Справочники',
-  'Системные настройки',
-  'Сессии',
-  'Расчёты',
-  'Лицензии',
-]
+const entities = computed(() => [
+  t('audit.entityUsers'),
+  t('audit.entityOrgs'),
+  t('audit.entityDeclarations'),
+  t('audit.entityReports'),
+  t('audit.entityRates'),
+  t('audit.entityReferences'),
+  t('audit.entitySettings'),
+  t('audit.entitySessions'),
+  t('audit.entityCalculations'),
+  t('audit.entityLicenses'),
+])
 
-const statuses = [
-  { value: 'success', label: 'Успешно' },
-  { value: 'warning', label: 'Предупреждение' },
-  { value: 'error', label: 'Ошибка' },
-]
+const statuses = computed(() => [
+  { value: 'success', label: t('audit.statusSuccess') },
+  { value: 'warning', label: t('audit.statusWarning') },
+  { value: 'error', label: t('audit.statusError') },
+])
 
 const filteredLog = computed(() => {
   return auditLog.value.filter(entry => {
@@ -191,14 +193,14 @@ const getActionTypeColor = (type: string) => {
 
 const getActionTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    create: 'Создание',
-    update: 'Изменение',
-    delete: 'Удаление',
-    login: 'Вход',
-    logout: 'Выход',
-    view: 'Просмотр',
-    export: 'Экспорт',
-    import: 'Импорт',
+    create: t('audit.actionCreate'),
+    update: t('audit.actionUpdate'),
+    delete: t('audit.actionDelete'),
+    login: t('audit.actionLogin'),
+    logout: t('audit.actionLogout'),
+    view: t('audit.actionView'),
+    export: t('audit.actionExport'),
+    import: t('audit.actionImport'),
   }
   return labels[type] || type
 }
@@ -228,11 +230,11 @@ const getRoleColor = (role: string) => {
 
 const getRoleLabel = (role: string) => {
   const labels: Record<string, string> = {
-    admin: 'Админ',
-    employee: 'Сотрудник',
-    business: 'Плательщик',
-    'eco-operator': 'Эко-оператор',
-    system: 'Система',
+    admin: t('audit.roleAdmin'),
+    employee: t('audit.roleEmployee'),
+    business: t('audit.roleBusiness'),
+    'eco-operator': t('audit.roleEcoOperator'),
+    system: t('audit.roleSystem'),
   }
   return labels[role] || role
 }
@@ -249,9 +251,9 @@ const openDetail = (entry: AuditEntry) => {
 // Export audit log to CSV
 const exportAuditLog = () => {
   const bom = '\uFEFF'
-  let csv = bom + 'ID;Дата и время;Пользователь;Роль;Тип действия;Действие;Объект;ID объекта;IP адрес;Детали;Статус\n'
+  let csv = bom + `${t('audit.csvId')};${t('audit.csvDateTime')};${t('audit.csvUser')};${t('audit.csvRole')};${t('audit.csvActionType')};${t('audit.csvAction')};${t('audit.csvObject')};${t('audit.csvObjectId')};${t('audit.csvIpAddress')};${t('audit.csvDetails')};${t('audit.csvStatus')}\n`
   filteredLog.value.forEach(e => {
-    csv += `${e.id};${e.timestamp};${e.user};${getRoleLabel(e.userRole)};${getActionTypeLabel(e.actionType)};${e.action};${e.entity};${e.entityId};${e.ipAddress};"${e.details}";${e.status === 'success' ? 'Успешно' : e.status === 'warning' ? 'Предупреждение' : 'Ошибка'}\n`
+    csv += `${e.id};${e.timestamp};${e.user};${getRoleLabel(e.userRole)};${getActionTypeLabel(e.actionType)};${e.action};${e.entity};${e.entityId};${e.ipAddress};"${e.details}";${e.status === 'success' ? t('audit.statusSuccess') : e.status === 'warning' ? t('audit.statusWarning') : t('audit.statusError')}\n`
   })
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -274,15 +276,15 @@ const exportAuditLog = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Журнал аудита</h1>
-          <p class="text-gray-600 mt-1">Аудит всех операций в системе</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('audit.title') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('audit.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <AppButton variant="secondary" @click="exportAuditLog">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Экспорт журнала
+            {{ $t('audit.exportLog') }}
           </AppButton>
         </div>
       </div>
@@ -292,7 +294,7 @@ const exportAuditLog = () => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Всего записей</p>
+              <p class="text-sm text-gray-500">{{ $t('audit.totalRecords') }}</p>
               <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total.toLocaleString() }}</p>
             </div>
             <div class="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center">
@@ -306,7 +308,7 @@ const exportAuditLog = () => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Успешных</p>
+              <p class="text-sm text-gray-500">{{ $t('audit.successful') }}</p>
               <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.success }}</p>
             </div>
             <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -320,7 +322,7 @@ const exportAuditLog = () => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Предупреждений</p>
+              <p class="text-sm text-gray-500">{{ $t('audit.warnings') }}</p>
               <p class="text-2xl font-bold text-amber-600 mt-1">{{ stats.warnings }}</p>
             </div>
             <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
@@ -334,7 +336,7 @@ const exportAuditLog = () => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Ошибок</p>
+              <p class="text-sm text-gray-500">{{ $t('audit.errors') }}</p>
               <p class="text-2xl font-bold text-red-600 mt-1">{{ stats.errors }}</p>
             </div>
             <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
@@ -351,7 +353,7 @@ const exportAuditLog = () => {
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
           <!-- Date Range -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">С даты</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.dateFrom') }}</label>
             <input
               v-model="dateFrom"
               type="date"
@@ -359,7 +361,7 @@ const exportAuditLog = () => {
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">По дату</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.dateTo') }}</label>
             <input
               v-model="dateTo"
               type="date"
@@ -369,12 +371,12 @@ const exportAuditLog = () => {
 
           <!-- Action Type -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Тип действия</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.actionType') }}</label>
             <select
               v-model="selectedAction"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d]"
             >
-              <option value="">Все типы</option>
+              <option value="">{{ $t('audit.allTypes') }}</option>
               <option v-for="action in actionTypes" :key="action.value" :value="action.value">
                 {{ action.label }}
               </option>
@@ -383,12 +385,12 @@ const exportAuditLog = () => {
 
           <!-- Entity -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Объект</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.object') }}</label>
             <select
               v-model="selectedEntity"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d]"
             >
-              <option value="">Все объекты</option>
+              <option value="">{{ $t('audit.allObjects') }}</option>
               <option v-for="entity in entities" :key="entity" :value="entity">
                 {{ entity }}
               </option>
@@ -397,12 +399,12 @@ const exportAuditLog = () => {
 
           <!-- Status -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.statusLabel') }}</label>
             <select
               v-model="selectedStatus"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d]"
             >
-              <option value="">Все статусы</option>
+              <option value="">{{ $t('audit.allStatuses') }}</option>
               <option v-for="status in statuses" :key="status.value" :value="status.value">
                 {{ status.label }}
               </option>
@@ -411,7 +413,7 @@ const exportAuditLog = () => {
 
           <!-- Search -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Поиск</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('audit.search') }}</label>
             <div class="relative">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -419,7 +421,7 @@ const exportAuditLog = () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск..."
+                :placeholder="$t('audit.searchPlaceholder')"
                 class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e888d] focus:border-[#0e888d]"
               />
             </div>
@@ -433,22 +435,22 @@ const exportAuditLog = () => {
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Время</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Пользователь</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действие</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Объект</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Детали</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.time') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.user') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.action') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.object') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.details') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.statusLabel') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('audit.actions') }}</th>
               </tr>
             </thead>
             <tbody v-if="filteredLog.length === 0">
               <tr>
                 <td colspan="7">
                   <EmptyState
-                    title="По запросу ничего не найдено"
-                    description="Попробуйте изменить параметры фильтрации или поисковый запрос"
-                    actionLabel="Сбросить фильтры"
+                    :title="$t('audit.emptyTitle')"
+                    :description="$t('audit.emptyDescription')"
+                    :actionLabel="$t('audit.resetFilters')"
                     @action="selectedAction = ''; selectedEntity = ''; selectedStatus = ''; searchQuery = ''"
                   />
                 </td>
@@ -498,7 +500,7 @@ const exportAuditLog = () => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Подробнее
+                    {{ $t('audit.viewDetails') }}
                   </AppButton>
                 </td>
               </tr>
@@ -509,7 +511,7 @@ const exportAuditLog = () => {
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <p class="text-sm text-gray-500">
-            Показано {{ paginationStart }}-{{ paginationEnd }} из {{ filteredLog.length }} записей
+            {{ $t('audit.showingRecords', { start: paginationStart, end: paginationEnd, total: filteredLog.length }) }}
           </p>
           <div class="flex items-center gap-2">
             <button
@@ -522,7 +524,7 @@ const exportAuditLog = () => {
                   : 'border-gray-300 text-gray-600 hover:bg-gray-50'
               ]"
             >
-              Назад
+              {{ $t('audit.prev') }}
             </button>
             <button
               v-for="page in pageNumbers"
@@ -547,7 +549,7 @@ const exportAuditLog = () => {
                   : 'border-gray-300 text-gray-600 hover:bg-gray-50'
               ]"
             >
-              Далее
+              {{ $t('audit.next') }}
             </button>
           </div>
         </div>
@@ -560,7 +562,7 @@ const exportAuditLog = () => {
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
           <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
-              <h3 class="text-xl font-bold text-gray-900">Детали записи</h3>
+              <h3 class="text-xl font-bold text-gray-900">{{ $t('audit.entryDetails') }}</h3>
               <button @click="showDetailModal = false" class="p-2 text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -572,63 +574,63 @@ const exportAuditLog = () => {
           <div v-if="selectedEntry" class="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-130px)]">
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="text-sm text-gray-500">ID записи</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.entryId') }}</label>
                 <p class="font-mono text-gray-900">#{{ selectedEntry.id }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Дата и время</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.dateTime') }}</label>
                 <p class="text-gray-900">{{ selectedEntry.timestamp }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Пользователь</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.user') }}</label>
                 <p class="text-gray-900">{{ selectedEntry.user }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Роль</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.role') }}</label>
                 <span :class="['text-xs px-2 py-1 rounded', getRoleColor(selectedEntry.userRole)]">
                   {{ getRoleLabel(selectedEntry.userRole) }}
                 </span>
               </div>
               <div>
-                <label class="text-sm text-gray-500">IP адрес</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.ipAddress') }}</label>
                 <p class="font-mono text-gray-900">{{ selectedEntry.ipAddress }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Статус</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.statusLabel') }}</label>
                 <span :class="['inline-flex items-center gap-1 text-sm px-2 py-1 rounded', getStatusColor(selectedEntry.status)]">
                   {{ getStatusIcon(selectedEntry.status) }}
-                  {{ selectedEntry.status === 'success' ? 'Успешно' : selectedEntry.status === 'warning' ? 'Предупреждение' : 'Ошибка' }}
+                  {{ $t(selectedEntry.status === 'success' ? 'audit.statusSuccess' : selectedEntry.status === 'warning' ? 'audit.statusWarning' : 'audit.statusError') }}
                 </span>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Тип действия</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.actionType') }}</label>
                 <span :class="['text-xs px-2 py-1 rounded-full font-medium', getActionTypeColor(selectedEntry.actionType)]">
                   {{ getActionTypeLabel(selectedEntry.actionType) }}
                 </span>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Действие</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.action') }}</label>
                 <p class="text-gray-900">{{ selectedEntry.action }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">Объект</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.object') }}</label>
                 <p class="text-gray-900">{{ selectedEntry.entity }}</p>
               </div>
               <div>
-                <label class="text-sm text-gray-500">ID объекта</label>
+                <label class="text-sm text-gray-500">{{ $t('audit.objectId') }}</label>
                 <p class="font-mono text-[#0e888d]">{{ selectedEntry.entityId }}</p>
               </div>
             </div>
 
             <div>
-              <label class="text-sm text-gray-500">Подробности</label>
+              <label class="text-sm text-gray-500">{{ $t('audit.detailedInfo') }}</label>
               <p class="text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{{ selectedEntry.details }}</p>
             </div>
           </div>
 
           <div class="p-6 border-t border-gray-200 flex justify-end">
             <AppButton variant="primary" @click="showDetailModal = false">
-              Закрыть
+              {{ $t('audit.close') }}
             </AppButton>
           </div>
         </div>

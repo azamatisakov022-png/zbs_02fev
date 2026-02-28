@@ -68,7 +68,7 @@ const saveEditing = () => {
   if (!landfill.value) return
   landfillStore.updateLandfill(landfill.value.id, { ...editData.value })
   isEditing.value = false
-  toastStore.show({ type: 'success', title: 'Сохранено', message: 'Данные полигона обновлены' })
+  toastStore.show({ type: 'success', title: t('ministryLandfillDetail.savedTitle'), message: t('ministryLandfillDetail.savedMessage') })
 }
 
 const onPickerConfirm = (coords: { lat: number; lng: number }) => {
@@ -77,16 +77,21 @@ const onPickerConfirm = (coords: { lat: number; lng: number }) => {
 }
 
 // --- Type / Status labels & styles ---
-const typeLabels: Record<string, string> = {
-  sanitary: 'Санитарный полигон',
-  unauthorized: 'Несанкционированная свалка',
-  sorting: 'Мусоросортировочная станция',
+const typeLabels = computed<Record<string, string>>(() => ({
+  sanitary: t('ministryLandfillDetail.typeSanitary'),
+  unauthorized: t('ministryLandfillDetail.typeUnauthorized'),
+  sorting: t('ministryLandfillDetail.typeSorting'),
+}))
+
+const statusLabelKey: Record<string, string> = {
+  active: 'status.active',
+  closed: 'status.closed',
+  recultivation: 'status.recultivation',
 }
 
-const statusLabels: Record<string, string> = {
-  active: 'Действующий',
-  closed: 'Закрыт',
-  recultivation: 'Рекультивация',
+function getStatusLabel(status: string): string {
+  const key = statusLabelKey[status]
+  return key ? t(key) : status
 }
 
 const typeBadgeClass = computed(() => {
@@ -138,12 +143,17 @@ const circleDashoffset = computed(() => {
 })
 
 // Monthly intake chart
-const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+const monthNames = computed(() => [
+  t('ministryLandfillDetail.monthJan'), t('ministryLandfillDetail.monthFeb'), t('ministryLandfillDetail.monthMar'),
+  t('ministryLandfillDetail.monthApr'), t('ministryLandfillDetail.monthMay'), t('ministryLandfillDetail.monthJun'),
+  t('ministryLandfillDetail.monthJul'), t('ministryLandfillDetail.monthAug'), t('ministryLandfillDetail.monthSep'),
+  t('ministryLandfillDetail.monthOct'), t('ministryLandfillDetail.monthNov'), t('ministryLandfillDetail.monthDec'),
+])
 
 const monthlyChartData = computed(() => {
   if (!landfill.value) return []
   return landfill.value.monthlyIntake.map((val, i) => ({
-    label: monthNames[i],
+    label: monthNames.value[i],
     value: val,
     color: '#0e888d',
   }))
@@ -188,31 +198,45 @@ function wasteUsageTextColor(percent: number): string {
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString('ru-RU')
+  return n.toLocaleString()
 }
 
 // --- Block 4: Infrastructure ---
 interface InfraItem {
   key: keyof Landfill['infrastructure']
-  label: string
+  labelKey: string
 }
 
-const infraItems: InfraItem[] = [
-  { key: 'fencing', label: 'Ограждение периметра' },
-  { key: 'weighControl', label: 'Весовой контроль' },
-  { key: 'monitoring', label: 'Система мониторинга' },
-  { key: 'drainage', label: 'Дренажная система' },
-  { key: 'leachateCollection', label: 'Система сбора фильтрата' },
-  { key: 'fireSafety', label: 'Противопожарное оборудование' },
-  { key: 'ecoMonitoring', label: 'Экологический мониторинг' },
+const infraItemDefs: InfraItem[] = [
+  { key: 'fencing', labelKey: 'ministryLandfillDetail.infraFencing' },
+  { key: 'weighControl', labelKey: 'ministryLandfillDetail.infraWeighControl' },
+  { key: 'monitoring', labelKey: 'ministryLandfillDetail.infraMonitoring' },
+  { key: 'drainage', labelKey: 'ministryLandfillDetail.infraDrainage' },
+  { key: 'leachateCollection', labelKey: 'ministryLandfillDetail.infraLeachate' },
+  { key: 'fireSafety', labelKey: 'ministryLandfillDetail.infraFireSafety' },
+  { key: 'ecoMonitoring', labelKey: 'ministryLandfillDetail.infraEcoMonitoring' },
 ]
+
+const infraItems = computed(() => infraItemDefs.map(item => ({
+  key: item.key,
+  label: t(item.labelKey),
+})))
 
 const infraCount = computed(() => {
   if (!landfill.value) return 0
-  return infraItems.filter(item => landfill.value!.infrastructure[item.key]).length
+  return infraItemDefs.filter(item => landfill.value!.infrastructure[item.key]).length
 })
 
-const infraPercent = computed(() => Math.round((infraCount.value / infraItems.length) * 100))
+const infraPercent = computed(() => Math.round((infraCount.value / infraItemDefs.length) * 100))
+
+// --- Block 4.5: Morphology ---
+const morphologyItems = computed(() => [
+  { label: t('ministryLandfillDetail.morphPlastic'), value: landfill.value?.morphology.plastic ?? 0, color: '#2563eb' },
+  { label: t('ministryLandfillDetail.morphPaper'), value: landfill.value?.morphology.paper ?? 0, color: '#f59e0b' },
+  { label: t('ministryLandfillDetail.morphGlass'), value: landfill.value?.morphology.glass ?? 0, color: '#10b981' },
+  { label: t('ministryLandfillDetail.morphFood'), value: landfill.value?.morphology.food ?? 0, color: '#8b5cf6' },
+  { label: t('ministryLandfillDetail.morphOther'), value: landfill.value?.morphology.other ?? 0, color: '#94a3b8' },
+])
 
 // --- Block 5: Permits & Documents ---
 function isPermitExpired(expiryStr: string): boolean {
@@ -259,13 +283,13 @@ const coordsText = computed(() => {
   >
     <!-- ==================== NOT FOUND STATE ==================== -->
     <div v-if="!landfill" class="text-center py-20">
-      <p class="text-xl text-gray-500 mb-4">Полигон не найден</p>
+      <p class="text-xl text-gray-500 mb-4">{{ $t('ministryLandfillDetail.notFound') }}</p>
       <button
         @click="router.push('/ministry/landfills')"
         class="btn-back"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('ministryLandfillDetail.backBtn') }}
       </button>
     </div>
 
@@ -278,7 +302,7 @@ const coordsText = computed(() => {
           class="btn-back"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('ministryLandfillDetail.backBtn') }}
         </button>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{ landfill.name }}</h1>
@@ -290,165 +314,165 @@ const coordsText = computed(() => {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            Редактировать
+            {{ $t('ministryLandfillDetail.editBtn') }}
           </button>
           <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', typeBadgeClass]">
             {{ typeLabels[landfill.type] || landfill.type }}
           </span>
           <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', statusBadgeClass]">
-            {{ statusLabels[landfill.status] || landfill.status }}
+            {{ getStatusLabel(landfill.status) }}
           </span>
         </div>
       </div>
 
       <!-- ==================== BLOCK 1: General Info ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Общая информация</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.generalInfo') }}</h2>
         <!-- Edit mode -->
         <div v-if="isEditing" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelName') }}</label>
               <input v-model="editData.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Тип объекта</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelType') }}</label>
               <select v-model="editData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
-                <option value="sanitary">Санитарный полигон</option>
-                <option value="unauthorized">Несанкционированная свалка</option>
-                <option value="sorting">Мусоросортировочная станция</option>
+                <option value="sanitary">{{ $t('ministryLandfillDetail.typeSanitary') }}</option>
+                <option value="unauthorized">{{ $t('ministryLandfillDetail.typeUnauthorized') }}</option>
+                <option value="sorting">{{ $t('ministryLandfillDetail.typeSorting') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelStatus') }}</label>
               <select v-model="editData.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
-                <option value="active">Действующий</option>
-                <option value="closed">Закрыт</option>
-                <option value="recultivation">Рекультивация</option>
+                <option value="active">{{ $t('ministryLandfillDetail.statusActive') }}</option>
+                <option value="closed">{{ $t('ministryLandfillDetail.statusClosed') }}</option>
+                <option value="recultivation">{{ $t('ministryLandfillDetail.statusRecultivation') }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Оператор</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelOperator') }}</label>
               <input v-model="editData.operator" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Регион</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelRegion') }}</label>
               <input v-model="editData.region" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Район</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelDistrict') }}</label>
               <input v-model="editData.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Проектная ёмкость (тыс. т)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelDesignCapacity') }}</label>
               <input v-model.number="editData.designCapacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Текущий объём (тыс. т)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelCurrentVolume') }}</label>
               <input v-model.number="editData.currentVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Срок эксплуатации до (год)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelExpiryYear') }}</label>
               <input v-model.number="editData.expiryYear" type="number" min="2024" max="2100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
             </div>
           </div>
           <!-- Coordinates with map picker -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Координаты</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelCoordinates') }}</label>
             <div class="flex items-center gap-3">
-              <input v-model.number="editData.lat" type="number" step="0.0001" placeholder="Широта" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
-              <input v-model.number="editData.lng" type="number" step="0.0001" placeholder="Долгота" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <input v-model.number="editData.lat" type="number" step="0.0001" :placeholder="$t('ministryLandfillDetail.latPlaceholder')" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <input v-model.number="editData.lng" type="number" step="0.0001" :placeholder="$t('ministryLandfillDetail.lngPlaceholder')" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
               <button type="button" @click="pickerCoords = { lat: editData.lat, lng: editData.lng }; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-teal-700 border border-teal-300 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-2 whitespace-nowrap">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                На карте
+                {{ $t('ministryLandfillDetail.pickOnMap') }}
               </button>
             </div>
           </div>
           <!-- Save / Cancel -->
           <div class="flex items-center gap-3 pt-4 border-t border-gray-200">
-            <button @click="saveEditing" class="px-5 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">Сохранить</button>
-            <button @click="cancelEditing" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Отмена</button>
+            <button @click="saveEditing" class="px-5 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">{{ $t('ministryLandfillDetail.saveBtn') }}</button>
+            <button @click="cancelEditing" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $t('ministryLandfillDetail.cancelBtn') }}</button>
           </div>
         </div>
 
         <!-- View mode (existing content) -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Название</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelName') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.name }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Тип объекта</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelType') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ typeLabels[landfill.type] || landfill.type }}</span>
           </div>
           <div class="flex justify-between items-center py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Статус</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelStatus') }}</span>
             <span :class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold', statusBadgeClass]">
-              {{ statusLabels[landfill.status] || landfill.status }}
+              {{ getStatusLabel(landfill.status) }}
             </span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Оператор</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelOperator') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.operator }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Год открытия</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelOpenYear') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ landfill.openYear }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Срок эксплуатации</span>
-            <span class="text-sm font-medium text-gray-900">до {{ landfill.expiryYear }} г.</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelExpiry') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ $t('ministryLandfillDetail.expiryPrefix') }} {{ landfill.expiryYear }} {{ $t('ministryLandfillDetail.yearSuffix') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Класс опасности</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelHazardClass') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ landfill.hazardClasses.join(', ') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Регион</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelRegion') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.region }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Район</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelDistrict') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.district }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Населённый пункт</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelSettlement') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.settlement }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Адрес</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelAddress') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.address }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Координаты</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelCoordinates') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ coordsText }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Категория земли</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelLandCategory') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ landfill.landCategory }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Население</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.population }} тыс. чел.</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelPopulation') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.population }} {{ $t('ministryLandfillDetail.populationUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Обслуживаемое население</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.servicedPopulation }} тыс. чел.</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelServicedPopulation') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.servicedPopulation }} {{ $t('ministryLandfillDetail.populationUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Тариф (физ. лица)</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.tariffPhysical }} сом</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelTariffPhysical') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.tariffPhysical }} {{ $t('ministryLandfillDetail.somUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Тариф (юр. лица)</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.tariffLegal }} сом</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelTariffLegal') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.tariffLegal }} {{ $t('ministryLandfillDetail.somUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Ежедневный объём</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.dailyVolume }} т/день</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelDailyVolume') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.dailyVolume }} {{ $t('ministryLandfillDetail.dailyVolumeUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">График завоза ТБО</span>
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelWasteSchedule') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ landfill.wasteSchedule }}</span>
           </div>
         </div>
@@ -456,23 +480,23 @@ const coordsText = computed(() => {
 
       <!-- ==================== BLOCK 2: Capacity & Fill Level ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Ёмкость и заполненность</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.capacityTitle') }}</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-            <p class="text-xs text-blue-600 mb-1">Проектная ёмкость</p>
+            <p class="text-xs text-blue-600 mb-1">{{ $t('ministryLandfillDetail.designCapacity') }}</p>
             <p class="text-2xl font-bold text-blue-800">{{ formatNumber(landfill.designCapacity) }}</p>
-            <p class="text-xs text-blue-500">тыс. т</p>
+            <p class="text-xs text-blue-500">{{ $t('ministryLandfillDetail.capacityUnit') }}</p>
           </div>
           <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
-            <p class="text-xs text-orange-600 mb-1">Текущий объём</p>
+            <p class="text-xs text-orange-600 mb-1">{{ $t('ministryLandfillDetail.currentVolume') }}</p>
             <p class="text-2xl font-bold text-orange-800">{{ formatNumber(landfill.currentVolume) }}</p>
-            <p class="text-xs text-orange-500">тыс. т</p>
+            <p class="text-xs text-orange-500">{{ $t('ministryLandfillDetail.capacityUnit') }}</p>
           </div>
           <div :class="['rounded-xl p-4 text-center border', fillBgClass]">
-            <p class="text-xs opacity-80 mb-1">Заполненность</p>
+            <p class="text-xs opacity-80 mb-1">{{ $t('ministryLandfillDetail.fillLevel') }}</p>
             <p class="text-2xl font-bold">{{ fillPercent }}%</p>
-            <p class="text-xs opacity-70">от проектной ёмкости</p>
+            <p class="text-xs opacity-70">{{ $t('ministryLandfillDetail.ofDesignCapacity') }}</p>
           </div>
         </div>
 
@@ -489,7 +513,7 @@ const coordsText = computed(() => {
               {{ fillPercent }}%
             </text>
             <text x="110" y="130" text-anchor="middle" fill="#6b7280" font-size="14">
-              заполнено
+              {{ $t('ministryLandfillDetail.filled') }}
             </text>
           </svg>
         </div>
@@ -497,39 +521,39 @@ const coordsText = computed(() => {
         <div class="bg-gray-50 rounded-lg p-4 mb-6 text-center">
           <template v-if="isClosedOrRecultivation">
             <p class="text-sm text-gray-600">
-              Полигон {{ landfill.status === 'closed' ? 'закрыт' : 'на рекультивации' }}
+              {{ landfill.status === 'closed' ? $t('status.closed') : $t('status.recultivation') }}
             </p>
           </template>
           <template v-else-if="avgMonthlyIntake > 0">
             <p class="text-sm text-gray-700">
-              При текущих темпах приёма (~<span class="font-semibold">{{ formatNumber(avgMonthlyIntake) }}</span> т/мес)
-              полигон будет заполнен через
+              {{ $t('ministryLandfillDetail.forecastAtCurrentRate') }}<span class="font-semibold">{{ formatNumber(avgMonthlyIntake) }}</span> {{ $t('ministryLandfillDetail.tonsPerMonth') }}
+              {{ $t('ministryLandfillDetail.forecastFillIn') }}
               <span class="font-semibold" :class="yearsLeft <= 3 ? 'text-red-600' : yearsLeft <= 7 ? 'text-yellow-600' : 'text-green-600'">
                 {{ yearsLeft }}
               </span>
-              лет
+              {{ $t('ministryLandfillDetail.yearsWord') }}
             </p>
           </template>
           <template v-else>
-            <p class="text-sm text-gray-500">Нет данных о поступлении отходов</p>
+            <p class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.noIntakeData') }}</p>
           </template>
         </div>
 
-        <BarChart :data="monthlyChartData" :height="220" title="Поступление отходов по месяцам (тонн)" />
+        <BarChart :data="monthlyChartData" :height="220" :title="$t('ministryLandfillDetail.monthlyIntakeChart')" />
       </div>
 
       <!-- ==================== BLOCK 3: Waste Types Table ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Принимаемые виды отходов</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.wasteTypesTitle') }}</h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
               <tr>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Категория отходов</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Класс опасности</th>
-                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Принято за год (т)</th>
-                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Лимит (т/год)</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200" style="min-width: 180px;">Использование лимита</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ministryLandfillDetail.thWasteCategory') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ministryLandfillDetail.thHazardClass') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ministryLandfillDetail.thAcceptedPerYear') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ministryLandfillDetail.thLimitPerYear') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200" style="min-width: 180px;">{{ $t('ministryLandfillDetail.thLimitUsage') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -559,7 +583,7 @@ const coordsText = computed(() => {
 
       <!-- ==================== BLOCK 4: Infrastructure ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Инфраструктура и оснащение</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.infraTitle') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <div v-for="item in infraItems" :key="item.key" class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50">
             <svg v-if="landfill.infrastructure[item.key]" class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -573,7 +597,7 @@ const coordsText = computed(() => {
         </div>
         <div class="bg-gray-50 rounded-lg p-4 mb-6">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">Оснащённость: {{ infraCount }} из {{ infraItems.length }}</span>
+            <span class="text-sm font-medium text-gray-700">{{ $t('ministryLandfillDetail.infraEquipped') }} {{ infraCount }} {{ $t('ministryLandfillDetail.infraOf') }} {{ infraItemDefs.length }}</span>
             <span class="text-sm font-semibold" :class="infraPercent >= 80 ? 'text-green-600' : infraPercent >= 50 ? 'text-yellow-600' : 'text-red-600'">
               {{ infraPercent }}%
             </span>
@@ -583,38 +607,32 @@ const coordsText = computed(() => {
           </div>
         </div>
 
-        <h3 class="text-sm font-semibold text-gray-800 mb-3">Техническое оснащение</h3>
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.equipmentTitle') }}</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.trucks }}</p>
-            <p class="text-xs text-gray-500 mt-1">Мусоровозов</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTrucks') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.excavators }}</p>
-            <p class="text-xs text-gray-500 mt-1">Экскаваторов</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipExcavators') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.tractors }}</p>
-            <p class="text-xs text-gray-500 mt-1">Тракторов</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTractors') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.bulldozers }}</p>
-            <p class="text-xs text-gray-500 mt-1">Бульдозеров</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipBulldozers') }}</p>
           </div>
         </div>
       </div>
 
       <!-- ==================== BLOCK 4.5: Morphological Composition ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Морфологический состав отходов</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.morphologyTitle') }}</h2>
         <div class="space-y-3">
-          <div v-for="item in [
-            { label: 'Пластик', value: landfill.morphology.plastic, color: '#2563eb' },
-            { label: 'Бумага/картон', value: landfill.morphology.paper, color: '#f59e0b' },
-            { label: 'Стекло', value: landfill.morphology.glass, color: '#10b981' },
-            { label: 'Пищевые отходы', value: landfill.morphology.food, color: '#8b5cf6' },
-            { label: 'Прочее', value: landfill.morphology.other, color: '#94a3b8' },
-          ]" :key="item.label">
+          <div v-for="item in morphologyItems" :key="item.label">
             <div class="flex items-center justify-between text-sm mb-1">
               <span class="text-gray-600">{{ item.label }}</span>
               <span class="font-semibold text-gray-900">{{ item.value }}%</span>
@@ -628,31 +646,31 @@ const coordsText = computed(() => {
 
       <!-- ==================== BLOCK 5: Documents & Permits ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Документы и разрешения</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.docsTitle') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div class="flex items-center justify-between mb-2">
-              <h3 class="text-sm font-semibold text-gray-800">Разрешение на эксплуатацию</h3>
-              <span v-if="landfill.permits.operationPermit.expiry && isPermitExpired(landfill.permits.operationPermit.expiry)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Истекло</span>
-              <span v-else-if="landfill.permits.operationPermit.number" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">Действует</span>
+              <h3 class="text-sm font-semibold text-gray-800">{{ $t('ministryLandfillDetail.operationPermit') }}</h3>
+              <span v-if="landfill.permits.operationPermit.expiry && isPermitExpired(landfill.permits.operationPermit.expiry)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{{ $t('ministryLandfillDetail.permitExpired') }}</span>
+              <span v-else-if="landfill.permits.operationPermit.number" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">{{ $t('ministryLandfillDetail.permitValid') }}</span>
             </div>
             <div v-if="landfill.permits.operationPermit.number" class="space-y-1 text-sm">
-              <div class="flex justify-between"><span class="text-gray-500">Номер:</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.number }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Дата выдачи:</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.date }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Действует до:</span><span class="font-medium" :class="isPermitExpired(landfill.permits.operationPermit.expiry) ? 'text-red-600' : 'text-gray-900'">{{ landfill.permits.operationPermit.expiry }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitNumber') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.number }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitDate') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.date }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitValidUntil') }}</span><span class="font-medium" :class="isPermitExpired(landfill.permits.operationPermit.expiry) ? 'text-red-600' : 'text-gray-900'">{{ landfill.permits.operationPermit.expiry }}</span></div>
             </div>
-            <p v-else class="text-sm text-gray-400">Нет данных</p>
+            <p v-else class="text-sm text-gray-400">{{ $t('ministryLandfillDetail.noData') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-800 mb-2">Экологическое заключение</h3>
+            <h3 class="text-sm font-semibold text-gray-800 mb-2">{{ $t('ministryLandfillDetail.ecoConclusion') }}</h3>
             <div v-if="landfill.permits.ecoConclusion.number" class="space-y-1 text-sm">
-              <div class="flex justify-between"><span class="text-gray-500">Номер:</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.number }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Дата выдачи:</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.date }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitNumber') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.number }}</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitDate') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.date }}</span></div>
             </div>
-            <p v-else class="text-sm text-gray-400">Нет данных</p>
+            <p v-else class="text-sm text-gray-400">{{ $t('ministryLandfillDetail.noData') }}</p>
           </div>
         </div>
-        <h3 class="text-sm font-semibold text-gray-800 mb-3">Прикреплённые документы</h3>
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.attachedDocs') }}</h3>
         <div v-if="landfill.documents.length > 0" class="space-y-2">
           <div v-for="(doc, idx) in landfill.documents" :key="idx" class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
             <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
@@ -665,18 +683,18 @@ const coordsText = computed(() => {
               <p class="text-xs text-gray-500">{{ doc.date }} &middot; {{ doc.size }}</p>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
-              <button class="text-xs font-medium text-teal-600 hover:text-teal-700 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors">Просмотр</button>
-              <button class="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">Скачать</button>
+              <button class="text-xs font-medium text-teal-600 hover:text-teal-700 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors">{{ $t('ministryLandfillDetail.viewDoc') }}</button>
+              <button class="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">{{ $t('ministryLandfillDetail.downloadDoc') }}</button>
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-400">Документы не прикреплены</p>
+        <p v-else class="text-sm text-gray-400">{{ $t('ministryLandfillDetail.noDocsAttached') }}</p>
       </div>
 
       <!-- ==================== BLOCK 6: Location Map ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-900">Расположение на карте</h2>
+          <h2 class="text-lg font-bold text-gray-900">{{ $t('ministryLandfillDetail.mapTitle') }}</h2>
           <router-link
             :to="{ path: '/registries', query: { lat: String(landfill.lat), lng: String(landfill.lng), zoom: '15' } }"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
@@ -684,7 +702,7 @@ const coordsText = computed(() => {
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
-            Показать на карте
+            {{ $t('ministryLandfillDetail.showOnMap') }}
           </router-link>
         </div>
         <div class="rounded-xl overflow-hidden border border-gray-200">

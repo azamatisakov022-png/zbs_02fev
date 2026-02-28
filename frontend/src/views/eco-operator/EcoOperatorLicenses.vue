@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { LicenseStatus } from '../../constants/statuses'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { toastStore } from '../../stores/toast'
+
+const { t } = useI18n()
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -142,7 +146,7 @@ const stats = computed(() => ({
 
 // Format date
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('ru-RU')
+  return new Date(dateStr).toLocaleDateString()
 }
 
 // Days until expiry
@@ -171,12 +175,12 @@ const getStatusClass = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'active':
-    case 'valid':
-      return 'Действует'
-    case 'expiring':
-      return 'Истекает'
-    case 'expired':
-      return 'Истекла'
+    case LicenseStatus.VALID:
+      return t('status.valid')
+    case LicenseStatus.EXPIRING:
+      return t('status.expiring')
+    case LicenseStatus.EXPIRED:
+      return t('status.expired')
     default:
       return status
   }
@@ -190,20 +194,20 @@ const selectedLicense = ref<License | null>(null)
 // Upload form
 const uploadForm = ref({
   name: '',
-  type: 'Сертификат',
+  type: t('ecoLicenses.docTypeCertificate'),
   expiryDate: '',
   files: [] as File[],
 })
 
-const documentTypes = [
-  'Учредительный документ',
-  'Регистрационный документ',
-  'Сертификат',
-  'Договор',
-  'Страхование',
-  'Разрешение',
-  'Прочее',
-]
+const documentTypes = computed(() => [
+  t('ecoLicenses.docTypeFoundation'),
+  t('ecoLicenses.docTypeRegistration'),
+  t('ecoLicenses.docTypeCertificate'),
+  t('ecoLicenses.docTypeContract'),
+  t('ecoLicenses.docTypeInsurance'),
+  t('ecoLicenses.docTypePermit'),
+  t('ecoLicenses.docTypeOther'),
+])
 
 const openLicenseDetails = (license: License) => {
   selectedLicense.value = license
@@ -230,9 +234,9 @@ const handleFileSelect = (event: Event) => {
 }
 
 const submitUpload = () => {
-  toastStore.show({ type: 'success', title: 'Документ загружен' })
+  toastStore.show({ type: 'success', title: t('ecoLicenses.toastDocUploaded') })
   showUploadModal.value = false
-  uploadForm.value = { name: '', type: 'Сертификат', expiryDate: '', files: [] }
+  uploadForm.value = { name: '', type: t('ecoLicenses.docTypeCertificate'), expiryDate: '', files: [] }
 }
 </script>
 
@@ -240,7 +244,7 @@ const submitUpload = () => {
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="ОсОО «ЭкоПереработка»"
+    :userName="$t('ecoLicenses.userName')"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
@@ -254,7 +258,7 @@ const submitUpload = () => {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Загрузить документ
+          {{ $t('ecoLicenses.uploadDocument') }}
         </AppButton>
       </div>
 
@@ -269,7 +273,7 @@ const submitUpload = () => {
             </div>
             <div>
               <p class="text-2xl font-bold text-gray-900">{{ stats.activeLicenses }}</p>
-              <p class="text-sm text-gray-500">Активных лицензий</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statActiveLicenses') }}</p>
             </div>
           </div>
         </div>
@@ -282,7 +286,7 @@ const submitUpload = () => {
             </div>
             <div>
               <p class="text-2xl font-bold text-gray-900">{{ stats.expiringLicenses }}</p>
-              <p class="text-sm text-gray-500">Истекают скоро</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statExpiringSoon') }}</p>
             </div>
           </div>
         </div>
@@ -295,7 +299,7 @@ const submitUpload = () => {
             </div>
             <div>
               <p class="text-2xl font-bold text-gray-900">{{ stats.expiredLicenses }}</p>
-              <p class="text-sm text-gray-500">Требуют продления</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statNeedRenewal') }}</p>
             </div>
           </div>
         </div>
@@ -308,7 +312,7 @@ const submitUpload = () => {
             </div>
             <div>
               <p class="text-2xl font-bold text-gray-900">{{ stats.totalDocuments }}</p>
-              <p class="text-sm text-gray-500">Всего документов</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statTotalDocuments') }}</p>
             </div>
           </div>
         </div>
@@ -326,7 +330,7 @@ const submitUpload = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             ]"
           >
-            Лицензии и разрешения
+            {{ $t('ecoLicenses.tabLicenses') }}
           </button>
           <button
             @click="activeTab = 'documents'"
@@ -337,7 +341,7 @@ const submitUpload = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             ]"
           >
-            Документы компании
+            {{ $t('ecoLicenses.tabDocuments') }}
           </button>
         </nav>
       </div>
@@ -370,27 +374,27 @@ const submitUpload = () => {
                   <p class="text-sm text-gray-500">{{ license.issuedBy }}</p>
                 </div>
               </div>
-              <AppBadge :variant="getStatusBadgeVariant(getStatusText(license.status))">{{ getStatusText(license.status) }}</AppBadge>
+              <AppBadge :variant="getStatusBadgeVariant(license.status)">{{ getStatusText(license.status) }}</AppBadge>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
               <div>
-                <p class="text-xs text-gray-500">Дата выдачи</p>
+                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.issueDate') }}</p>
                 <p class="text-sm font-medium text-gray-900">{{ formatDate(license.issueDate) }}</p>
               </div>
               <div>
-                <p class="text-xs text-gray-500">Действует до</p>
+                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.validUntil') }}</p>
                 <p class="text-sm font-medium" :class="license.status === 'expired' ? 'text-red-600' : 'text-gray-900'">
                   {{ formatDate(license.expiryDate) }}
                 </p>
               </div>
               <div>
-                <p class="text-xs text-gray-500">Осталось дней</p>
+                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.daysLeft') }}</p>
                 <p
                   class="text-sm font-medium"
                   :class="daysUntilExpiry(license.expiryDate) < 0 ? 'text-red-600' : daysUntilExpiry(license.expiryDate) < 90 ? 'text-yellow-600' : 'text-green-600'"
                 >
-                  {{ daysUntilExpiry(license.expiryDate) < 0 ? 'Истекла' : daysUntilExpiry(license.expiryDate) + ' дней' }}
+                  {{ daysUntilExpiry(license.expiryDate) < 0 ? $t('status.expired') : daysUntilExpiry(license.expiryDate) + ' ' + $t('ecoLicenses.days') }}
                 </p>
               </div>
               <div class="flex justify-end items-center">
@@ -422,12 +426,12 @@ const submitUpload = () => {
         <table class="w-full">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Документ</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Загружен</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действует до</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Статус</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thDocument') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thType') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thUploaded') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thValidUntil') }}</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thStatus') }}</th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thActions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -449,7 +453,7 @@ const submitUpload = () => {
               <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(doc.uploadDate) }}</td>
               <td class="px-6 py-4 text-sm text-gray-600">{{ doc.expiryDate ? formatDate(doc.expiryDate) : '—' }}</td>
               <td class="px-6 py-4">
-                <AppBadge :variant="getStatusBadgeVariant(getStatusText(doc.status))">{{ getStatusText(doc.status) }}</AppBadge>
+                <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ getStatusText(doc.status) }}</AppBadge>
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-2">
@@ -460,13 +464,13 @@ const submitUpload = () => {
                     </svg>
                     {{ $t('common.view') }}
                   </AppButton>
-                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: 'Скачивание', message: 'Скачивание файлов будет доступно после подключения хранилища' })">
+                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: $t('ecoLicenses.toastDownloadTitle'), message: $t('ecoLicenses.toastDownloadMsg') })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                     {{ $t('common.download') }}
                   </AppButton>
-                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'info', title: 'Удаление', message: 'Удаление документов будет доступно после подключения хранилища' })">
+                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'info', title: $t('ecoLicenses.toastDeleteTitle'), message: $t('ecoLicenses.toastDeleteMsg') })">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -485,7 +489,7 @@ const submitUpload = () => {
       <div v-if="showLicenseModal && selectedLicense" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">Детали лицензии</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.licenseDetails') }}</h3>
             <button @click="showLicenseModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -507,25 +511,25 @@ const submitUpload = () => {
 
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">Кем выдана</p>
+                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.issuedBy') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedLicense.issuedBy }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">Статус</p>
-                <AppBadge :variant="getStatusBadgeVariant(getStatusText(selectedLicense.status))">{{ getStatusText(selectedLicense.status) }}</AppBadge>
+                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.status') }}</p>
+                <AppBadge :variant="getStatusBadgeVariant(selectedLicense.status)">{{ getStatusText(selectedLicense.status) }}</AppBadge>
               </div>
               <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">Дата выдачи</p>
+                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.issueDate') }}</p>
                 <p class="font-medium text-gray-900">{{ formatDate(selectedLicense.issueDate) }}</p>
               </div>
               <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">Действует до</p>
+                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.validUntil') }}</p>
                 <p class="font-medium text-gray-900">{{ formatDate(selectedLicense.expiryDate) }}</p>
               </div>
             </div>
 
             <div>
-              <h5 class="font-medium text-gray-900 mb-2">Виды разрешённой деятельности</h5>
+              <h5 class="font-medium text-gray-900 mb-2">{{ $t('ecoLicenses.permittedActivities') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span v-for="activity in selectedLicense.activities" :key="activity" class="px-3 py-1.5 bg-lime-100 text-lime-700 rounded-lg text-sm font-medium">
                   {{ activity }}
@@ -534,7 +538,7 @@ const submitUpload = () => {
             </div>
 
             <div v-if="selectedLicense.wasteTypes.length > 0">
-              <h5 class="font-medium text-gray-900 mb-2">Виды отходов</h5>
+              <h5 class="font-medium text-gray-900 mb-2">{{ $t('ecoLicenses.wasteTypes') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span v-for="wt in selectedLicense.wasteTypes" :key="wt" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
                   {{ wt }}
@@ -560,7 +564,7 @@ const submitUpload = () => {
       <div v-if="showUploadModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">Загрузить документ</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.uploadDocument') }}</h3>
             <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -569,16 +573,16 @@ const submitUpload = () => {
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Название документа *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentName') }}</label>
               <input
                 v-model="uploadForm.name"
                 type="text"
-                placeholder="Введите название"
+                :placeholder="$t('ecoLicenses.enterName')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Тип документа</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentType') }}</label>
               <select
                 v-model="uploadForm.type"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
@@ -587,7 +591,7 @@ const submitUpload = () => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Срок действия (если есть)</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.expiryDateOptional') }}</label>
               <input
                 v-model="uploadForm.expiryDate"
                 type="date"
@@ -595,7 +599,7 @@ const submitUpload = () => {
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Файл *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.file') }}</label>
               <div
                 @drop="handleFileDrop"
                 @dragover.prevent
@@ -607,7 +611,7 @@ const submitUpload = () => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <p v-if="uploadForm.files.length === 0" class="text-gray-500">
-                    Перетащите файл или <span class="text-lime-600 font-medium">выберите</span>
+                    {{ $t('ecoLicenses.dragFileOr') }} <span class="text-lime-600 font-medium">{{ $t('ecoLicenses.selectFile') }}</span>
                   </p>
                   <p v-else class="text-lime-600 font-medium">{{ uploadForm.files[0].name }}</p>
                 </label>
@@ -624,7 +628,7 @@ const submitUpload = () => {
               @click="submitUpload"
               :disabled="!uploadForm.name || uploadForm.files.length === 0"
             >
-              Загрузить
+              {{ $t('ecoLicenses.upload') }}
             </AppButton>
           </div>
         </div>

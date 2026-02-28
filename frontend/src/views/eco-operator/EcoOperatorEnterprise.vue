@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const isEditing = ref(false)
@@ -27,7 +29,7 @@ const enterpriseData = ref({
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="ОсОО «ЭкоПереработка»"
+    :userName="$t('ecoEnterprise.userName')"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -73,7 +75,7 @@ const enterpriseData = ref({
           <!-- Left Column -->
           <div class="space-y-5">
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Наименование</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.name') }}</label>
               <input
                 v-model="enterpriseData.name"
                 :disabled="!isEditing"
@@ -86,7 +88,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Регион</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.region') }}</label>
               <input
                 v-model="enterpriseData.region"
                 :disabled="!isEditing"
@@ -99,7 +101,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Вид деятельности</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.activityType') }}</label>
               <input
                 v-model="enterpriseData.activityType"
                 :disabled="!isEditing"
@@ -112,7 +114,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">ИНН</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.inn') }}</label>
               <input
                 v-model="enterpriseData.inn"
                 :disabled="!isEditing"
@@ -125,7 +127,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Мощность переработки</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.capacity') }}</label>
               <input
                 v-model="enterpriseData.capacity"
                 :disabled="!isEditing"
@@ -142,7 +144,7 @@ const enterpriseData = ref({
           <!-- Right Column -->
           <div class="space-y-5">
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Руководитель</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.director') }}</label>
               <input
                 v-model="enterpriseData.director"
                 :disabled="!isEditing"
@@ -155,7 +157,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Телефон</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.phone') }}</label>
               <input
                 v-model="enterpriseData.phone"
                 :disabled="!isEditing"
@@ -168,7 +170,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Email</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.email') }}</label>
               <input
                 v-model="enterpriseData.email"
                 :disabled="!isEditing"
@@ -181,7 +183,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Адрес</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.address') }}</label>
               <input
                 v-model="enterpriseData.address"
                 :disabled="!isEditing"
@@ -194,7 +196,7 @@ const enterpriseData = ref({
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#70868f] mb-2">Номер лицензии</label>
+              <label class="block text-sm font-medium text-[#70868f] mb-2">{{ $t('ecoEnterprise.licenseNumber') }}</label>
               <div class="px-4 py-3 rounded-xl bg-[#f8fafc] text-[#415861] font-mono">
                 {{ enterpriseData.licenseNumber }}
               </div>
@@ -204,7 +206,7 @@ const enterpriseData = ref({
 
         <!-- Waste Types -->
         <div class="mt-6">
-          <label class="block text-sm font-medium text-[#70868f] mb-3">Виды перерабатываемых отходов</label>
+          <label class="block text-sm font-medium text-[#70868f] mb-3">{{ $t('ecoEnterprise.wasteTypes') }}</label>
           <div class="flex flex-wrap gap-2">
             <span
               v-for="type in enterpriseData.wasteTypes"

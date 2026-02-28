@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { toastStore } from '../stores/toast'
+import i18n from '../i18n'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1',
@@ -64,8 +65,9 @@ api.interceptors.response.use(
 
     // Show toast for non-auth errors
     if (error.response?.status !== 401 && error.response?.status !== 403) {
-      const msg = error.response?.data?.message || error.message || 'Ошибка сервера'
-      toastStore.show({ type: 'error', title: 'Ошибка API', message: msg })
+      const t = i18n.global.t as (key: string) => string
+      const msg = error.response?.data?.message || error.message || t('error.serverError')
+      toastStore.show({ type: 'error', title: t('error.apiError'), message: msg })
     }
 
     return Promise.reject(error)

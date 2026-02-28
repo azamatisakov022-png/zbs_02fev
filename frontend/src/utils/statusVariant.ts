@@ -1,31 +1,53 @@
+import { CalcStatus, ReportStatus, DeclStatus, RefundStatus, LicenseStatus, UserStatus } from '../constants/statuses'
+
+type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
+
+const variantMap: Record<string, BadgeVariant> = {
+  // Success (green)
+  [CalcStatus.APPROVED]: 'success',
+  [CalcStatus.PAID]: 'success',
+  [LicenseStatus.VALID]: 'success',
+  [UserStatus.ACTIVE]: 'success',
+
+  // Warning (yellow/orange)
+  [CalcStatus.DRAFT]: 'warning',
+  [CalcStatus.UNDER_REVIEW]: 'warning',
+  [CalcStatus.PAYMENT_PENDING]: 'warning',
+  [DeclStatus.REVISION]: 'warning',
+  [LicenseStatus.EXPIRING]: 'warning',
+  [UserStatus.PENDING]: 'warning',
+
+  // Danger (red)
+  [CalcStatus.REJECTED]: 'danger',
+  [CalcStatus.PAYMENT_REJECTED]: 'danger',
+  [LicenseStatus.EXPIRED]: 'danger',
+  [LicenseStatus.REVOKED]: 'danger',
+  [UserStatus.BLOCKED]: 'danger',
+  [UserStatus.TEMP_BLOCKED]: 'danger',
+
+  // Info (blue)
+  [RefundStatus.NEW]: 'info',
+
+  // Neutral (gray)
+  [UserStatus.DEACTIVATED]: 'neutral',
+  suspended: 'neutral',
+
+  // Compliance-specific
+  fulfilled: 'success',
+  close: 'warning',
+  failed: 'danger',
+  partial: 'warning',
+
+  // Condition-specific
+  good: 'success',
+  warning: 'warning',
+  critical: 'danger',
+}
+
 /**
  * Maps status strings to AppBadge variant names.
  * Used across all dashboard views for consistent badge coloring.
  */
-export function getStatusBadgeVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' {
-  const s = status.toLowerCase()
-
-  // Success (green)
-  if (['принято', 'принята', 'принят', 'оплачено', 'активен', 'активна', 'действует',
-       'завершён', 'завершена', 'выполнено', 'одобрено', 'одобрена', 'подтверждён',
-       'подтверждена', 'разблокирован', 'восстановлен', 'активирован', 'active', 'valid'].some(v => s.includes(v))) return 'success'
-
-  // Warning (yellow/orange)
-  if (['на проверке', 'на рассмотрении', 'ожидает', 'истекает', 'в обработке',
-       'черновик', 'оплата на проверке', 'приостановлен', 'приостановлена',
-       'в работе', 'на доработке', 'expiring', 'pending'].some(v => s.includes(v))) return 'warning'
-
-  // Danger (red)
-  if (['отклонено', 'отклонена', 'отклонён', 'аннулирован', 'аннулирована', 'просрочено',
-       'просрочена', 'истекла', 'удалён', 'удалена', 'отменено', 'отменена',
-       'заблокирован', 'expired', 'revoked'].some(v => s.includes(v))) return 'danger'
-
-  // Info (blue)
-  if (['новая', 'новый', 'подана', 'подан', 'отправлен', 'отправлена',
-       'зарегистрирован', 'зарегистрирована', 'создан', 'создана'].some(v => s.includes(v))) return 'info'
-
-  // Neutral (gray)
-  if (['деактивирован', 'деактивирована', 'неактивен', 'неактивна', 'inactive'].some(v => s.includes(v))) return 'neutral'
-
-  return 'neutral'
+export function getStatusBadgeVariant(status: string): BadgeVariant {
+  return variantMap[status] || 'neutral'
 }

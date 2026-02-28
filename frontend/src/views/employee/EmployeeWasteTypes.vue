@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Filter
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 
-const categories = [
-  { id: 'all', name: 'Все категории' },
-  { id: 'plastic', name: 'Пластик' },
-  { id: 'paper', name: 'Бумага и картон' },
-  { id: 'glass', name: 'Стекло' },
-  { id: 'metal', name: 'Металл' },
-  { id: 'organic', name: 'Органика' },
-]
+const categories = computed(() => [
+  { id: 'all', name: t('employeeWasteTypes.allCategories') },
+  { id: 'plastic', name: t('employeeWasteTypes.plastic') },
+  { id: 'paper', name: t('employeeWasteTypes.paperCardboard') },
+  { id: 'glass', name: t('employeeWasteTypes.glass') },
+  { id: 'metal', name: t('employeeWasteTypes.metal') },
+  { id: 'organic', name: t('employeeWasteTypes.organic') },
+])
 
 // Waste types data
 interface WasteType {
@@ -139,16 +141,16 @@ const stats = computed(() => ({
   ),
 }))
 
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 
 const getHazardClass = (hazardClass: number) => {
   switch (hazardClass) {
-    case 1: return { color: 'bg-red-100 text-red-700', label: 'I класс (чрезв. опасные)' }
-    case 2: return { color: 'bg-orange-100 text-orange-700', label: 'II класс (высоко опасные)' }
-    case 3: return { color: 'bg-yellow-100 text-yellow-700', label: 'III класс (умеренно опасные)' }
-    case 4: return { color: 'bg-blue-100 text-blue-700', label: 'IV класс (мало опасные)' }
-    case 5: return { color: 'bg-teal-100 text-teal-700', label: 'V класс (неопасные)' }
-    default: return { color: 'bg-gray-100 text-gray-700', label: 'Не определён' }
+    case 1: return { color: 'bg-red-100 text-red-700', label: t('employeeWasteTypes.hazardClass1') }
+    case 2: return { color: 'bg-orange-100 text-orange-700', label: t('employeeWasteTypes.hazardClass2') }
+    case 3: return { color: 'bg-yellow-100 text-yellow-700', label: t('employeeWasteTypes.hazardClass3') }
+    case 4: return { color: 'bg-blue-100 text-blue-700', label: t('employeeWasteTypes.hazardClass4') }
+    case 5: return { color: 'bg-teal-100 text-teal-700', label: t('employeeWasteTypes.hazardClass5') }
+    default: return { color: 'bg-gray-100 text-gray-700', label: t('employeeWasteTypes.hazardClassUndefined') }
   }
 }
 
@@ -177,9 +179,9 @@ const openDetails = (wt: WasteType) => {
       </div>
 
       <SectionGuide
-        title="Справочник видов отходов"
-        description="Классификатор отходов с кодами и категориями."
-        :actions="['Просмотр классификатора', 'Редактирование категорий', 'Управление кодами отходов']"
+        :title="$t('employeeWasteTypes.guideTitle')"
+        :description="$t('employeeWasteTypes.guideDescription')"
+        :actions="[$t('employeeWasteTypes.guideAction1'), $t('employeeWasteTypes.guideAction2'), $t('employeeWasteTypes.guideAction3')]"
         storageKey="employee-waste-types"
       />
 
@@ -187,19 +189,19 @@ const openDetails = (wt: WasteType) => {
       <div class="rounded-2xl p-6 text-white" style="background: linear-gradient(135deg, #115E59, #0D9488);">
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           <div>
-            <p class="text-teal-200 text-sm">Видов отходов</p>
+            <p class="text-teal-200 text-sm">{{ $t('employeeWasteTypes.wasteTypesCount') }}</p>
             <p class="text-3xl font-bold mt-1">{{ stats.totalTypes }}</p>
           </div>
           <div>
-            <p class="text-teal-200 text-sm">Принято (тонн/год)</p>
+            <p class="text-teal-200 text-sm">{{ $t('employeeWasteTypes.acceptedTonsYear') }}</p>
             <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.totalAccepted) }}</p>
           </div>
           <div>
-            <p class="text-teal-200 text-sm">Переработано (тонн/год)</p>
+            <p class="text-teal-200 text-sm">{{ $t('employeeWasteTypes.processedTonsYear') }}</p>
             <p class="text-3xl font-bold mt-1">{{ formatNumber(stats.totalProcessed) }}</p>
           </div>
           <div>
-            <p class="text-teal-200 text-sm">Процент переработки</p>
+            <p class="text-teal-200 text-sm">{{ $t('employeeWasteTypes.processingPercent') }}</p>
             <p class="text-3xl font-bold mt-1">{{ stats.processingRate }}%</p>
           </div>
         </div>
@@ -262,7 +264,7 @@ const openDetails = (wt: WasteType) => {
               v-if="!wt.isActive"
               class="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full"
             >
-              Приём остановлен
+              {{ $t('employeeWasteTypes.receptionStopped') }}
             </span>
           </div>
 
@@ -270,12 +272,12 @@ const openDetails = (wt: WasteType) => {
 
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
-              <span class="text-gray-500">Принято:</span>
-              <span class="font-medium text-gray-900">{{ formatNumber(wt.acceptedVolume) }} т</span>
+              <span class="text-gray-500">{{ $t('employeeWasteTypes.accepted') }}:</span>
+              <span class="font-medium text-gray-900">{{ formatNumber(wt.acceptedVolume) }} {{ $t('employeeWasteTypes.tonsShort') }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-gray-500">Переработано:</span>
-              <span class="font-medium text-gray-900">{{ formatNumber(wt.processedVolume) }} т</span>
+              <span class="text-gray-500">{{ $t('employeeWasteTypes.processed') }}:</span>
+              <span class="font-medium text-gray-900">{{ formatNumber(wt.processedVolume) }} {{ $t('employeeWasteTypes.tonsShort') }}</span>
             </div>
             <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -288,9 +290,9 @@ const openDetails = (wt: WasteType) => {
 
           <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
             <span :class="['px-2 py-1 rounded-full text-xs font-medium', getHazardClass(wt.hazardClass).color]">
-              {{ wt.hazardClass }} класс
+              {{ wt.hazardClass }} {{ $t('employeeWasteTypes.classLabel') }}
             </span>
-            <span class="text-sm font-medium text-gray-900">{{ formatNumber(wt.pricePerTon) }} сом/т</span>
+            <span class="text-sm font-medium text-gray-900">{{ formatNumber(wt.pricePerTon) }} {{ $t('employeeWasteTypes.somPerTon') }}</span>
           </div>
         </div>
       </div>
@@ -300,8 +302,8 @@ const openDetails = (wt: WasteType) => {
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-1">Виды отходов не найдены</h3>
-        <p class="text-gray-500">Попробуйте изменить параметры поиска</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('employeeWasteTypes.noWasteTypesFound') }}</h3>
+        <p class="text-gray-500">{{ $t('employeeWasteTypes.tryChangingSearch') }}</p>
       </div>
     </div>
 
@@ -310,7 +312,7 @@ const openDetails = (wt: WasteType) => {
       <div v-if="showDetailsModal && selectedWasteType" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">Информация о виде отходов</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('employeeWasteTypes.wasteTypeInfo') }}</h3>
             <button @click="showDetailsModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -330,34 +332,34 @@ const openDetails = (wt: WasteType) => {
             </div>
 
             <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-1">Описание</h5>
+              <h5 class="text-sm font-medium text-gray-500 mb-1">{{ $t('employeeWasteTypes.descriptionLabel') }}</h5>
               <p class="text-gray-900">{{ selectedWasteType.description }}</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">Класс опасности</p>
+                <p class="text-sm text-gray-500">{{ $t('employeeWasteTypes.hazardClassLabel') }}</p>
                 <span :class="['px-2 py-1 rounded-full text-sm font-medium mt-1 inline-block', getHazardClass(selectedWasteType.hazardClass).color]">
                   {{ getHazardClass(selectedWasteType.hazardClass).label }}
                 </span>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">Цена приёма</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.pricePerTon) }} сом/т</p>
+                <p class="text-sm text-gray-500">{{ $t('employeeWasteTypes.receptionPrice') }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.pricePerTon) }} {{ $t('employeeWasteTypes.somPerTon') }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">Принято за год</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.acceptedVolume) }} тонн</p>
+                <p class="text-sm text-gray-500">{{ $t('employeeWasteTypes.acceptedPerYear') }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.acceptedVolume) }} {{ $t('employeeWasteTypes.tons') }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">Переработано</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.processedVolume) }} тонн</p>
+                <p class="text-sm text-gray-500">{{ $t('employeeWasteTypes.processed') }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.processedVolume) }} {{ $t('employeeWasteTypes.tons') }}</p>
               </div>
             </div>
 
             <div>
               <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-500">Процент переработки</span>
+                <span class="text-gray-500">{{ $t('employeeWasteTypes.processingPercent') }}</span>
                 <span class="font-medium text-teal-600">{{ Math.round((selectedWasteType.processedVolume / selectedWasteType.acceptedVolume) * 100) }}%</span>
               </div>
               <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -370,7 +372,7 @@ const openDetails = (wt: WasteType) => {
             </div>
 
             <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-3">Методы переработки</h5>
+              <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('employeeWasteTypes.processingMethods') }}</h5>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="method in selectedWasteType.processingMethods"
@@ -391,14 +393,14 @@ const openDetails = (wt: WasteType) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
                 <span :class="selectedWasteType.isActive ? 'text-teal-700' : 'text-gray-600'">
-                  {{ selectedWasteType.isActive ? 'Активный приём отходов' : 'Приём временно приостановлен' }}
+                  {{ selectedWasteType.isActive ? $t('employeeWasteTypes.activeReception') : $t('employeeWasteTypes.receptionPaused') }}
                 </span>
               </div>
             </div>
 
             <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button @click="toastStore.show({ type: 'info', title: 'Редактирование', message: 'Редактирование классификатора будет доступно в следующем обновлении' })" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
-                Редактировать
+              <button @click="toastStore.show({ type: 'info', title: $t('employeeWasteTypes.editToastTitle'), message: $t('employeeWasteTypes.editToastMessage') })" class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
+                {{ $t('common.edit') }}
               </button>
               <button @click="showDetailsModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                 {{ $t('common.close') }}

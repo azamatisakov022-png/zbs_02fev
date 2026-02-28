@@ -3,8 +3,11 @@ import TheHeader from '../components/layout/TheHeader.vue'
 import TheNavigation from '../components/layout/TheNavigation.vue'
 import TheFooter from '../components/layout/TheFooter.vue'
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { recyclerStore } from '../stores/recyclers'
 import { productGroups } from '../data/product-groups'
+
+const { t } = useI18n()
 
 const searchQuery = ref('')
 const filterWasteType = ref('')
@@ -46,26 +49,25 @@ const getGroupLabel = (value: string) => {
         <!-- Header -->
         <div class="mb-8">
           <h1 class="text-2xl md:text-3xl lg:text-4xl font-bold text-[#415861] uppercase mb-3">
-            Реестр переработчиков
+            {{ $t('publicRecyclers.title') }}
           </h1>
           <p class="text-[#70868f] text-base lg:text-lg max-w-3xl">
-            Список лицензированных переработчиков и утилизаторов отходов на территории Кыргызской Республики.
-            Здесь вы можете найти предприятие, имеющее лицензию на переработку конкретного вида отходов.
+            {{ $t('publicRecyclers.subtitle') }}
           </p>
         </div>
 
         <!-- Stats -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <p class="text-sm text-[#70868f] mb-1">Активных переработчиков</p>
+            <p class="text-sm text-[#70868f] mb-1">{{ $t('publicRecyclers.activeRecyclers') }}</p>
             <p class="text-3xl font-bold text-[#0e888d]">{{ activeRecyclers.length }}</p>
           </div>
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <p class="text-sm text-[#70868f] mb-1">Видов отходов</p>
+            <p class="text-sm text-[#70868f] mb-1">{{ $t('publicRecyclers.wasteTypes') }}</p>
             <p class="text-3xl font-bold text-[#415861]">24</p>
           </div>
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <p class="text-sm text-[#70868f] mb-1">Регионов покрытия</p>
+            <p class="text-sm text-[#70868f] mb-1">{{ $t('publicRecyclers.regionsCoverage') }}</p>
             <p class="text-3xl font-bold text-[#415861]">4</p>
           </div>
         </div>
@@ -76,11 +78,11 @@ const getGroupLabel = (value: string) => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Поиск по названию..."
+              :placeholder="$t('publicRecyclers.searchPlaceholder')"
               class="flex-1 min-w-[200px] px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#0e888d]"
             />
             <select v-model="filterWasteType" class="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#0e888d]">
-              <option value="">Все виды отходов</option>
+              <option value="">{{ $t('publicRecyclers.allWasteTypes') }}</option>
               <option v-for="group in productGroups" :key="group.value" :value="group.value">
                 {{ group.label }}
               </option>
@@ -108,21 +110,21 @@ const getGroupLabel = (value: string) => {
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
                   <h3 class="text-lg font-bold text-[#415861]">{{ recycler.name }}</h3>
                   <span class="inline-flex px-3 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium w-fit">
-                    Активен
+                    {{ $t('status.active') }}
                   </span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3 text-sm">
                   <div>
-                    <span class="text-[#70868f]">Лицензия:</span>
+                    <span class="text-[#70868f]">{{ $t('publicRecyclers.license') }}</span>
                     <span class="ml-1 font-medium text-[#415861]">{{ recycler.licenseNumber }}</span>
                   </div>
                   <div>
-                    <span class="text-[#70868f]">Действует до:</span>
+                    <span class="text-[#70868f]">{{ $t('publicRecyclers.validUntil') }}</span>
                     <span class="ml-1 font-medium text-[#415861]">{{ recycler.licenseExpiry }}</span>
                   </div>
                   <div>
-                    <span class="text-[#70868f]">Адрес:</span>
+                    <span class="text-[#70868f]">{{ $t('publicRecyclers.address') }}</span>
                     <span class="ml-1 text-[#415861]">{{ recycler.address }}</span>
                   </div>
                 </div>
@@ -144,7 +146,7 @@ const getGroupLabel = (value: string) => {
         </div>
 
         <div v-if="activeRecyclers.length === 0" class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-          <p class="text-[#70868f]">Переработчики не найдены</p>
+          <p class="text-[#70868f]">{{ $t('publicRecyclers.notFound') }}</p>
         </div>
 
         <!-- Info block -->
@@ -154,10 +156,9 @@ const getGroupLabel = (value: string) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p class="font-medium text-[#415861] mb-1">Как попасть в реестр?</p>
+              <p class="font-medium text-[#415861] mb-1">{{ $t('publicRecyclers.howToJoinTitle') }}</p>
               <p class="text-sm text-[#70868f]">
-                Для включения в реестр лицензированных переработчиков необходимо получить лицензию на деятельность по переработке отходов
-                в Министерстве природных ресурсов, экологии и технического надзора КР и заключить договор с ГП «Эко Оператор».
+                {{ $t('publicRecyclers.howToJoinText') }}
               </p>
             </div>
           </div>

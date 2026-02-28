@@ -139,10 +139,10 @@ const breadcrumbs = computed(() => {
       <!-- Logo -->
       <div class="h-20 flex items-center px-6" style="border-bottom: 1px solid rgba(0,0,0,0.06)">
         <router-link to="/" class="flex items-center gap-2">
-          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 44px; width: 44px; object-fit: cover; object-position: left;" />
+          <img src="/images/logo-eco.png" :alt="t('common.companyName')" style="height: 44px; width: 44px; object-fit: cover; object-position: left;" />
           <div class="flex flex-col whitespace-nowrap">
-            <span class="text-[14px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">ГП Эко Оператор</span>
-            <span class="text-[11px] font-normal text-[#6b7280]">Государственное предприятие</span>
+            <span class="text-[14px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">{{ t('common.companyName') }}</span>
+            <span class="text-[11px] font-normal text-[#6b7280]">{{ t('common.companyType') }}</span>
           </div>
         </router-link>
       </div>
@@ -167,7 +167,7 @@ const breadcrumbs = computed(() => {
           <span
             v-if="item.badge && item.badge > 0"
             class="badge badge-danger ml-auto text-[10px] px-1.5 py-0.5"
-            :aria-label="`${item.badge} новых`"
+            :aria-label="t('notifications.unreadCount', { count: item.badge })"
           >{{ item.badge }}</span>
         </button>
       </nav>

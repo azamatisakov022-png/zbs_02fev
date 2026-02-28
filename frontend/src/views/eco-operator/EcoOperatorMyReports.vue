@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+
+const { t } = useI18n()
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -17,20 +20,20 @@ const selectedQuarter = ref('all')
 const selectedStatus = ref('all')
 
 const years = [2030, 2029, 2028, 2027, 2026, 2025]
-const quarters = [
-  { id: 'all', name: 'Все кварталы' },
-  { id: 'q1', name: 'I квартал' },
-  { id: 'q2', name: 'II квартал' },
-  { id: 'q3', name: 'III квартал' },
-  { id: 'q4', name: 'IV квартал' },
-]
-const statuses = [
-  { id: 'all', name: 'Все статусы' },
-  { id: 'draft', name: 'Черновик' },
-  { id: 'submitted', name: 'Отправлен' },
-  { id: 'approved', name: 'Принят' },
-  { id: 'rejected', name: 'Отклонён' },
-]
+const quarters = computed(() => [
+  { id: 'all', name: t('ecoMyReports.allQuarters') },
+  { id: 'q1', name: t('ecoMyReports.quarterI') },
+  { id: 'q2', name: t('ecoMyReports.quarterII') },
+  { id: 'q3', name: t('ecoMyReports.quarterIII') },
+  { id: 'q4', name: t('ecoMyReports.quarterIV') },
+])
+const statuses = computed(() => [
+  { id: 'all', name: t('ecoMyReports.allStatuses') },
+  { id: 'draft', name: t('ecoMyReports.statusDraft') },
+  { id: 'submitted', name: t('ecoMyReports.statusSubmitted') },
+  { id: 'approved', name: t('ecoMyReports.statusApproved') },
+  { id: 'rejected', name: t('ecoMyReports.statusRejected') },
+])
 
 // Waste data interface for report details
 interface WasteItem {
@@ -332,21 +335,21 @@ const getStatusClass = (status: string) => {
 }
 
 const getStatusText = (status: string) => {
-  switch (status) {
-    case 'approved': return 'Принят'
-    case 'submitted': return 'На рассмотрении'
-    case 'draft': return 'Черновик'
-    case 'rejected': return 'Отклонён'
-    default: return status
+  const map: Record<string, string> = {
+    approved: t('status.approvedMasc'),
+    submitted: t('status.underReview'),
+    draft: t('status.draft'),
+    rejected: t('status.rejectedMasc'),
   }
+  return map[status] || status
 }
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('ru-RU')
+  return new Date(dateStr).toLocaleDateString()
 }
 
-const formatNumber = (num: number) => num.toLocaleString('ru-RU')
+const formatNumber = (num: number) => num.toLocaleString()
 
 // View report details
 const viewReport = (report: Report) => {
@@ -380,7 +383,7 @@ const downloadPDF = async () => {
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Отчёт ${report.number}</title>
+      <title>${t('ecoMyReports.reportTitle', { number: report.number })}</title>
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 40px; font-size: 12px; }
@@ -414,43 +417,43 @@ const downloadPDF = async () => {
     </head>
     <body>
       <div class="header">
-        <h1>ГП ЭКО ОПЕРАТОР</h1>
-        <p>Государственное предприятие «Эко Оператор»</p>
+        <h1>${t('ecoMyReports.pdfOrgTitle')}</h1>
+        <p>${t('ecoMyReports.pdfOrgSubtitle')}</p>
       </div>
 
       <div class="company">
-        <h2>Данные организации</h2>
+        <h2>${t('ecoMyReports.pdfOrgDataHeading')}</h2>
         <div class="company-info">
-          <div><label>Наименование:</label><span>ОсОО «ЭкоПереработка»</span></div>
-          <div><label>ИНН:</label><span>02301200510234</span></div>
-          <div><label>Юридический адрес:</label><span>г. Бишкек, ул. Экологическая, 15</span></div>
-          <div><label>Лицензия:</label><span>ЛЦ-ЭКО-2024-0045</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelName')}</label><span>ОсОО «ЭкоПереработка»</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelInn')}</label><span>02301200510234</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelAddress')}</label><span>г. Бишкек, ул. Экологическая, 15</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelLicense')}</label><span>ЛЦ-ЭКО-2024-0045</span></div>
         </div>
       </div>
 
       <div class="report-info">
-        <h3>Информация об отчёте</h3>
+        <h3>${t('ecoMyReports.pdfReportInfoHeading')}</h3>
         <div class="info-grid">
-          <div><label>Номер отчёта:</label><span>${report.number}</span></div>
-          <div><label>Тип отчёта:</label><span>${report.type}</span></div>
-          <div><label>Период:</label><span>${report.period}</span></div>
-          <div><label>Дата подачи:</label><span>${formatDate(report.submittedDate)}</span></div>
-          <div><label>Статус:</label><span class="status status-${report.status}">${getStatusText(report.status)}</span></div>
-          <div><label>Видов отходов:</label><span>${report.wasteTypesCount}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelReportNumber')}</label><span>${report.number}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelReportType')}</label><span>${report.type}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelPeriod')}</label><span>${report.period}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelSubmittedDate')}</label><span>${formatDate(report.submittedDate)}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelStatus')}</label><span class="status status-${report.status}">${getStatusText(report.status)}</span></div>
+          <div><label>${t('ecoMyReports.pdfLabelWasteTypes')}</label><span>${report.wasteTypesCount}</span></div>
         </div>
       </div>
 
-      <h3 style="margin-bottom: 15px; font-size: 13px;">Данные о переработке</h3>
+      <h3 style="margin-bottom: 15px; font-size: 13px;">${t('ecoMyReports.pdfProcessingDataHeading')}</h3>
       <table>
         <thead>
           <tr>
             <th>№</th>
-            <th>Вид отходов</th>
-            <th>Код</th>
-            <th>Источник</th>
-            <th>Метод переработки</th>
-            <th>Принято (т)</th>
-            <th>Переработано (т)</th>
+            <th>${t('ecoMyReports.thWasteType')}</th>
+            <th>${t('ecoMyReports.thCode')}</th>
+            <th>${t('ecoMyReports.thSource')}</th>
+            <th>${t('ecoMyReports.thProcessingMethod')}</th>
+            <th>${t('ecoMyReports.thAcceptedTons')}</th>
+            <th>${t('ecoMyReports.thProcessedTons')}</th>
           </tr>
         </thead>
         <tbody>
@@ -461,20 +464,20 @@ const downloadPDF = async () => {
               <td>${w.code}</td>
               <td>${w.source}</td>
               <td>${w.method}</td>
-              <td>${w.accepted.toLocaleString('ru-RU')}</td>
-              <td>${w.processed.toLocaleString('ru-RU')}</td>
+              <td>${w.accepted.toLocaleString()}</td>
+              <td>${w.processed.toLocaleString()}</td>
             </tr>
           `).join('')}
           <tr class="totals">
-            <td colspan="5" style="text-align: right;">ИТОГО:</td>
-            <td>${detailTotals.value.accepted.toLocaleString('ru-RU')} т</td>
-            <td>${detailTotals.value.processed.toLocaleString('ru-RU')} т</td>
+            <td colspan="5" style="text-align: right;">${t('ecoMyReports.totalLabel')}</td>
+            <td>${detailTotals.value.accepted.toLocaleString()} ${t('ecoMyReports.tonsShort')}</td>
+            <td>${detailTotals.value.processed.toLocaleString()} ${t('ecoMyReports.tonsShort')}</td>
           </tr>
         </tbody>
       </table>
 
       <div class="footer">
-        <p>Документ сформирован: ${new Date().toLocaleDateString('ru-RU')} ${new Date().toLocaleTimeString('ru-RU')}</p>
+        <p>${t('ecoMyReports.pdfDocFormed')} ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
         <p>ГП Эко Оператор | www.eco.gov.kg</p>
       </div>
     </body>
@@ -500,21 +503,21 @@ const downloadExcel = () => {
   const report = selectedReport.value
 
   let csvContent = '\uFEFF' // BOM for UTF-8
-  csvContent += `Отчёт о переработке отходов\n`
-  csvContent += `Организация:,ОсОО «ЭкоПереработка»\n`
-  csvContent += `ИНН:,02301200510234\n`
-  csvContent += `Номер отчёта:,${report.number}\n`
-  csvContent += `Период:,${report.period}\n`
-  csvContent += `Дата подачи:,${formatDate(report.submittedDate)}\n`
-  csvContent += `Статус:,${getStatusText(report.status)}\n\n`
-  csvContent += `№,Вид отходов,Код,Источник,Метод переработки,Принято (т),Переработано (т)\n`
+  csvContent += `${t('ecoMyReports.csvReportTitle')}\n`
+  csvContent += `${t('ecoMyReports.csvOrganization')},ОсОО «ЭкоПереработка»\n`
+  csvContent += `${t('ecoMyReports.csvInn')},02301200510234\n`
+  csvContent += `${t('ecoMyReports.csvReportNumber')},${report.number}\n`
+  csvContent += `${t('ecoMyReports.csvPeriod')},${report.period}\n`
+  csvContent += `${t('ecoMyReports.csvSubmittedDate')},${formatDate(report.submittedDate)}\n`
+  csvContent += `${t('ecoMyReports.csvStatus')},${getStatusText(report.status)}\n\n`
+  csvContent += `№,${t('ecoMyReports.thWasteType')},${t('ecoMyReports.thCode')},${t('ecoMyReports.thSource')},${t('ecoMyReports.thProcessingMethod')},${t('ecoMyReports.thAcceptedTons')},${t('ecoMyReports.thProcessedTons')}\n`
 
   report.wasteData.forEach((w, i) => {
     csvContent += `${i + 1},"${w.wasteType}",${w.code},"${w.source}","${w.method}",${w.accepted},${w.processed}\n`
   })
 
   csvContent += `\n,,,,,${detailTotals.value.accepted},${detailTotals.value.processed}\n`
-  csvContent += `\nДата формирования:,${new Date().toLocaleDateString('ru-RU')}\n`
+  csvContent += `\n${t('ecoMyReports.csvDateFormed')},${new Date().toLocaleDateString()}\n`
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
@@ -567,13 +570,13 @@ const prevStep = () => {
 }
 
 const submitReport = () => {
-  toastStore.show({ type: 'success', title: 'Отчёт успешно отправлен' })
+  toastStore.show({ type: 'success', title: t('ecoMyReports.toastReportSubmitted') })
   showWizard.value = false
   wizardStep.value = 1
 }
 
 const saveDraft = () => {
-  toastStore.show({ type: 'success', title: 'Черновик сохранён' })
+  toastStore.show({ type: 'success', title: t('ecoMyReports.toastDraftSaved') })
 }
 </script>
 
@@ -647,39 +650,39 @@ const saveDraft = () => {
       <!-- Report Info Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Дата подачи</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.submittedDate') }}</p>
           <p class="text-lg font-bold text-gray-900 mt-1">{{ formatDate(selectedReport.submittedDate) }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Видов отходов</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.wasteTypesCount') }}</p>
           <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedReport.wasteTypesCount }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Принято всего</p>
-          <p class="text-lg font-bold text-blue-600 mt-1">{{ formatNumber(detailTotals.accepted) }} т</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.totalAccepted') }}</p>
+          <p class="text-lg font-bold text-blue-600 mt-1">{{ formatNumber(detailTotals.accepted) }} {{ $t('ecoMyReports.tonsShort') }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Переработано</p>
-          <p class="text-lg font-bold text-lime-600 mt-1">{{ formatNumber(detailTotals.processed) }} т</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.totalProcessed') }}</p>
+          <p class="text-lg font-bold text-lime-600 mt-1">{{ formatNumber(detailTotals.processed) }} {{ $t('ecoMyReports.tonsShort') }}</p>
         </div>
       </div>
 
       <!-- Waste Data Table -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="font-semibold text-gray-900">Данные о переработке отходов</h3>
+          <h3 class="font-semibold text-gray-900">{{ $t('ecoMyReports.processingDataHeading') }}</h3>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">№</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид отходов</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Код</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Источник</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Метод переработки</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Принято (т)</th>
-                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Переработано (т)</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thWasteType') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thCode') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thSource') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thProcessingMethod') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thAcceptedTons') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoMyReports.thProcessedTons') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -695,9 +698,9 @@ const saveDraft = () => {
             </tbody>
             <tfoot class="bg-lime-50 border-t-2 border-lime-200">
               <tr>
-                <td colspan="5" class="px-4 py-3 font-bold text-gray-900 text-right">ИТОГО:</td>
-                <td class="px-4 py-3 text-right font-bold text-gray-900">{{ formatNumber(detailTotals.accepted) }} т</td>
-                <td class="px-4 py-3 text-right font-bold text-lime-700 text-lg">{{ formatNumber(detailTotals.processed) }} т</td>
+                <td colspan="5" class="px-4 py-3 font-bold text-gray-900 text-right">{{ $t('ecoMyReports.totalLabel') }}</td>
+                <td class="px-4 py-3 text-right font-bold text-gray-900">{{ formatNumber(detailTotals.accepted) }} {{ $t('ecoMyReports.tonsShort') }}</td>
+                <td class="px-4 py-3 text-right font-bold text-lime-700 text-lg">{{ formatNumber(detailTotals.processed) }} {{ $t('ecoMyReports.tonsShort') }}</td>
               </tr>
             </tfoot>
           </table>
@@ -706,10 +709,10 @@ const saveDraft = () => {
 
       <!-- Processing Summary -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="font-semibold text-gray-900 mb-4">Показатели переработки</h3>
+        <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoMyReports.processingMetrics') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <p class="text-sm text-gray-500 mb-1">Эффективность переработки</p>
+            <p class="text-sm text-gray-500 mb-1">{{ $t('ecoMyReports.processingEfficiency') }}</p>
             <div class="flex items-center gap-3">
               <div class="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                 <div
@@ -721,12 +724,12 @@ const saveDraft = () => {
             </div>
           </div>
           <div>
-            <p class="text-sm text-gray-500 mb-1">Потери при переработке</p>
-            <p class="text-2xl font-bold text-gray-900">{{ formatNumber(detailTotals.accepted - detailTotals.processed) }} т</p>
+            <p class="text-sm text-gray-500 mb-1">{{ $t('ecoMyReports.processingLosses') }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatNumber(detailTotals.accepted - detailTotals.processed) }} {{ $t('ecoMyReports.tonsShort') }}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-500 mb-1">Средний объём на вид отходов</p>
-            <p class="text-2xl font-bold text-gray-900">{{ formatNumber(Math.round(detailTotals.processed / selectedReport.wasteTypesCount)) }} т</p>
+            <p class="text-sm text-gray-500 mb-1">{{ $t('ecoMyReports.avgVolumePerType') }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatNumber(Math.round(detailTotals.processed / selectedReport.wasteTypesCount)) }} {{ $t('ecoMyReports.tonsShort') }}</p>
           </div>
         </div>
       </div>
@@ -754,24 +757,24 @@ const saveDraft = () => {
       <!-- Stats -->
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Всего отчётов</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.totalReports') }}</p>
           <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Принято</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.approved') }}</p>
           <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.approved }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">На рассмотрении</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.underReview') }}</p>
           <p class="text-2xl font-bold text-blue-600 mt-1">{{ stats.pending }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Черновики</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.drafts') }}</p>
           <p class="text-2xl font-bold text-gray-600 mt-1">{{ stats.drafts }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Объём переработки</p>
-          <p class="text-2xl font-bold text-lime-600 mt-1">{{ formatNumber(stats.totalVolume) }} т</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoMyReports.processingVolume') }}</p>
+          <p class="text-2xl font-bold text-lime-600 mt-1">{{ formatNumber(stats.totalVolume) }} {{ $t('ecoMyReports.tonsShort') }}</p>
         </div>
       </div>
 
@@ -786,7 +789,7 @@ const saveDraft = () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по номеру..."
+                :placeholder="$t('ecoMyReports.searchByNumber')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
             </div>
@@ -795,7 +798,7 @@ const saveDraft = () => {
             v-model="selectedYear"
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
           >
-            <option v-for="year in years" :key="year" :value="year">{{ year }} год</option>
+            <option v-for="year in years" :key="year" :value="year">{{ $t('ecoMyReports.yearSuffix', { year }) }}</option>
           </select>
           <select
             v-model="selectedQuarter"
@@ -845,18 +848,18 @@ const saveDraft = () => {
               </div>
             </div>
             <div class="text-right">
-              <p class="text-sm text-gray-500">Дата подачи</p>
+              <p class="text-sm text-gray-500">{{ $t('ecoMyReports.submittedDate') }}</p>
               <p class="font-medium text-gray-900">{{ formatDate(report.submittedDate) }}</p>
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
             <div>
-              <p class="text-xs text-gray-500">Объём переработки</p>
-              <p class="font-semibold text-gray-900">{{ formatNumber(report.totalVolume) }} тонн</p>
+              <p class="text-xs text-gray-500">{{ $t('ecoMyReports.processingVolume') }}</p>
+              <p class="font-semibold text-gray-900">{{ formatNumber(report.totalVolume) }} {{ $t('ecoMyReports.tons') }}</p>
             </div>
             <div>
-              <p class="text-xs text-gray-500">Видов отходов</p>
+              <p class="text-xs text-gray-500">{{ $t('ecoMyReports.wasteTypesCount') }}</p>
               <p class="font-semibold text-gray-900">{{ report.wasteTypesCount }}</p>
             </div>
             <div class="flex justify-end items-center gap-2">
@@ -886,8 +889,8 @@ const saveDraft = () => {
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-        <h3 class="text-lg font-medium text-gray-900 mb-1">Отчёты не найдены</h3>
-        <p class="text-gray-500 mb-4">Создайте новый отчёт или измените параметры фильтрации</p>
+        <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('ecoMyReports.noReportsFound') }}</h3>
+        <p class="text-gray-500 mb-4">{{ $t('ecoMyReports.noReportsHint') }}</p>
         <button
           @click="showWizard = true"
           class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
@@ -904,8 +907,8 @@ const saveDraft = () => {
           <!-- Header -->
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Создание отчёта о переработке</h3>
-              <p class="text-sm text-gray-500">Шаг {{ wizardStep }} из 4</p>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoMyReports.wizardTitle') }}</h3>
+              <p class="text-sm text-gray-500">{{ $t('ecoMyReports.wizardStep', { step: wizardStep, total: 4 }) }}</p>
             </div>
             <button @click="showWizard = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -925,7 +928,7 @@ const saveDraft = () => {
                   {{ step }}
                 </div>
                 <span class="ml-2 text-sm hidden md:inline" :class="wizardStep >= step ? 'text-gray-900' : 'text-gray-400'">
-                  {{ step === 1 ? 'Период' : step === 2 ? 'Данные' : step === 3 ? 'Документы' : 'Проверка' }}
+                  {{ step === 1 ? $t('ecoMyReports.stepPeriod') : step === 2 ? $t('ecoMyReports.stepData') : step === 3 ? $t('ecoMyReports.stepDocuments') : $t('ecoMyReports.stepReview') }}
                 </span>
                 <div v-if="step < 4" class="w-12 md:w-24 h-1 mx-2 rounded" :class="wizardStep > step ? 'bg-lime-600' : 'bg-gray-200'"></div>
               </div>
@@ -937,7 +940,7 @@ const saveDraft = () => {
             <!-- Step 1: Period -->
             <div v-if="wizardStep === 1" class="space-y-6">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Тип отчёта</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('ecoMyReports.reportTypeLabel') }}</label>
                 <div class="grid grid-cols-2 gap-4">
                   <label
                     class="p-4 border-2 rounded-xl cursor-pointer transition-colors"
@@ -951,8 +954,8 @@ const saveDraft = () => {
                         </svg>
                       </div>
                       <div>
-                        <p class="font-medium text-gray-900">Квартальный отчёт</p>
-                        <p class="text-sm text-gray-500">За один квартал</p>
+                        <p class="font-medium text-gray-900">{{ $t('ecoMyReports.quarterlyReport') }}</p>
+                        <p class="text-sm text-gray-500">{{ $t('ecoMyReports.quarterlyReportDesc') }}</p>
                       </div>
                     </div>
                   </label>
@@ -968,8 +971,8 @@ const saveDraft = () => {
                         </svg>
                       </div>
                       <div>
-                        <p class="font-medium text-gray-900">Годовой отчёт</p>
-                        <p class="text-sm text-gray-500">За весь год</p>
+                        <p class="font-medium text-gray-900">{{ $t('ecoMyReports.annualReport') }}</p>
+                        <p class="text-sm text-gray-500">{{ $t('ecoMyReports.annualReportDesc') }}</p>
                       </div>
                     </div>
                   </label>
@@ -978,19 +981,19 @@ const saveDraft = () => {
 
               <div class="grid grid-cols-2 gap-4">
                 <div v-if="reportForm.type === 'quarterly'">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Квартал</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoMyReports.quarterLabel') }}</label>
                   <select
                     v-model="reportForm.quarter"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                   >
-                    <option value="q1">I квартал (янв-мар)</option>
-                    <option value="q2">II квартал (апр-июн)</option>
-                    <option value="q3">III квартал (июл-сен)</option>
-                    <option value="q4">IV квартал (окт-дек)</option>
+                    <option value="q1">{{ $t('ecoMyReports.quarterQ1Full') }}</option>
+                    <option value="q2">{{ $t('ecoMyReports.quarterQ2Full') }}</option>
+                    <option value="q3">{{ $t('ecoMyReports.quarterQ3Full') }}</option>
+                    <option value="q4">{{ $t('ecoMyReports.quarterQ4Full') }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Год</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoMyReports.yearLabel') }}</label>
                   <select
                     v-model="reportForm.year"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
@@ -1009,7 +1012,7 @@ const saveDraft = () => {
             <!-- Step 2: Waste Data -->
             <div v-if="wizardStep === 2" class="space-y-4">
               <div class="flex items-center justify-between">
-                <h4 class="font-medium text-gray-900">Данные о переработке</h4>
+                <h4 class="font-medium text-gray-900">{{ $t('ecoMyReports.processingData') }}</h4>
                 <button @click="addWasteRow" class="text-lime-600 hover:text-lime-700 text-sm font-medium flex items-center gap-1">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -1022,10 +1025,10 @@ const saveDraft = () => {
                 <table class="w-full">
                   <thead>
                     <tr class="bg-gray-50">
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">Вид отходов</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">Код</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">Принято (т)</th>
-                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">Переработано (т)</th>
+                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">{{ $t('ecoMyReports.thWasteType') }}</th>
+                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">{{ $t('ecoMyReports.thCode') }}</th>
+                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">{{ $t('ecoMyReports.thAcceptedTons') }}</th>
+                      <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600">{{ $t('ecoMyReports.thProcessedTons') }}</th>
                       <th class="px-3 py-2"></th>
                     </tr>
                   </thead>
@@ -1074,9 +1077,9 @@ const saveDraft = () => {
                   </tbody>
                   <tfoot class="bg-gray-50 font-semibold">
                     <tr>
-                      <td colspan="2" class="px-3 py-2 text-right">Итого:</td>
-                      <td class="px-3 py-2">{{ formatNumber(totalAccepted) }} т</td>
-                      <td class="px-3 py-2">{{ formatNumber(totalProcessed) }} т</td>
+                      <td colspan="2" class="px-3 py-2 text-right">{{ $t('ecoMyReports.totalLabelWizard') }}</td>
+                      <td class="px-3 py-2">{{ formatNumber(totalAccepted) }} {{ $t('ecoMyReports.tonsShort') }}</td>
+                      <td class="px-3 py-2">{{ formatNumber(totalProcessed) }} {{ $t('ecoMyReports.tonsShort') }}</td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -1086,24 +1089,24 @@ const saveDraft = () => {
 
             <!-- Step 3: Documents -->
             <div v-if="wizardStep === 3" class="space-y-4">
-              <h4 class="font-medium text-gray-900">Подтверждающие документы</h4>
+              <h4 class="font-medium text-gray-900">{{ $t('ecoMyReports.supportingDocs') }}</h4>
               <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
                 <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <p class="text-gray-500 mb-2">Перетащите файлы сюда или</p>
+                <p class="text-gray-500 mb-2">{{ $t('ecoMyReports.dragFilesHere') }}</p>
                 <button class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors">
-                  Выбрать файлы
+                  {{ $t('ecoMyReports.chooseFiles') }}
                 </button>
-                <p class="text-xs text-gray-400 mt-2">PDF, JPG, PNG до 10MB</p>
+                <p class="text-xs text-gray-400 mt-2">{{ $t('ecoMyReports.fileHint') }}</p>
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Комментарий (необязательно)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoMyReports.commentLabel') }}</label>
                 <textarea
                   v-model="reportForm.comment"
                   rows="3"
-                  placeholder="Дополнительная информация..."
+                  :placeholder="$t('ecoMyReports.commentPlaceholder')"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
                 ></textarea>
               </div>
@@ -1111,33 +1114,33 @@ const saveDraft = () => {
 
             <!-- Step 4: Review -->
             <div v-if="wizardStep === 4" class="space-y-6">
-              <h4 class="font-medium text-gray-900">Проверьте данные перед отправкой</h4>
+              <h4 class="font-medium text-gray-900">{{ $t('ecoMyReports.reviewBeforeSubmit') }}</h4>
 
               <div class="bg-gray-50 rounded-xl p-4 space-y-3">
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Тип отчёта:</span>
-                  <span class="font-medium">{{ reportForm.type === 'quarterly' ? 'Квартальный' : 'Годовой' }}</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewReportType') }}</span>
+                  <span class="font-medium">{{ reportForm.type === 'quarterly' ? $t('ecoMyReports.reviewQuarterly') : $t('ecoMyReports.reviewAnnual') }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Период:</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewPeriod') }}</span>
                   <span class="font-medium">
-                    {{ reportForm.type === 'quarterly' ? `${reportForm.quarter === 'q1' ? 'I' : reportForm.quarter === 'q2' ? 'II' : reportForm.quarter === 'q3' ? 'III' : 'IV'} квартал` : '' }} {{ reportForm.year }}
+                    {{ reportForm.type === 'quarterly' ? `${reportForm.quarter === 'q1' ? 'I' : reportForm.quarter === 'q2' ? 'II' : reportForm.quarter === 'q3' ? 'III' : 'IV'} ${$t('ecoMyReports.reviewQuarterSuffix')}` : '' }} {{ reportForm.year }}
                   </span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Видов отходов:</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewWasteTypes') }}</span>
                   <span class="font-medium">{{ reportForm.wasteData.length }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Всего принято:</span>
-                  <span class="font-medium">{{ formatNumber(totalAccepted) }} тонн</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewTotalAccepted') }}</span>
+                  <span class="font-medium">{{ formatNumber(totalAccepted) }} {{ $t('ecoMyReports.tons') }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Всего переработано:</span>
-                  <span class="font-medium">{{ formatNumber(totalProcessed) }} тонн</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewTotalProcessed') }}</span>
+                  <span class="font-medium">{{ formatNumber(totalProcessed) }} {{ $t('ecoMyReports.tons') }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-gray-500">Процент переработки:</span>
+                  <span class="text-gray-500">{{ $t('ecoMyReports.reviewProcessingPercent') }}</span>
                   <span class="font-medium text-lime-600">{{ Math.round((totalProcessed / totalAccepted) * 100) }}%</span>
                 </div>
               </div>
@@ -1147,7 +1150,7 @@ const saveDraft = () => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p class="text-sm text-lime-700">
-                  После отправки отчёт будет направлен на проверку. Вы получите уведомление о результате.
+                  {{ $t('ecoMyReports.submitInfoText') }}
                 </p>
               </div>
             </div>

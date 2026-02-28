@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore, type ProductItem, type AttachedDocument, type DocumentType, type PaymentData, documentTypeLabels } from '../../stores/calculations'
+import { calculationStore, type ProductItem, type AttachedDocument, type DocumentType, type PaymentData, getDocumentTypeLabel } from '../../stores/calculations'
+
+const documentTypes: DocumentType[] = ['gtd', 'act', 'invoice_goods', 'invoice', 'contract', 'other']
 import { accountStore } from '../../stores/account'
 import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
@@ -12,9 +15,12 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
+import { CalcStatus, statusI18nKey } from '../../constants/statuses'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const calcId = computed(() => Number(route.params.id))
@@ -115,7 +121,7 @@ function saveAsDraft() {
   calculationStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
   isEditing.value = false
   if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
-  toastStore.show({ type: 'success', title: 'Черновик сохранён' })
+  toastStore.show({ type: 'success', title: t('calcDetail.draftSaved') })
 }
 
 function saveAndSubmit() {
@@ -125,7 +131,7 @@ function saveAndSubmit() {
   calculationStore.submitForReview(calc.value.id)
   isEditing.value = false
   if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
-  toastStore.show({ type: 'success', title: 'Расчёт отправлен на проверку' })
+  toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })
 }
 
 // ---- Document upload state ----
@@ -134,9 +140,9 @@ const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'applicatio
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return bytes + ' Б'
-  if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' КБ'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' МБ'
+  if (bytes < 1024) return bytes + ' ' + t('calcDetail.sizeB')
+  if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' ' + t('calcDetail.sizeKB')
+  return (bytes / (1024 * 1024)).toFixed(1) + ' ' + t('calcDetail.sizeMB')
 }
 
 function handleFileDrop(e: DragEvent) {
@@ -152,12 +158,12 @@ function handleFileSelect(e: Event) {
 
 function processFiles(files: FileList) {
   if (editDocuments.value.length + files.length > 10) {
-    toastStore.show({ type: 'error', title: 'Максимум 10 файлов' })
+    toastStore.show({ type: 'error', title: t('calcDetail.maxFiles') })
     return
   }
   Array.from(files).forEach(file => {
     if (file.size > MAX_FILE_SIZE) {
-      toastStore.show({ type: 'error', title: `Файл "${file.name}" превышает 10 МБ` })
+      toastStore.show({ type: 'error', title: t('calcDetail.fileTooBig', { name: file.name }) })
       return
     }
     const reader = new FileReader()
@@ -170,7 +176,7 @@ function processFiles(files: FileList) {
         docType: guessDocType(file.name),
         dataUrl: reader.result as string,
       })
-      toastStore.show({ type: 'success', title: 'Документ прикреплён' })
+      toastStore.show({ type: 'success', title: t('calcDetail.docAttached') })
     }
     reader.readAsDataURL(file)
   })
@@ -196,7 +202,7 @@ function changeDocType(doc: AttachedDocument, type: DocumentType) {
 
 // Auto-enter edit mode if ?edit=true
 onMounted(() => {
-  if (route.query.edit === 'true' && calc.value && (calc.value.status === 'Черновик' || calc.value.status === 'Отклонено')) {
+  if (route.query.edit === 'true' && calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED)) {
     startEditing()
   }
   if (route.query.print === 'true') {
@@ -210,16 +216,8 @@ const getGroupLabel = (value: string) => {
 }
 
 const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Черновик': return 'badge badge-neutral'
-    case 'На проверке': return 'badge badge-warning'
-    case 'Принято': return 'badge badge-success'
-    case 'Отклонено': return 'badge badge-danger'
-    case 'Оплата на проверке': return 'badge badge-purple'
-    case 'Оплачено': return 'badge badge-info'
-    case 'Оплата отклонена': return 'badge badge-danger'
-    default: return 'badge badge-neutral'
-  }
+  const variant = getStatusBadgeVariant(status)
+  return `badge badge-${variant}`
 }
 
 const displayItems = computed(() => isEditing.value ? editItems.value : (calc.value?.items || []))
@@ -247,23 +245,23 @@ const timelineDates = computed(() => {
   if (!calc.value) return {}
   const d: Record<string, string | undefined> = { created: calc.value.date }
   const s = calc.value.status
-  if (s !== 'Черновик') d.submitted = calc.value.date
-  if (['На проверке', 'Принято', 'Отклонено', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) d.reviewed = calc.value.date
-  if (['Принято', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(s)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
-  if (s === 'Оплачено') d.paid = calc.value.paidAt || calc.value.date
-  if (s === 'Отклонено') d.rejected = calc.value.rejectedAt || calc.value.date
+  if (s !== CalcStatus.DRAFT) d.submitted = calc.value.date
+  if ([CalcStatus.UNDER_REVIEW, CalcStatus.APPROVED, CalcStatus.REJECTED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) d.reviewed = calc.value.date
+  if ([CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
+  if (s === CalcStatus.PAID) d.paid = calc.value.paidAt || calc.value.date
+  if (s === CalcStatus.REJECTED) d.rejected = calc.value.rejectedAt || calc.value.date
   return d
 })
 
 const payerTypeLabel = computed(() => {
   if (!calc.value) return ''
-  return calc.value.payerType === 'importer' ? 'Импортёр' : 'Производитель'
+  return calc.value.payerType === 'importer' ? t('calcDetail.importer') : t('calcDetail.producer')
 })
 
 const periodLabel = computed(() => {
   if (!calc.value) return ''
   if (calc.value.payerType === 'importer' && calc.value.importDate) {
-    return `Ввоз: ${calc.value.importDate}`
+    return `${t('calcDetail.importLabel')}: ${calc.value.importDate}`
   }
   return calc.value.period
 })
@@ -294,7 +292,7 @@ const reconciliation = computed(() => {
   return accountStore.getReconciliationForCalculation(calc.value.id)
 })
 
-const canEdit = computed(() => calc.value && (calc.value.status === 'Черновик' || calc.value.status === 'Отклонено'))
+const canEdit = computed(() => calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED))
 
 const goBack = () => {
   const from = route.query.from as string
@@ -385,7 +383,7 @@ function validatePaymentAmount() {
     return
   }
   if (amount !== calc.value.totalAmount) {
-    paymentAmountError.value = `Сумма не совпадает с суммой расчёта (${calc.value.totalAmount.toLocaleString('ru-RU')} сом)`
+    paymentAmountError.value = t('calcDetail.amountMismatch', { amount: calc.value.totalAmount.toLocaleString() })
   } else {
     paymentAmountError.value = ''
   }
@@ -407,11 +405,11 @@ function handlePaymentFileSelect(e: Event) {
 function processPaymentFile(file: File) {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
   if (!allowedTypes.includes(file.type)) {
-    toastStore.show({ type: 'warning', title: 'Недопустимый формат', description: 'Допустимые форматы: PDF, JPG, PNG' })
+    toastStore.show({ type: 'warning', title: t('calcDetail.invalidFormat'), description: t('calcDetail.allowedFormats') })
     return
   }
   if (file.size > 10 * 1024 * 1024) {
-    toastStore.show({ type: 'warning', title: 'Файл слишком большой', description: 'Максимальный размер: 10 МБ' })
+    toastStore.show({ type: 'warning', title: t('calcDetail.fileTooLarge'), description: t('calcDetail.maxFileSize') })
     return
   }
   const reader = new FileReader()
@@ -435,7 +433,7 @@ function submitPaymentConfirmation() {
   }
   calculationStore.submitPayment(calc.value.id, payment)
   closePayment()
-  toastStore.show({ type: 'success', title: 'Документ об оплате отправлен', description: 'Эко Оператор проверит поступление средств.' })
+  toastStore.show({ type: 'success', title: t('calcDetail.paymentDocSent'), description: t('calcDetail.paymentDocSentDesc') })
 }
 </script>
 
@@ -453,11 +451,11 @@ function submitPaymentConfirmation() {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">Расчёт не найден</h2>
-      <p class="text-[#64748b] mb-6">Расчёт с указанным номером не существует</p>
+      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
+      <p class="text-[#64748b] mb-6">{{ $t('calcDetail.notFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -467,12 +465,12 @@ function submitPaymentConfirmation() {
       <div class="mb-6">
         <button @click="goBack" class="btn-back mb-4 no-print">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] font-mono">{{ calc.number }}</h1>
-          <span :class="getStatusClass(calc.status)" class="text-sm">{{ calc.status }}</span>
-          <span class="text-[#64748b] text-sm">от {{ calc.date }}</span>
+          <span :class="getStatusClass(calc.status)" class="text-sm">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
+          <span class="text-[#64748b] text-sm">{{ $t('calcDetail.fromDate') }} {{ calc.date }}</span>
         </div>
       </div>
 
@@ -482,37 +480,37 @@ function submitPaymentConfirmation() {
           <svg class="w-5 h-5 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          Данные плательщика
+          {{ $t('calcDetail.payerData') }}
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
           <div>
-            <p class="text-xs text-[#64748b] mb-1">Тип плательщика</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ $t('calcDetail.payerType') }}</p>
             <p class="font-medium text-[#1e293b]">{{ payerTypeLabel }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] mb-1">Наименование</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ $t('common.name') }}</p>
             <p class="font-medium text-[#1e293b]">{{ calc.company }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] mb-1">ИНН</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ $t('calcDetail.inn') }}</p>
             <p class="font-medium text-[#1e293b] font-mono">{{ calc.inn }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] mb-1">Адрес</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ $t('calcDetail.address') }}</p>
             <p class="font-medium text-[#1e293b]">{{ calc.address || '—' }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] mb-1">{{ calc.payerType === 'importer' ? 'Дата ввоза' : 'Расчётный период' }}</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ calc.payerType === 'importer' ? $t('calcDetail.importDate') : $t('calcDetail.calcPeriod') }}</p>
             <p class="font-medium text-[#1e293b]">{{ periodLabel }}</p>
           </div>
           <div>
-            <p class="text-xs text-[#64748b] mb-1">Срок оплаты</p>
+            <p class="text-xs text-[#64748b] mb-1">{{ $t('calcDetail.paymentDeadline') }}</p>
             <p class="font-medium" :style="{ color: deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? '#DC2626' : '#f59e0b' }">
               {{ dueDateFormatted }}
             </p>
             <p v-if="deadlineStatus" class="text-xs mt-0.5" :style="{ color: deadlineStatus.overdue ? '#DC2626' : '#94a3b8' }">
-              <template v-if="deadlineStatus.overdue">Просрочено на {{ deadlineStatus.days }} дн.!</template>
-              <template v-else>Осталось {{ deadlineStatus.days }} дн.</template>
+              <template v-if="deadlineStatus.overdue">{{ $t('calcDetail.overdueDays', { days: deadlineStatus.days }) }}</template>
+              <template v-else>{{ $t('calcDetail.remainingDays', { days: deadlineStatus.days }) }}</template>
             </p>
           </div>
         </div>
@@ -524,22 +522,22 @@ function submitPaymentConfirmation() {
       <!-- Products Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6" :class="{ 'ring-2 ring-blue-300': isEditing }">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Товары и упаковка</h2>
-          <span v-if="isEditing" class="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Режим редактирования</span>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('calcDetail.productsAndPackaging') }}</h2>
+          <span v-if="isEditing" class="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{{ $t('calcDetail.editMode') }}</span>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-[#f8fafc]">
               <tr class="text-left text-[11px] tracking-[0.05em] uppercase text-[#64748b]">
-                <th class="px-5 py-3 font-semibold">Группа/подгруппа</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.5 Объём (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.6 Норматив (%)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.7 К перераб. (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.8 Передано (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.9 Вывезено (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.10 Облагаемый (т)</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.11 Ставка</th>
-                <th class="px-5 py-3 font-semibold text-right">Гр.12 Сумма</th>
+                <th class="px-5 py-3 font-semibold">{{ $t('calcDetail.colGroupSubgroup') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colVolume') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colStandard') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colToRecycle') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colTransferred') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colExported') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colTaxable') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colRate') }}</th>
+                <th class="px-5 py-3 font-semibold text-right">{{ $t('calcDetail.colAmount') }}</th>
                 <th v-if="isEditing" class="px-3 py-3 font-semibold w-10"></th>
               </tr>
             </thead>
@@ -563,7 +561,7 @@ function submitPaymentConfirmation() {
                     {{ getGroupLabel(item.group) }}
                     <span v-if="item.subgroup" class="block text-xs text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                     <span v-if="item.gskpCode" class="block text-xs text-[#94a3b8] font-mono">{{ item.gskpCode }}</span>
-                    <span v-if="item.tnvedCode" class="block text-xs text-[#94a3b8] font-mono mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></span>
+                    <span v-if="item.tnvedCode" class="block text-xs text-[#94a3b8] font-mono mt-0.5">{{ $t('calcDetail.tnved') }} <TnvedCode :code="item.tnvedCode" /></span>
                   </template>
                 </td>
                 <!-- Volume -->
@@ -593,7 +591,7 @@ function submitPaymentConfirmation() {
                 <td class="px-5 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
                 <!-- Remove -->
                 <td v-if="isEditing" class="px-3 py-3 text-center">
-                  <button v-if="editItems.length > 1" @click="removeRow(index)" class="text-red-400 hover:text-red-600 transition-colors" title="Удалить строку">
+                  <button v-if="editItems.length > 1" @click="removeRow(index)" class="text-red-400 hover:text-red-600 transition-colors" :title="$t('calcDetail.deleteRow')">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                   </button>
                 </td>
@@ -605,7 +603,7 @@ function submitPaymentConfirmation() {
         <div v-if="isEditing" class="px-6 py-3 border-t border-[#e2e8f0] bg-[#f8fafc]">
           <button @click="addRow" class="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Добавить строку
+            {{ $t('common.addRow') }}
           </button>
         </div>
       </div>
@@ -614,9 +612,9 @@ function submitPaymentConfirmation() {
       <div v-if="isEditing" class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
           <svg class="w-5 h-5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-          Подтверждающие документы
+          {{ $t('calcDetail.supportingDocs') }}
         </h2>
-        <p class="text-sm text-[#94a3b8] mb-4">Прикрепите ГТД, акты приёма-передачи, накладные и другие документы</p>
+        <p class="text-sm text-[#94a3b8] mb-4">{{ $t('calcDetail.supportingDocsHint') }}</p>
 
         <!-- Drop zone -->
         <div
@@ -627,10 +625,10 @@ function submitPaymentConfirmation() {
           @drop.prevent="handleFileDrop"
         >
           <svg class="w-10 h-10 text-[#94a3b8] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-          <span class="text-sm text-[#64748b]">Перетащите файлы сюда или нажмите</span>
-          <span class="text-xs text-[#94a3b8]">PDF, JPG, PNG, DOC — до 10 МБ, макс. 10 файлов</span>
+          <span class="text-sm text-[#64748b]">{{ $t('calcDetail.dropFilesHere') }}</span>
+          <span class="text-xs text-[#94a3b8]">{{ $t('calcDetail.dropFilesFormats') }}</span>
           <label class="doc-dropzone__btn">
-            Выбрать файлы
+            {{ $t('calcDetail.chooseFiles') }}
             <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden" @change="handleFileSelect" />
           </label>
         </div>
@@ -643,10 +641,10 @@ function submitPaymentConfirmation() {
             </div>
             <div class="doc-file-row__name">{{ doc.fileName }}</div>
             <select :value="doc.docType" @change="changeDocType(doc, ($event.target as HTMLSelectElement).value as DocumentType)" class="doc-file-row__type">
-              <option v-for="(label, key) in documentTypeLabels" :key="key" :value="key">{{ label }}</option>
+              <option v-for="dt in documentTypes" :key="dt" :value="dt">{{ getDocumentTypeLabel(dt) }}</option>
             </select>
             <span class="doc-file-row__size">{{ formatFileSize(doc.fileSize) }}</span>
-            <button @click="removeDocument(doc.id)" class="doc-file-row__delete" title="Удалить">
+            <button @click="removeDocument(doc.id)" class="doc-file-row__delete" :title="$t('common.delete')">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
@@ -657,7 +655,7 @@ function submitPaymentConfirmation() {
       <div v-if="!isEditing && calc.documents && calc.documents.length > 0" class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-          Подтверждающие документы ({{ calc.documents.length }})
+          {{ $t('calcDetail.supportingDocs') }} ({{ calc.documents.length }})
         </h2>
         <div class="space-y-2">
           <div v-for="doc in calc.documents" :key="doc.id" class="doc-file-row doc-file-row--readonly">
@@ -665,9 +663,9 @@ function submitPaymentConfirmation() {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
             <div class="doc-file-row__name">{{ doc.fileName }}</div>
-            <span class="doc-file-row__type-badge">{{ documentTypeLabels[doc.docType] }}</span>
+            <span class="doc-file-row__type-badge">{{ getDocumentTypeLabel(doc.docType) }}</span>
             <span class="doc-file-row__size">{{ formatFileSize(doc.fileSize) }}</span>
-            <a v-if="doc.dataUrl" :href="doc.dataUrl" :download="doc.fileName" class="doc-file-row__download" title="Скачать">
+            <a v-if="doc.dataUrl" :href="doc.dataUrl" :download="doc.fileName" class="doc-file-row__download" :title="$t('common.download')">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             </a>
           </div>
@@ -676,27 +674,27 @@ function submitPaymentConfirmation() {
 
       <!-- Totals -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-5">Итоги расчёта</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-5">{{ $t('calcDetail.calcTotals') }}</h2>
         <div class="grid grid-cols-2 lg:grid-cols-5 gap-6">
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Общий объём (Гр.5)</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('calcDetail.totalVolumeGr5') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume }} {{ $t('calcDetail.tons') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Передано на переработку (Гр.8)</p>
-            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferred }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('calcDetail.transferredGr8') }}</p>
+            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferred }} {{ $t('calcDetail.tons') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Вывезено из КР (Гр.9)</p>
-            <p class="text-xl font-bold text-[#2563eb]">{{ totalExported }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('calcDetail.exportedGr9') }}</p>
+            <p class="text-xl font-bold text-[#2563eb]">{{ totalExported }} {{ $t('calcDetail.tons') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Облагаемый объём (Гр.10)</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume }} тонн</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('calcDetail.taxableGr10') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume }} {{ $t('calcDetail.tons') }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#64748b] mb-1">Итого к оплате (Гр.12)</p>
-            <p class="text-2xl font-bold text-[#10b981]">{{ displayTotalAmount.toLocaleString('ru-RU') }} сом</p>
+            <p class="text-sm text-[#64748b] mb-1">{{ $t('calcDetail.totalPayableGr12') }}</p>
+            <p class="text-2xl font-bold text-[#10b981]">{{ displayTotalAmount.toLocaleString() }} {{ $t('calcDetail.som') }}</p>
           </div>
         </div>
       </div>
@@ -704,31 +702,31 @@ function submitPaymentConfirmation() {
       <!-- Графа 13: Сверка платежей -->
       <div class="g13-container mb-6">
         <div class="g13-header">
-          <h3 class="g13-title">Графа 13. Сверка платежей за отчётный период</h3>
+          <h3 class="g13-title">{{ $t('calcDetail.g13Title') }}</h3>
           <div class="g13-tooltip-wrap">
             <svg class="w-4 h-4 text-[#94a3b8] cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div class="g13-tooltip">Заполняется автоматически на основании данных лицевого счёта. Для производителей — по суммам ежеквартальных платежей, для импортёров — по суммам платежей при фактическом ввозе товаров.</div>
+            <div class="g13-tooltip">{{ $t('calcDetail.g13Tooltip') }}</div>
           </div>
         </div>
         <div class="g13-cards">
           <div class="g13-card">
-            <span class="g13-card__label">Начислено за период</span>
-            <span class="g13-card__value">{{ reconciliation.charged.toLocaleString('ru-RU') }} сом</span>
-            <span class="g13-card__sub">Из лицевого счёта</span>
+            <span class="g13-card__label">{{ $t('calcDetail.chargedForPeriod') }}</span>
+            <span class="g13-card__value">{{ reconciliation.charged.toLocaleString() }} {{ $t('calcDetail.som') }}</span>
+            <span class="g13-card__sub">{{ $t('calcDetail.fromPersonalAccount') }}</span>
           </div>
           <div class="g13-card">
-            <span class="g13-card__label">Уплачено за период</span>
-            <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString('ru-RU') }} сом</span>
-            <span class="g13-card__sub">Из лицевого счёта</span>
+            <span class="g13-card__label">{{ $t('calcDetail.paidForPeriod') }}</span>
+            <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString() }} {{ $t('calcDetail.som') }}</span>
+            <span class="g13-card__sub">{{ $t('calcDetail.fromPersonalAccount') }}</span>
           </div>
           <div :class="['g13-card g13-card--diff', reconciliation.difference > 0 ? 'g13-card--debt' : reconciliation.difference < 0 ? 'g13-card--overpay' : 'g13-card--zero']">
-            <span class="g13-card__label">Разница (начислено − уплачено)</span>
+            <span class="g13-card__label">{{ $t('calcDetail.differenceLabel') }}</span>
             <span class="g13-card__value" :class="{ 'g13-card__value--red': reconciliation.difference > 0, 'g13-card__value--green': reconciliation.difference < 0, 'g13-card__value--gray': reconciliation.difference === 0 }">
-              <template v-if="reconciliation.difference > 0">Недоимка: +{{ reconciliation.difference.toLocaleString('ru-RU') }} сом</template>
-              <template v-else-if="reconciliation.difference < 0">Переплата: {{ Math.abs(reconciliation.difference).toLocaleString('ru-RU') }} сом</template>
-              <template v-else>Задолженность отсутствует</template>
+              <template v-if="reconciliation.difference > 0">{{ $t('calcDetail.arrears') }}: +{{ reconciliation.difference.toLocaleString() }} {{ $t('calcDetail.som') }}</template>
+              <template v-else-if="reconciliation.difference < 0">{{ $t('calcDetail.overpayment') }}: {{ Math.abs(reconciliation.difference).toLocaleString() }} {{ $t('calcDetail.som') }}</template>
+              <template v-else>{{ $t('calcDetail.noDebt') }}</template>
             </span>
           </div>
         </div>
@@ -741,20 +739,20 @@ function submitPaymentConfirmation() {
             &#x26A0;&#xFE0F;
           </div>
           <div>
-            <h3 class="font-semibold text-amber-800 mb-1">Повторный расчёт (на основе {{ parentCalc.number }})</h3>
-            <p v-if="parentCalc.rejectionReason" class="text-amber-700 text-sm">Причина отклонения: {{ parentCalc.rejectionReason }}</p>
+            <h3 class="font-semibold text-amber-800 mb-1">{{ $t('calcDetail.repeatCalc', { number: parentCalc.number }) }}</h3>
+            <p v-if="parentCalc.rejectionReason" class="text-amber-700 text-sm">{{ $t('calcDetail.rejectionReason') }}: {{ parentCalc.rejectionReason }}</p>
           </div>
         </div>
       </div>
 
       <!-- Rejection Comment -->
-      <div v-if="calc.status === 'Отклонено' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+      <div v-if="calc.status === 'rejected' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
         <div class="flex items-start gap-4">
           <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 text-lg">
             &#x274C;
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-red-800 mb-1">Расчёт отклонён</h3>
+            <h3 class="font-semibold text-red-800 mb-1">{{ $t('calcDetail.calcRejected') }}</h3>
             <p v-if="calc.rejectedBy || calc.rejectedAt" class="text-sm text-red-600 mb-2">
               <span v-if="calc.rejectedBy">{{ calc.rejectedBy }}</span>
               <span v-if="calc.rejectedAt"> &middot; {{ calc.rejectedAt }}</span>
@@ -762,62 +760,62 @@ function submitPaymentConfirmation() {
             <p class="text-red-700 mb-4">{{ calc.rejectionReason }}</p>
             <button v-if="!isEditing" @click="startEditing" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-              Исправить
+              {{ $t('calcDetail.fix') }}
             </button>
           </div>
         </div>
       </div>
 
       <!-- Payment rejection -->
-      <div v-if="calc.status === 'Оплата отклонена' && calc.paymentRejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+      <div v-if="calc.status === 'payment_rejected' && calc.paymentRejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
         <div class="flex items-start gap-4">
           <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 text-lg">
             &#x274C;
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-red-800 mb-1">Оплата отклонена</h3>
+            <h3 class="font-semibold text-red-800 mb-1">{{ $t('calcDetail.paymentRejected') }}</h3>
             <p class="text-red-700">{{ calc.paymentRejectionReason }}</p>
             <button @click="openPayment" class="mt-3 inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              Подтвердить оплату повторно
+              {{ $t('calcDetail.confirmPaymentAgain') }}
             </button>
           </div>
         </div>
       </div>
 
       <!-- Status block: На проверке -->
-      <div v-if="calc.status === 'На проверке'" class="status-block status-block--yellow mb-6">
+      <div v-if="calc.status === 'under_review'" class="status-block status-block--yellow mb-6">
         <div class="flex items-start gap-4">
           <div class="status-block__icon status-block__icon--yellow">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div>
-            <h3 class="font-semibold text-amber-800">Расчёт на проверке у Эко Оператора</h3>
-            <p class="text-amber-700 text-sm mt-1">Ожидайте результат. Эко Оператор проверит расчёт в течение 3 рабочих дней.</p>
+            <h3 class="font-semibold text-amber-800">{{ $t('calcDetail.underReviewTitle') }}</h3>
+            <p class="text-amber-700 text-sm mt-1">{{ $t('calcDetail.underReviewDesc') }}</p>
           </div>
         </div>
       </div>
 
       <!-- Status block: Принято (with payment) -->
-      <div v-if="calc.status === 'Принято'" class="status-block status-block--green mb-6">
+      <div v-if="calc.status === 'approved'" class="status-block status-block--green mb-6">
         <div class="flex items-start gap-4">
           <div class="status-block__icon status-block__icon--green">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-green-800">Расчёт принят</h3>
+            <h3 class="font-semibold text-green-800">{{ $t('calcDetail.calcApproved') }}</h3>
             <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
               <div>
-                <p class="text-sm text-green-700">Сумма к оплате</p>
-                <p class="text-2xl font-bold text-green-900">{{ calc.totalAmount.toLocaleString('ru-RU') }} сом</p>
+                <p class="text-sm text-green-700">{{ $t('calcDetail.amountToPay') }}</p>
+                <p class="text-2xl font-bold text-green-900">{{ calc.totalAmount.toLocaleString() }} {{ $t('calcDetail.som') }}</p>
               </div>
               <div v-if="computedDueDate">
-                <p class="text-sm text-green-700">Срок оплаты</p>
+                <p class="text-sm text-green-700">{{ $t('calcDetail.paymentDeadline') }}</p>
                 <p class="font-semibold" :class="deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? 'text-red-600' : 'text-green-900'">
                   {{ dueDateFormatted }}
                   <span v-if="deadlineStatus" class="text-xs font-normal ml-1">
-                    <template v-if="deadlineStatus.overdue">(просрочено на {{ deadlineStatus.days }} дн.!)</template>
-                    <template v-else>(осталось {{ deadlineStatus.days }} дн.)</template>
+                    <template v-if="deadlineStatus.overdue">({{ $t('calcDetail.overdueDays', { days: deadlineStatus.days }) }})</template>
+                    <template v-else>({{ $t('calcDetail.remainingDays', { days: deadlineStatus.days }) }})</template>
                   </span>
                 </p>
               </div>
@@ -825,11 +823,11 @@ function submitPaymentConfirmation() {
             <div class="mt-4 flex flex-wrap gap-3">
               <button @click="openPayment" class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg text-sm font-semibold hover:bg-[#059669] transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                Оплатить
+                {{ $t('calcDetail.pay') }}
               </button>
-              <button @click="mockAction('Скачивание счёта')" class="inline-flex items-center gap-2 px-5 py-2.5 border border-green-300 text-green-800 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors">
+              <button @click="mockAction(t('calcDetail.downloadingInvoice'))" class="inline-flex items-center gap-2 px-5 py-2.5 border border-green-300 text-green-800 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                Скачать счёт
+                {{ $t('calcDetail.downloadInvoice') }}
               </button>
             </div>
           </div>
@@ -837,23 +835,23 @@ function submitPaymentConfirmation() {
       </div>
 
       <!-- Status block: Оплата на проверке -->
-      <div v-if="calc.status === 'Оплата на проверке'" class="status-block status-block--orange mb-6">
+      <div v-if="calc.status === 'payment_pending'" class="status-block status-block--orange mb-6">
         <div class="flex items-start gap-4">
           <div class="status-block__icon status-block__icon--orange">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-orange-800">Подтверждение оплаты отправлено</h3>
-            <p class="text-orange-700 text-sm mt-1">Эко Оператор проверяет поступление средств.</p>
+            <h3 class="font-semibold text-orange-800">{{ $t('calcDetail.paymentConfSent') }}</h3>
+            <p class="text-orange-700 text-sm mt-1">{{ $t('calcDetail.paymentConfSentDesc') }}</p>
             <div v-if="calc.payment" class="mt-3 bg-white/60 rounded-lg p-3 border border-orange-200">
               <p class="text-sm text-orange-800">
-                <span class="font-medium">Документ:</span> {{ calc.payment.fileName }}
+                <span class="font-medium">{{ $t('calcDetail.document') }}:</span> {{ calc.payment.fileName }}
               </p>
               <p v-if="calc.payment.paymentDate" class="text-sm text-orange-800 mt-1">
-                <span class="font-medium">Дата оплаты:</span> {{ calc.payment.paymentDate }}
+                <span class="font-medium">{{ $t('calcDetail.paymentDateLabel') }}:</span> {{ calc.payment.paymentDate }}
               </p>
               <p v-if="calc.payment.paymentOrderNumber" class="text-sm text-orange-800 mt-1">
-                <span class="font-medium">Платёжное поручение:</span> {{ calc.payment.paymentOrderNumber }}
+                <span class="font-medium">{{ $t('calcDetail.paymentOrder') }}:</span> {{ calc.payment.paymentOrderNumber }}
               </p>
             </div>
           </div>
@@ -861,14 +859,14 @@ function submitPaymentConfirmation() {
       </div>
 
       <!-- Status block: Оплачено -->
-      <div v-if="calc.status === 'Оплачено'" class="status-block status-block--green mb-6">
+      <div v-if="calc.status === 'paid'" class="status-block status-block--green mb-6">
         <div class="flex items-start gap-4">
           <div class="status-block__icon status-block__icon--green">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
           <div>
-            <h3 class="font-semibold text-green-800">Оплачено</h3>
-            <p v-if="calc.paidAt" class="text-green-700 text-sm mt-1">Дата оплаты: {{ calc.paidAt }}</p>
+            <h3 class="font-semibold text-green-800">{{ $t('calcDetail.paid') }}</h3>
+            <p v-if="calc.paidAt" class="text-green-700 text-sm mt-1">{{ $t('calcDetail.paymentDateLabel') }}: {{ calc.paidAt }}</p>
           </div>
         </div>
       </div>
@@ -879,16 +877,16 @@ function submitPaymentConfirmation() {
         <template v-if="isEditing">
           <button @click="cancelEditing" class="btn-action btn-action-ghost text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            Отмена
+            {{ $t('common.cancel') }}
           </button>
           <div class="flex flex-wrap items-center gap-2">
             <button @click="saveAsDraft" class="btn-action btn-action-secondary text-sm">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
-              Сохранить черновик
+              {{ $t('common.saveDraft') }}
             </button>
             <button @click="saveAndSubmit" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-              Отправить на проверку
+              {{ $t('calcDetail.submitForReview') }}
             </button>
           </div>
         </template>
@@ -897,79 +895,79 @@ function submitPaymentConfirmation() {
         <template v-else>
           <button @click="goBack" class="btn-back">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-            Назад
+            {{ $t('common.back') }}
           </button>
 
           <div class="flex flex-wrap items-center gap-2">
             <!-- Draft actions -->
-            <template v-if="calc.status === 'Черновик'">
+            <template v-if="calc.status === 'draft'">
               <button @click="startEditing" class="btn-action btn-action-primary text-sm">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Редактировать
+                {{ $t('common.edit') }}
               </button>
-              <button @click="mockAction('Удаление расчёта')" class="btn-action btn-action-danger text-sm">
+              <button @click="mockAction(t('calcDetail.deletingCalc'))" class="btn-action btn-action-danger text-sm">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                Удалить
+                {{ $t('common.delete') }}
               </button>
-              <button @click="calculationStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: 'Расчёт отправлен на проверку' })" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
+              <button @click="calculationStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                Отправить на проверку
+                {{ $t('calcDetail.submitForReview') }}
               </button>
             </template>
 
-            <!-- На проверке actions -->
-            <template v-if="calc.status === 'На проверке'">
+            <!-- under_review actions -->
+            <template v-if="calc.status === 'under_review'">
               <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Скачать PDF
+                {{ $t('common.downloadPdf') }}
               </button>
               <button @click="downloadExcel" class="btn-excel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Скачать Excel
+                {{ $t('common.downloadExcel') }}
               </button>
-              <button @click="mockAction('Отзыв расчёта')" class="btn-action btn-action-warning text-sm">
+              <button @click="mockAction(t('calcDetail.recallingCalc'))" class="btn-action btn-action-warning text-sm">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-                Отозвать расчёт
+                {{ $t('calcDetail.recallCalc') }}
               </button>
             </template>
 
-            <!-- Принято actions -->
-            <template v-if="calc.status === 'Принято'">
+            <!-- approved actions -->
+            <template v-if="calc.status === 'approved'">
               <button @click="openPayment" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                Оплатить
+                {{ $t('calcDetail.pay') }}
               </button>
               <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Скачать PDF
+                {{ $t('common.downloadPdf') }}
               </button>
               <button @click="downloadExcel" class="btn-excel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Скачать Excel
+                {{ $t('common.downloadExcel') }}
               </button>
             </template>
 
-            <!-- Отклонено actions -->
-            <template v-if="calc.status === 'Отклонено'">
+            <!-- rejected actions -->
+            <template v-if="calc.status === 'rejected'">
               <button @click="startEditing" class="btn-action text-sm" style="background:#f59e0b; color:#fff; border:1px solid #f59e0b;">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Исправить
+                {{ $t('calcDetail.fix') }}
               </button>
             </template>
 
-            <!-- Оплачено / Оплата на проверке -->
-            <template v-if="calc.status === 'Оплачено' || calc.status === 'Оплата на проверке'">
+            <!-- paid / payment_pending -->
+            <template v-if="calc.status === 'paid' || calc.status === 'payment_pending'">
               <button @click="handleDownloadPdf()" class="btn-pdf">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Скачать PDF
+                {{ $t('common.downloadPdf') }}
               </button>
               <button @click="downloadExcel" class="btn-excel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                Скачать Excel
+                {{ $t('common.downloadExcel') }}
               </button>
               <button @click="handlePrint()" class="btn-print">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                Печать
+                {{ $t('common.print') }}
               </button>
             </template>
           </div>
@@ -983,68 +981,68 @@ function submitPaymentConfirmation() {
       <div v-if="showPaymentModal" class="pay-overlay" @click.self="closePayment">
         <div class="pay-modal">
           <div class="pay-modal__header">
-            <h2 class="text-xl font-bold text-[#1e293b]">Оплата расчёта {{ calc?.number }}</h2>
+            <h2 class="text-xl font-bold text-[#1e293b]">{{ $t('calcDetail.paymentModalTitle', { number: calc?.number }) }}</h2>
             <button @click="closePayment" class="pay-modal__close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
           <div class="pay-modal__amount">
-            Сумма к оплате: <strong>{{ calc?.totalAmount.toLocaleString('ru-RU') }} сом</strong>
+            {{ $t('calcDetail.amountToPay') }}: <strong>{{ calc?.totalAmount.toLocaleString() }} {{ $t('calcDetail.som') }}</strong>
           </div>
 
           <!-- Method tabs -->
           <div class="pay-tabs">
             <button :class="['pay-tab', paymentMethod === 'transfer' ? 'pay-tab--active' : '']" @click="paymentMethod = 'transfer'">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-              Банковский перевод
+              {{ $t('calcDetail.bankTransfer') }}
             </button>
             <button :class="['pay-tab', paymentMethod === 'qr' ? 'pay-tab--active' : '']" @click="paymentMethod = 'qr'">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-              QR-код
+              {{ $t('calcDetail.qrCode') }}
             </button>
             <button class="pay-tab pay-tab--disabled" disabled>
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              Картой (Q2 2026)
+              {{ $t('calcDetail.cardPayment') }}
             </button>
           </div>
 
           <!-- Method: Bank transfer -->
           <div v-if="paymentMethod === 'transfer'" class="pay-body">
             <div class="pay-requisites">
-              <h4 class="text-sm font-semibold text-[#1e293b] mb-3">Реквизиты для оплаты</h4>
+              <h4 class="text-sm font-semibold text-[#1e293b] mb-3">{{ $t('calcDetail.paymentRequisites') }}</h4>
               <table class="pay-req-table">
-                <tr><td>Получатель</td><td>ГП «Эко Оператор»</td></tr>
-                <tr><td>ИНН</td><td class="font-mono">01712202610151</td></tr>
-                <tr><td>Банк</td><td>ОАО «РСК Банк»</td></tr>
-                <tr><td>БИК</td><td class="font-mono">017012</td></tr>
-                <tr><td>Р/с</td><td class="font-mono">1091620100830049</td></tr>
-                <tr><td>Назначение</td><td>Утилизационный сбор по расчёту {{ calc?.number }}</td></tr>
+                <tr><td>{{ $t('calcDetail.recipient') }}</td><td>{{ $t('calcDetail.ecoOperator') }}</td></tr>
+                <tr><td>{{ $t('calcDetail.inn') }}</td><td class="font-mono">01712202610151</td></tr>
+                <tr><td>{{ $t('calcDetail.bank') }}</td><td>{{ $t('calcDetail.rskBank') }}</td></tr>
+                <tr><td>{{ $t('calcDetail.bik') }}</td><td class="font-mono">017012</td></tr>
+                <tr><td>{{ $t('calcDetail.account') }}</td><td class="font-mono">1091620100830049</td></tr>
+                <tr><td>{{ $t('calcDetail.purpose') }}</td><td>{{ $t('calcDetail.paymentPurpose', { number: calc?.number }) }}</td></tr>
               </table>
             </div>
 
             <div class="space-y-4 mt-5">
               <div>
-                <label class="pay-label">Номер платёжного поручения *</label>
-                <input v-model="paymentForm.paymentOrderNumber" type="text" placeholder="ПП-00412" class="pay-input" />
+                <label class="pay-label">{{ $t('calcDetail.paymentOrderNum') }} *</label>
+                <input v-model="paymentForm.paymentOrderNumber" type="text" :placeholder="$t('calcDetail.paymentOrderPlaceholder')" class="pay-input" />
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="pay-label">Дата оплаты *</label>
-                  <input v-model="paymentForm.paymentDate" type="text" placeholder="дд.мм.гггг" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
+                  <label class="pay-label">{{ $t('calcDetail.paymentDateLabel') }} *</label>
+                  <input v-model="paymentForm.paymentDate" type="text" :placeholder="$t('calcDetail.datePlaceholder')" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
                 </div>
                 <div>
-                  <label class="pay-label">Банк плательщика *</label>
-                  <input v-model="paymentForm.payerBank" type="text" placeholder="Оптима Банк" class="pay-input" />
+                  <label class="pay-label">{{ $t('calcDetail.payerBank') }} *</label>
+                  <input v-model="paymentForm.payerBank" type="text" :placeholder="$t('calcDetail.payerBankPlaceholder')" class="pay-input" />
                 </div>
               </div>
               <div>
-                <label class="pay-label">Сумма перевода (сом) *</label>
+                <label class="pay-label">{{ $t('calcDetail.transferAmountLabel') }} *</label>
                 <input v-model="paymentForm.transferAmount" @input="validatePaymentAmount" type="number" :placeholder="String(calc?.totalAmount || '')" class="pay-input" :class="{ 'pay-input--error': paymentAmountError }" />
                 <p v-if="paymentAmountError" class="text-xs text-red-600 mt-1">{{ paymentAmountError }}</p>
               </div>
               <div>
-                <label class="pay-label">Скан/фото платёжного поручения *</label>
+                <label class="pay-label">{{ $t('calcDetail.paymentScanLabel') }} *</label>
                 <div
                   v-if="!paymentFile"
                   class="pay-dropzone"
@@ -1054,10 +1052,10 @@ function submitPaymentConfirmation() {
                   @drop.prevent="handlePaymentFileDrop"
                 >
                   <svg class="w-8 h-8 text-[#94a3b8] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                  <span class="text-sm text-[#64748b]">Перетащите файл или нажмите</span>
-                  <span class="text-xs text-[#94a3b8]">PDF, JPG, PNG — до 10 МБ</span>
+                  <span class="text-sm text-[#64748b]">{{ $t('calcDetail.dropFileHere') }}</span>
+                  <span class="text-xs text-[#94a3b8]">{{ $t('calcDetail.dropFileFormats') }}</span>
                   <label class="pay-dropzone__btn">
-                    Выбрать файл
+                    {{ $t('calcDetail.chooseFile') }}
                     <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handlePaymentFileSelect" />
                   </label>
                 </div>
@@ -1074,15 +1072,15 @@ function submitPaymentConfirmation() {
                 </div>
               </div>
               <div>
-                <label class="pay-label">Комментарий</label>
-                <textarea v-model="paymentForm.comment" rows="2" placeholder="Необязательно" class="pay-input"></textarea>
+                <label class="pay-label">{{ $t('calcDetail.comment') }}</label>
+                <textarea v-model="paymentForm.comment" rows="2" :placeholder="$t('calcDetail.optional')" class="pay-input"></textarea>
               </div>
             </div>
 
             <div class="flex justify-end gap-3 mt-6 pt-5 border-t border-[#e2e8f0]">
-              <button @click="closePayment" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] text-sm transition-colors">Отмена</button>
+              <button @click="closePayment" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] text-sm transition-colors">{{ $t('common.cancel') }}</button>
               <button @click="submitPaymentConfirmation" :disabled="!canSubmitPayment" class="px-6 py-2.5 bg-[#10b981] text-white rounded-lg font-medium text-sm hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                Отправить на проверку
+                {{ $t('calcDetail.submitForReview') }}
               </button>
             </div>
           </div>
@@ -1091,11 +1089,11 @@ function submitPaymentConfirmation() {
           <div v-else-if="paymentMethod === 'qr'" class="pay-body text-center">
             <div class="bg-[#f8fafc] rounded-xl p-6 inline-block mx-auto">
               <div class="w-48 h-48 bg-white rounded-lg border border-[#e2e8f0] flex items-center justify-center mx-auto mb-4">
-                <p class="text-xs text-[#94a3b8] px-4">QR-код для оплаты будет сгенерирован при подключении платёжной системы</p>
+                <p class="text-xs text-[#94a3b8] px-4">{{ $t('calcDetail.qrPlaceholder') }}</p>
               </div>
-              <p class="text-sm text-[#64748b]">Отсканируйте QR-код в мобильном банке</p>
+              <p class="text-sm text-[#64748b]">{{ $t('calcDetail.scanQr') }}</p>
             </div>
-            <p class="text-xs text-[#94a3b8] mt-4">Функция будет доступна после интеграции с платёжной системой</p>
+            <p class="text-xs text-[#94a3b8] mt-4">{{ $t('calcDetail.qrAvailableLater') }}</p>
           </div>
         </div>
       </div>

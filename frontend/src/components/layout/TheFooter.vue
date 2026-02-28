@@ -1,13 +1,18 @@
 <script setup lang="ts">
-const footerLinks = [
-  { name: 'legislation', path: '/legislation', label: 'Законодательство' },
-  { name: 'licenses', path: '/licenses', label: 'Лицензии' },
-  { name: 'publications', path: '/publications', label: 'Публикации' },
-  { name: 'registries', path: '/registries', label: 'Реестры' },
-  { name: 'calculator', path: '/calculator', label: 'Калькулятор РОП' },
-  { name: 'contests', path: '/contests', label: 'Конкурсы' },
-  { name: 'glossary', path: '/glossary', label: 'Глоссарий' },
-]
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const footerLinks = computed(() => [
+  { name: 'legislation', path: '/legislation', label: t('nav.legislation') },
+  { name: 'licenses', path: '/licenses', label: t('nav.licenses') },
+  { name: 'publications', path: '/publications', label: t('nav.publications') },
+  { name: 'registries', path: '/registries', label: t('nav.registries') },
+  { name: 'calculator', path: '/calculator', label: t('nav.calculator') },
+  { name: 'contests', path: '/contests', label: t('nav.contests') },
+  { name: 'glossary', path: '/glossary', label: t('nav.glossary') },
+])
 
 const socialLinks = [
   { name: 'instagram', icon: '/images/social/instagram.svg', url: 'https://instagram.com/reestr_kg', label: 'Instagram', handle: 'reestr_kg' },
@@ -25,7 +30,7 @@ const socialLinks = [
       <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between py-5 lg:py-6 gap-4 lg:gap-0">
         <!-- Logo -->
         <router-link to="/" class="flex items-center">
-          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="max-height: 48px; width: auto; object-fit: contain;" />
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="max-height: 48px; width: auto; object-fit: contain;" />
         </router-link>
 
         <!-- Footer navigation -->
@@ -70,8 +75,8 @@ const socialLinks = [
           <div class="flex items-center gap-3">
             <img src="/images/icons/clock.svg" alt="clock" class="w-5 h-5 lg:w-6 lg:h-6 flex-shrink-0" />
             <div class="text-[#415861] text-xs leading-[15px]">
-              <p>Пн-Пт: 9:00 - 18:00</p>
-              <p>Сб-Вс: выходной</p>
+              <p>{{ $t('common.workHours') }}</p>
+              <p>{{ $t('common.weekendHours') }}</p>
             </div>
           </div>
 
@@ -79,8 +84,8 @@ const socialLinks = [
           <div class="flex items-center gap-3">
             <img src="/images/icons/map-pin.svg" alt="location" class="w-5 h-5 lg:w-6 lg:h-6 flex-shrink-0" />
             <div class="text-[#415861] text-xs leading-[15px]">
-              <p>720040, г. Бишкек</p>
-              <p>ул. Токтогула, 228</p>
+              <p>{{ $t('common.addressZip') }}</p>
+              <p>{{ $t('common.addressStreet') }}</p>
             </div>
           </div>
         </div>

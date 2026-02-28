@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -11,8 +12,10 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import QRCode from 'qrcode'
+import { CalcStatus } from '../../constants/statuses'
 
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const isLoading = ref(true)
@@ -23,19 +26,19 @@ const companyName = 'ОсОО «ТехПром»'
 
 const approvedCalcs = computed(() =>
   calculationStore.getBusinessCalculations(companyName).filter(c =>
-    ['Принято', 'Оплата на проверке', 'Оплачено', 'Оплата отклонена'].includes(c.status)
+    [CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(c.status as any)
   )
 )
 
 const totalCharged = computed(() => approvedCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
 const totalPaid = computed(() =>
-  approvedCalcs.value.filter(c => c.status === 'Оплачено').reduce((s, c) => s + c.totalAmount, 0)
+  approvedCalcs.value.filter(c => c.status === CalcStatus.PAID).reduce((s, c) => s + c.totalAmount, 0)
 )
 const accountBalance = computed(() => totalPaid.value - totalCharged.value)
 
 const lastPaymentDate = computed(() => {
   const paidCalcs = calculationStore.getBusinessCalculations(companyName)
-    .filter(c => c.status === 'Оплачено' && c.paidAt)
+    .filter(c => c.status === CalcStatus.PAID && c.paidAt)
   if (!paidCalcs.length) return '—'
   const sorted = [...paidCalcs].sort((a, b) => {
     const [da, ma, ya] = (a.paidAt || '').split('.')
@@ -46,7 +49,7 @@ const lastPaymentDate = computed(() => {
 })
 
 const unpaidCalcs = computed(() =>
-  calculationStore.getBusinessCalculations(companyName).filter(c => c.status === 'Принято')
+  calculationStore.getBusinessCalculations(companyName).filter(c => c.status === CalcStatus.APPROVED)
 )
 const totalUnpaid = computed(() => unpaidCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
 
@@ -86,31 +89,31 @@ const filteredTransactions = computed(() => {
   return result
 })
 
-const columns = [
-  { key: 'date', label: 'Дата', width: '100px' },
-  { key: 'type', label: 'Тип', width: '120px' },
-  { key: 'description', label: 'Описание' },
-  { key: 'amount', label: 'Сумма', width: '130px' },
-  { key: 'balance', label: 'Баланс', width: '130px' },
-]
+const columns = computed(() => [
+  { key: 'date', label: t('common.date'), width: '100px' },
+  { key: 'type', label: t('common.type'), width: '120px' },
+  { key: 'description', label: t('common.description'), width: undefined },
+  { key: 'amount', label: t('common.amount'), width: '130px' },
+  { key: 'balance', label: t('businessAccount.balance'), width: '130px' },
+])
 
 const tableData = computed(() =>
-  filteredTransactions.value.map(t => ({
-    id: t.id,
-    date: t.date,
-    type: t.type,
-    typeLabel: t.type === 'charge' ? 'Начисление' : t.type === 'payment' ? 'Оплата' : t.type === 'correction' ? 'Корректировка' : t.type === 'offset' ? 'Зачёт' : 'Возврат',
-    description: t.description,
-    calculationId: t.calculationId,
-    calculationNumber: t.calculationNumber,
-    chargeAmount: t.chargeAmount,
-    paymentAmount: t.paymentAmount,
-    amount: t.type === 'charge' ? -t.chargeAmount : t.paymentAmount || t.offsetAmount,
-    balance: t.balance,
+  filteredTransactions.value.map(tx => ({
+    id: tx.id,
+    date: tx.date,
+    type: tx.type,
+    typeLabel: tx.type === 'charge' ? t('businessAccount.typeCharge') : tx.type === 'payment' ? t('businessAccount.typePayment') : tx.type === 'correction' ? t('businessAccount.typeCorrection') : tx.type === 'offset' ? t('businessAccount.typeOffset') : t('businessAccount.typeRefund'),
+    description: tx.description,
+    calculationId: tx.calculationId,
+    calculationNumber: tx.calculationNumber,
+    chargeAmount: tx.chargeAmount,
+    paymentAmount: tx.paymentAmount,
+    amount: tx.type === 'charge' ? -tx.chargeAmount : tx.paymentAmount || tx.offsetAmount,
+    balance: tx.balance,
   }))
 )
 
-const formatAmount = (n: number) => n.toLocaleString('ru-RU') + ' сом'
+const formatAmount = (n: number) => n.toLocaleString() + ' ' + t('common.som')
 
 // ── Payment detail modal (for viewing past payments) ──
 const showPaymentDetailModal = ref(false)
@@ -133,7 +136,7 @@ const openPaymentDetail = (row: any) => {
     calcId: row.calculationId,
     date: row.date,
     amount: row.paymentAmount,
-    status: calc?.status === 'Оплачено' ? 'Оплачен' : 'Оплата на проверке',
+    status: calc?.status === CalcStatus.PAID ? 'paid' : 'payment_pending',
     paymentOrderNumber: calc?.payment?.paymentOrderNumber || '—',
     bank: calc?.payment?.payerBank || '—',
     fileName: calc?.payment?.fileName || null,
@@ -187,9 +190,9 @@ const bankDetails = {
 
 const copyRequisites = () => {
   const c = payingCalc.value
-  const text = `Получатель: ${bankDetails.recipient}\nИНН: ${bankDetails.inn}\nБанк: ${bankDetails.bank}\nБИК: ${bankDetails.bik}\nР/с: ${bankDetails.account}\nНазначение: Утилизационный сбор по расчёту №${c?.number || ''}\nСумма: ${c ? c.totalAmount.toLocaleString('ru-RU') : ''} сом`
+  const text = `${t('businessAccount.recipient')}: ${bankDetails.recipient}\n${t('businessAccount.inn')}: ${bankDetails.inn}\n${t('businessAccount.bankLabel')}: ${bankDetails.bank}\n${t('businessAccount.bik')}: ${bankDetails.bik}\n${t('businessAccount.accountNumber')}: ${bankDetails.account}\n${t('businessAccount.purpose')}: ${t('businessAccount.recyclingFeeForCalc', { number: c?.number || '' })}\n${t('common.amount')}: ${c ? c.totalAmount.toLocaleString() : ''} ${t('common.som')}`
   navigator.clipboard.writeText(text)
-  toastStore.show({ type: 'success', title: 'Реквизиты скопированы' })
+  toastStore.show({ type: 'success', title: t('businessAccount.requisitesCopied') })
 }
 
 // Payment file upload
@@ -208,7 +211,7 @@ const handlePaymentFileSelect = (e: Event) => {
 }
 const pickPaymentFile = (file: File) => {
   if (file.size > 10 * 1024 * 1024) {
-    toastStore.show({ type: 'error', title: 'Файл слишком большой (макс. 10 МБ)' })
+    toastStore.show({ type: 'error', title: t('businessAccount.fileTooLarge') })
     return
   }
   paymentFile.value = file
@@ -224,9 +227,9 @@ const submitPaymentConfirmation = () => {
   const c = payingCalc.value
   const calc = calculationStore.getCalculationById(c.id)
   if (calc) {
-    ;(calc as any).status = 'Оплата на проверке'
+    ;(calc as any).status = CalcStatus.PAYMENT_PENDING
   }
-  toastStore.show({ type: 'success', title: 'Документ об оплате отправлен', description: 'Эко Оператор проверит поступление средств.' })
+  toastStore.show({ type: 'success', title: t('businessAccount.paymentDocSent'), description: t('businessAccount.ecoOperatorWillVerify') })
   closePayment()
 }
 
@@ -235,7 +238,7 @@ const qrDataUrl = ref('')
 const generateQR = async () => {
   if (!payingCalc.value) return
   const c = payingCalc.value
-  const text = `Получатель: ${bankDetails.recipient}\nИНН: ${bankDetails.inn}\nР/с: ${bankDetails.account}\nСумма: ${c.totalAmount.toLocaleString('ru-RU')} сом\nНазначение: Утильсбор ${c.number}`
+  const text = `${t('businessAccount.recipient')}: ${bankDetails.recipient}\n${t('businessAccount.inn')}: ${bankDetails.inn}\n${t('businessAccount.accountNumber')}: ${bankDetails.account}\n${t('common.amount')}: ${c.totalAmount.toLocaleString()} ${t('common.som')}\n${t('businessAccount.purpose')}: ${t('businessAccount.recyclingFeeShort')} ${c.number}`
   try {
     qrDataUrl.value = await QRCode.toDataURL(text, { width: 180, margin: 2, color: { dark: '#1e293b', light: '#ffffff' } })
   } catch { qrDataUrl.value = '' }
@@ -256,8 +259,8 @@ const downloadPaymentPdf = async () => {
   <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
     <!-- Header -->
     <div class="content__header mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Лицевой счёт</h1>
-      <p class="text-[#64748b]">Финансовый лицевой счёт, начисления и оплаты</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessAccount.title') }}</h1>
+      <p class="text-[#64748b]">{{ $t('businessAccount.subtitle') }}</p>
     </div>
 
     <template v-if="isLoading">
@@ -274,10 +277,10 @@ const downloadPaymentPdf = async () => {
             <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
               <svg class="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
             </div>
-            <p class="text-sm text-[#64748b]">Начислено</p>
+            <p class="text-sm text-[#64748b]">{{ $t('businessAccount.charged') }}</p>
           </div>
           <p class="text-2xl font-bold text-[#1e293b]">{{ formatAmount(totalCharged) }}</p>
-          <p class="text-xs text-[#94a3b8] mt-1">за всё время</p>
+          <p class="text-xs text-[#94a3b8] mt-1">{{ $t('businessAccount.forAllTime') }}</p>
         </div>
         <!-- Оплачено -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
@@ -285,10 +288,10 @@ const downloadPaymentPdf = async () => {
             <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
               <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             </div>
-            <p class="text-sm text-[#64748b]">Оплачено</p>
+            <p class="text-sm text-[#64748b]">{{ $t('businessAccount.paid') }}</p>
           </div>
           <p class="text-2xl font-bold text-green-600">{{ formatAmount(totalPaid) }}</p>
-          <p class="text-xs text-[#94a3b8] mt-1">подтверждено</p>
+          <p class="text-xs text-[#94a3b8] mt-1">{{ $t('businessAccount.confirmed') }}</p>
         </div>
         <!-- Задолженность / Переплата -->
         <div :class="['rounded-2xl p-5 shadow-sm border', accountBalance >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
@@ -296,10 +299,10 @@ const downloadPaymentPdf = async () => {
             <div :class="['w-10 h-10 rounded-xl flex items-center justify-center', accountBalance >= 0 ? 'bg-green-200' : 'bg-red-200']">
               <svg :class="['w-5 h-5', accountBalance >= 0 ? 'text-green-700' : 'text-red-700']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
-            <p class="text-sm text-[#64748b]">{{ accountBalance >= 0 ? 'Переплата' : 'Задолженность' }}</p>
+            <p class="text-sm text-[#64748b]">{{ accountBalance >= 0 ? $t('businessAccount.overpayment') : $t('businessAccount.debt') }}</p>
           </div>
           <p :class="['text-2xl font-bold', accountBalance >= 0 ? 'text-green-700' : 'text-red-700']">{{ formatAmount(Math.abs(accountBalance)) }}</p>
-          <p :class="['text-xs mt-1', accountBalance >= 0 ? 'text-green-600' : 'text-red-600']">{{ accountBalance >= 0 ? 'баланс положительный' : 'требуется оплата' }}</p>
+          <p :class="['text-xs mt-1', accountBalance >= 0 ? 'text-green-600' : 'text-red-600']">{{ accountBalance >= 0 ? $t('businessAccount.balancePositive') : $t('businessAccount.paymentRequired') }}</p>
         </div>
         <!-- Последний платёж -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
@@ -307,10 +310,10 @@ const downloadPaymentPdf = async () => {
             <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
               <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </div>
-            <p class="text-sm text-[#64748b]">Последний платёж</p>
+            <p class="text-sm text-[#64748b]">{{ $t('businessAccount.lastPayment') }}</p>
           </div>
           <p class="text-2xl font-bold text-[#1e293b]">{{ lastPaymentDate }}</p>
-          <p class="text-xs text-[#94a3b8] mt-1">дата оплаты</p>
+          <p class="text-xs text-[#94a3b8] mt-1">{{ $t('businessAccount.paymentDate') }}</p>
         </div>
       </div>
 
@@ -321,25 +324,25 @@ const downloadPaymentPdf = async () => {
             <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div>
-            <p class="font-semibold text-amber-800">У вас {{ unpaidCalcs.length }} {{ unpaidCalcs.length === 1 ? 'неоплаченный счёт' : 'неоплаченных счёта' }} на сумму {{ formatAmount(totalUnpaid) }}</p>
-            <p class="text-sm text-amber-700 mt-1">Оплатите в срок, чтобы избежать начисления пени</p>
+            <p class="font-semibold text-amber-800">{{ $t('businessAccount.unpaidInvoicesWarning', { count: unpaidCalcs.length, amount: formatAmount(totalUnpaid) }) }}</p>
+            <p class="text-sm text-amber-700 mt-1">{{ $t('businessAccount.payOnTimeWarning') }}</p>
           </div>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6 overflow-hidden">
           <div class="px-6 py-4 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-semibold text-[#1e293b]">Неоплаченные счета</h2>
+            <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('businessAccount.unpaidInvoices') }}</h2>
           </div>
           <!-- Desktop table -->
           <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-sm">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em]">
-                  <th class="px-4 py-3">Расчёт</th>
-                  <th class="px-4 py-3">Период</th>
-                  <th class="px-4 py-3">Сумма</th>
-                  <th class="px-4 py-3">Дата расчёта</th>
-                  <th class="px-4 py-3 text-right">Действия</th>
+                  <th class="px-4 py-3">{{ $t('businessAccount.calculation') }}</th>
+                  <th class="px-4 py-3">{{ $t('common.period') }}</th>
+                  <th class="px-4 py-3">{{ $t('common.amount') }}</th>
+                  <th class="px-4 py-3">{{ $t('businessAccount.calculationDate') }}</th>
+                  <th class="px-4 py-3 text-right">{{ $t('common.actions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -348,12 +351,12 @@ const downloadPaymentPdf = async () => {
                     <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline">{{ c.number }}</router-link>
                   </td>
                   <td class="px-4 py-3 text-[#64748b]">{{ c.period }}</td>
-                  <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ c.totalAmount.toLocaleString('ru-RU') }} сом</td>
+                  <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ c.totalAmount.toLocaleString() }} {{ $t('common.som') }}</td>
                   <td class="px-4 py-3 text-[#64748b]">{{ c.date }}</td>
                   <td class="px-4 py-3 text-right">
                     <button @click="openPayment(c.id)" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] text-white rounded-lg text-xs font-medium hover:bg-[#16a34a] transition-colors">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                      Оплатить
+                      {{ $t('businessAccount.pay') }}
                     </button>
                   </td>
                 </tr>
@@ -368,12 +371,12 @@ const downloadPaymentPdf = async () => {
                 <span class="text-xs text-[#64748b]">{{ c.date }}</span>
               </div>
               <div class="grid grid-cols-2 gap-2 text-sm mb-3">
-                <div><span class="text-[#94a3b8] text-xs">Период</span><br>{{ c.period }}</div>
-                <div><span class="text-[#94a3b8] text-xs">Сумма</span><br><strong class="text-[#1e293b]">{{ c.totalAmount.toLocaleString('ru-RU') }} сом</strong></div>
+                <div><span class="text-[#94a3b8] text-xs">{{ $t('common.period') }}</span><br>{{ c.period }}</div>
+                <div><span class="text-[#94a3b8] text-xs">{{ $t('common.amount') }}</span><br><strong class="text-[#1e293b]">{{ c.totalAmount.toLocaleString() }} {{ $t('common.som') }}</strong></div>
               </div>
               <button @click="openPayment(c.id)" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#22c55e] text-white rounded-lg text-sm font-medium hover:bg-[#16a34a] transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                Оплатить
+                {{ $t('businessAccount.pay') }}
               </button>
             </div>
           </div>
@@ -387,7 +390,7 @@ const downloadPaymentPdf = async () => {
             <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
               <svg class="w-4 h-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
             </div>
-            <h2 class="text-base font-semibold text-[#1e293b]">Способы оплаты</h2>
+            <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('businessAccount.paymentMethods') }}</h2>
           </div>
           <svg :class="['w-5 h-5 text-[#94a3b8] transition-transform duration-200', showPaymentMethods ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
         </button>
@@ -400,9 +403,9 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#9ca3af] text-sm">Банковская карта</p>
-                  <p class="text-xs text-[#d1d5db]">Visa, MasterCard, Элкарт</p>
-                  <p class="text-xs text-amber-600 mt-1">Скоро (Q2 2026)</p>
+                  <p class="font-medium text-[#9ca3af] text-sm">{{ $t('businessAccount.bankCard') }}</p>
+                  <p class="text-xs text-[#d1d5db]">Visa, MasterCard, {{ $t('businessAccount.elcart') }}</p>
+                  <p class="text-xs text-amber-600 mt-1">{{ $t('businessAccount.comingSoonQ2') }}</p>
                 </div>
               </div>
               <!-- QR-код -->
@@ -411,9 +414,9 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b] text-sm">QR-код</p>
-                  <p class="text-xs text-[#64748b]">MBANK, O!Деньги, Элсом</p>
-                  <p class="text-xs text-amber-600 mt-1">В процессе подключения</p>
+                  <p class="font-medium text-[#1e293b] text-sm">{{ $t('businessAccount.qrCode') }}</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('businessAccount.qrProviders') }}</p>
+                  <p class="text-xs text-amber-600 mt-1">{{ $t('businessAccount.connectionInProgress') }}</p>
                 </div>
               </div>
               <!-- Банковский перевод -->
@@ -422,13 +425,13 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b] text-sm">Банковский перевод</p>
-                  <p class="text-xs text-[#64748b]">По реквизитам в любом банке</p>
+                  <p class="font-medium text-[#1e293b] text-sm">{{ $t('businessAccount.bankTransfer') }}</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('businessAccount.bankTransferDesc') }}</p>
                   <div class="mt-2 text-xs text-[#64748b] space-y-0.5">
-                    <p><span class="text-[#94a3b8]">Получатель:</span> {{ bankDetails.recipient }}</p>
-                    <p><span class="text-[#94a3b8]">ИНН:</span> <span class="font-mono">{{ bankDetails.inn }}</span></p>
-                    <p><span class="text-[#94a3b8]">Банк:</span> {{ bankDetails.bank }}</p>
-                    <p><span class="text-[#94a3b8]">Р/с:</span> <span class="font-mono">{{ bankDetails.account }}</span></p>
+                    <p><span class="text-[#94a3b8]">{{ $t('businessAccount.recipient') }}:</span> {{ bankDetails.recipient }}</p>
+                    <p><span class="text-[#94a3b8]">{{ $t('businessAccount.inn') }}:</span> <span class="font-mono">{{ bankDetails.inn }}</span></p>
+                    <p><span class="text-[#94a3b8]">{{ $t('businessAccount.bankLabel') }}:</span> {{ bankDetails.bank }}</p>
+                    <p><span class="text-[#94a3b8]">{{ $t('businessAccount.accountNumber') }}:</span> <span class="font-mono">{{ bankDetails.account }}</span></p>
                   </div>
                 </div>
               </div>
@@ -439,12 +442,12 @@ const downloadPaymentPdf = async () => {
 
       <!-- BLOCK 4: Operations History -->
       <div class="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 class="text-lg font-semibold text-[#1e293b]">История операций</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('businessAccount.operationsHistory') }}</h2>
         <div class="flex flex-wrap gap-2">
           <!-- Period filter -->
           <div class="flex gap-1 mr-2">
             <button
-              v-for="opt in [{ v: 'all', l: 'Всё время' }, { v: 'month', l: 'Месяц' }, { v: 'quarter', l: 'Квартал' }, { v: 'year', l: 'Год' }]"
+              v-for="opt in [{ v: 'all', l: $t('businessAccount.allTime') }, { v: 'month', l: $t('businessAccount.month') }, { v: 'quarter', l: $t('businessAccount.quarter') }, { v: 'year', l: $t('businessAccount.year') }]"
               :key="opt.v"
               @click="filterPeriod = opt.v as any"
               :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterPeriod === opt.v ? 'bg-blue-600 text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]']"
@@ -453,7 +456,7 @@ const downloadPaymentPdf = async () => {
           <!-- Type filter -->
           <div class="flex gap-1">
             <button
-              v-for="opt in [{ v: 'all', l: 'Все' }, { v: 'charge', l: 'Начисления' }, { v: 'payment', l: 'Оплаты' }]"
+              v-for="opt in [{ v: 'all', l: $t('common.all') }, { v: 'charge', l: $t('businessAccount.charges') }, { v: 'payment', l: $t('businessAccount.payments') }]"
               :key="opt.v"
               @click="filterType = opt.v as any"
               :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterType === opt.v ? 'bg-[#1e293b] text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]']"
@@ -466,8 +469,8 @@ const downloadPaymentPdf = async () => {
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M20 13.33v5m0 0v5m0-5h5m-5 0h-5M35 20a15 15 0 11-30 0 15 15 0 0130 0z&quot;/></svg>'"
-            title="Нет операций"
-            description="Операции появятся после первого начисления"
+            :title="$t('businessAccount.noOperations')"
+            :description="$t('businessAccount.noOperationsDesc')"
           />
         </template>
         <template #cell-date="{ value }">
@@ -492,12 +495,12 @@ const downloadPaymentPdf = async () => {
         </template>
         <template #cell-amount="{ row }">
           <span :class="['text-sm font-semibold', row.amount > 0 ? 'text-green-600' : 'text-red-600']">
-            {{ row.amount > 0 ? '+' : '' }}{{ row.amount.toLocaleString('ru-RU') }} сом
+            {{ row.amount > 0 ? '+' : '' }}{{ row.amount.toLocaleString() }} {{ $t('common.som') }}
           </span>
         </template>
         <template #cell-balance="{ value }">
           <span :class="['text-sm font-bold', value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-[#94a3b8]']">
-            {{ value.toLocaleString('ru-RU') }} сом
+            {{ value.toLocaleString() }} {{ $t('common.som') }}
           </span>
         </template>
         <template #actions="{ row }">
@@ -506,7 +509,7 @@ const downloadPaymentPdf = async () => {
             class="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
           >
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-            {{ row.type === 'payment' ? 'Детали' : 'Открыть' }}
+            {{ row.type === 'payment' ? $t('common.details') : $t('businessAccount.open') }}
           </button>
         </template>
       </DataTable>
@@ -518,7 +521,7 @@ const downloadPaymentPdf = async () => {
         <div class="pm-modal">
           <!-- Header -->
           <div class="pm-header">
-            <h2 class="text-lg font-bold text-[#1e293b]">Оплата расчёта №{{ payingCalc.number }}</h2>
+            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('businessAccount.paymentForCalc', { number: payingCalc.number }) }}</h2>
             <button @click="closePayment" class="pm-close">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -526,12 +529,12 @@ const downloadPaymentPdf = async () => {
 
           <!-- Amount -->
           <div class="text-center py-4 border-b border-[#e2e8f0]">
-            <p class="text-sm text-[#64748b]">Сумма к оплате</p>
-            <p class="text-3xl font-bold text-[#16a34a] mt-1">{{ payingCalc.totalAmount.toLocaleString('ru-RU') }} сом</p>
+            <p class="text-sm text-[#64748b]">{{ $t('businessAccount.amountToPay') }}</p>
+            <p class="text-3xl font-bold text-[#16a34a] mt-1">{{ payingCalc.totalAmount.toLocaleString() }} {{ $t('common.som') }}</p>
           </div>
 
           <div class="pm-body">
-            <p class="text-sm font-semibold text-[#64748b] mb-4">Выберите способ оплаты:</p>
+            <p class="text-sm font-semibold text-[#64748b] mb-4">{{ $t('businessAccount.choosePaymentMethod') }}:</p>
 
             <!-- Method 1: Bank Transfer -->
             <div class="pm-method">
@@ -540,33 +543,33 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#1e293b]">Банковский перевод</p>
-                  <p class="text-xs text-[#94a3b8]">Рекомендуется для сумм свыше 50 000 сом</p>
+                  <p class="font-semibold text-[#1e293b]">{{ $t('businessAccount.bankTransfer') }}</p>
+                  <p class="text-xs text-[#94a3b8]">{{ $t('businessAccount.recommendedForLargeAmounts') }}</p>
                 </div>
               </div>
 
               <div class="pm-reqs">
-                <div class="pm-req-row"><span class="pm-req-label">Получатель</span><span class="pm-req-value">{{ bankDetails.recipient }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">ИНН</span><span class="pm-req-value font-mono">{{ bankDetails.inn }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">Банк</span><span class="pm-req-value">{{ bankDetails.bank }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">БИК</span><span class="pm-req-value font-mono">{{ bankDetails.bik }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">Р/с</span><span class="pm-req-value font-mono">{{ bankDetails.account }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">Назначение</span><span class="pm-req-value">Утилизационный сбор по расчёту №{{ payingCalc.number }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.recipient') }}</span><span class="pm-req-value">{{ bankDetails.recipient }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.inn') }}</span><span class="pm-req-value font-mono">{{ bankDetails.inn }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.bankLabel') }}</span><span class="pm-req-value">{{ bankDetails.bank }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.bik') }}</span><span class="pm-req-value font-mono">{{ bankDetails.bik }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.accountNumber') }}</span><span class="pm-req-value font-mono">{{ bankDetails.account }}</span></div>
+                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.purpose') }}</span><span class="pm-req-value">{{ $t('businessAccount.recyclingFeeForCalc', { number: payingCalc.number }) }}</span></div>
               </div>
 
               <div class="flex gap-2 mb-4">
                 <button @click="copyRequisites" class="pm-btn pm-btn--outline">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                  Копировать реквизиты
+                  {{ $t('businessAccount.copyRequisites') }}
                 </button>
                 <button @click="showInvoicePreview = true" class="pm-btn pm-btn--outline">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  Скачать счёт PDF
+                  {{ $t('businessAccount.downloadInvoicePdf') }}
                 </button>
               </div>
 
               <!-- Upload payment confirmation -->
-              <p class="text-xs font-semibold text-[#64748b] mb-2">После оплаты загрузите подтверждающий документ:</p>
+              <p class="text-xs font-semibold text-[#64748b] mb-2">{{ $t('businessAccount.uploadConfirmationDoc') }}:</p>
               <div
                 v-if="!paymentFile"
                 class="pm-dropzone"
@@ -576,8 +579,8 @@ const downloadPaymentPdf = async () => {
                 @drop.prevent="handlePaymentFileDrop"
               >
                 <svg class="w-8 h-8 text-[#94a3b8] mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                <p class="text-sm text-[#64748b]">Перетащите файл или <label class="text-blue-600 cursor-pointer hover:underline">выберите<input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" @change="handlePaymentFileSelect" /></label></p>
-                <p class="text-xs text-[#94a3b8] mt-1">Платёжное поручение, квитанция, выписка — PDF, JPG, PNG до 10 МБ</p>
+                <p class="text-sm text-[#64748b]">{{ $t('businessAccount.dragFileOr') }} <label class="text-blue-600 cursor-pointer hover:underline">{{ $t('businessAccount.selectFile') }}<input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png" @change="handlePaymentFileSelect" /></label></p>
+                <p class="text-xs text-[#94a3b8] mt-1">{{ $t('businessAccount.fileFormats') }}</p>
               </div>
               <div v-else class="pm-file">
                 <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -591,8 +594,8 @@ const downloadPaymentPdf = async () => {
                 @click="submitPaymentConfirmation"
                 :disabled="!paymentFile"
                 :class="['w-full mt-3 py-2.5 rounded-xl text-sm font-semibold transition-colors', paymentFile ? 'bg-[#22c55e] text-white hover:bg-[#16a34a]' : 'bg-gray-200 text-gray-400 cursor-not-allowed']"
-              >Отправить на подтверждение</button>
-              <p class="text-xs text-[#94a3b8] mt-2 text-center">Эко Оператор проверит поступление средств и подтвердит оплату</p>
+              >{{ $t('businessAccount.sendForConfirmation') }}</button>
+              <p class="text-xs text-[#94a3b8] mt-2 text-center">{{ $t('businessAccount.ecoOperatorWillVerify') }}</p>
             </div>
 
             <!-- Method 2: QR Code -->
@@ -602,19 +605,19 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#1e293b]">QR-код</p>
-                  <p class="text-xs text-[#94a3b8]">Для сумм до 50 000 сом через мобильный банкинг</p>
+                  <p class="font-semibold text-[#1e293b]">{{ $t('businessAccount.qrCode') }}</p>
+                  <p class="text-xs text-[#94a3b8]">{{ $t('businessAccount.qrCodeDesc') }}</p>
                 </div>
               </div>
               <div class="flex items-start gap-5 mt-3">
                 <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR-код" class="w-[140px] h-[140px] rounded-lg border border-[#e2e8f0]" />
                 <div class="flex-1">
-                  <p class="text-sm text-[#374151] mb-2">Отсканируйте QR-код через приложение банка или платёжную систему</p>
-                  <p class="text-sm font-semibold text-[#1e293b] mb-3">Сумма: {{ payingCalc.totalAmount.toLocaleString('ru-RU') }} сом</p>
-                  <p class="text-xs text-[#94a3b8] mb-1">Поддерживаемые системы:</p>
-                  <p class="text-xs text-[#64748b]">Элсом &middot; О!Деньги &middot; Баланс.кг &middot; MBank &middot; Optima24</p>
+                  <p class="text-sm text-[#374151] mb-2">{{ $t('businessAccount.scanQrCode') }}</p>
+                  <p class="text-sm font-semibold text-[#1e293b] mb-3">{{ $t('common.amount') }}: {{ payingCalc.totalAmount.toLocaleString() }} {{ $t('common.som') }}</p>
+                  <p class="text-xs text-[#94a3b8] mb-1">{{ $t('businessAccount.supportedSystems') }}:</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('businessAccount.qrProvidersFull') }}</p>
                   <div class="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p class="text-xs text-amber-700">Интеграция с платёжными системами в процессе подключения. Пока используйте банковский перевод (Способ 1).</p>
+                    <p class="text-xs text-amber-700">{{ $t('businessAccount.integrationInProgress') }}</p>
                   </div>
                 </div>
               </div>
@@ -627,19 +630,19 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#9ca3af]">Онлайн-оплата картой</p>
-                  <p class="text-xs text-[#d1d5db]">Visa / MasterCard / Элкарт</p>
+                  <p class="font-semibold text-[#9ca3af]">{{ $t('businessAccount.onlineCardPayment') }}</p>
+                  <p class="text-xs text-[#d1d5db]">Visa / MasterCard / {{ $t('businessAccount.elcart') }}</p>
                 </div>
               </div>
               <div class="mt-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
-                <p class="text-xs text-[#9ca3af]">Будет доступно после подключения эквайринга. Ожидаемый срок: Q2 2026</p>
+                <p class="text-xs text-[#9ca3af]">{{ $t('businessAccount.acquiringComingSoon') }}</p>
               </div>
             </div>
           </div>
 
           <!-- Footer -->
           <div class="pm-footer">
-            <button @click="closePayment" class="px-6 py-2.5 rounded-xl text-sm font-medium bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0] transition-colors">Закрыть</button>
+            <button @click="closePayment" class="px-6 py-2.5 rounded-xl text-sm font-medium bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0] transition-colors">{{ $t('common.close') }}</button>
           </div>
         </div>
       </div>
@@ -650,29 +653,29 @@ const downloadPaymentPdf = async () => {
       <div v-if="showInvoicePreview && payingCalc" class="pm-overlay" @click.self="showInvoicePreview = false">
         <div class="pm-modal pm-modal--invoice">
           <div class="pm-header">
-            <h2 class="text-lg font-bold text-[#1e293b]">Счёт на оплату</h2>
+            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('businessAccount.invoiceTitle') }}</h2>
             <button @click="showInvoicePreview = false" class="pm-close no-print">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
           <div class="p-6 invoice-content">
             <div class="text-center mb-6">
-              <h3 class="text-xl font-bold">СЧЁТ НА ОПЛАТУ</h3>
+              <h3 class="text-xl font-bold">{{ $t('businessAccount.invoiceTitleUpper') }}</h3>
               <p class="text-sm text-[#64748b]">№ {{ payingCalc.number }} от {{ payingCalc.date }}</p>
             </div>
             <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
               <div>
-                <p class="font-semibold mb-1">Получатель:</p>
+                <p class="font-semibold mb-1">{{ $t('businessAccount.recipient') }}:</p>
                 <p>{{ bankDetails.recipient }}</p>
-                <p>ИНН: {{ bankDetails.inn }}</p>
+                <p>{{ $t('businessAccount.inn') }}: {{ bankDetails.inn }}</p>
                 <p>{{ bankDetails.bank }}</p>
-                <p>БИК: {{ bankDetails.bik }}</p>
-                <p>Р/с: {{ bankDetails.account }}</p>
+                <p>{{ $t('businessAccount.bik') }}: {{ bankDetails.bik }}</p>
+                <p>{{ $t('businessAccount.accountNumber') }}: {{ bankDetails.account }}</p>
               </div>
               <div>
-                <p class="font-semibold mb-1">Плательщик:</p>
+                <p class="font-semibold mb-1">{{ $t('businessAccount.payer') }}:</p>
                 <p>{{ payingCalc.company }}</p>
-                <p>ИНН: {{ payingCalc.inn }}</p>
+                <p>{{ $t('businessAccount.inn') }}: {{ payingCalc.inn }}</p>
                 <p v-if="payingCalc.address">{{ payingCalc.address }}</p>
               </div>
             </div>
@@ -680,31 +683,31 @@ const downloadPaymentPdf = async () => {
               <thead class="bg-[#f8fafc]">
                 <tr>
                   <th class="border border-[#e2e8f0] px-3 py-2 text-left">#</th>
-                  <th class="border border-[#e2e8f0] px-3 py-2 text-left">Описание</th>
-                  <th class="border border-[#e2e8f0] px-3 py-2 text-right">Сумма</th>
+                  <th class="border border-[#e2e8f0] px-3 py-2 text-left">{{ $t('common.description') }}</th>
+                  <th class="border border-[#e2e8f0] px-3 py-2 text-right">{{ $t('common.amount') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td class="border border-[#e2e8f0] px-3 py-2">1</td>
-                  <td class="border border-[#e2e8f0] px-3 py-2">Утилизационный сбор ({{ payingCalc.period }})</td>
-                  <td class="border border-[#e2e8f0] px-3 py-2 text-right font-semibold">{{ payingCalc.totalAmount.toLocaleString('ru-RU') }} сом</td>
+                  <td class="border border-[#e2e8f0] px-3 py-2">{{ $t('businessAccount.recyclingFee') }} ({{ payingCalc.period }})</td>
+                  <td class="border border-[#e2e8f0] px-3 py-2 text-right font-semibold">{{ payingCalc.totalAmount.toLocaleString() }} {{ $t('common.som') }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr class="bg-[#f8fafc]">
-                  <td colspan="2" class="border border-[#e2e8f0] px-3 py-2 text-right font-bold">Итого к оплате:</td>
-                  <td class="border border-[#e2e8f0] px-3 py-2 text-right font-bold text-[#16a34a]">{{ payingCalc.totalAmount.toLocaleString('ru-RU') }} сом</td>
+                  <td colspan="2" class="border border-[#e2e8f0] px-3 py-2 text-right font-bold">{{ $t('businessAccount.totalToPay') }}:</td>
+                  <td class="border border-[#e2e8f0] px-3 py-2 text-right font-bold text-[#16a34a]">{{ payingCalc.totalAmount.toLocaleString() }} {{ $t('common.som') }}</td>
                 </tr>
               </tfoot>
             </table>
-            <p class="text-xs text-[#94a3b8]">Назначение платежа: Утилизационный сбор по расчёту №{{ payingCalc.number }}</p>
+            <p class="text-xs text-[#94a3b8]">{{ $t('businessAccount.paymentPurpose') }}: {{ $t('businessAccount.recyclingFeeForCalc', { number: payingCalc.number }) }}</p>
           </div>
           <div class="pm-footer no-print">
-            <button @click="showInvoicePreview = false" class="px-5 py-2 rounded-xl text-sm font-medium bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]">Закрыть</button>
+            <button @click="showInvoicePreview = false" class="px-5 py-2 rounded-xl text-sm font-medium bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]">{{ $t('common.close') }}</button>
             <button @click="printInvoice" class="px-5 py-2 rounded-xl text-sm font-medium bg-[#1e293b] text-white hover:bg-[#334155]">
               <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              Печать
+              {{ $t('common.print') }}
             </button>
           </div>
         </div>
@@ -718,7 +721,7 @@ const downloadPaymentPdf = async () => {
           <Transition name="pd-scale" appear>
             <div ref="paymentDetailRef" class="pd-modal">
               <div class="pd-header">
-                <h2 class="pd-title">Детали оплаты</h2>
+                <h2 class="pd-title">{{ $t('businessAccount.paymentDetails') }}</h2>
                 <button class="pd-close" @click="closePaymentDetail">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -726,30 +729,30 @@ const downloadPaymentPdf = async () => {
 
               <div class="pd-grid">
                 <div class="pd-field">
-                  <span class="pd-label">Номер ПП</span>
+                  <span class="pd-label">{{ $t('businessAccount.paymentOrderNumber') }}</span>
                   <span class="pd-value font-mono">{{ paymentDetailData.paymentOrderNumber }}</span>
                 </div>
                 <div class="pd-field">
-                  <span class="pd-label">Дата оплаты</span>
+                  <span class="pd-label">{{ $t('businessAccount.paymentDate') }}</span>
                   <span class="pd-value">{{ paymentDetailData.date }}</span>
                 </div>
                 <div class="pd-field">
-                  <span class="pd-label">Банк</span>
+                  <span class="pd-label">{{ $t('businessAccount.bankLabel') }}</span>
                   <span class="pd-value">{{ paymentDetailData.bank }}</span>
                 </div>
                 <div class="pd-field">
-                  <span class="pd-label">Сумма</span>
-                  <span class="pd-value pd-value--bold">{{ paymentDetailData.amount.toLocaleString('ru-RU') }} сом</span>
+                  <span class="pd-label">{{ $t('common.amount') }}</span>
+                  <span class="pd-value pd-value--bold">{{ paymentDetailData.amount.toLocaleString() }} {{ $t('common.som') }}</span>
                 </div>
                 <div class="pd-field">
-                  <span class="pd-label">Статус</span>
+                  <span class="pd-label">{{ $t('common.status') }}</span>
                   <span class="pd-badge">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                     {{ paymentDetailData.status }}
                   </span>
                 </div>
                 <div class="pd-field">
-                  <span class="pd-label">Связанный расчёт</span>
+                  <span class="pd-label">{{ $t('businessAccount.linkedCalculation') }}</span>
                   <button class="pd-link" @click="goToCalcFromDetail(paymentDetailData.calcId)">{{ paymentDetailData.calcNumber }}</button>
                 </div>
               </div>
@@ -762,9 +765,9 @@ const downloadPaymentPdf = async () => {
               <div class="pd-footer">
                 <button class="pd-btn pd-btn--outline" @click="downloadPaymentPdf">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  Скачать PDF
+                  {{ $t('common.downloadPdf') }}
                 </button>
-                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">Закрыть</button>
+                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">{{ $t('common.close') }}</button>
               </div>
             </div>
           </Transition>

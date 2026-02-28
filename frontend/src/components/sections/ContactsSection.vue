@@ -1,11 +1,15 @@
 <script setup lang="ts">
-const contactInfo = {
-  organization:
-    'Министерство природных ресурсов, экологии и технического надзора Кыргызской Республики (МПРЭТН КР)',
-  address: '720040, г. Бишкек, бул. Эркиндик, 2',
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
+const contactInfo = computed(() => ({
+  organization: t('contacts.organization'),
+  address: t('contacts.address'),
   phone: '+996 (312) 62-32-28',
   email: 'info@ecology.gov.kg',
-}
+}))
 </script>
 
 <template>
@@ -15,7 +19,7 @@ const contactInfo = {
         <!-- Left column: contact info -->
         <div>
           <h2 class="text-3xl font-bold text-white tracking-tight mb-6">
-            Контакты
+            {{ $t('contacts.title') }}
           </h2>
 
           <p class="text-[#9CA3AF] text-sm leading-relaxed mb-8">
@@ -98,29 +102,29 @@ const contactInfo = {
         <div class="flex flex-col justify-center">
           <div class="bg-[#1F2937] rounded-2xl p-8">
             <h3 class="text-white font-semibold text-lg mb-4">
-              Режим работы
+              {{ $t('contacts.workSchedule') }}
             </h3>
             <div class="space-y-3 text-sm">
               <div class="flex justify-between">
-                <span class="text-[#9CA3AF]">Понедельник - Пятница</span>
+                <span class="text-[#9CA3AF]">{{ $t('contacts.weekdays') }}</span>
                 <span class="text-white">09:00 - 18:00</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-[#9CA3AF]">Суббота</span>
-                <span class="text-white">Выходной</span>
+                <span class="text-[#9CA3AF]">{{ $t('contacts.saturday') }}</span>
+                <span class="text-white">{{ $t('contacts.dayOff') }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-[#9CA3AF]">Воскресенье</span>
-                <span class="text-white">Выходной</span>
+                <span class="text-[#9CA3AF]">{{ $t('contacts.sunday') }}</span>
+                <span class="text-white">{{ $t('contacts.dayOff') }}</span>
               </div>
             </div>
 
             <div class="mt-6 pt-6 border-t border-[#374151]">
               <h3 class="text-white font-semibold text-lg mb-3">
-                Приёмная
+                {{ $t('contacts.reception') }}
               </h3>
               <p class="text-[#9CA3AF] text-sm leading-relaxed">
-                Для записи на приём и получения консультации обращайтесь по указанному телефону или электронной почте в рабочее время.
+                {{ $t('contacts.receptionDescription') }}
               </p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
@@ -7,9 +8,11 @@ import { refundStore } from '../../stores/refunds'
 import { productGroups, productSubgroups } from '../../data/product-groups'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { CalcStatus } from '../../constants/statuses'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
+const { t } = useI18n()
 
 // View mode
 type ViewMode = 'form' | 'success'
@@ -18,13 +21,13 @@ const viewMode = ref<ViewMode>('form')
 // Helpers
 const getGroupLabel = (value: string) => productGroups.find(g => g.value === value)?.label || value
 const getSubgroupLabel = (group: string, subgroup: string) => productSubgroups[group]?.find(s => s.value === subgroup)?.label || subgroup || '—'
-const formatAmount = (amount: number) => amount.toLocaleString('ru-RU') + ' сом'
+const formatAmount = (amount: number) => amount.toLocaleString() + ' ' + t('businessRefundNew.som')
 
 // Step 1: Select a paid calculation
 const selectedCalcId = ref<number | null>(null)
 
 const paidCalculations = computed(() =>
-  calculationStore.state.calculations.filter(c => c.status === 'Оплачено')
+  calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
 )
 
 const selectedCalculation = computed(() =>
@@ -157,7 +160,7 @@ const createRefund = () => {
 }
 
 const saveDraft = () => {
-  toastStore.show({ type: 'success', title: 'Черновик сохранён' })
+  toastStore.show({ type: 'success', title: t('businessRefundNew.draftSaved') })
 }
 </script>
 
@@ -173,18 +176,18 @@ const saveDraft = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Назад к заявкам
+            {{ $t('businessRefundNew.backToApplications') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Заявка на возврат утилизационного сбора</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessRefundNew.title') }}</h1>
         </div>
 
         <!-- Step 1: Select paid calculation -->
         <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
           <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
             <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">1</div>
-            Выберите оплаченный расчёт
+            {{ $t('businessRefundNew.selectPaidCalc') }}
           </h2>
-          <p class="text-sm text-[#64748b] mb-4 ml-9">Возврат возможен только по расчётам со статусом «Оплачено»</p>
+          <p class="text-sm text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.refundOnlyPaid') }}</p>
 
           <div class="ml-9">
             <select
@@ -192,7 +195,7 @@ const saveDraft = () => {
               @change="onSelectCalculation"
               class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 bg-white"
             >
-              <option :value="null" disabled>— Выберите расчёт —</option>
+              <option :value="null" disabled>— {{ $t('businessRefundNew.selectCalcOption') }} —</option>
               <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
                 {{ calc.number }} | {{ calc.period }} | {{ formatAmount(calc.totalAmount) }}
               </option>
@@ -205,8 +208,8 @@ const saveDraft = () => {
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-amber-800">Нет оплаченных расчётов</p>
-                <p class="text-sm text-amber-700">Для подачи заявки на возврат необходимо иметь хотя бы один расчёт со статусом «Оплачено».</p>
+                <p class="font-medium text-amber-800">{{ $t('businessRefundNew.noPaidCalcs') }}</p>
+                <p class="text-sm text-amber-700">{{ $t('businessRefundNew.noPaidCalcsDesc') }}</p>
               </div>
             </div>
           </div>
@@ -217,21 +220,21 @@ const saveDraft = () => {
           <div class="p-5 lg:p-6 border-b border-[#e2e8f0]">
             <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
               <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">2</div>
-              Позиции для возврата
+              {{ $t('businessRefundNew.refundItems') }}
             </h2>
-            <p class="text-sm text-[#64748b] ml-9">Укажите массу вывезенных из КР товаров по каждой позиции</p>
+            <p class="text-sm text-[#64748b] ml-9">{{ $t('businessRefundNew.specifyExportedMass') }}</p>
           </div>
 
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left text-[#64748b] bg-[#f8fafc]">
-                  <th class="px-4 py-3 font-medium">Группа</th>
-                  <th class="px-4 py-3 font-medium">Подгруппа</th>
-                  <th class="px-4 py-3 font-medium text-right">Масса ввоза (тн)</th>
-                  <th class="px-4 py-3 font-medium text-right">Ранее оплачено (сом)</th>
-                  <th class="px-4 py-3 font-medium text-center">Вывезено из КР (тн)</th>
-                  <th class="px-4 py-3 font-medium text-right">Сумма к возврату (сом)</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessRefundNew.group') }}</th>
+                  <th class="px-4 py-3 font-medium">{{ $t('businessRefundNew.subgroup') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessRefundNew.importMass') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessRefundNew.previouslyPaid') }}</th>
+                  <th class="px-4 py-3 font-medium text-center">{{ $t('businessRefundNew.exportedFromKR') }}</th>
+                  <th class="px-4 py-3 font-medium text-right">{{ $t('businessRefundNew.refundAmount') }}</th>
                 </tr>
               </thead>
               <tbody class="text-[#1e293b]">
@@ -248,7 +251,7 @@ const saveDraft = () => {
                     <span class="block truncate" :title="getSubgroupLabel(item.group, item.subgroup)">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                   </td>
                   <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
-                  <td class="px-4 py-3 text-right font-medium text-green-600">{{ item.paidAmount.toLocaleString('ru-RU') }}</td>
+                  <td class="px-4 py-3 text-right font-medium text-green-600">{{ item.paidAmount.toLocaleString() }}</td>
                   <td class="px-4 py-3">
                     <div class="flex flex-col items-center">
                       <input
@@ -264,18 +267,18 @@ const saveDraft = () => {
                         ]"
                       />
                       <span v-if="hasExportExceedsVolume(item)" class="text-xs text-red-500 mt-1">
-                        Не более {{ item.volume }} тн
+                        {{ $t('businessRefundNew.noMoreThan', { volume: item.volume }) }}
                       </span>
                     </div>
                   </td>
                   <td class="px-4 py-3 text-right font-semibold" :class="getRefundAmount(item) > 0 ? 'text-[#10b981]' : 'text-[#64748b]'">
-                    {{ getRefundAmount(item) > 0 ? getRefundAmount(item).toLocaleString('ru-RU') : '—' }}
+                    {{ getRefundAmount(item) > 0 ? getRefundAmount(item).toLocaleString() : '—' }}
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-[#1e293b] bg-[#f8fafc]">
-                  <td colspan="5" class="px-4 py-3 font-semibold text-[#1e293b]">ИТОГО к возврату</td>
+                  <td colspan="5" class="px-4 py-3 font-semibold text-[#1e293b]">{{ $t('businessRefundNew.totalRefund') }}</td>
                   <td class="px-4 py-3 text-right font-bold text-lg text-[#10b981]">
                     {{ totalRefundAmount > 0 ? formatAmount(totalRefundAmount) : '—' }}
                   </td>
@@ -289,16 +292,16 @@ const saveDraft = () => {
         <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
           <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
             <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">3</div>
-            Подтверждающие документы <span class="text-red-500">*</span>
+            {{ $t('businessRefundNew.supportingDocuments') }} <span class="text-red-500">*</span>
           </h2>
-          <p class="text-sm text-[#64748b] mb-4 ml-9">ГТД на вывоз, инвойс, транспортные документы</p>
+          <p class="text-sm text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.supportingDocsDesc') }}</p>
 
           <div class="ml-9">
             <label class="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-[#e2e8f0] rounded-xl hover:border-[#10b981] hover:bg-green-50 transition-colors cursor-pointer">
               <svg class="w-6 h-6 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span class="text-[#64748b] font-medium">Выбрать файлы</span>
+              <span class="text-[#64748b] font-medium">{{ $t('businessRefundNew.selectFiles') }}</span>
               <input type="file" multiple class="hidden" @change="onFileSelect" />
             </label>
 
@@ -323,7 +326,7 @@ const saveDraft = () => {
             </div>
 
             <div v-if="documents.length === 0" class="mt-3 text-xs text-amber-600">
-              Необходимо приложить хотя бы один документ
+              {{ $t('businessRefundNew.attachAtLeastOne') }}
             </div>
           </div>
         </div>
@@ -332,11 +335,11 @@ const saveDraft = () => {
         <div v-if="selectedCalculation && totalRefundAmount > 0" class="bg-gradient-to-r from-[#10b981]/10 to-[#059669]/10 rounded-2xl p-5 lg:p-6 border border-[#10b981]/20 mb-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Расчёт: <span class="font-mono font-medium text-[#1e293b]">{{ selectedCalculation.number }}</span></p>
-              <p class="text-sm text-[#64748b]">Период: {{ selectedCalculation.period }}</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.calculation') }}: <span class="font-mono font-medium text-[#1e293b]">{{ selectedCalculation.number }}</span></p>
+              <p class="text-sm text-[#64748b]">{{ $t('common.period') }}: {{ selectedCalculation.period }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm text-[#64748b] mb-1">Общая сумма к возврату</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.totalRefundAmount') }}</p>
               <p class="text-3xl font-bold text-[#10b981]">{{ formatAmount(totalRefundAmount) }}</p>
             </div>
           </div>
@@ -348,7 +351,7 @@ const saveDraft = () => {
             @click="router.push('/business/refunds')"
             class="flex items-center justify-center gap-2 px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-white transition-colors"
           >
-            Отмена
+            {{ $t('common.cancel') }}
           </button>
           <button
             @click="saveDraft"
@@ -357,7 +360,7 @@ const saveDraft = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
             </svg>
-            Сохранить черновик
+            {{ $t('businessRefundNew.saveDraft') }}
           </button>
           <button
             @click="createRefund"
@@ -367,7 +370,7 @@ const saveDraft = () => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Отправить заявку
+            {{ $t('businessRefundNew.submitApplication') }}
           </button>
         </div>
       </div>
@@ -383,29 +386,29 @@ const saveDraft = () => {
         </div>
 
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">
-          Заявка на возврат {{ createdRefund?.number }} отправлена на рассмотрение ГП Эко Оператор
+          {{ $t('businessRefundNew.successTitle', { number: createdRefund?.number }) }}
         </h1>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Номер заявки</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.applicationNumber') }}</p>
               <p class="text-lg font-bold text-[#10b981] font-mono">{{ createdRefund?.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Сумма к возврату</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.refundAmountLabel') }}</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ createdRefund ? formatAmount(createdRefund.amount) : '' }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Дата подачи</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.submissionDate') }}</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ createdRefund?.date }}</p>
             </div>
           </div>
         </div>
 
         <p class="text-[#64748b] mb-8">
-          Ваша заявка принята и направлена на рассмотрение.<br />
-          Вы получите уведомление о результате проверки.
+          {{ $t('businessRefundNew.successLine1') }}<br />
+          {{ $t('businessRefundNew.successLine2') }}
         </p>
 
         <button
@@ -415,7 +418,7 @@ const saveDraft = () => {
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
-          К списку заявок
+          {{ $t('businessRefundNew.toApplicationsList') }}
         </button>
       </div>
     </template>

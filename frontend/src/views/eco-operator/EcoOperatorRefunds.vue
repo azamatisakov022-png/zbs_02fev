@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { refundStore } from '../../stores/refunds'
+import { RefundStatus } from '../../constants/statuses'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -18,14 +21,14 @@ const { roleTitle, menuItems } = useEcoOperatorMenu()
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
-const columns = [
-  { key: 'number', label: 'Номер заявки', width: '12%' },
-  { key: 'company', label: 'Плательщик', width: '18%' },
-  { key: 'date', label: 'Дата', width: '9%' },
-  { key: 'calculationNumber', label: 'Связанный расчёт', width: '14%' },
-  { key: 'totalRefund', label: 'Сумма возврата', width: '12%' },
-  { key: 'status', label: 'Статус', width: '12%' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('ecoRefunds.colNumber'), width: '12%' },
+  { key: 'company', label: t('ecoRefunds.colPayer'), width: '18%' },
+  { key: 'date', label: t('ecoRefunds.colDate'), width: '9%' },
+  { key: 'calculationNumber', label: t('ecoRefunds.colLinkedCalc'), width: '14%' },
+  { key: 'totalRefund', label: t('ecoRefunds.colRefundAmount'), width: '12%' },
+  { key: 'status', label: t('ecoRefunds.colStatus'), width: '12%' },
+])
 
 // Filters
 const searchQuery = ref('')
@@ -45,16 +48,16 @@ const filteredRefunds = computed(() => {
 
 // Stats
 const totalCount = computed(() => refundStore.state.refunds.length)
-const pendingCount = computed(() => refundStore.state.refunds.filter(r => r.status === 'На рассмотрении' || r.status === 'Новая').length)
-const approvedCount = computed(() => refundStore.state.refunds.filter(r => r.status === 'Одобрена').length)
-const rejectedCount = computed(() => refundStore.state.refunds.filter(r => r.status === 'Отклонена').length)
+const pendingCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.UNDER_REVIEW || r.status === RefundStatus.NEW).length)
+const approvedCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.APPROVED).length)
+const rejectedCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Новая': return 'bg-blue-100 text-blue-800'
-    case 'На рассмотрении': return 'bg-yellow-100 text-yellow-800'
-    case 'Одобрена': return 'bg-green-100 text-green-800'
-    case 'Отклонена': return 'bg-red-100 text-red-800'
+    case RefundStatus.NEW: return 'bg-blue-100 text-blue-800'
+    case RefundStatus.UNDER_REVIEW: return 'bg-yellow-100 text-yellow-800'
+    case RefundStatus.APPROVED: return 'bg-green-100 text-green-800'
+    case RefundStatus.REJECTED: return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -77,7 +80,7 @@ const resetFilters = () => {
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="Экологический оператор"
+    :userName="$t('ecoRefunds.userName')"
     :menuItems="menuItems"
   >
     <div class="mb-6">
@@ -86,9 +89,9 @@ const resetFilters = () => {
     </div>
 
     <SectionGuide
-      title="Заявки на возврат средств"
-      description="Заявки от плательщиков на возврат излишне уплаченного сбора."
-      :actions="['Просмотр заявок', 'Проверка оснований для возврата', 'Одобрение или отклонение', 'Формирование акта возврата']"
+      :title="$t('ecoRefunds.guideTitle')"
+      :description="$t('ecoRefunds.guideDescription')"
+      :actions="[$t('ecoRefunds.guideAction1'), $t('ecoRefunds.guideAction2'), $t('ecoRefunds.guideAction3'), $t('ecoRefunds.guideAction4')]"
       storageKey="eco-refunds"
     />
 
@@ -101,10 +104,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-yellow-800">На рассмотрении</p>
+          <p class="text-sm font-medium text-yellow-800">{{ $t('ecoRefunds.statPending') }}</p>
         </div>
         <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
-        <p class="text-xs text-yellow-600 mt-1">заявок ожидают решения</p>
+        <p class="text-xs text-yellow-600 mt-1">{{ $t('ecoRefunds.statPendingDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -113,10 +116,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-green-800">Одобрено</p>
+          <p class="text-sm font-medium text-green-800">{{ $t('ecoRefunds.statApproved') }}</p>
         </div>
         <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
-        <p class="text-xs text-green-600 mt-1">заявок одобрено</p>
+        <p class="text-xs text-green-600 mt-1">{{ $t('ecoRefunds.statApprovedDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -125,10 +128,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-red-800">Отклонено</p>
+          <p class="text-sm font-medium text-red-800">{{ $t('ecoRefunds.statRejected') }}</p>
         </div>
         <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
-        <p class="text-xs text-red-600 mt-1">заявок отклонено</p>
+        <p class="text-xs text-red-600 mt-1">{{ $t('ecoRefunds.statRejectedDesc') }}</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -137,10 +140,10 @@ const resetFilters = () => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <p class="text-sm font-medium text-blue-800">Всего заявок</p>
+          <p class="text-sm font-medium text-blue-800">{{ $t('ecoRefunds.statTotal') }}</p>
         </div>
         <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
-        <p class="text-xs text-blue-600 mt-1">всего получено</p>
+        <p class="text-xs text-blue-600 mt-1">{{ $t('ecoRefunds.statTotalDesc') }}</p>
       </div>
     </div>
 
@@ -152,8 +155,8 @@ const resetFilters = () => {
         </svg>
       </div>
       <div>
-        <p class="text-sm font-semibold text-yellow-900">Требуется внимание</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? 'новая заявка' : 'новых заявок' }} на рассмотрении. Проверьте данные и примите решение.</p>
+        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoRefunds.attentionRequired') }}</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoRefunds.newRequestSingular') : $t('ecoRefunds.newRequestPlural') }} {{ $t('ecoRefunds.alertCheckAndDecide') }}</p>
       </div>
     </div>
 
@@ -169,15 +172,15 @@ const resetFilters = () => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Поиск по номеру, компании или ИНН..."
+          :placeholder="$t('ecoRefunds.searchPlaceholder')"
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все статусы</option>
-          <option value="Новая">Новая</option>
-          <option value="На рассмотрении">На рассмотрении</option>
-          <option value="Одобрена">Одобрена</option>
-          <option value="Отклонена">Отклонена</option>
+          <option value="">{{ $t('ecoRefunds.allStatuses') }}</option>
+          <option value="new">{{ $t('status.new') }}</option>
+          <option value="under_review">{{ $t('status.underReview') }}</option>
+          <option value="approved">{{ $t('status.approvedFem') }}</option>
+          <option value="rejected">{{ $t('status.rejectedFem') }}</option>
         </select>
       </div>
     </div>
@@ -194,7 +197,7 @@ const resetFilters = () => {
         <span class="font-mono text-sm text-[#64748b]">{{ value }}</span>
       </template>
       <template #cell-totalRefund="{ value }">
-        <span class="font-semibold text-[#10b981]">{{ value.toLocaleString('ru-RU') }} сом</span>
+        <span class="font-semibold text-[#10b981]">{{ value.toLocaleString() }} {{ $t('ecoRefunds.som') }}</span>
       </template>
       <template #cell-status="{ value }">
         <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+
+const { t } = useI18n()
 
 interface ReceptionPoint {
   id: number
@@ -22,27 +25,27 @@ const markers = shallowRef<maplibregl.Marker[]>([])
 const selectedWasteType = ref('')
 const selectedRegion = ref('')
 
-const wasteTypes = [
-  { value: '', label: 'Все виды' },
-  { value: 'plastic', label: 'Пластик' },
-  { value: 'paper', label: 'Бумага' },
-  { value: 'glass', label: 'Стекло' },
-  { value: 'metal', label: 'Металл' },
-  { value: 'batteries', label: 'Батарейки' },
-  { value: 'electronics', label: 'Электроника' }
-]
+const wasteTypes = computed(() => [
+  { value: '', label: t('receptionPoints.allTypes') },
+  { value: 'plastic', label: t('receptionPoints.plastic') },
+  { value: 'paper', label: t('receptionPoints.paper') },
+  { value: 'glass', label: t('receptionPoints.glass') },
+  { value: 'metal', label: t('receptionPoints.metal') },
+  { value: 'batteries', label: t('receptionPoints.batteries') },
+  { value: 'electronics', label: t('receptionPoints.electronics') }
+])
 
-const regions = [
-  { value: '', label: 'Все области' },
-  { value: 'bishkek', label: 'г. Бишкек' },
-  { value: 'chui', label: 'Чуйская область' },
-  { value: 'osh', label: 'Ошская область' },
-  { value: 'jalal-abad', label: 'Джалал-Абадская область' },
-  { value: 'batken', label: 'Баткенская область' },
-  { value: 'naryn', label: 'Нарынская область' },
-  { value: 'talas', label: 'Таласская область' },
-  { value: 'issyk-kul', label: 'Иссык-Кульская область' }
-]
+const regions = computed(() => [
+  { value: '', label: t('receptionPoints.allRegions') },
+  { value: 'bishkek', label: t('receptionPoints.regionBishkek') },
+  { value: 'chui', label: t('receptionPoints.regionChui') },
+  { value: 'osh', label: t('receptionPoints.regionOsh') },
+  { value: 'jalal-abad', label: t('receptionPoints.regionJalalAbad') },
+  { value: 'batken', label: t('receptionPoints.regionBatken') },
+  { value: 'naryn', label: t('receptionPoints.regionNaryn') },
+  { value: 'talas', label: t('receptionPoints.regionTalas') },
+  { value: 'issyk-kul', label: t('receptionPoints.regionIssykKul') }
+])
 
 // Region centers for map navigation
 const regionCenters: Record<string, { center: [number, number], zoom: number }> = {
@@ -198,10 +201,10 @@ onUnmounted(() => {
     <!-- Page header -->
     <div class="container-main">
       <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[12px]">
-        Пункты приема
+        {{ $t('receptionPoints.title') }}
       </h1>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861]">
-        Пункты приёма вторсырья и опасных отходов
+        {{ $t('receptionPoints.subtitle') }}
       </p>
     </div>
 
@@ -211,7 +214,7 @@ onUnmounted(() => {
         <!-- Filters row -->
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 lg:mb-[20px]">
           <h2 class="text-base lg:text-[18px] font-medium text-[#415861]">
-            Карта пунктов приёма
+            {{ $t('receptionPoints.mapTitle') }}
           </h2>
 
           <div class="flex flex-col lg:flex-row gap-3 lg:gap-[15px]">
@@ -240,7 +243,7 @@ onUnmounted(() => {
               @click="handleSearch"
               class="bg-[#0e888d] text-white font-medium px-6 py-2.5 rounded-[10px] hover:bg-[#0a6d71] transition-colors text-sm"
             >
-              Найти
+              {{ $t('receptionPoints.searchBtn') }}
             </button>
           </div>
         </div>
@@ -256,7 +259,7 @@ onUnmounted(() => {
     <!-- Counter -->
     <div class="container-main pt-6 lg:pt-[30px]">
       <h2 class="text-lg lg:text-[20px] font-bold text-[#415861] uppercase">
-        Найдено пунктов: {{ totalCount }}
+        {{ $t('receptionPoints.foundPoints', { count: totalCount }) }}
       </h2>
     </div>
 
@@ -308,7 +311,7 @@ onUnmounted(() => {
             @click="handleShowOnMap(point)"
             class="w-full bg-[#0e888d] text-white text-sm font-medium py-2.5 rounded-[12px] hover:bg-[#0a6d71] transition-colors"
           >
-            На карте
+            {{ $t('receptionPoints.showOnMap') }}
           </button>
         </div>
       </div>

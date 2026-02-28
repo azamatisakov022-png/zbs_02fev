@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -15,8 +16,10 @@ import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { notificationStore } from '../../stores/notifications'
 import { useRouter } from 'vue-router'
+import { CalcStatus, ReportStatus, DeclStatus } from '../../constants/statuses'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
@@ -30,11 +33,11 @@ const viewMode = ref<ViewMode>('list')
 const currentStep = ref(1)
 const totalSteps = 3
 
-const steps = [
-  { number: 1, title: 'Основные данные' },
-  { number: 2, title: 'Сводные данные' },
-  { number: 3, title: 'Проверка и отправка' },
-]
+const steps = computed(() => [
+  { number: 1, title: t('businessDecl.stepBasicData') },
+  { number: 2, title: t('businessDecl.stepSummaryData') },
+  { number: 3, title: t('businessDecl.stepReviewSubmit') },
+])
 
 // Form data
 const reportingYear = ref('2026')
@@ -55,7 +58,7 @@ const yearCalculations = computed(() => {
   return calculationStore.state.calculations.filter(c =>
     c.company === companyData.name &&
     c.year === reportingYear.value &&
-    (c.status === 'Принято' || c.status === 'Оплачено')
+    (c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID)
   )
 })
 
@@ -76,7 +79,7 @@ const aggregatedItems = computed(() => {
   }>()
 
   for (const calc of yearCalculations.value) {
-    const isPaid = calc.status === 'Оплачено'
+    const isPaid = calc.status === CalcStatus.PAID
     for (const item of calc.items) {
       const key = `${item.group}_${item.subgroup}`
       const mass = parseFloat(item.mass) || 0
@@ -112,7 +115,7 @@ const aggregatedItems = computed(() => {
 const totalMass = computed(() => aggregatedItems.value.reduce((s, i) => s + i.mass, 0))
 const totalAmount = computed(() => yearCalculations.value.reduce((s, c) => s + c.totalAmount, 0))
 const totalPaid = computed(() =>
-  yearCalculations.value.filter(c => c.status === 'Оплачено').reduce((s, c) => s + c.totalAmount, 0)
+  yearCalculations.value.filter(c => c.status === CalcStatus.PAID).reduce((s, c) => s + c.totalAmount, 0)
 )
 const totalDebt = computed(() => totalAmount.value - totalPaid.value)
 
@@ -121,7 +124,7 @@ const yearReports = computed(() => {
   return reportStore.state.reports.filter(r =>
     r.company === companyData.name &&
     r.year === reportingYear.value &&
-    r.status === 'Принят'
+    r.status === ReportStatus.APPROVED
   )
 })
 
@@ -207,18 +210,18 @@ const submitDeclaration = () => {
     })),
     payments: [],
     documents: [],
-  }, 'На рассмотрении')
+  }, DeclStatus.UNDER_REVIEW)
   notificationStore.add({
     type: 'info',
-    title: 'Новая входящая декларация',
-    message: `Поступила декларация от ${companyData.name}. Требуется проверка.`,
+    title: t('businessDecl.notifNewDeclaration'),
+    message: t('businessDecl.notifNewDeclMessage', { company: companyData.name }),
     role: 'eco-operator',
     link: '/eco-operator/incoming-declarations'
   })
   notificationStore.add({
     type: 'success',
-    title: 'Декларация отправлена',
-    message: 'Ваша декларация отправлена на проверку.',
+    title: t('businessDecl.notifDeclSentTitle'),
+    message: t('businessDecl.notifDeclSentMessage'),
     role: 'business'
   })
   submittedDeclaration.value = { number: decl.number, date: decl.submittedAt }
@@ -250,7 +253,7 @@ const saveDraft = () => {
     })),
     payments: [],
     documents: [],
-  }, 'Черновик')
+  }, DeclStatus.DRAFT)
   viewMode.value = 'list'
 }
 
@@ -270,14 +273,14 @@ const backToList = () => {
 const canProceedStep1 = computed(() => reportingYear.value && hasCalculations.value)
 
 // List table
-const columns = [
-  { key: 'number', label: 'Номер', width: '12%' },
-  { key: 'year', label: 'Отчётный год', width: '10%' },
-  { key: 'calcCount', label: 'Расчётов', width: '10%' },
-  { key: 'totalAmount', label: 'Общая сумма', width: '15%' },
-  { key: 'submittedAt', label: 'Дата подачи', width: '12%' },
-  { key: 'status', label: 'Статус', width: '10%' },
-]
+const columns = computed(() => [
+  { key: 'number', label: t('businessDecl.colNumber'), width: '12%' },
+  { key: 'year', label: t('businessDecl.colReportingYear'), width: '10%' },
+  { key: 'calcCount', label: t('businessDecl.colCalcCount'), width: '10%' },
+  { key: 'totalAmount', label: t('businessDecl.colTotalAmount'), width: '15%' },
+  { key: 'submittedAt', label: t('businessDecl.colSubmittedAt'), width: '12%' },
+  { key: 'status', label: t('businessDecl.colStatus'), width: '10%' },
+])
 
 // Declarations from shared store filtered by company
 const storeDeclarations = computed(() => declarationStore.getByCompany(companyData.name))
@@ -329,10 +332,10 @@ const resetFilters = () => {
 // Row class for Variant 6 colored left border
 const getRowClass = (row: Record<string, any>) => {
   switch (row.status) {
-    case 'Принята': case 'Подписана': return 'row-green'
-    case 'На проверке': return 'row-yellow'
-    case 'Отклонена': return 'row-red'
-    case 'Автосформирована': return 'row-blue'
+    case 'approved': case 'signed': return 'row-green'
+    case 'under_review': return 'row-yellow'
+    case 'rejected': return 'row-red'
+    case 'auto_generated': return 'row-blue'
     default: return 'row-gray'
   }
 }
@@ -356,11 +359,11 @@ const printPage = async () => {
 }
 
 const deleteDeclaration = (id: number) => {
-  toastStore.show({ type: 'info', title: 'Удаление', message: 'Удаление деклараций будет доступно в следующем обновлении' })
+  toastStore.show({ type: 'info', title: t('businessDecl.deleteToastTitle'), message: t('businessDecl.deleteToastMessage') })
 }
 
 const signDeclaration = (id: number) => {
-  toastStore.show({ type: 'info', title: 'Подписание', message: 'Электронное подписание будет доступно в следующем обновлении' })
+  toastStore.show({ type: 'info', title: t('businessDecl.signToastTitle'), message: t('businessDecl.signToastMessage') })
 }
 </script>
 
@@ -374,8 +377,8 @@ const signDeclaration = (id: number) => {
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Декларации</h1>
-        <p class="text-[#64748b]">Годовые декларации о товарах и упаковке</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDecl.title') }}</h1>
+        <p class="text-[#64748b]">{{ $t('businessDecl.subtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
@@ -389,8 +392,8 @@ const signDeclaration = (id: number) => {
             </svg>
           </div>
           <div class="flex-1">
-            <h2 class="text-xl lg:text-2xl font-bold mb-2">Подать годовую декларацию</h2>
-            <p class="text-white/80 text-sm lg:text-base">Декларация формируется автоматически из всех принятых расчётов утилизационного сбора за выбранный год.</p>
+            <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
+            <p class="text-white/80 text-sm lg:text-base">{{ $t('businessDecl.ctaDescription') }}</p>
           </div>
           <button
             @click="startWizard"
@@ -399,7 +402,7 @@ const signDeclaration = (id: number) => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Начать заполнение
+            {{ $t('businessDecl.startFilling') }}
           </button>
         </div>
       </div>
@@ -412,21 +415,21 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
         <div>
-          <p class="font-medium text-[#1e293b]">Автоформирование</p>
-          <p class="text-sm text-[#64748b]">Годовая декларация формируется автоматически из принятых расчётов утилизационного сбора. Данные агрегируются по группам товаров за выбранный отчётный год.</p>
+          <p class="font-medium text-[#1e293b]">{{ $t('businessDecl.autoFormTitle') }}</p>
+          <p class="text-sm text-[#64748b]">{{ $t('businessDecl.autoFormDescription') }}</p>
         </div>
       </div>
 
       <!-- Review result banners from shared store -->
-      <div v-for="decl in storeDeclarations.filter(d => d.status === 'Отклонена' || d.status === 'На доработке')" :key="'banner-' + decl.id" class="mb-4">
+      <div v-for="decl in storeDeclarations.filter(d => d.status === 'rejected' || d.status === 'revision')" :key="'banner-' + decl.id" class="mb-4">
         <div
           :class="[
             'rounded-xl p-4 flex items-start gap-3 border',
-            decl.status === 'Отклонена' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
+            decl.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
           ]"
         >
-          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5', decl.status === 'Отклонена' ? 'bg-red-100' : 'bg-orange-100']">
-            <svg v-if="decl.status === 'Отклонена'" class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div :class="['w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5', decl.status === 'rejected' ? 'bg-red-100' : 'bg-orange-100']">
+            <svg v-if="decl.status === 'rejected'" class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
             <svg v-else class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -434,11 +437,11 @@ const signDeclaration = (id: number) => {
             </svg>
           </div>
           <div class="flex-1">
-            <p :class="['text-sm font-semibold', decl.status === 'Отклонена' ? 'text-red-900' : 'text-orange-900']">
-              {{ decl.number }} — {{ decl.status === 'Отклонена' ? 'Отклонена' : 'Возвращена на доработку' }}
-              <span v-if="decl.reviewDate" class="font-normal">от {{ decl.reviewDate }}</span>
+            <p :class="['text-sm font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
+              {{ decl.number }} — {{ decl.status === 'rejected' ? $t('status.rejectedFem') : $t('businessDecl.returnedForRevision') }}
+              <span v-if="decl.reviewDate" class="font-normal">{{ $t('businessDecl.fromDate') }} {{ decl.reviewDate }}</span>
             </p>
-            <p v-if="decl.reviewComment" :class="['text-xs mt-1', decl.status === 'Отклонена' ? 'text-red-700' : 'text-orange-700']">
+            <p v-if="decl.reviewComment" :class="['text-xs mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
               {{ decl.reviewComment }}
             </p>
           </div>
@@ -457,38 +460,38 @@ const signDeclaration = (id: number) => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Поиск по номеру..."
+            :placeholder="$t('businessDecl.searchPlaceholder')"
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
           <select v-model="filterYear" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все годы</option>
+            <option value="">{{ $t('businessDecl.allYears') }}</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
             <option value="2027">2027</option>
           </select>
           <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">Все статусы</option>
-            <option value="Черновик">Черновик</option>
-            <option value="На рассмотрении">На рассмотрении</option>
-            <option value="Одобрена">Одобрена</option>
-            <option value="Отклонена">Отклонена</option>
-            <option value="На доработке">На доработке</option>
+            <option value="">{{ $t('businessDecl.allStatuses') }}</option>
+            <option value="draft">{{ $t('status.draft') }}</option>
+            <option value="under_review">{{ $t('status.underReview') }}</option>
+            <option value="approved">{{ $t('status.approvedFem') }}</option>
+            <option value="rejected">{{ $t('status.rejectedFem') }}</option>
+            <option value="revision">{{ $t('status.revision') }}</option>
           </select>
         </div>
       </div>
 
       <!-- Table -->
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">История деклараций</h2>
+        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('businessDecl.historyTitle') }}</h2>
       </div>
 
       <!-- Search no results state -->
       <div v-if="isFilteredEmpty" class="mb-6">
         <EmptyState
           :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M35 35l-10-10m0 0A11.67 11.67 0 1025 25z&quot;/></svg>'"
-          title="Ничего не найдено"
-          description="Попробуйте изменить параметры поиска"
-          actionLabel="Сбросить фильтры"
+          :title="$t('businessDecl.nothingFound')"
+          :description="$t('businessDecl.nothingFoundHint')"
+          :actionLabel="$t('businessDecl.resetFilters')"
           @action="resetFilters"
         />
       </div>
@@ -497,9 +500,9 @@ const signDeclaration = (id: number) => {
         <template #empty>
           <EmptyState
             :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M5 11.67v16.66A3.33 3.33 0 008.33 31.67h23.34A3.33 3.33 0 0035 28.33V15A3.33 3.33 0 0031.67 11.67H20l-3.33-3.34H8.33A3.33 3.33 0 005 11.67z&quot;/></svg>'"
-            title="Нет деклараций"
-            description="Сформируйте годовую декларацию"
-            actionLabel="Создать декларацию"
+            :title="$t('businessDecl.noDeclarations')"
+            :description="$t('businessDecl.createDeclarationHint')"
+            :actionLabel="$t('businessDecl.createDeclaration')"
             @action="startWizard()"
           />
         </template>
@@ -507,70 +510,70 @@ const signDeclaration = (id: number) => {
           <button class="font-mono font-medium text-[#2563eb] hover:underline cursor-pointer" @click="router.push({ path: '/business/declarations/' + row.id, query: { from: 'declarations' } })">{{ value }}</button>
         </template>
         <template #cell-year="{ value }">
-          <span>{{ value }} год</span>
+          <span>{{ value }} {{ $t('businessDecl.yearSuffix') }}</span>
         </template>
         <template #cell-totalAmount="{ value }">
-          <span class="font-medium">{{ value.toLocaleString() }} сом</span>
+          <span class="font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
         </template>
         <template #cell-status="{ value }">
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="act-wrap">
-            <!-- На проверке: [Просмотреть] -->
-            <template v-if="row.status === 'На проверке'">
+            <!-- under_review: [Просмотреть] -->
+            <template v-if="row.status === 'under_review'">
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
             </template>
-            <!-- Принята: [Просмотреть] [⋯ → PDF, Excel] -->
-            <template v-else-if="row.status === 'Принята' || row.status === 'Подписана'">
+            <!-- approved: [Просмотреть] [⋯ → PDF, Excel] -->
+            <template v-else-if="row.status === 'approved' || row.status === 'signed'">
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
                   <button class="act-dropdown__item" @click="handleDownloadPdf(row.id); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    Скачать PDF
+                    {{ $t('businessDecl.downloadPdf') }}
                   </button>
-                  <button class="act-dropdown__item" @click="toastStore.show({ type: 'info', title: 'Excel', message: 'Экспорт декларации в Excel будет доступен в следующем обновлении' }); closeMenu()">
+                  <button class="act-dropdown__item" @click="toastStore.show({ type: 'info', title: 'Excel', message: t('businessDecl.excelExportToast') }); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    Скачать Excel
+                    {{ $t('businessDecl.downloadExcel') }}
                   </button>
                 </div>
               </div>
             </template>
-            <!-- Отклонена: [Исправить (orange)] [Просмотреть] -->
-            <template v-else-if="row.status === 'Отклонена'">
+            <!-- rejected: [Исправить (orange)] [Просмотреть] -->
+            <template v-else-if="row.status === 'rejected'">
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--filled act-btn--orange">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Исправить
+                {{ $t('businessDecl.fix') }}
               </router-link>
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
             </template>
-            <!-- Черновик: [Редактировать (green)] [Просмотреть] [⋯ → Удалить] -->
-            <template v-else-if="row.status === 'Черновик'">
+            <!-- draft: [Редактировать (green)] [Просмотреть] [⋯ → Удалить] -->
+            <template v-else-if="row.status === 'draft'">
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                Редактировать
+                {{ $t('businessDecl.edit') }}
               </router-link>
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
               <div class="act-more-wrap">
                 <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
                 <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
                   <button class="act-dropdown__item act-dropdown__item--red" @click="deleteDeclaration(row.id); closeMenu()">
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    Удалить
+                    {{ $t('businessDecl.deleteLabel') }}
                   </button>
                 </div>
               </div>
@@ -579,18 +582,18 @@ const signDeclaration = (id: number) => {
             <template v-else-if="row.status === 'Автосформирована'">
               <button @click="signDeclaration(row.id)" class="act-btn act-btn--filled act-btn--green">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Подписать
+                {{ $t('businessDecl.sign') }}
               </button>
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
             </template>
             <!-- Fallback -->
             <template v-else>
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                Просмотреть
+                {{ $t('businessDecl.view') }}
               </router-link>
             </template>
           </div>
@@ -608,9 +611,9 @@ const signDeclaration = (id: number) => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Назад к списку
+            {{ $t('businessDecl.backToList') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">Годовая декларация о товарах и упаковке</h1>
+          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessDecl.wizardTitle') }}</h1>
         </div>
 
         <!-- Progress Steps -->
@@ -653,12 +656,12 @@ const signDeclaration = (id: number) => {
 
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Основные данные</h2>
+            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.stepBasicData') }}</h2>
 
             <div class="space-y-6">
               <!-- Year -->
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">Отчётный год *</label>
+                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessDecl.reportingYear') }}</label>
                 <select
                   v-model="reportingYear"
                   class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20"
@@ -678,19 +681,19 @@ const signDeclaration = (id: number) => {
                   <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <h3 class="font-medium text-[#1e293b]">Данные компании (из профиля)</h3>
+                  <h3 class="font-medium text-[#1e293b]">{{ $t('businessDecl.companyDataTitle') }}</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">Наименование</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessDecl.companyName') }}</label>
                     <input type="text" :value="companyData.name" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                   <div>
-                    <label class="block text-xs text-[#64748b] mb-1">ИНН</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessDecl.inn') }}</label>
                     <input type="text" :value="companyData.inn" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                   <div class="sm:col-span-2">
-                    <label class="block text-xs text-[#64748b] mb-1">Адрес</label>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessDecl.address') }}</label>
                     <input type="text" :value="companyData.legalAddress" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                 </div>
@@ -705,10 +708,10 @@ const signDeclaration = (id: number) => {
                 </div>
                 <div>
                   <p class="font-medium text-green-800">
-                    Найдено {{ yearCalculations.length }} расчёт{{ yearCalculations.length === 1 ? '' : yearCalculations.length < 5 ? 'а' : 'ов' }} со статусом Принято/Оплачено за {{ reportingYear }} год
+                    {{ $t('businessDecl.calcFound', { count: yearCalculations.length, year: reportingYear }) }}
                   </p>
                   <p class="text-sm text-green-700 mt-1">
-                    Общая сумма: {{ totalAmount.toLocaleString() }} сом. Общая масса: {{ totalMass.toFixed(1) }} тонн.
+                    {{ $t('businessDecl.totalAmountAndMass', { amount: totalAmount.toLocaleString(), mass: totalMass.toFixed(1) }) }}
                   </p>
                 </div>
               </div>
@@ -720,8 +723,8 @@ const signDeclaration = (id: number) => {
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-yellow-800">За выбранный год не найдено принятых расчётов</p>
-                  <p class="text-sm text-yellow-700 mt-1">Сначала подайте расчёты утилизационного сбора в разделе «Расчёт утильсбора».</p>
+                  <p class="font-medium text-yellow-800">{{ $t('businessDecl.noCalcsForYear') }}</p>
+                  <p class="text-sm text-yellow-700 mt-1">{{ $t('businessDecl.noCalcsHint') }}</p>
                 </div>
               </div>
             </div>
@@ -729,24 +732,24 @@ const signDeclaration = (id: number) => {
 
           <!-- Step 2: Aggregated Data -->
           <div v-if="currentStep === 2" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-1">Итоговые данные за {{ reportingYear }} год</h2>
-            <p class="text-sm text-[#64748b] mb-6">Данные автоматически агрегированы из {{ yearCalculations.length }} принятых расчётов</p>
+            <h2 class="text-xl font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.summaryTitle', { year: reportingYear }) }}</h2>
+            <p class="text-sm text-[#64748b] mb-6">{{ $t('businessDecl.summarySubtitle', { count: yearCalculations.length }) }}</p>
 
             <!-- Aggregated Table -->
             <div class="overflow-x-auto mb-6">
               <table class="w-full text-sm">
                 <thead>
                   <tr class="text-left text-[#64748b] bg-[#f8fafc]">
-                    <th class="px-3 py-3 font-medium">Группа товаров</th>
-                    <th class="px-3 py-3 font-medium">Подгруппа</th>
-                    <th class="px-3 py-3 font-medium">Код ГСКП / Материал</th>
-                    <th class="px-3 py-3 font-medium">Код ТН ВЭД / ТР ТС</th>
-                    <th class="px-3 py-3 font-medium">Наименование</th>
-                    <th class="px-3 py-3 font-medium text-right">Масса (т)</th>
-                    <th class="px-3 py-3 font-medium text-right">Ставка (сом/т)</th>
-                    <th class="px-3 py-3 font-medium text-right">Сумма (сом)</th>
-                    <th class="px-3 py-3 font-medium text-right">Оплачено (сом)</th>
-                    <th class="px-3 py-3 font-medium text-right">Остаток (сом)</th>
+                    <th class="px-3 py-3 font-medium">{{ $t('businessDecl.thProductGroup') }}</th>
+                    <th class="px-3 py-3 font-medium">{{ $t('businessDecl.thSubgroup') }}</th>
+                    <th class="px-3 py-3 font-medium">{{ $t('businessDecl.thGskpCode') }}</th>
+                    <th class="px-3 py-3 font-medium">{{ $t('businessDecl.thTnvedCode') }}</th>
+                    <th class="px-3 py-3 font-medium">{{ $t('businessDecl.thName') }}</th>
+                    <th class="px-3 py-3 font-medium text-right">{{ $t('businessDecl.thMassTon') }}</th>
+                    <th class="px-3 py-3 font-medium text-right">{{ $t('businessDecl.thRateSom') }}</th>
+                    <th class="px-3 py-3 font-medium text-right">{{ $t('businessDecl.thAmountSom') }}</th>
+                    <th class="px-3 py-3 font-medium text-right">{{ $t('businessDecl.thPaidSom') }}</th>
+                    <th class="px-3 py-3 font-medium text-right">{{ $t('businessDecl.thRemainderSom') }}</th>
                   </tr>
                 </thead>
                 <tbody class="text-[#1e293b]">
@@ -774,7 +777,7 @@ const signDeclaration = (id: number) => {
                 </tbody>
                 <tfoot>
                   <tr class="border-t-2 border-[#1e293b] font-semibold bg-[#f8fafc]">
-                    <td colspan="5" class="px-3 py-3">ИТОГО</td>
+                    <td colspan="5" class="px-3 py-3">{{ $t('businessDecl.totalRow') }}</td>
                     <td class="px-3 py-3 text-right">{{ totalMass.toFixed(1) }}</td>
                     <td class="px-3 py-3"></td>
                     <td class="px-3 py-3 text-right">{{ totalAmount.toLocaleString() }}</td>
@@ -791,7 +794,7 @@ const signDeclaration = (id: number) => {
                 @click="showDetails = !showDetails"
                 class="w-full flex items-center justify-between px-4 py-3 bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors"
               >
-                <span class="font-medium text-[#1e293b] text-sm">Детализация по расчётам ({{ yearCalculations.length }})</span>
+                <span class="font-medium text-[#1e293b] text-sm">{{ $t('businessDecl.detailsAccordion', { count: yearCalculations.length }) }}</span>
                 <svg :class="['w-5 h-5 text-[#64748b] transition-transform', showDetails ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -800,11 +803,11 @@ const signDeclaration = (id: number) => {
                 <table class="w-full text-sm">
                   <thead>
                     <tr class="text-left text-[#64748b]">
-                      <th class="pb-2 font-medium">Номер расчёта</th>
-                      <th class="pb-2 font-medium">Период</th>
-                      <th class="pb-2 font-medium">Дата</th>
-                      <th class="pb-2 font-medium text-right">Сумма (сом)</th>
-                      <th class="pb-2 font-medium">Статус оплаты</th>
+                      <th class="pb-2 font-medium">{{ $t('businessDecl.thCalcNumber') }}</th>
+                      <th class="pb-2 font-medium">{{ $t('businessDecl.thPeriod') }}</th>
+                      <th class="pb-2 font-medium">{{ $t('businessDecl.thDate') }}</th>
+                      <th class="pb-2 font-medium text-right">{{ $t('businessDecl.thAmountSom') }}</th>
+                      <th class="pb-2 font-medium">{{ $t('businessDecl.thPaymentStatus') }}</th>
                     </tr>
                   </thead>
                   <tbody class="text-[#1e293b]">
@@ -814,8 +817,8 @@ const signDeclaration = (id: number) => {
                       <td class="py-2">{{ calc.date }}</td>
                       <td class="py-2 text-right font-medium">{{ calc.totalAmount.toLocaleString() }}</td>
                       <td class="py-2">
-                        <AppBadge :variant="calc.status === 'Оплачено' ? 'success' : 'warning'">
-                          {{ calc.status === 'Оплачено' ? 'Оплачено' : 'Не оплачено' }}
+                        <AppBadge :variant="calc.status === 'paid' ? 'success' : 'warning'">
+                          {{ calc.status === 'paid' ? $t('status.paid') : $t('businessDecl.notPaid') }}
                         </AppBadge>
                       </td>
                     </tr>
@@ -827,17 +830,17 @@ const signDeclaration = (id: number) => {
             <!-- Summary Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200">
-                <p class="text-sm text-green-700 mb-1">Общая масса за год</p>
-                <p class="text-2xl font-bold text-green-800">{{ totalMass.toFixed(1) }} т</p>
+                <p class="text-sm text-green-700 mb-1">{{ $t('businessDecl.cardTotalMass') }}</p>
+                <p class="text-2xl font-bold text-green-800">{{ totalMass.toFixed(1) }} {{ $t('businessDecl.tShort') }}</p>
               </div>
               <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border border-orange-200">
-                <p class="text-sm text-orange-700 mb-1">Начислено утильсбора</p>
-                <p class="text-2xl font-bold text-orange-800">{{ totalAmount.toLocaleString() }} сом</p>
+                <p class="text-sm text-orange-700 mb-1">{{ $t('businessDecl.cardCharged') }}</p>
+                <p class="text-2xl font-bold text-orange-800">{{ totalAmount.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
               </div>
               <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
-                <p class="text-sm text-blue-700 mb-1">Оплачено</p>
-                <p class="text-2xl font-bold text-blue-800">{{ totalPaid.toLocaleString() }} сом</p>
-                <p v-if="totalDebt > 0" class="text-sm font-semibold text-red-600 mt-1">Задолженность: {{ totalDebt.toLocaleString() }} сом</p>
+                <p class="text-sm text-blue-700 mb-1">{{ $t('businessDecl.cardPaid') }}</p>
+                <p class="text-2xl font-bold text-blue-800">{{ totalPaid.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+                <p v-if="totalDebt > 0" class="text-sm font-semibold text-red-600 mt-1">{{ $t('businessDecl.debtLabel', { amount: totalDebt.toLocaleString() }) }}</p>
               </div>
             </div>
 
@@ -847,14 +850,14 @@ const signDeclaration = (id: number) => {
                 <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <h3 class="font-medium text-green-800">Данные о переработке (из принятых отчётов: {{ yearReports.length }})</h3>
+                <h3 class="font-medium text-green-800">{{ $t('businessDecl.recyclingDataTitle', { count: yearReports.length }) }}</h3>
               </div>
               <div class="space-y-2">
                 <div v-for="item in aggregatedItems" :key="'proc_' + item.group + item.subgroup" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm py-1 border-b border-green-200 last:border-0">
                   <span class="text-green-900 font-medium">{{ item.groupLabel }}</span>
                   <div class="flex items-center gap-4 text-xs sm:text-sm">
-                    <span class="text-[#64748b]">Задекл.: {{ item.mass.toFixed(1) }} т</span>
-                    <span class="text-green-700 font-medium">Перераб.: {{ (processedByGroup.get(item.group) || 0).toFixed(1) }} т</span>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.declaredShort', { mass: item.mass.toFixed(1) }) }}</span>
+                    <span class="text-green-700 font-medium">{{ $t('businessDecl.processedShort', { mass: (processedByGroup.get(item.group) || 0).toFixed(1) }) }}</span>
                     <span :class="[(processedByGroup.get(item.group) || 0) >= item.mass ? 'text-green-600' : 'text-orange-600', 'font-medium']">
                       {{ item.mass > 0 ? (((processedByGroup.get(item.group) || 0) / item.mass) * 100).toFixed(0) : 0 }}%
                     </span>
@@ -862,8 +865,8 @@ const signDeclaration = (id: number) => {
                 </div>
               </div>
               <div class="mt-3 pt-3 border-t border-green-300 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 font-medium">
-                <span class="text-green-900">Итого переработано</span>
-                <span class="text-green-700">{{ totalProcessed.toFixed(1) }} т из {{ totalMass.toFixed(1) }} т ({{ totalMass > 0 ? ((totalProcessed / totalMass) * 100).toFixed(1) : 0 }}%)</span>
+                <span class="text-green-900">{{ $t('businessDecl.totalProcessed') }}</span>
+                <span class="text-green-700">{{ $t('businessDecl.totalProcessedValue', { processed: totalProcessed.toFixed(1), total: totalMass.toFixed(1), percent: totalMass > 0 ? ((totalProcessed / totalMass) * 100).toFixed(1) : 0 }) }}</span>
               </div>
             </div>
 
@@ -871,13 +874,13 @@ const signDeclaration = (id: number) => {
               <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p class="text-sm text-yellow-800">Принятых отчётов о переработке за {{ reportingYear }} год пока нет. Данные о переработке будут отображены после принятия отчётов.</p>
+              <p class="text-sm text-yellow-800">{{ $t('businessDecl.noRecyclingReports', { year: reportingYear }) }}</p>
             </div>
           </div>
 
           <!-- Step 3: Review & Submit -->
           <div v-if="currentStep === 3" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">Проверка и отправка</h2>
+            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.reviewAndSubmit') }}</h2>
 
             <div class="space-y-6">
               <!-- Summary -->
@@ -886,40 +889,40 @@ const signDeclaration = (id: number) => {
                   <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Сводная информация
+                  {{ $t('businessDecl.summaryInfo') }}
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <span class="text-[#64748b]">Отчётный год:</span>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.reportingYearLabel') }}</span>
                     <p class="font-medium text-[#1e293b]">{{ reportingYear }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">Организация:</span>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.organizationLabel') }}</span>
                     <p class="font-medium text-[#1e293b]">{{ companyData.name }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">ИНН:</span>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.innLabel') }}</span>
                     <p class="font-medium text-[#1e293b]">{{ companyData.inn }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">Количество расчётов:</span>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.calcCountLabel') }}</span>
                     <p class="font-medium text-[#1e293b]">{{ yearCalculations.length }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">Общая масса:</span>
-                    <p class="font-medium text-[#1e293b]">{{ totalMass.toFixed(2) }} тонн</p>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.totalMassLabel') }}</span>
+                    <p class="font-medium text-[#1e293b]">{{ totalMass.toFixed(2) }} {{ $t('businessDecl.tonsSuffix') }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">Общая сумма:</span>
-                    <p class="font-medium text-[#1e293b]">{{ totalAmount.toLocaleString() }} сом</p>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.totalAmountLabel') }}</span>
+                    <p class="font-medium text-[#1e293b]">{{ totalAmount.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
                   </div>
                   <div>
-                    <span class="text-[#64748b]">Оплачено:</span>
-                    <p class="font-medium text-green-600">{{ totalPaid.toLocaleString() }} сом</p>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.paidLabel') }}</span>
+                    <p class="font-medium text-green-600">{{ totalPaid.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
                   </div>
                   <div v-if="totalDebt > 0">
-                    <span class="text-[#64748b]">Остаток:</span>
-                    <p class="font-medium text-red-600">{{ totalDebt.toLocaleString() }} сом</p>
+                    <span class="text-[#64748b]">{{ $t('businessDecl.remainderLabel') }}</span>
+                    <p class="font-medium text-red-600">{{ totalDebt.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
                   </div>
                 </div>
               </div>
@@ -930,9 +933,9 @@ const signDeclaration = (id: number) => {
                   <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  Прикреплённые документы
+                  {{ $t('businessDecl.attachedDocs') }}
                 </h3>
-                <p class="text-xs text-[#64748b] mb-3">Прикрепите подтверждающие документы (акты, договоры, счета). PDF, JPG, PNG до 10 МБ.</p>
+                <p class="text-xs text-[#64748b] mb-3">{{ $t('businessDecl.attachedDocsHint') }}</p>
 
                 <!-- File list -->
                 <div v-if="attachedDocs.length > 0" class="space-y-2 mb-3">
@@ -957,7 +960,7 @@ const signDeclaration = (id: number) => {
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
-                  Добавить файл
+                  {{ $t('businessDecl.addFile') }}
                   <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="handleDocUpload" />
                 </label>
               </div>
@@ -968,11 +971,11 @@ const signDeclaration = (id: number) => {
                   <svg class="w-5 h-5" :class="signedWithEcp ? 'text-green-600' : 'text-[#64748b]'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  Электронная цифровая подпись (ЭЦП)
+                  {{ $t('businessDecl.ecpTitle') }}
                 </h3>
 
                 <div v-if="!signedWithEcp">
-                  <p class="text-sm text-[#64748b] mb-3">Для отправки декларации необходимо подписать её электронной цифровой подписью.</p>
+                  <p class="text-sm text-[#64748b] mb-3">{{ $t('businessDecl.ecpHint') }}</p>
                   <button
                     @click="simulateEcp"
                     class="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] text-white rounded-lg text-sm font-medium hover:bg-[#1d4ed8] transition-colors"
@@ -980,7 +983,7 @@ const signDeclaration = (id: number) => {
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                     </svg>
-                    Подписать ЭЦП
+                    {{ $t('businessDecl.signEcp') }}
                   </button>
                 </div>
 
@@ -991,8 +994,8 @@ const signDeclaration = (id: number) => {
                     </svg>
                   </div>
                   <div>
-                    <p class="font-medium text-green-800">Документ подписан ЭЦП</p>
-                    <p class="text-xs text-green-600">Сертификат: CN={{ companyData.name }}, ИНН={{ companyData.inn }}</p>
+                    <p class="font-medium text-green-800">{{ $t('businessDecl.docSignedEcp') }}</p>
+                    <p class="text-xs text-green-600">{{ $t('businessDecl.certificateLabel', { name: companyData.name, inn: companyData.inn }) }}</p>
                   </div>
                 </div>
               </div>
@@ -1004,7 +1007,7 @@ const signDeclaration = (id: number) => {
                   v-model="confirmData"
                   class="mt-1 w-5 h-5 rounded border-[#e2e8f0] text-[#2563eb] focus:ring-[#2563eb]/20"
                 />
-                <span class="text-sm text-[#1e293b]">Подтверждаю достоверность предоставленных данных и соответствие их первичным документам</span>
+                <span class="text-sm text-[#1e293b]">{{ $t('businessDecl.confirmCheckbox') }}</span>
               </label>
             </div>
           </div>
@@ -1019,7 +1022,7 @@ const signDeclaration = (id: number) => {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Назад
+              {{ $t('businessDecl.back') }}
             </AppButton>
             <div v-else></div>
 
@@ -1032,7 +1035,7 @@ const signDeclaration = (id: number) => {
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                 </svg>
-                Сохранить черновик
+                {{ $t('businessDecl.saveDraft') }}
               </AppButton>
 
               <button
@@ -1041,7 +1044,7 @@ const signDeclaration = (id: number) => {
                 :disabled="currentStep === 1 && !canProceedStep1"
                 class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Далее
+                {{ $t('businessDecl.next') }}
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
@@ -1056,7 +1059,7 @@ const signDeclaration = (id: number) => {
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Отправить декларацию
+                {{ $t('businessDecl.submitDeclaration') }}
               </AppButton>
             </div>
           </div>
@@ -1073,28 +1076,28 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
 
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">Декларация успешно отправлена!</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessDecl.successTitle') }}</h1>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Номер декларации</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDecl.declarationNumber') }}</p>
               <p class="text-lg font-bold text-[#2563eb] font-mono">{{ submittedDeclaration.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Дата подачи</p>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDecl.submissionDate') }}</p>
               <p class="text-lg font-bold text-[#1e293b]">{{ submittedDeclaration.date }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">Статус</p>
-              <AppBadge variant="warning">На проверке</AppBadge>
+              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDecl.statusLabel') }}</p>
+              <AppBadge variant="warning">{{ $t('status.underReview') }}</AppBadge>
             </div>
           </div>
         </div>
 
         <p class="text-[#64748b] mb-8">
-          Ваша годовая декларация принята и направлена на проверку.<br />
-          Вы получите уведомление о результате проверки.
+          {{ $t('businessDecl.successMessage') }}<br />
+          {{ $t('businessDecl.successMessageLine2') }}
         </p>
 
         <div class="flex flex-col sm:flex-row justify-center gap-4">
@@ -1102,7 +1105,7 @@ const signDeclaration = (id: number) => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Скачать PDF
+            {{ $t('businessDecl.downloadPdf') }}
           </button>
           <button
             @click="backToList"
@@ -1111,7 +1114,7 @@ const signDeclaration = (id: number) => {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
-            Вернуться к списку
+            {{ $t('businessDecl.returnToList') }}
           </button>
         </div>
       </div>

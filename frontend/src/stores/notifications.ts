@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
+import i18n from '../i18n'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
 export type NotificationRole = 'business' | 'eco-operator' | 'employee' | 'admin'
@@ -22,10 +23,11 @@ function formatRelativeTime(isoString: string): string {
   const mins = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
-  if (mins < 1) return 'только что'
-  if (mins < 60) return `${mins} мин назад`
-  if (hours < 24) return `${hours} ч назад`
-  if (days < 30) return `${days} дн назад`
+  const t = i18n.global.t as (key: string, params?: Record<string, any>) => string
+  if (mins < 1) return t('time.justNow')
+  if (mins < 60) return t('time.minutesAgo', { mins })
+  if (hours < 24) return t('time.hoursAgo', { hours })
+  if (days < 30) return t('time.daysAgo', { days })
   return new Date(isoString).toLocaleDateString('ru-RU')
 }
 

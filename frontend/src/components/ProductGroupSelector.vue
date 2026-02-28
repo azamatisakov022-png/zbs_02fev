@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   productGroups,
   productSubgroups,
@@ -8,6 +9,8 @@ import {
 } from '../data/product-groups'
 import SubgroupPickerModal from './SubgroupPickerModal.vue'
 import TnvedCode from './TnvedCode.vue'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   group: string
@@ -71,7 +74,7 @@ watch(() => props.subgroup, () => {
   <div class="product-group-selector">
     <!-- Row 1: Group — full width -->
     <div class="mb-4">
-      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Группа товара</label>
+      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.label') }}</label>
       <template v-if="readonly">
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="groupLabel">
           {{ groupLabel || '—' }}
@@ -85,7 +88,7 @@ watch(() => props.subgroup, () => {
           class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
           :style="{ '--tw-ring-color': accentColor }"
         >
-          <option value="">Выберите группу</option>
+          <option value="">{{ $t('productGroup.selectGroup') }}</option>
           <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
         </select>
       </template>
@@ -93,7 +96,7 @@ watch(() => props.subgroup, () => {
 
     <!-- Row 2: Subgroup — modal picker -->
     <div class="mb-4">
-      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Подгруппа</label>
+      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.subgroupLabel') }}</label>
       <template v-if="readonly">
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="subgroupLabel">
           {{ subgroupLabel || '—' }}
@@ -112,20 +115,20 @@ watch(() => props.subgroup, () => {
     <!-- Row 3: Type-specific readonly fields -->
     <div v-if="!isPackaging" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
       <div>
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ГСКП</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.gskpCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           {{ selectedSubgroupData?.gskpCode || '—' }}
         </div>
       </div>
       <div>
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ТН ВЭД</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           <TnvedCode v-if="selectedSubgroupData?.tnvedCode" :code="selectedSubgroupData.tnvedCode" />
           <span v-else>—</span>
         </div>
       </div>
       <div class="sm:col-span-2 lg:col-span-3">
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Наименование ТН ВЭД</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedName') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]" :title="selectedSubgroupData?.tnvedName || ''">
           {{ selectedSubgroupData?.tnvedName || '—' }}
         </div>
@@ -133,19 +136,19 @@ watch(() => props.subgroup, () => {
     </div>
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3 lg:gap-4">
       <div class="sm:col-span-2 lg:col-span-4">
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Материал упаковки</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.packagingMaterial') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
           {{ selectedSubgroupData?.packagingMaterial || '—' }}
         </div>
       </div>
       <div class="lg:col-span-3">
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Обозначение ТР ТС</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsDesignation') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           {{ selectedSubgroupData?.packagingLetterCode || '—' }}
         </div>
       </div>
       <div class="lg:col-span-3">
-        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">Код ТР ТС</label>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           {{ selectedSubgroupData?.packagingDigitalCode || '—' }}
         </div>

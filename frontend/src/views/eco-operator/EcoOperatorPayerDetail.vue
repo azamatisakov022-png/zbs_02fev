@@ -1,29 +1,31 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import {
   payerStore,
   formatMoney,
-  categoryLabels,
+  getCategoryLabel,
   categoryColors,
-  subcategoryLabels,
-  reportingLabels,
+  getSubcategoryLabel,
+  getReportingLabel,
   reportingColors,
-  settlementLabels,
+  getSettlementLabel,
   settlementColors,
-  systemStatusLabels,
+  getSystemStatusLabel,
   systemStatusColors,
-  declarationStatusLabels,
+  getDeclarationStatusLabel,
   declarationStatusColors,
-  paymentStatusLabels,
+  getPaymentStatusLabel,
   paymentStatusColors,
   type Payer,
 } from '../../stores/payers'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // --- Payer data ---
@@ -50,9 +52,9 @@ const avatarLetter = computed(() => {
 const settlementDisplay = computed(() => {
   if (!payer.value) return { text: '', colorClass: '' }
   const s = payer.value.settlementStatus
-  if (s === 'clear') return { text: 'Без задолженности', colorClass: 'text-green-800' }
-  if (s === 'overpaid') return { text: '+' + formatMoney(payer.value.settlementAmount) + ' сом', colorClass: 'text-blue-800' }
-  return { text: '-' + formatMoney(payer.value.settlementAmount) + ' сом', colorClass: 'text-red-800' }
+  if (s === 'clear') return { text: t('ecoPayerDetail.noDebt'), colorClass: 'text-green-800' }
+  if (s === 'overpaid') return { text: '+' + formatMoney(payer.value.settlementAmount) + ' ' + t('ecoPayerDetail.som'), colorClass: 'text-blue-800' }
+  return { text: '-' + formatMoney(payer.value.settlementAmount) + ' ' + t('ecoPayerDetail.som'), colorClass: 'text-red-800' }
 })
 
 const settlementCardClass = computed(() => {
@@ -123,13 +125,13 @@ function docTypeLabel(type: string): string {
   >
     <!-- ==================== NOT FOUND STATE ==================== -->
     <div v-if="!payer" class="text-center py-20">
-      <p class="text-xl text-gray-500 mb-4">Плательщик не найден</p>
+      <p class="text-xl text-gray-500 mb-4">{{ $t('ecoPayerDetail.payerNotFound') }}</p>
       <button
         @click="router.push('/eco-operator/payers')"
         class="btn-back"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -142,7 +144,7 @@ function docTypeLabel(type: string): string {
           class="btn-back"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
       </div>
 
@@ -160,24 +162,24 @@ function docTypeLabel(type: string): string {
           <div class="flex-1 min-w-0">
             <h1 class="text-2xl font-bold text-gray-900">{{ payer.name }}</h1>
             <div class="flex flex-wrap items-center gap-3 mt-1">
-              <span class="text-sm text-gray-500">ИНН: <span class="font-mono font-medium text-gray-700">{{ payer.inn }}</span></span>
-              <span class="text-sm text-gray-500">Дата регистрации: <span class="font-medium text-gray-700">{{ payer.registeredAt }}</span></span>
+              <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.inn') }}: <span class="font-mono font-medium text-gray-700">{{ payer.inn }}</span></span>
+              <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.registrationDate') }}: <span class="font-medium text-gray-700">{{ payer.registeredAt }}</span></span>
             </div>
           </div>
 
           <!-- Right badges -->
           <div class="flex flex-wrap items-center gap-2 flex-shrink-0">
             <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', systemStatusColors[payer.systemStatus]]">
-              {{ systemStatusLabels[payer.systemStatus] }}
+              {{ getSystemStatusLabel(payer.systemStatus) }}
             </span>
             <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', categoryColors[payer.category]]">
-              {{ categoryLabels[payer.category] }}
+              {{ getCategoryLabel(payer.category) }}
             </span>
             <span
               v-if="payer.subcategory"
               class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700"
             >
-              {{ subcategoryLabels[payer.subcategory] }}
+              {{ getSubcategoryLabel(payer.subcategory) }}
             </span>
           </div>
         </div>
@@ -185,61 +187,61 @@ function docTypeLabel(type: string): string {
 
       <!-- ==================== BLOCK 1: General Info ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Общая информация</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.generalInfo') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
           <!-- Left column -->
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Полное наименование</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.fullName') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ payer.name }}</span>
           </div>
           <!-- Right column -->
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Контактное лицо</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.contactPerson') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ payer.contactPerson }}</span>
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">ОПФ</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.opf') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ payer.opf }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Телефон</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.phone') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ payer.contactPhone }}</span>
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">ИНН</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.inn') }}</span>
             <span class="text-sm font-medium text-gray-900 font-mono">{{ payer.inn }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Email</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.email') }}</span>
             <a :href="'mailto:' + payer.contactEmail" class="text-sm font-medium text-teal-600 hover:text-teal-700">{{ payer.contactEmail }}</a>
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Регион</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.region') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ payer.region }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Руководитель</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.director') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ payer.director }}</span>
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Юридический адрес</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.legalAddress') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right max-w-xs">{{ payer.legalAddress }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Должность</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.position') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right">{{ payer.directorPosition }}</span>
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Фактический адрес</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.actualAddress') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right max-w-xs">{{ payer.actualAddress }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Веб-сайт</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.website') }}</span>
             <a
               v-if="payer.website"
               :href="'https://' + payer.website"
@@ -250,12 +252,12 @@ function docTypeLabel(type: string): string {
           </div>
 
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">ОКЭД</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.oked') }}</span>
             <span class="text-sm font-medium text-gray-900 text-right max-w-xs">{{ payer.oked }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
-            <span class="text-sm text-gray-500">Подкатегория</span>
-            <span v-if="payer.subcategory" class="text-sm font-medium text-gray-900">{{ subcategoryLabels[payer.subcategory] }}</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.subcategory') }}</span>
+            <span v-if="payer.subcategory" class="text-sm font-medium text-gray-900">{{ getSubcategoryLabel(payer.subcategory) }}</span>
             <span v-else class="text-sm text-gray-400">&mdash;</span>
           </div>
         </div>
@@ -263,7 +265,7 @@ function docTypeLabel(type: string): string {
 
       <!-- ==================== BLOCK 2: Financial Summary ==================== -->
       <div class="mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Финансовая сводка</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.financialSummary') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Charged -->
           <div class="bg-green-50 border border-green-200 rounded-xl p-4">
@@ -273,9 +275,9 @@ function docTypeLabel(type: string): string {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                 </svg>
               </div>
-              <p class="text-xs font-medium text-green-600">Начислено за 2026</p>
+              <p class="text-xs font-medium text-green-600">{{ $t('ecoPayerDetail.chargedFor2026') }}</p>
             </div>
-            <p class="text-2xl font-bold text-green-800">{{ formatMoney(payer.totalCharged) }} <span class="text-sm font-medium">сом</span></p>
+            <p class="text-2xl font-bold text-green-800">{{ formatMoney(payer.totalCharged) }} <span class="text-sm font-medium">{{ $t('ecoPayerDetail.som') }}</span></p>
           </div>
 
           <!-- Paid -->
@@ -286,9 +288,9 @@ function docTypeLabel(type: string): string {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <p class="text-xs font-medium text-blue-600">Оплачено за 2026</p>
+              <p class="text-xs font-medium text-blue-600">{{ $t('ecoPayerDetail.paidFor2026') }}</p>
             </div>
-            <p class="text-2xl font-bold text-blue-800">{{ formatMoney(payer.totalPaid) }} <span class="text-sm font-medium">сом</span></p>
+            <p class="text-2xl font-bold text-blue-800">{{ formatMoney(payer.totalPaid) }} <span class="text-sm font-medium">{{ $t('ecoPayerDetail.som') }}</span></p>
           </div>
 
           <!-- Settlement -->
@@ -300,7 +302,7 @@ function docTypeLabel(type: string): string {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                 </svg>
               </div>
-              <p :class="['text-xs font-medium', payer.settlementStatus === 'clear' ? 'text-green-600' : payer.settlementStatus === 'overpaid' ? 'text-blue-600' : 'text-red-600']">Задолженность / Переплата</p>
+              <p :class="['text-xs font-medium', payer.settlementStatus === 'clear' ? 'text-green-600' : payer.settlementStatus === 'overpaid' ? 'text-blue-600' : 'text-red-600']">{{ $t('ecoPayerDetail.debtOverpayment') }}</p>
             </div>
             <p :class="['text-2xl font-bold', settlementDisplay.colorClass]">{{ settlementDisplay.text }}</p>
           </div>
@@ -313,7 +315,7 @@ function docTypeLabel(type: string): string {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <p class="text-xs font-medium text-purple-600">Деклараций подано</p>
+              <p class="text-xs font-medium text-purple-600">{{ $t('ecoPayerDetail.declarationsSubmitted') }}</p>
             </div>
             <p class="text-2xl font-bold text-purple-800">{{ payer.declarationsCount }}</p>
           </div>
@@ -322,18 +324,18 @@ function docTypeLabel(type: string): string {
 
       <!-- ==================== BLOCK 3: Declarations History ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">История деклараций</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.declarationsHistory') }}</h2>
         <div v-if="payer.declarations.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
               <tr>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200"># декларации</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Период</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Тип операции</th>
-                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Масса, тонн</th>
-                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Сумма сбора</th>
-                <th class="text-center px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Статус</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Дата подачи</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declNumber') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declPeriod') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declOperationType') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declMass') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declFeeAmount') }}</th>
+                <th class="text-center px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declStatus') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.declSubmitDate') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -342,10 +344,10 @@ function docTypeLabel(type: string): string {
                 <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ d.period }}</td>
                 <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ d.operationType }}</td>
                 <td class="px-4 py-3 text-right text-gray-700 border-b border-gray-100">{{ d.mass }}</td>
-                <td class="px-4 py-3 text-right font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{{ formatMoney(d.amount) }} сом</td>
+                <td class="px-4 py-3 text-right font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{{ formatMoney(d.amount) }} {{ $t('ecoPayerDetail.som') }}</td>
                 <td class="px-4 py-3 text-center border-b border-gray-100">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', declarationStatusColors[d.status]]">
-                    {{ declarationStatusLabels[d.status] }}
+                    {{ getDeclarationStatusLabel(d.status) }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ d.submittedAt || '&mdash;' }}</td>
@@ -360,64 +362,64 @@ function docTypeLabel(type: string): string {
               :disabled="declarationsPage <= 1"
               class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Назад
+              {{ $t('common.back') }}
             </button>
-            <span class="text-sm text-gray-500">Страница {{ declarationsPage }} из {{ totalDeclarationPages }}</span>
+            <span class="text-sm text-gray-500">{{ $t('ecoPayerDetail.page') }} {{ declarationsPage }} {{ $t('ecoPayerDetail.of') }} {{ totalDeclarationPages }}</span>
             <button
               @click="declarationsPage++"
               :disabled="declarationsPage >= totalDeclarationPages"
               class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Далее
+              {{ $t('ecoPayerDetail.next') }}
             </button>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-400 text-center py-6">Нет деклараций</p>
+        <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noDeclarations') }}</p>
       </div>
 
       <!-- ==================== BLOCK 4: Payments History ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">История платежей</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.paymentsHistory') }}</h2>
         <div v-if="payer.payments.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
               <tr>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Дата</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200"># платежа</th>
-                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Сумма</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Способ оплаты</th>
-                <th class="text-center px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Статус</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.payDate') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.payNumber') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.payAmount') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.payMethod') }}</th>
+                <th class="text-center px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.payStatus') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="p in payer.payments" :key="p.id" class="hover:bg-gray-50 transition-colors">
                 <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ p.date }}</td>
                 <td class="px-4 py-3 font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{{ p.id }}</td>
-                <td class="px-4 py-3 text-right font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{{ formatMoney(p.amount) }} сом</td>
+                <td class="px-4 py-3 text-right font-medium text-gray-900 border-b border-gray-100 whitespace-nowrap">{{ formatMoney(p.amount) }} {{ $t('ecoPayerDetail.som') }}</td>
                 <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ p.method }}</td>
                 <td class="px-4 py-3 text-center border-b border-gray-100">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', paymentStatusColors[p.status]]">
-                    {{ paymentStatusLabels[p.status] }}
+                    {{ getPaymentStatusLabel(p.status) }}
                   </span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p v-else class="text-sm text-gray-400 text-center py-6">Нет платежей</p>
+        <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noPayments') }}</p>
       </div>
 
       <!-- ==================== BLOCK 5: Audit Log ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">История изменений</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.changeHistory') }}</h2>
         <div v-if="payer.auditLog.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
               <tr>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Дата и время</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Действие</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Кто изменил</th>
-                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">Детали</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.auditDateTime') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.auditAction') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.auditUser') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.auditDetails') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -434,16 +436,16 @@ function docTypeLabel(type: string): string {
               @click="showAllAudit = true"
               class="text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
             >
-              Показать все ({{ payer.auditLog.length }})
+              {{ $t('ecoPayerDetail.showAll') }} ({{ payer.auditLog.length }})
             </button>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-400 text-center py-6">Нет записей</p>
+        <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noRecords') }}</p>
       </div>
 
       <!-- ==================== BLOCK 6: Documents ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">Документы</h2>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.documents') }}</h2>
         <div v-if="payer.documents.length > 0" class="space-y-2 mb-4">
           <div
             v-for="doc in payer.documents"
@@ -472,15 +474,15 @@ function docTypeLabel(type: string): string {
             <!-- Actions -->
             <div class="flex items-center gap-2 flex-shrink-0">
               <button class="text-xs font-medium text-teal-600 hover:text-teal-700 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors">
-                Просмотр
+                {{ $t('common.view') }}
               </button>
               <button class="text-xs font-medium text-blue-600 hover:text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
-                Скачать
+                {{ $t('common.download') }}
               </button>
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-400 text-center py-4 mb-4">Нет документов</p>
+        <p v-else class="text-sm text-gray-400 text-center py-4 mb-4">{{ $t('ecoPayerDetail.noDocuments') }}</p>
       </div>
 
       <!-- ==================== BLOCK 7: Comments ==================== -->
@@ -490,9 +492,9 @@ function docTypeLabel(type: string): string {
             <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            Комментарии сотрудников
+            {{ $t('ecoPayerDetail.employeeComments') }}
           </h2>
-          <p class="text-xs text-gray-400 mt-1">Видны только сотрудникам МПРЭТН</p>
+          <p class="text-xs text-gray-400 mt-1">{{ $t('ecoPayerDetail.visibleToStaffOnly') }}</p>
         </div>
 
         <!-- Add comment form -->
@@ -501,7 +503,7 @@ function docTypeLabel(type: string): string {
             v-model="newCommentText"
             rows="3"
             class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
-            placeholder="Добавить комментарий..."
+            :placeholder="$t('ecoPayerDetail.addCommentPlaceholder')"
           ></textarea>
           <div class="flex justify-end mt-2">
             <button
@@ -509,7 +511,7 @@ function docTypeLabel(type: string): string {
               :disabled="!newCommentText.trim()"
               class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Добавить комментарий
+              {{ $t('ecoPayerDetail.addComment') }}
             </button>
           </div>
         </div>
@@ -533,7 +535,7 @@ function docTypeLabel(type: string): string {
             <p class="text-sm text-gray-700 ml-11">{{ c.text }}</p>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-400 text-center py-4">Нет комментариев</p>
+        <p v-else class="text-sm text-gray-400 text-center py-4">{{ $t('ecoPayerDetail.noComments') }}</p>
       </div>
     </template>
   </DashboardLayout>

@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Document {
   id: number
   name: string
@@ -101,10 +105,10 @@ const handleDownload = (doc: Document) => {
     <!-- Page header -->
     <div class="container-main">
       <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-3 lg:mb-[12px]">
-        Законодательство
+        {{ $t('legislation.title') }}
       </h1>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] mb-8 lg:mb-[60px]">
-        Нормативные правовые акты в сфере обращения с отходами
+        {{ $t('legislation.subtitle') }}
       </p>
     </div>
 
@@ -119,13 +123,13 @@ const handleDownload = (doc: Document) => {
               <span class="text-[24px] font-medium text-black">№</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center px-5 py-4 flex-1">
-              <span class="text-[18px] font-medium text-black">Наименование документа</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('legislation.documentName') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-5 py-4 w-[150px]">
-              <span class="text-[18px] font-medium text-black">Дата</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('legislation.date') }}</span>
             </div>
             <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[200px]">
-              <span class="text-[18px] font-medium text-black">Действия</span>
+              <span class="text-[18px] font-medium text-black">{{ $t('legislation.actions') }}</span>
             </div>
           </div>
 
@@ -150,13 +154,13 @@ const handleDownload = (doc: Document) => {
                   @click="handleView(doc)"
                   class="bg-[#0e888d] text-white text-[12px] font-medium px-[10px] py-[8px] rounded-[12px] hover:bg-[#0a6d71] transition-colors"
                 >
-                  Смотреть
+                  {{ $t('legislation.viewDoc') }}
                 </button>
                 <button
                   @click="handleDownload(doc)"
                   class="bg-[#fea629] text-white text-[12px] font-medium px-[10px] py-[8px] rounded-[12px] hover:bg-[#e59520] transition-colors"
                 >
-                  Скачать
+                  {{ $t('legislation.downloadDoc') }}
                 </button>
               </div>
             </div>
@@ -185,13 +189,13 @@ const handleDownload = (doc: Document) => {
               @click="handleView(doc)"
               class="bg-[#0e888d] text-white text-sm font-medium px-4 py-2 rounded-[12px] hover:bg-[#0a6d71] transition-colors flex-1"
             >
-              Смотреть
+              {{ $t('legislation.viewDoc') }}
             </button>
             <button
               @click="handleDownload(doc)"
               class="bg-[#fea629] text-white text-sm font-medium px-4 py-2 rounded-[12px] hover:bg-[#e59520] transition-colors flex-1"
             >
-              Скачать
+              {{ $t('legislation.downloadDoc') }}
             </button>
           </div>
         </div>

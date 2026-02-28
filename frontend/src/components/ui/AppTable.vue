@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 export interface TableColumn {
   key: string
   label: string
@@ -30,7 +34,7 @@ defineEmits<{
           >
             {{ col.label }}
           </th>
-          <th v-if="$slots.actions" class="app-table__th--right">Действия</th>
+          <th v-if="$slots.actions" class="app-table__th--right">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -56,7 +60,7 @@ defineEmits<{
         <tr v-if="rows.length === 0">
           <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="app-table__empty">
             <slot name="empty">
-              <span class="text-[#94A3B8]">Нет данных</span>
+              <span class="text-[#94A3B8]">{{ t('common.noData') }}</span>
             </slot>
           </td>
         </tr>

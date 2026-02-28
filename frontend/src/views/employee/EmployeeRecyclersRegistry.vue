@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -11,6 +12,7 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
+const { t } = useI18n()
 
 // View state
 const showAddForm = ref(false)
@@ -43,11 +45,8 @@ const filteredRecyclers = computed(() => {
 
 // Status helpers
 const getStatusLabel = (status: RecyclerStatus) => {
-  switch (status) {
-    case 'active': return 'Активен'
-    case 'suspended': return 'Приостановлен'
-    case 'revoked': return 'Исключён'
-  }
+  const map: Record<string, string> = { active: 'status.active', suspended: 'status.suspended', revoked: 'status.revoked' }
+  return map[status] || status
 }
 
 const getStatusClass = (status: RecyclerStatus) => {
@@ -157,7 +156,7 @@ const toggleWasteType = (groupValue: string) => {
 const saveRecycler = () => {
   if (!newRecycler.value.name || !newRecycler.value.inn) return
   const today = new Date()
-  const dateStr = today.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const dateStr = today.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })
   recyclerStore.addRecycler({
     ...newRecycler.value,
     addedDate: dateStr,
@@ -197,7 +196,7 @@ const saveEdit = () => {
   recyclerStore.updateRecycler(editingRecyclerId.value, {
     ...newRecycler.value,
   })
-  toastStore.show({ type: 'success', title: 'Успешно', message: 'Данные переработчика обновлены' })
+  toastStore.show({ type: 'success', title: t('common.success'), message: t('employeeRecyclers.recyclerUpdated') })
   resetForm()
   showAddForm.value = false
   isEditing.value = false
@@ -234,8 +233,8 @@ const resetAllFilters = () => {
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Реестр переработчиков</h1>
-        <p class="text-[#64748b]">Лицензированные переработчики и утилизаторы отходов</p>
+        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('employeeRecyclers.title') }}</h1>
+        <p class="text-[#64748b]">{{ $t('employeeRecyclers.subtitle') }}</p>
       </div>
       <AppButton variant="primary" @click="showAddForm = true">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,62 +247,62 @@ const resetAllFilters = () => {
     <!-- Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Всего</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('common.total') }}</p>
         <p class="text-2xl font-bold text-[#1e293b]">{{ counts.all }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Активных</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeRecyclers.statActive') }}</p>
         <p class="text-2xl font-bold text-[#10b981]">{{ counts.active }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Приостановленных</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeRecyclers.statSuspended') }}</p>
         <p class="text-2xl font-bold text-[#f59e0b]">{{ counts.suspended }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Исключённых</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeRecyclers.statRevoked') }}</p>
         <p class="text-2xl font-bold text-[#ef4444]">{{ counts.revoked }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">Общая мощность</p>
-        <p class="text-2xl font-bold text-[#2563eb]">{{ totalCapacityAll }} т/год</p>
+        <p class="text-sm text-[#64748b] mb-1">{{ $t('employeeRecyclers.totalCapacity') }}</p>
+        <p class="text-2xl font-bold text-[#2563eb]">{{ totalCapacityAll }} {{ $t('employeeRecyclers.tonsPerYear') }}</p>
       </div>
     </div>
 
     <!-- Add Form -->
     <div v-if="showAddForm" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
-      <h2 class="text-lg font-semibold text-[#1e293b] mb-6">{{ isEditing ? 'Редактирование переработчика' : 'Добавление переработчика' }}</h2>
+      <h2 class="text-lg font-semibold text-[#1e293b] mb-6">{{ isEditing ? $t('employeeRecyclers.editRecycler') : $t('employeeRecyclers.addRecycler') }}</h2>
       <div class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Наименование *</label>
-            <input v-model="newRecycler.name" type="text" placeholder="ОсОО «Название»" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.name') }} *</label>
+            <input v-model="newRecycler.name" type="text" :placeholder="$t('employeeRecyclers.namePlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">ИНН *</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.inn') }} *</label>
             <input v-model="newRecycler.inn" type="text" placeholder="01234567890123" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Номер лицензии</label>
-            <input v-model="newRecycler.licenseNumber" type="text" placeholder="ЛИЦ-2024-XXX" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseNumber') }}</label>
+            <input v-model="newRecycler.licenseNumber" type="text" :placeholder="$t('employeeRecyclers.licenseNumPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Дата выдачи лицензии</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseDate') }}</label>
             <input v-model="newRecycler.licenseDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Срок действия лицензии</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseExpiry') }}</label>
             <input v-model="newRecycler.licenseExpiry" type="text" placeholder="01.01.2029" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Статус</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('common.status') }}</label>
             <div class="flex items-center gap-4 mt-2">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="radio" v-model="newRecycler.status" value="active" class="text-[#10b981]" />
-                <span class="text-sm text-[#1e293b]">Активен</span>
+                <span class="text-sm text-[#1e293b]">{{ $t('status.active') }}</span>
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="radio" v-model="newRecycler.status" value="suspended" class="text-[#f59e0b]" />
-                <span class="text-sm text-[#1e293b]">Приостановлен</span>
+                <span class="text-sm text-[#1e293b]">{{ $t('status.suspended') }}</span>
               </label>
             </div>
           </div>
@@ -311,15 +310,15 @@ const resetAllFilters = () => {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="sm:col-span-2 lg:col-span-1">
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Юридический адрес</label>
-            <input v-model="newRecycler.address" type="text" placeholder="г. Бишкек, ул. ..." class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.legalAddress') }}</label>
+            <input v-model="newRecycler.address" type="text" :placeholder="$t('employeeRecyclers.addressPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Телефон</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.phone') }}</label>
             <input v-model="newRecycler.contactPhone" type="text" placeholder="+996 555 ..." class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Email</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.email') }}</label>
             <input v-model="newRecycler.contactEmail" type="text" placeholder="info@company.kg" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
         </div>
@@ -327,24 +326,24 @@ const resetAllFilters = () => {
         <!-- Coordinates -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Широта</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.latitude') }}</label>
             <input :value="newRecycler.coordinates?.lat || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lat = v } }" type="number" step="0.0001" placeholder="42.8746" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">Долгота</label>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.longitude') }}</label>
             <input :value="newRecycler.coordinates?.lng || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lng = v } }" type="number" step="0.0001" placeholder="74.5698" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
           </div>
           <div class="flex items-end">
             <button type="button" @click="pickerCoords = newRecycler.coordinates; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              Указать на карте
+              {{ $t('employeeRecyclers.pickOnMap') }}
             </button>
           </div>
         </div>
 
         <!-- Waste Types multiselect -->
         <div>
-          <label class="block text-sm font-medium text-[#1e293b] mb-2">Виды отходов</label>
+          <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('employeeRecyclers.wasteTypes') }}</label>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="group in productGroups"
@@ -364,13 +363,13 @@ const resetAllFilters = () => {
 
         <!-- Capacities -->
         <div v-if="newRecycler.wasteTypes.length > 0">
-          <label class="block text-sm font-medium text-[#1e293b] mb-2">Мощности переработки (т/год)</label>
+          <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('employeeRecyclers.capacitiesLabel') }}</label>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="wt in newRecycler.wasteTypes" :key="'cap-' + wt" class="bg-[#f8fafc] rounded-lg p-3">
               <p class="text-xs font-medium text-[#1e293b] mb-2">{{ getGroupShortLabel(wt) }}</p>
               <div class="flex gap-2">
                 <div class="flex-1">
-                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">Мощность</label>
+                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">{{ $t('employeeRecyclers.capacity') }}</label>
                   <input
                     type="number"
                     min="0"
@@ -381,7 +380,7 @@ const resetAllFilters = () => {
                   />
                 </div>
                 <div class="flex-1">
-                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">Текущая загрузка</label>
+                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">{{ $t('employeeRecyclers.currentLoad') }}</label>
                   <input
                     type="number"
                     min="0"
@@ -421,13 +420,13 @@ const resetAllFilters = () => {
           class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
         />
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все статусы</option>
-          <option value="active">Активен</option>
-          <option value="suspended">Приостановлен</option>
-          <option value="revoked">Исключён</option>
+          <option value="">{{ $t('employeeRecyclers.allStatuses') }}</option>
+          <option value="active">{{ $t('status.active') }}</option>
+          <option value="suspended">{{ $t('status.suspended') }}</option>
+          <option value="revoked">{{ $t('status.revoked') }}</option>
         </select>
         <select v-model="filterWasteType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-          <option value="">Все виды отходов</option>
+          <option value="">{{ $t('employeeRecyclers.allWasteTypes') }}</option>
           <option v-for="group in productGroups" :key="group.value" :value="group.value">
             {{ group.label }}
           </option>
@@ -441,11 +440,11 @@ const resetAllFilters = () => {
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-[#64748b] bg-[#f8fafc] border-b border-[#e2e8f0]">
-              <th class="px-4 py-3 font-medium">Наименование</th>
-              <th class="px-4 py-3 font-medium">ИНН</th>
-              <th class="px-4 py-3 font-medium">Лицензия</th>
-              <th class="px-4 py-3 font-medium">Виды отходов</th>
-              <th class="px-4 py-3 font-medium">Мощность</th>
+              <th class="px-4 py-3 font-medium">{{ $t('employeeRecyclers.thName') }}</th>
+              <th class="px-4 py-3 font-medium">{{ $t('employeeRecyclers.inn') }}</th>
+              <th class="px-4 py-3 font-medium">{{ $t('employeeRecyclers.thLicense') }}</th>
+              <th class="px-4 py-3 font-medium">{{ $t('employeeRecyclers.wasteTypes') }}</th>
+              <th class="px-4 py-3 font-medium">{{ $t('employeeRecyclers.capacity') }}</th>
               <th class="px-4 py-3 font-medium">{{ $t('common.status') }}</th>
               <th class="px-4 py-3 font-medium">{{ $t('common.date') }}</th>
               <th class="px-4 py-3 font-medium text-right">{{ $t('common.actions') }}</th>
@@ -462,7 +461,7 @@ const resetAllFilters = () => {
               <td class="px-4 py-3 font-mono text-xs">{{ recycler.inn }}</td>
               <td class="px-4 py-3">
                 <p class="font-mono text-xs">{{ recycler.licenseNumber }}</p>
-                <p class="text-xs text-[#64748b]">до {{ recycler.licenseExpiry }}</p>
+                <p class="text-xs text-[#64748b]">{{ $t('employeeRecyclers.until') }} {{ recycler.licenseExpiry }}</p>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1">
@@ -495,12 +494,12 @@ const resetAllFilters = () => {
                       :style="{ width: Math.min(getLoadPercent(recycler), 100) + '%', backgroundColor: getLoadColor(getLoadPercent(recycler)) }"
                     ></div>
                   </div>
-                  <p class="text-[10px] text-[#94a3b8] mt-0.5">Свободно: {{ getTotalCapacity(recycler) - getTotalLoad(recycler) }} т/год</p>
+                  <p class="text-[10px] text-[#94a3b8] mt-0.5">{{ $t('employeeRecyclers.available') }}: {{ getTotalCapacity(recycler) - getTotalLoad(recycler) }} {{ $t('employeeRecyclers.tonsPerYear') }}</p>
                 </div>
               </td>
               <td class="px-4 py-3">
-                <AppBadge :variant="getStatusBadgeVariant(getStatusLabel(recycler.status))">
-                  {{ getStatusLabel(recycler.status) }}
+                <AppBadge :variant="getStatusBadgeVariant(recycler.status)">
+                  {{ $t('status.' + recycler.status) }}
                 </AppBadge>
               </td>
               <td class="px-4 py-3 text-xs text-[#64748b]">{{ recycler.addedDate }}</td>
@@ -510,7 +509,7 @@ const resetAllFilters = () => {
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Редактировать
+                    {{ $t('common.edit') }}
                   </AppButton>
                   <button
                     v-if="recycler.status !== 'revoked'"
@@ -526,7 +525,7 @@ const resetAllFilters = () => {
                       <path v-if="recycler.status === 'active'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     </svg>
-                    {{ recycler.status === 'active' ? 'Приостановить' : 'Активировать' }}
+                    {{ recycler.status === 'active' ? $t('employeeRecyclers.suspend') : $t('employeeRecyclers.activate') }}
                   </button>
                 </div>
               </td>
@@ -539,16 +538,16 @@ const resetAllFilters = () => {
         <EmptyState
           v-if="isFiltersActive && recyclerStore.state.recyclers.length > 0"
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
-          title="Ничего не найдено"
-          description="Попробуйте изменить параметры поиска"
+          :title="$t('employeeRecyclers.nothingFound')"
+          :description="$t('employeeRecyclers.tryChangeSearch')"
           :actionLabel="$t('common.reset')"
           @action="resetAllFilters"
         />
         <EmptyState
           v-else
           icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>'
-          title="Реестр пуст"
-          description="Добавьте первого переработчика"
+          :title="$t('employeeRecyclers.registryEmpty')"
+          :description="$t('employeeRecyclers.addFirstRecycler')"
           :actionLabel="'+ ' + $t('common.add')"
           @action="showAddForm = true"
         />

@@ -6,6 +6,7 @@
 // ════════════════════════════════════════════════════════════════════
 
 import { ref, reactive, computed, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
@@ -14,6 +15,8 @@ import { landfillStore } from '../stores/landfills'
 import { collectionPointStore } from '../stores/collectionPoints'
 import { dumpStore } from '../stores/dumps'
 import { productGroups } from '../data/product-groups'
+
+const { t } = useI18n()
 
 const recyclerCoords: Record<string, { lat: number; lng: number; region: string }> = {
   'ОсОО «ЭкоРесайкл»': { lat: 42.8746, lng: 74.5698, region: 'Бишкек' },
@@ -84,12 +87,12 @@ type DisplayItem = ClusterItem | MarkerItem
 // Layer Configuration
 // ════════════════════════════════════════════════════════════════════
 
-const layerConfig = [
-  { id: 'landfills' as LayerType, name: 'Полигоны ТБО', color: '#22c55e', icon: '\u{1F7E2}' },
-  { id: 'recyclers' as LayerType, name: 'Переработчики', color: '#2563EB', icon: '\u{1F535}' },
-  { id: 'reception' as LayerType, name: 'Пункты приёма', color: '#EAB308', icon: '\u{1F7E1}' },
-  { id: 'dumps' as LayerType, name: 'Несанкц. свалки', color: '#DC2626', icon: '\u{1F7E0}' },
-]
+const layerConfig = computed(() => [
+  { id: 'landfills' as LayerType, name: t('registries.layerLandfills'), color: '#22c55e', icon: '\u{1F7E2}' },
+  { id: 'recyclers' as LayerType, name: t('registries.layerRecyclers'), color: '#2563EB', icon: '\u{1F535}' },
+  { id: 'reception' as LayerType, name: t('registries.layerReception'), color: '#EAB308', icon: '\u{1F7E1}' },
+  { id: 'dumps' as LayerType, name: t('registries.layerDumps'), color: '#DC2626', icon: '\u{1F7E0}' },
+])
 
 // ════════════════════════════════════════════════════════════════════
 // Map State
@@ -167,7 +170,7 @@ const recyclerTableData = computed(() => {
       wasteTypes: r.wasteTypes,
       licenseNumber: r.licenseNumber,
       licenseExpiry: r.licenseExpiry,
-      capacity: totalCapacity > 0 ? `${totalCapacity} т/год` : '',
+      capacity: totalCapacity > 0 ? `${totalCapacity} ${t('registries.tonsPerYear')}` : '',
       status: 'active',
     }
   })
@@ -233,7 +236,7 @@ const allMapPoints = computed<MapPoint[]>(() => {
     phone: '',
     status: d.dumpStatus,
     region: d.region,
-    area: d.area + ' га',
+    area: d.area + ' ' + t('registries.ha'),
     discoveryDate: d.discoveryDate,
     dumpStatus: d.dumpStatus,
     notes: d.notes,
@@ -487,7 +490,7 @@ const createHighlightedIcon = (color: string) => {
 }
 
 const getMarkerIcon = (point: MapPoint) => {
-  const layer = layerConfig.find(l => l.id === point.type)
+  const layer = layerConfig.value.find(l => l.id === point.type)
   const color = layer?.color || '#666'
   if (point.id === highlightedPointId.value) return createHighlightedIcon(color)
   return createIcon(color, 28)
@@ -656,24 +659,24 @@ const toggleExpandedWaste = (id: number, event: Event) => {
 
 const getStatusInfo = (status: string) => {
   switch (status) {
-    case 'active': return { label: 'Действующий', color: 'bg-green-100 text-green-700' }
-    case 'full': return { label: 'Переполнен', color: 'bg-orange-100 text-orange-700' }
-    case 'closed': return { label: 'Закрыт', color: 'bg-red-100 text-red-700' }
+    case 'active': return { label: t('registries.statusActive'), color: 'bg-green-100 text-green-700' }
+    case 'full': return { label: t('registries.statusFull'), color: 'bg-orange-100 text-orange-700' }
+    case 'closed': return { label: t('registries.statusClosed'), color: 'bg-red-100 text-red-700' }
     default: return { label: status, color: 'bg-gray-100 text-gray-700' }
   }
 }
 
 const getDumpStatusInfo = (status: string) => {
   switch (status) {
-    case 'discovered': return { label: 'Обнаружена', color: 'bg-red-100 text-red-700' }
-    case 'liquidating': return { label: 'Ликвидируется', color: 'bg-yellow-100 text-yellow-700' }
-    case 'liquidated': return { label: 'Ликвидирована', color: 'bg-green-100 text-green-700' }
+    case 'discovered': return { label: t('registries.statusDiscovered'), color: 'bg-red-100 text-red-700' }
+    case 'liquidating': return { label: t('registries.statusLiquidating'), color: 'bg-yellow-100 text-yellow-700' }
+    case 'liquidated': return { label: t('registries.statusLiquidated'), color: 'bg-green-100 text-green-700' }
     default: return { label: status, color: 'bg-gray-100 text-gray-700' }
   }
 }
 
 const getTypeLabel = (type: LayerType) => {
-  return layerConfig.find(l => l.id === type)?.name || type
+  return layerConfig.value.find(l => l.id === type)?.name || type
 }
 
 const getTypeBadgeClass = (type: LayerType) => {
@@ -762,10 +765,10 @@ const hasActiveFilters = computed(() => {
     <!-- ════════════════════════════════════════════ -->
     <div class="container-main">
       <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[12px]">
-        ГИС-Карта
+        {{ $t('registries.gisMapTitle') }}
       </h1>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861]">
-        Интерактивная карта объектов обращения с отходами Кыргызской Республики
+        {{ $t('registries.gisMapSubtitle') }}
       </p>
     </div>
 
@@ -784,7 +787,7 @@ const hasActiveFilters = computed(() => {
             <input
               v-model="mapSearchQuery"
               type="text"
-              placeholder="Поиск объекта..."
+              :placeholder="$t('registries.searchObject')"
               class="w-full h-9 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent"
               @focus="showMapSearchResults = mapSearchResults.length > 0"
               @blur="setTimeout(() => showMapSearchResults = false, 200)"
@@ -838,20 +841,20 @@ const hasActiveFilters = computed(() => {
 
           <!-- Dropdowns -->
           <select v-model="regionFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[160px] flex-shrink-0">
-            <option value="">Регион: Все</option>
+            <option value="">{{ $t('registries.regionAll') }}</option>
             <option v-for="region in gisRegions" :key="region" :value="region">{{ region }}</option>
           </select>
           <select v-model="landfillStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[180px] flex-shrink-0">
-            <option value="">Полигоны: Все</option>
-            <option value="active">Действующие</option>
-            <option value="full">Переполненные</option>
-            <option value="closed">Закрытые</option>
+            <option value="">{{ $t('registries.landfillsAll') }}</option>
+            <option value="active">{{ $t('registries.landfillsActive') }}</option>
+            <option value="full">{{ $t('registries.landfillsFull') }}</option>
+            <option value="closed">{{ $t('registries.landfillsClosed') }}</option>
           </select>
           <select v-model="dumpStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[170px] flex-shrink-0">
-            <option value="">Свалки: Все</option>
-            <option value="discovered">Обнаружена</option>
-            <option value="liquidating">Ликвидируется</option>
-            <option value="liquidated">Ликвидирована</option>
+            <option value="">{{ $t('registries.dumpsAll') }}</option>
+            <option value="discovered">{{ $t('registries.dumpDiscovered') }}</option>
+            <option value="liquidating">{{ $t('registries.dumpLiquidating') }}</option>
+            <option value="liquidated">{{ $t('registries.dumpLiquidated') }}</option>
           </select>
 
           <!-- Reset -->
@@ -861,7 +864,7 @@ const hasActiveFilters = computed(() => {
             class="flex items-center gap-1 h-9 px-3 text-sm text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
           >
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            Сбросить
+            {{ $t('registries.resetFilters') }}
           </button>
         </div>
 
@@ -875,7 +878,7 @@ const hasActiveFilters = computed(() => {
               <input
                 v-model="mapSearchQuery"
                 type="text"
-                placeholder="Поиск объекта..."
+                :placeholder="$t('registries.searchObject')"
                 class="w-full h-9 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent"
                 @focus="showMapSearchResults = mapSearchResults.length > 0"
                 @blur="setTimeout(() => showMapSearchResults = false, 200)"
@@ -902,7 +905,7 @@ const hasActiveFilters = computed(() => {
               :class="['flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium border transition-colors', mobileFiltersOpen ? 'bg-[#0e888d] text-white border-[#0e888d]' : 'bg-gray-50 text-gray-700 border-gray-200']"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-              Фильтры
+              {{ $t('registries.filters') }}
               <svg :class="['w-3 h-3 transition-transform', mobileFiltersOpen ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
           </div>
@@ -930,23 +933,23 @@ const hasActiveFilters = computed(() => {
             </div>
             <div class="grid grid-cols-2 gap-2">
               <select v-model="regionFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">Регион: Все</option>
+                <option value="">{{ $t('registries.regionAll') }}</option>
                 <option v-for="region in gisRegions" :key="region" :value="region">{{ region }}</option>
               </select>
               <select v-model="landfillStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">Полигоны: Все</option>
-                <option value="active">Действующие</option>
-                <option value="full">Переполненные</option>
-                <option value="closed">Закрытые</option>
+                <option value="">{{ $t('registries.landfillsAll') }}</option>
+                <option value="active">{{ $t('registries.landfillsActive') }}</option>
+                <option value="full">{{ $t('registries.landfillsFull') }}</option>
+                <option value="closed">{{ $t('registries.landfillsClosed') }}</option>
               </select>
               <select v-model="dumpStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">Свалки: Все</option>
-                <option value="discovered">Обнаружена</option>
-                <option value="liquidating">Ликвидируется</option>
-                <option value="liquidated">Ликвидирована</option>
+                <option value="">{{ $t('registries.dumpsAll') }}</option>
+                <option value="discovered">{{ $t('registries.dumpDiscovered') }}</option>
+                <option value="liquidating">{{ $t('registries.dumpLiquidating') }}</option>
+                <option value="liquidated">{{ $t('registries.dumpLiquidated') }}</option>
               </select>
               <button v-if="hasActiveFilters" @click="resetFilters" class="h-9 text-sm text-gray-500 hover:text-gray-700">
-                ✕ Сбросить
+                ✕ {{ $t('registries.resetFilters') }}
               </button>
             </div>
           </div>
@@ -1018,19 +1021,19 @@ const hasActiveFilters = computed(() => {
                     <!-- ── Landfills popup ── -->
                     <template v-if="item.point.type === 'landfills'">
                       <p v-if="item.point.landfillType" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Тип:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupType') }}</span>
                         <span class="text-gray-700">{{ item.point.landfillType }}</span>
                       </p>
                       <p v-if="item.point.area" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Площадь:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupArea') }}</span>
                         <span class="text-gray-700">{{ item.point.area }}</span>
                       </p>
                       <p v-if="item.point.capacity" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Вместимость:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupCapacity') }}</span>
                         <span class="text-gray-700">{{ item.point.capacity }}</span>
                       </p>
                       <div v-if="item.point.fillLevel && item.point.fillLevel !== '—'" class="flex items-center gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Заполненность:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupFillLevel') }}</span>
                         <div class="flex-1 flex items-center gap-2">
                           <div class="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                             <div class="h-full rounded-full" :class="getFillLevelColor(item.point.fillLevel)" :style="{ width: item.point.fillLevel }"></div>
@@ -1049,11 +1052,11 @@ const hasActiveFilters = computed(() => {
                         </span>
                       </div>
                       <p v-if="item.point.licenseNumber" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Лицензия:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupLicense') }}</span>
                         <span class="text-gray-700">{{ item.point.licenseNumber }}</span>
                       </p>
                       <p v-if="item.point.capacity" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Мощность:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupPower') }}</span>
                         <span class="text-gray-700">{{ item.point.capacity }}</span>
                       </p>
                     </template>
@@ -1067,11 +1070,11 @@ const hasActiveFilters = computed(() => {
                         </span>
                       </div>
                       <p v-if="item.point.workingHours" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Режим работы:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupWorkingHours') }}</span>
                         <span class="text-gray-700">{{ item.point.workingHours }}</span>
                       </p>
                       <p v-if="item.point.operator" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Оператор:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupOperator') }}</span>
                         <span class="text-gray-700">{{ item.point.operator }}</span>
                       </p>
                     </template>
@@ -1079,30 +1082,30 @@ const hasActiveFilters = computed(() => {
                     <!-- ── Dumps popup ── -->
                     <template v-if="item.point.type === 'dumps'">
                       <p v-if="item.point.area" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Площадь:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupArea') }}</span>
                         <span class="text-gray-700">{{ item.point.area }}</span>
                       </p>
                       <p v-if="item.point.discoveryDate" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Дата обнаружения:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupDiscoveryDate') }}</span>
                         <span class="text-gray-700">{{ item.point.discoveryDate }}</span>
                       </p>
                       <p v-if="item.point.notes" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Примечание:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupNote') }}</span>
                         <span class="text-gray-700">{{ item.point.notes }}</span>
                       </p>
                       <p class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">Координаты:</span>
+                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupCoordinates') }}</span>
                         <span class="text-gray-700 font-mono text-[11px]">{{ item.point.lat.toFixed(4) }}, {{ item.point.lng.toFixed(4) }}</span>
                       </p>
                     </template>
 
                     <!-- Common: address, phone -->
                     <p class="flex gap-2">
-                      <span class="text-gray-400 flex-shrink-0">Адрес:</span>
+                      <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupAddress') }}</span>
                       <span class="text-gray-700">{{ item.point.address }}</span>
                     </p>
                     <p v-if="item.point.phone" class="flex gap-2">
-                      <span class="text-gray-400 flex-shrink-0">Телефон:</span>
+                      <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupPhone') }}</span>
                       <span class="text-gray-700">{{ item.point.phone }}</span>
                     </p>
                   </div>
@@ -1128,13 +1131,13 @@ const hasActiveFilters = computed(() => {
           <button
             @click="getLeafletMap()?.zoomIn()"
             class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 hover:text-[#0e888d] transition-colors text-xl font-bold"
-            title="Приблизить"
+            :title="$t('registries.zoomIn')"
           >+</button>
           <!-- Zoom Out -->
           <button
             @click="getLeafletMap()?.zoomOut()"
             class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 hover:text-[#0e888d] transition-colors text-xl font-bold"
-            title="Отдалить"
+            :title="$t('registries.zoomOut')"
           >-</button>
           <!-- Divider -->
           <div class="h-px bg-gray-200 mx-1"></div>
@@ -1142,7 +1145,7 @@ const hasActiveFilters = computed(() => {
           <button
             @click="resetMapView"
             class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-[#0e888d] transition-colors"
-            title="Показать всю карту"
+            :title="$t('registries.showFullMap')"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -1152,7 +1155,7 @@ const hasActiveFilters = computed(() => {
           <button
             @click="locateUser"
             class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:text-[#0e888d] transition-colors"
-            title="Где я"
+            :title="$t('registries.whereAmI')"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -1186,7 +1189,7 @@ const hasActiveFilters = computed(() => {
 
         <!-- Registry header + Tabs -->
         <div class="px-6 pt-6 pb-4 border-b border-gray-100">
-          <h2 class="text-xl md:text-2xl font-bold text-[#415861] mb-4">Реестр объектов</h2>
+          <h2 class="text-xl md:text-2xl font-bold text-[#415861] mb-4">{{ $t('registries.registryTitle') }}</h2>
 
           <div class="flex flex-wrap gap-3">
             <!-- Landfills tab -->
@@ -1198,7 +1201,7 @@ const hasActiveFilters = computed(() => {
               ]"
             >
               <span :class="['w-3 h-3 rounded-full', getTabDotColor('landfills')]"></span>
-              Полигоны ТБО
+              {{ $t('registries.layerLandfills') }}
               <span :class="['text-xs px-2 py-0.5 rounded-full', getTabBadgeClasses('landfills', activeTab === 'landfills')]">
                 {{ filteredLandfills.length }}
               </span>
@@ -1213,7 +1216,7 @@ const hasActiveFilters = computed(() => {
               ]"
             >
               <span :class="['w-3 h-3 rounded-full', getTabDotColor('recyclers')]"></span>
-              Переработчики
+              {{ $t('registries.layerRecyclers') }}
               <span :class="['text-xs px-2 py-0.5 rounded-full', getTabBadgeClasses('recyclers', activeTab === 'recyclers')]">
                 {{ filteredRecyclers.length }}
               </span>
@@ -1228,7 +1231,7 @@ const hasActiveFilters = computed(() => {
               ]"
             >
               <span :class="['w-3 h-3 rounded-full', getTabDotColor('reception')]"></span>
-              Пункты приёма
+              {{ $t('registries.layerReception') }}
               <span :class="['text-xs px-2 py-0.5 rounded-full', getTabBadgeClasses('reception', activeTab === 'reception')]">
                 {{ filteredReceptionPoints.length }}
               </span>
@@ -1243,7 +1246,7 @@ const hasActiveFilters = computed(() => {
               ]"
             >
               <span :class="['w-3 h-3 rounded-full', getTabDotColor('dumps')]"></span>
-              Несанкц. свалки
+              {{ $t('registries.layerDumps') }}
               <span :class="['text-xs px-2 py-0.5 rounded-full', getTabBadgeClasses('dumps', activeTab === 'dumps')]">
                 {{ filteredDumps.length }}
               </span>
@@ -1259,7 +1262,7 @@ const hasActiveFilters = computed(() => {
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input v-model="landfillTabSearch" type="text" placeholder="Поиск по наименованию..."
+              <input v-model="landfillTabSearch" type="text" :placeholder="$t('registries.searchByName')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
           </div>
@@ -1269,13 +1272,13 @@ const hasActiveFilters = computed(() => {
             <table class="w-full text-[14px]">
               <thead>
                 <tr class="border-b border-gray-200 bg-gray-50">
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">Наименование</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[140px]">Тип</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Площадь</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Вместимость</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Заполненность</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">Регион</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Статус</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">{{ $t('registries.thName') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[140px]">{{ $t('registries.thType') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thArea') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thCapacity') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thFillLevel') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">{{ $t('registries.thRegion') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thStatus') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1308,7 +1311,7 @@ const hasActiveFilters = computed(() => {
               </tbody>
             </table>
             <div v-if="filteredLandfills.length === 0" class="py-12 text-center text-gray-400 text-[14px]">
-              Ничего не найдено по заданным фильтрам
+              {{ $t('registries.nothingFoundByFilters') }}
             </div>
           </div>
         </div>
@@ -1321,7 +1324,7 @@ const hasActiveFilters = computed(() => {
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input v-model="recyclerTabSearch" type="text" placeholder="Поиск по наименованию или ИНН..."
+              <input v-model="recyclerTabSearch" type="text" :placeholder="$t('registries.searchByNameOrInn')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
           </div>
@@ -1331,11 +1334,11 @@ const hasActiveFilters = computed(() => {
             <table class="w-full text-[14px]">
               <thead>
                 <tr class="border-b border-gray-200 bg-gray-50">
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">Наименование</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px]">Виды отходов</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[120px] whitespace-nowrap">Лицензия</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">Регион</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[180px]">Адрес</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">{{ $t('registries.thName') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px]">{{ $t('registries.thWasteTypes') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[120px] whitespace-nowrap">{{ $t('registries.thLicense') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">{{ $t('registries.thRegion') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[180px]">{{ $t('registries.thAddress') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1347,7 +1350,7 @@ const hasActiveFilters = computed(() => {
                 >
                   <td class="py-3 px-4 min-w-[200px]">
                     <div class="font-medium text-[#415861] leading-snug">{{ recycler.name }}</div>
-                    <div class="text-[12px] text-gray-400 mt-0.5">ИНН: {{ recycler.inn }}</div>
+                    <div class="text-[12px] text-gray-400 mt-0.5">{{ $t('registries.innLabel') }} {{ recycler.inn }}</div>
                   </td>
                   <td class="py-3 px-4">
                     <div class="flex flex-wrap gap-1">
@@ -1358,7 +1361,7 @@ const hasActiveFilters = computed(() => {
                         </span>
                         <span @click="toggleExpandedWaste(recycler.id, $event)"
                           class="inline-block px-2 py-0.5 bg-gray-200 text-gray-600 rounded-md text-[12px] cursor-pointer hover:bg-gray-300 transition-colors">
-                          Свернуть
+                          {{ $t('registries.collapse') }}
                         </span>
                       </template>
                       <template v-else>
@@ -1381,7 +1384,7 @@ const hasActiveFilters = computed(() => {
               </tbody>
             </table>
             <div v-if="filteredRecyclers.length === 0" class="py-12 text-center text-gray-400 text-[14px]">
-              Ничего не найдено по заданным фильтрам
+              {{ $t('registries.nothingFoundByFilters') }}
             </div>
           </div>
         </div>
@@ -1394,7 +1397,7 @@ const hasActiveFilters = computed(() => {
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input v-model="receptionTabSearch" type="text" placeholder="Поиск по наименованию..."
+              <input v-model="receptionTabSearch" type="text" :placeholder="$t('registries.searchByName')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
           </div>
@@ -1404,11 +1407,11 @@ const hasActiveFilters = computed(() => {
             <table class="w-full text-[14px]">
               <thead>
                 <tr class="border-b border-gray-200 bg-gray-50">
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">Наименование</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px]">Принимаемые отходы</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Режим работы</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Оператор</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">Регион</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">{{ $t('registries.thName') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px]">{{ $t('registries.thAcceptedWaste') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thWorkingHours') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thOperator') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">{{ $t('registries.thRegion') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1426,7 +1429,7 @@ const hasActiveFilters = computed(() => {
                           class="inline-block px-2 py-0.5 bg-yellow-50 text-yellow-700 rounded-md text-[12px]">{{ wt }}</span>
                         <span @click="toggleExpandedWaste(point.id, $event)"
                           class="inline-block px-2 py-0.5 bg-gray-200 text-gray-600 rounded-md text-[12px] cursor-pointer hover:bg-gray-300 transition-colors">
-                          Свернуть
+                          {{ $t('registries.collapse') }}
                         </span>
                       </template>
                       <template v-else>
@@ -1447,7 +1450,7 @@ const hasActiveFilters = computed(() => {
               </tbody>
             </table>
             <div v-if="filteredReceptionPoints.length === 0" class="py-12 text-center text-gray-400 text-[14px]">
-              Ничего не найдено по заданным фильтрам
+              {{ $t('registries.nothingFoundByFilters') }}
             </div>
           </div>
         </div>
@@ -1460,7 +1463,7 @@ const hasActiveFilters = computed(() => {
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input v-model="dumpsTabSearch" type="text" placeholder="Поиск по наименованию..."
+              <input v-model="dumpsTabSearch" type="text" :placeholder="$t('registries.searchByName')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
           </div>
@@ -1470,11 +1473,11 @@ const hasActiveFilters = computed(() => {
             <table class="w-full text-[14px]">
               <thead>
                 <tr class="border-b border-gray-200 bg-gray-50">
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">Наименование</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Площадь</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Дата обнаружения</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">Статус</th>
-                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">Регион</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[200px]">{{ $t('registries.thName') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thArea') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thDiscoveryDate') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] whitespace-nowrap">{{ $t('registries.thStatus') }}</th>
+                  <th class="text-left py-3 px-4 font-semibold text-gray-500 text-[14px] min-w-[100px] whitespace-nowrap">{{ $t('registries.thRegion') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1485,7 +1488,7 @@ const hasActiveFilters = computed(() => {
                     highlightedPointId === dump.id ? getRowHighlightClass('dumps') : getRowHoverClass('dumps')]"
                 >
                   <td class="py-3 px-4 font-medium text-[#415861] min-w-[200px] leading-snug">{{ dump.name }}</td>
-                  <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.area }} га</td>
+                  <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.area }} {{ $t('registries.ha') }}</td>
                   <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ dump.discoveryDate }}</td>
                   <td class="py-3 px-4">
                     <span :class="['px-2.5 py-1 rounded-full text-[12px] font-medium whitespace-nowrap', getDumpStatusInfo(dump.dumpStatus).color]">
@@ -1497,7 +1500,7 @@ const hasActiveFilters = computed(() => {
               </tbody>
             </table>
             <div v-if="filteredDumps.length === 0" class="py-12 text-center text-gray-400 text-[14px]">
-              Ничего не найдено по заданным фильтрам
+              {{ $t('registries.nothingFoundByFilters') }}
             </div>
           </div>
         </div>

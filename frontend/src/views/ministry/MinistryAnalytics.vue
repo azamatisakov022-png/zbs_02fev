@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppBadge } from '../../components/ui'
@@ -10,6 +11,7 @@ import { toastStore } from '../../stores/toast'
 import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ─── Loading ───
@@ -21,11 +23,11 @@ onMounted(async () => {
 
 // ─── Tabs ───
 const activeTab = ref<'summary' | 'recycling' | 'regional'>('summary')
-const tabs = [
-  { key: 'summary' as const, label: 'Общая сводка' },
-  { key: 'recycling' as const, label: 'Переработка и нормативы' },
-  { key: 'regional' as const, label: 'Региональная статистика' },
-]
+const tabs = computed(() => [
+  { key: 'summary' as const, label: t('ministryAnalytics.tabSummary') },
+  { key: 'recycling' as const, label: t('ministryAnalytics.tabRecycling') },
+  { key: 'regional' as const, label: t('ministryAnalytics.tabRegional') },
+])
 
 // ─── Filters ───
 const periodMode = ref<'month' | 'quarter' | 'year' | 'custom'>('year')
@@ -33,18 +35,18 @@ const regionFilter = ref('all')
 const customFrom = ref('')
 const customTo = ref('')
 
-const regions = [
-  { value: 'all', label: 'Все регионы' },
-  { value: 'bishkek', label: 'г. Бишкек' },
-  { value: 'osh_city', label: 'г. Ош' },
-  { value: 'chuy', label: 'Чуйская область' },
-  { value: 'issyk_kul', label: 'Иссык-Кульская область' },
-  { value: 'naryn', label: 'Нарынская область' },
-  { value: 'talas', label: 'Таласская область' },
-  { value: 'batken', label: 'Баткенская область' },
-  { value: 'jalal_abad', label: 'Джалал-Абадская область' },
-  { value: 'osh', label: 'Ошская область' },
-]
+const regions = computed(() => [
+  { value: 'all', label: t('ministryAnalytics.regionAll') },
+  { value: 'bishkek', label: t('ministryAnalytics.regionBishkek') },
+  { value: 'osh_city', label: t('ministryAnalytics.regionOshCity') },
+  { value: 'chuy', label: t('ministryAnalytics.regionChuy') },
+  { value: 'issyk_kul', label: t('ministryAnalytics.regionIssykKul') },
+  { value: 'naryn', label: t('ministryAnalytics.regionNaryn') },
+  { value: 'talas', label: t('ministryAnalytics.regionTalas') },
+  { value: 'batken', label: t('ministryAnalytics.regionBatken') },
+  { value: 'jalal_abad', label: t('ministryAnalytics.regionJalalAbad') },
+  { value: 'osh', label: t('ministryAnalytics.regionOsh') },
+])
 
 // ─── Regional Data (from backend analytics) ───
 interface RegionDataItem {
@@ -112,12 +114,12 @@ const totalLandfills = computed(() => filteredRegions.value.reduce((s, r) => s +
 const totalDumps = computed(() => filteredRegions.value.reduce((s, r) => s + r.dumps, 0))
 
 // ─── Dump status donut data ───
-const dumpStatusData = [
-  { label: 'Ликвидировано', value: 23, color: '#22C55E' },
-  { label: 'В процессе', value: 18, color: '#F59E0B' },
-  { label: 'Не начато', value: 44, color: '#EF4444' },
-]
-const totalDumpStatus = dumpStatusData.reduce((s, c) => s + c.value, 0)
+const dumpStatusData = computed(() => [
+  { label: t('ministryAnalytics.dumpLiquidated'), value: 23, color: '#22C55E' },
+  { label: t('ministryAnalytics.dumpInProgress'), value: 18, color: '#F59E0B' },
+  { label: t('ministryAnalytics.dumpNotStarted'), value: 44, color: '#EF4444' },
+])
+const totalDumpStatus = computed(() => dumpStatusData.value.reduce((s, c) => s + c.value, 0))
 
 function getDumpDonutPath(startAngle: number, endAngle: number, r: number, cx: number, cy: number): string {
   const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) }
@@ -129,8 +131,8 @@ function getDumpDonutPath(startAngle: number, endAngle: number, r: number, cx: n
 const dumpDonutArcs = computed(() => {
   const arcs: { d: string; color: string; label: string; pct: string }[] = []
   let cumAngle = -Math.PI / 2
-  for (const cat of dumpStatusData) {
-    const pct = cat.value / totalDumpStatus
+  for (const cat of dumpStatusData.value) {
+    const pct = cat.value / totalDumpStatus.value
     const angle = pct * 2 * Math.PI
     arcs.push({
       d: getDumpDonutPath(cumAngle, cumAngle + angle, 70, 100, 100),
@@ -188,21 +190,21 @@ const recyclingKpis = computed(() => {
 })
 
 // ─── Monthly recycling data for area chart ───
-const recyclingMonthly = [
-  { month: 'Янв', plan: 950, fact: 820 },
-  { month: 'Фев', plan: 980, fact: 860 },
-  { month: 'Мар', plan: 1050, fact: 940 },
-  { month: 'Апр', plan: 1080, fact: 1020 },
-  { month: 'Май', plan: 1120, fact: 1080 },
-  { month: 'Июн', plan: 1100, fact: 1050 },
-  { month: 'Июл', plan: 1060, fact: 990 },
-  { month: 'Авг', plan: 1090, fact: 1030 },
-  { month: 'Сен', plan: 1150, fact: 1120 },
-  { month: 'Окт', plan: 1180, fact: 1100 },
-  { month: 'Ноя', plan: 1050, fact: 980 },
-  { month: 'Дек', plan: 1040, fact: 960 },
-]
-const maxRecycling = Math.max(...recyclingMonthly.map(d => Math.max(d.plan, d.fact)))
+const recyclingMonthly = computed(() => [
+  { month: t('ministryAnalytics.monthJan'), plan: 950, fact: 820 },
+  { month: t('ministryAnalytics.monthFeb'), plan: 980, fact: 860 },
+  { month: t('ministryAnalytics.monthMar'), plan: 1050, fact: 940 },
+  { month: t('ministryAnalytics.monthApr'), plan: 1080, fact: 1020 },
+  { month: t('ministryAnalytics.monthMay'), plan: 1120, fact: 1080 },
+  { month: t('ministryAnalytics.monthJun'), plan: 1100, fact: 1050 },
+  { month: t('ministryAnalytics.monthJul'), plan: 1060, fact: 990 },
+  { month: t('ministryAnalytics.monthAug'), plan: 1090, fact: 1030 },
+  { month: t('ministryAnalytics.monthSep'), plan: 1150, fact: 1120 },
+  { month: t('ministryAnalytics.monthOct'), plan: 1180, fact: 1100 },
+  { month: t('ministryAnalytics.monthNov'), plan: 1050, fact: 980 },
+  { month: t('ministryAnalytics.monthDec'), plan: 1040, fact: 960 },
+])
+const maxRecycling = computed(() => Math.max(...recyclingMonthly.value.map(d => Math.max(d.plan, d.fact))))
 
 function areaPolyline(data: number[], maxVal: number, w: number, h: number): string {
   const step = w / (data.length - 1)
@@ -239,17 +241,31 @@ function toggleSort(col: string) {
 }
 
 // ─── Format helpers ───
-function fmt(n: number): string { return n.toLocaleString('ru-RU') }
+function fmt(n: number): string { return n.toLocaleString() }
 function fmtM(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' млн'
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' тыс'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' ' + t('ministryAnalytics.unitMln')
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' ' + t('ministryAnalytics.unitThs')
   return fmt(n)
 }
 
 // ─── Export stub ───
 function exportReport() {
-  toastStore.show({ type: 'info', title: 'Экспорт', message: 'Выгрузка отчёта будет доступна в следующем обновлении' })
+  toastStore.show({ type: 'info', title: t('ministryAnalytics.exportTitle'), message: t('ministryAnalytics.exportMessage') })
 }
+
+const guideActions = computed(() => [
+  t('ministryAnalytics.guideAction1'),
+  t('ministryAnalytics.guideAction2'),
+  t('ministryAnalytics.guideAction3'),
+  t('ministryAnalytics.guideAction4'),
+])
+
+const periodButtons = computed(() => [
+  { key: 'month', label: t('ministryAnalytics.periodMonth') },
+  { key: 'quarter', label: t('ministryAnalytics.periodQuarter') },
+  { key: 'year', label: t('ministryAnalytics.periodYear') },
+  { key: 'custom', label: t('ministryAnalytics.periodCustom') },
+])
 </script>
 
 <template>
@@ -261,14 +277,14 @@ function exportReport() {
   >
     <!-- Header -->
     <div class="mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Аналитика управления отходами</h1>
-      <p class="text-[#64748b]">Сводные показатели системы РОП Кыргызской Республики</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('ministryAnalytics.title') }}</h1>
+      <p class="text-[#64748b]">{{ $t('ministryAnalytics.subtitle') }}</p>
     </div>
 
     <SectionGuide
-      title="Аналитика управления отходами"
-      description="Сводные показатели экологической инфраструктуры Кыргызской Республики."
-      :actions="['Анализ переработки и нормативов', 'Региональная статистика', 'Мониторинг инфраструктуры', 'Выгрузка отчётов']"
+      :title="$t('ministryAnalytics.title')"
+      :description="$t('ministryAnalytics.guideDescription')"
+      :actions="guideActions"
       storageKey="ministry-analytics"
     />
 
@@ -277,12 +293,7 @@ function exportReport() {
       <div class="flex flex-wrap items-center gap-3">
         <!-- Period -->
         <div class="flex items-center gap-1 bg-[#f8fafc] rounded-xl p-1">
-          <button v-for="p in [
-            { key: 'month', label: 'Месяц' },
-            { key: 'quarter', label: 'Квартал' },
-            { key: 'year', label: 'Год' },
-            { key: 'custom', label: 'Произвольный' },
-          ]" :key="p.key"
+          <button v-for="p in periodButtons" :key="p.key"
             @click="periodMode = p.key as any"
             :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               periodMode === p.key ? 'bg-white text-[#1e293b] shadow-sm' : 'text-[#64748b] hover:text-[#1e293b]']">
@@ -302,7 +313,7 @@ function exportReport() {
         <!-- Export -->
         <button @click="exportReport" class="ml-auto flex items-center gap-1.5 px-4 py-1.5 bg-[#10b981] text-white rounded-lg text-xs font-medium hover:bg-[#059669] transition-colors">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Выгрузить отчёт
+          {{ $t('ministryAnalytics.exportReport') }}
         </button>
       </div>
     </div>
@@ -338,7 +349,7 @@ function exportReport() {
               </div>
             </div>
             <p class="text-2xl font-bold text-green-900">{{ fmt(totalRecyclers) }}</p>
-            <p class="text-xs text-green-700">Переработчиков активных</p>
+            <p class="text-xs text-green-700">{{ $t('ministryAnalytics.activeRecyclers') }}</p>
           </div>
           <!-- Landfills -->
           <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 border border-blue-200 shadow-sm">
@@ -348,7 +359,7 @@ function exportReport() {
               </div>
             </div>
             <p class="text-2xl font-bold text-blue-900">{{ fmt(totalLandfills) }}</p>
-            <p class="text-xs text-blue-700">Полигонов</p>
+            <p class="text-xs text-blue-700">{{ $t('ministryAnalytics.landfillsCount') }}</p>
           </div>
           <!-- Dumps -->
           <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-4 border border-orange-200 shadow-sm">
@@ -358,7 +369,7 @@ function exportReport() {
               </div>
             </div>
             <p class="text-2xl font-bold text-orange-900">{{ fmt(totalDumps) }}</p>
-            <p class="text-xs text-orange-700">Свалок</p>
+            <p class="text-xs text-orange-700">{{ $t('ministryAnalytics.dumpsCount') }}</p>
           </div>
           <!-- Licenses -->
           <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-4 border border-purple-200 shadow-sm">
@@ -368,8 +379,8 @@ function exportReport() {
               </div>
             </div>
             <p class="text-2xl font-bold text-purple-900">47</p>
-            <p class="text-xs text-purple-700">Лицензий действующих</p>
-            <p class="text-xs text-purple-500 mt-1">5 истекают в ближайший месяц</p>
+            <p class="text-xs text-purple-700">{{ $t('ministryAnalytics.activeLicenses') }}</p>
+            <p class="text-xs text-purple-500 mt-1">{{ $t('ministryAnalytics.licensesExpiringSoon') }}</p>
           </div>
         </div>
 
@@ -377,7 +388,7 @@ function exportReport() {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <!-- Horizontal Bar: Recycling capacity by region -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">Мощности переработки по регионам</h3>
+            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.recyclingCapacity') }}</h3>
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => b.recyclers - a.recyclers)" :key="'rec-'+r.key" class="flex items-center gap-3">
                 <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -392,17 +403,17 @@ function exportReport() {
 
           <!-- Landfill status -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">Состояние полигонов</h3>
+            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.landfillStatus') }}</h3>
             <div class="space-y-5">
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-sm text-[#64748b]">Всего полигонов</span>
+                  <span class="text-sm text-[#64748b]">{{ $t('ministryAnalytics.totalLandfills') }}</span>
                   <span class="text-sm font-bold text-[#1e293b]">13</span>
                 </div>
               </div>
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-sm text-[#64748b]">Средняя заполненность</span>
+                  <span class="text-sm text-[#64748b]">{{ $t('ministryAnalytics.avgFillLevel') }}</span>
                   <span class="text-sm font-bold text-[#1e293b]">67%</span>
                 </div>
                 <div class="w-full h-3 bg-[#f1f5f9] rounded-full overflow-hidden">
@@ -411,26 +422,26 @@ function exportReport() {
               </div>
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-sm text-[#64748b]">Критическая заполненность (&gt;80%)</span>
-                  <span class="text-sm font-bold text-red-600">3 полигона</span>
+                  <span class="text-sm text-[#64748b]">{{ $t('ministryAnalytics.criticalFill') }}</span>
+                  <span class="text-sm font-bold text-red-600">{{ $t('ministryAnalytics.criticalLandfills') }}</span>
                 </div>
                 <div class="w-full h-3 bg-[#f1f5f9] rounded-full overflow-hidden">
                   <div class="h-full rounded-full bg-red-500" :style="{ width: (3 / 13 * 100) + '%' }"></div>
                 </div>
-                <p class="text-xs text-[#94a3b8] mt-1.5">Бишкек (89%), Чуйская (83%), г. Ош (81%)</p>
+                <p class="text-xs text-[#94a3b8] mt-1.5">{{ $t('ministryAnalytics.criticalDetails') }}</p>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-[#f1f5f9]">
                 <div class="text-center">
                   <p class="text-lg font-bold text-green-600">6</p>
-                  <p class="text-xs text-[#64748b]">Норма (&lt;60%)</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('ministryAnalytics.normalBelow60') }}</p>
                 </div>
                 <div class="text-center">
                   <p class="text-lg font-bold text-yellow-600">4</p>
-                  <p class="text-xs text-[#64748b]">Внимание (60-80%)</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('ministryAnalytics.warningRange') }}</p>
                 </div>
                 <div class="text-center">
                   <p class="text-lg font-bold text-red-600">3</p>
-                  <p class="text-xs text-[#64748b]">Критично (&gt;80%)</p>
+                  <p class="text-xs text-[#64748b]">{{ $t('ministryAnalytics.criticalAbove80') }}</p>
                 </div>
               </div>
             </div>
@@ -441,13 +452,13 @@ function exportReport() {
         <div class="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <!-- Donut: Dump liquidation status -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">Статус ликвидации свалок</h3>
+            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.dumpLiquidationStatus') }}</h3>
             <div class="flex items-center gap-6">
               <div class="relative flex-shrink-0">
                 <svg viewBox="0 0 200 200" width="180" height="180">
                   <path v-for="(arc, i) in dumpDonutArcs" :key="i" :d="arc.d" fill="none" :stroke="arc.color" stroke-width="28" stroke-linecap="round" />
                   <text x="100" y="95" text-anchor="middle" fill="#1e293b" font-size="28" font-weight="700">{{ totalDumpStatus }}</text>
-                  <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">всего</text>
+                  <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">{{ $t('ministryAnalytics.totalLabel') }}</text>
                 </svg>
               </div>
               <div class="space-y-3 flex-1">
@@ -469,35 +480,35 @@ function exportReport() {
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
-            <p class="text-xs text-green-700 mb-1">Переработчиков активных</p>
+            <p class="text-xs text-green-700 mb-1">{{ $t('ministryAnalytics.activeRecyclers') }}</p>
             <p class="text-3xl font-bold text-green-900">{{ totalRecyclers }}</p>
           </div>
           <div class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-2xl p-5 border border-teal-200 shadow-sm">
-            <p class="text-xs text-teal-700 mb-1">Переработано всего</p>
-            <p class="text-3xl font-bold text-teal-900">{{ fmt(totalWaste) }} т</p>
+            <p class="text-xs text-teal-700 mb-1">{{ $t('ministryAnalytics.recycledTotal') }}</p>
+            <p class="text-3xl font-bold text-teal-900">{{ fmt(totalWaste) }} {{ $t('ministryAnalytics.tonsUnit') }}</p>
           </div>
           <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
-            <p class="text-xs text-blue-700 mb-1">Выполнение нормативов</p>
+            <p class="text-xs text-blue-700 mb-1">{{ $t('ministryAnalytics.normFulfillment') }}</p>
             <p class="text-3xl font-bold text-blue-900">{{ recyclingKpis.avgFulfillment }}%</p>
           </div>
           <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-5 border border-orange-200 shadow-sm">
-            <p class="text-xs text-orange-700 mb-1">Категорий ниже плана</p>
-            <p class="text-3xl font-bold text-orange-900">{{ recyclingKpis.belowPlan }} из 24</p>
+            <p class="text-xs text-orange-700 mb-1">{{ $t('ministryAnalytics.categoriesBelowPlan') }}</p>
+            <p class="text-3xl font-bold text-orange-900">{{ recyclingKpis.belowPlan }} {{ $t('ministryAnalytics.outOf24') }}</p>
           </div>
         </div>
 
         <!-- Normative fulfillment table -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Выполнение нормативов переработки по категориям ({{ normYear }})</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.normFulfillmentByCategory') }} ({{ normYear }})</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
               <thead>
                 <tr class="text-left text-[#64748b] bg-[#f8fafc]">
-                  <th class="px-3 py-2.5 font-medium rounded-tl-lg">Категория</th>
-                  <th class="px-3 py-2.5 font-medium text-center">Норматив {{ normYear }}</th>
-                  <th class="px-3 py-2.5 font-medium text-center">Факт</th>
-                  <th class="px-3 py-2.5 font-medium text-center">Выполнение</th>
-                  <th class="px-3 py-2.5 font-medium text-center rounded-tr-lg">Статус</th>
+                  <th class="px-3 py-2.5 font-medium rounded-tl-lg">{{ $t('ministryAnalytics.thCategory') }}</th>
+                  <th class="px-3 py-2.5 font-medium text-center">{{ $t('ministryAnalytics.thNormative') }} {{ normYear }}</th>
+                  <th class="px-3 py-2.5 font-medium text-center">{{ $t('ministryAnalytics.thFact') }}</th>
+                  <th class="px-3 py-2.5 font-medium text-center">{{ $t('ministryAnalytics.thFulfillment') }}</th>
+                  <th class="px-3 py-2.5 font-medium text-center rounded-tr-lg">{{ $t('ministryAnalytics.thStatus') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -521,9 +532,9 @@ function exportReport() {
                     </div>
                   </td>
                   <td class="px-3 py-2.5 text-center">
-                    <span v-if="c.status === 'fulfilled'" class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">Выполнен</span>
-                    <span v-else-if="c.status === 'lagging'" class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Отставание</span>
-                    <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">Не выполнен</span>
+                    <span v-if="c.status === 'fulfilled'" class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">{{ $t('ministryAnalytics.statusFulfilled') }}</span>
+                    <span v-else-if="c.status === 'lagging'" class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">{{ $t('ministryAnalytics.statusLagging') }}</span>
+                    <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">{{ $t('ministryAnalytics.statusFailed') }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -533,7 +544,7 @@ function exportReport() {
 
         <!-- Area chart: Recycling dynamics -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Динамика переработки (тонн)</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.recyclingDynamics') }}</h3>
           <svg viewBox="0 0 600 240" class="w-full" preserveAspectRatio="xMidYMid meet">
             <!-- Grid -->
             <line v-for="i in 5" :key="'rgl'+i" x1="40" x2="580" :y1="10 + (i-1)*45" :y2="10 + (i-1)*45" stroke="#f1f5f9" stroke-width="1" />
@@ -548,8 +559,8 @@ function exportReport() {
             <text v-for="(d, i) in recyclingMonthly" :key="'rxl'+i" :x="40 + i * (540/11)" y="220" text-anchor="middle" fill="#94a3b8" font-size="9">{{ d.month }}</text>
           </svg>
           <div class="flex items-center gap-4 mt-3 justify-center">
-            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-6 h-0.5 bg-[#94a3b8] inline-block" style="border-top:1.5px dashed #94a3b8"></span>План</span>
-            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#d1fae5] border border-[#22C55E]"></span>Факт</span>
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-6 h-0.5 bg-[#94a3b8] inline-block" style="border-top:1.5px dashed #94a3b8"></span>{{ $t('ministryAnalytics.legendPlan') }}</span>
+            <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#d1fae5] border border-[#22C55E]"></span>{{ $t('ministryAnalytics.legendFact') }}</span>
           </div>
         </div>
       </template>
@@ -558,7 +569,7 @@ function exportReport() {
       <template v-if="activeTab === 'regional'">
         <!-- Region infrastructure overview -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Инфраструктура по регионам</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.infrastructureByRegions') }}</h3>
           <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
             <button v-for="r in regionData" :key="r.key"
               @click="regionFilter = regionFilter === r.key ? 'all' : r.key"
@@ -570,33 +581,33 @@ function exportReport() {
                 {{ r.recyclers + r.landfills }}
               </div>
               <p class="text-xs font-medium text-[#1e293b] truncate">{{ r.shortName }}</p>
-              <p class="text-[10px] text-[#64748b]">{{ r.recyclers + r.landfills }} объектов</p>
+              <p class="text-[10px] text-[#64748b]">{{ r.recyclers + r.landfills }} {{ $t('ministryAnalytics.objectsCount') }}</p>
             </button>
           </div>
         </div>
 
         <!-- Sortable region table -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">Детальная статистика по регионам</h3>
+          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.detailedRegionStats') }}</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
               <thead>
                 <tr class="text-left text-[#64748b] bg-[#f8fafc] text-xs">
-                  <th class="px-3 py-2.5 font-medium rounded-tl-lg">Регион</th>
+                  <th class="px-3 py-2.5 font-medium rounded-tl-lg">{{ $t('ministryAnalytics.thRegion') }}</th>
                   <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="toggleSort('recyclers')">
-                    Переработчиков
+                    {{ $t('ministryAnalytics.thRecyclers') }}
                     <span v-if="sortCol==='recyclers'" class="ml-0.5">{{ sortDir==='desc' ? '↓' : '↑' }}</span>
                   </th>
                   <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="toggleSort('landfills')">
-                    Полигонов
+                    {{ $t('ministryAnalytics.thLandfills') }}
                     <span v-if="sortCol==='landfills'" class="ml-0.5">{{ sortDir==='desc' ? '↓' : '↑' }}</span>
                   </th>
                   <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b]" @click="toggleSort('dumps')">
-                    Свалок
+                    {{ $t('ministryAnalytics.thDumps') }}
                     <span v-if="sortCol==='dumps'" class="ml-0.5">{{ sortDir==='desc' ? '↓' : '↑' }}</span>
                   </th>
                   <th class="px-3 py-2.5 font-medium text-right cursor-pointer hover:text-[#1e293b] rounded-tr-lg" @click="toggleSort('wasteVolume')">
-                    Объём отходов (т)
+                    {{ $t('ministryAnalytics.thWasteVolume') }}
                     <span v-if="sortCol==='wasteVolume'" class="ml-0.5">{{ sortDir==='desc' ? '↓' : '↑' }}</span>
                   </th>
                 </tr>
@@ -609,16 +620,16 @@ function exportReport() {
                   <td class="px-3 py-2.5 text-right">{{ r.recyclers }}</td>
                   <td class="px-3 py-2.5 text-right">{{ r.landfills }}</td>
                   <td class="px-3 py-2.5 text-right">{{ r.dumps }}</td>
-                  <td class="px-3 py-2.5 text-right font-medium">{{ fmt(r.wasteVolume) }} т</td>
+                  <td class="px-3 py-2.5 text-right font-medium">{{ fmt(r.wasteVolume) }} {{ $t('ministryAnalytics.tonsUnit') }}</td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr class="bg-[#f8fafc] font-semibold border-t-2 border-[#e2e8f0]">
-                  <td class="px-3 py-2.5 text-[#1e293b]">ИТОГО</td>
+                  <td class="px-3 py-2.5 text-[#1e293b]">{{ $t('ministryAnalytics.totalRow') }}</td>
                   <td class="px-3 py-2.5 text-right">{{ filteredRegions.reduce((s,r) => s+r.recyclers,0) }}</td>
                   <td class="px-3 py-2.5 text-right">{{ filteredRegions.reduce((s,r) => s+r.landfills,0) }}</td>
                   <td class="px-3 py-2.5 text-right">{{ filteredRegions.reduce((s,r) => s+r.dumps,0) }}</td>
-                  <td class="px-3 py-2.5 text-right">{{ fmt(filteredRegions.reduce((s,r) => s+r.wasteVolume,0)) }} т</td>
+                  <td class="px-3 py-2.5 text-right">{{ fmt(filteredRegions.reduce((s,r) => s+r.wasteVolume,0)) }} {{ $t('ministryAnalytics.tonsUnit') }}</td>
                 </tr>
               </tfoot>
             </table>
@@ -629,7 +640,7 @@ function exportReport() {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Stacked bar: Waste by region -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">Распределение отходов по регионам</h3>
+            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.wasteDistribution') }}</h3>
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => b.wasteVolume - a.wasteVolume)" :key="'waste-'+r.key" class="flex items-center gap-3">
                 <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -637,32 +648,32 @@ function exportReport() {
                   <div class="h-full rounded-lg transition-all bg-gradient-to-r from-[#22C55E] to-[#10b981]"
                     :style="{ width: (r.wasteVolume / regionData[0].wasteVolume * 100) + '%' }"></div>
                 </div>
-                <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ fmt(r.wasteVolume) }} т</span>
+                <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ fmt(r.wasteVolume) }} {{ $t('ministryAnalytics.tonsUnit') }}</span>
               </div>
             </div>
           </div>
 
           <!-- Grouped bar: Infrastructure -->
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">Инфраструктура по регионам</h3>
+            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.infrastructureByRegions') }}</h3>
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => (b.recyclers+b.landfills) - (a.recyclers+a.landfills))" :key="'infra-'+r.key"
                 class="flex items-center gap-3">
                 <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
                 <div class="flex-1 flex gap-0.5">
                   <div v-if="r.recyclers" class="h-5 bg-[#22C55E] rounded-l" :style="{ width: r.recyclers * 8 + 'px' }"
-                    :title="'Переработчиков: ' + r.recyclers"></div>
+                    :title="$t('ministryAnalytics.recyclersTitleAttr') + ': ' + r.recyclers"></div>
                   <div v-if="r.landfills" class="h-5 bg-[#3B82F6]" :style="{ width: r.landfills * 8 + 'px' }"
-                    :title="'Полигонов: ' + r.landfills"></div>
+                    :title="$t('ministryAnalytics.landfillsTitleAttr') + ': ' + r.landfills"></div>
                   <div v-if="r.dumps" class="h-5 bg-[#F59E0B] rounded-r" :style="{ width: Math.min(r.dumps, 20) * 5 + 'px' }"
-                    :title="'Свалок: ' + r.dumps"></div>
+                    :title="$t('ministryAnalytics.dumpsTitleAttr') + ': ' + r.dumps"></div>
                 </div>
               </div>
             </div>
             <div class="flex items-center gap-4 mt-4 justify-center text-xs text-[#64748b]">
-              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>Переработчики</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>Полигоны</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>Свалки</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>{{ $t('ministryAnalytics.legendRecyclers') }}</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>{{ $t('ministryAnalytics.legendLandfills') }}</span>
+              <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>{{ $t('ministryAnalytics.legendDumps') }}</span>
             </div>
           </div>
         </div>

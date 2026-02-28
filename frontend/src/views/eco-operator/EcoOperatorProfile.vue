@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { recyclerStore } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
+
+const { t } = useI18n()
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
@@ -44,33 +47,33 @@ const filterRegion = ref('all')
 const filterStatus = ref('all')
 
 // Company types
-const companyTypes = [
-  { id: 'all', name: 'Все типы' },
-  { id: 'importer', name: 'Импортёр' },
-  { id: 'manufacturer', name: 'Производитель' },
-  { id: 'recycler', name: 'Переработчик' },
-]
+const companyTypes = computed(() => [
+  { id: 'all', name: t('ecoProfile.allTypes') },
+  { id: 'importer', name: t('ecoProfile.importer') },
+  { id: 'manufacturer', name: t('ecoProfile.manufacturer') },
+  { id: 'recycler', name: t('ecoProfile.recycler') },
+])
 
 // Regions
-const regions = [
-  { id: 'all', name: 'Все регионы' },
-  { id: 'bishkek', name: 'г. Бишкек' },
-  { id: 'osh', name: 'г. Ош' },
-  { id: 'chui', name: 'Чуйская область' },
-  { id: 'osh-obl', name: 'Ошская область' },
-  { id: 'jalal-abad', name: 'Джалал-Абадская область' },
-  { id: 'issyk-kul', name: 'Иссык-Кульская область' },
-  { id: 'naryn', name: 'Нарынская область' },
-  { id: 'talas', name: 'Таласская область' },
-  { id: 'batken', name: 'Баткенская область' },
-]
+const regions = computed(() => [
+  { id: 'all', name: t('ecoProfile.allRegions') },
+  { id: 'bishkek', name: t('ecoProfile.regionBishkek') },
+  { id: 'osh', name: t('ecoProfile.regionOsh') },
+  { id: 'chui', name: t('ecoProfile.regionChui') },
+  { id: 'osh-obl', name: t('ecoProfile.regionOshObl') },
+  { id: 'jalal-abad', name: t('ecoProfile.regionJalalAbad') },
+  { id: 'issyk-kul', name: t('ecoProfile.regionIssykKul') },
+  { id: 'naryn', name: t('ecoProfile.regionNaryn') },
+  { id: 'talas', name: t('ecoProfile.regionTalas') },
+  { id: 'batken', name: t('ecoProfile.regionBatken') },
+])
 
 // Statuses
-const statuses = [
-  { id: 'all', name: 'Все статусы' },
-  { id: 'active', name: 'Активен' },
-  { id: 'suspended', name: 'Приостановлен' },
-]
+const statuses = computed(() => [
+  { id: 'all', name: t('ecoProfile.allStatuses') },
+  { id: 'active', name: t('status.active') },
+  { id: 'suspended', name: t('status.suspended') },
+])
 
 // Company interface
 interface Company {
@@ -490,7 +493,7 @@ const stats = computed(() => ({
 
 // Helpers
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('ru-RU')
+  return new Date(dateStr).toLocaleDateString()
 }
 
 const getTypeColor = (type: string) => {
@@ -507,7 +510,7 @@ const getStatusColor = (status: string) => {
 }
 
 const getStatusText = (status: string) => {
-  return status === 'active' ? 'Активен' : 'Приостановлен'
+  return status === 'active' ? t('status.active') : t('status.suspended')
 }
 
 // Actions
@@ -621,27 +624,27 @@ const getCapacityGroupLabel = (value: string) => {
       <!-- Stats Cards -->
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Всего компаний</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.totalCompanies') }}</p>
           <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Импортёры</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.importers') }}</p>
           <p class="text-2xl font-bold text-blue-600">{{ stats.importers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Производители</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.manufacturers') }}</p>
           <p class="text-2xl font-bold text-purple-600">{{ stats.manufacturers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Переработчики</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.recyclers') }}</p>
           <p class="text-2xl font-bold text-green-600">{{ stats.recyclers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Активных</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.activeCount') }}</p>
           <p class="text-2xl font-bold text-green-600">{{ stats.active }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <p class="text-sm text-gray-500">Приостановлено</p>
+          <p class="text-sm text-gray-500">{{ $t('ecoProfile.suspendedCount') }}</p>
           <p class="text-2xl font-bold text-red-600">{{ stats.suspended }}</p>
         </div>
       </div>
@@ -650,28 +653,28 @@ const getCapacityGroupLabel = (value: string) => {
       <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
         <div class="flex flex-wrap gap-4">
           <div class="flex-1 min-w-[250px]">
-            <label class="block text-xs text-gray-500 mb-1">Поиск по наименованию или ИНН</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoProfile.searchByNameOrInn') }}</label>
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Введите название или ИНН..."
+              :placeholder="$t('ecoProfile.searchPlaceholder')"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
             />
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Тип компании</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoProfile.companyType') }}</label>
             <select v-model="filterType" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
               <option v-for="t in companyTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Регион</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoProfile.region') }}</label>
             <select v-model="filterRegion" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
               <option v-for="r in regions" :key="r.id" :value="r.id">{{ r.name }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs text-gray-500 mb-1">Статус</label>
+            <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoProfile.status') }}</label>
             <select v-model="filterStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
               <option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.name }}</option>
             </select>
@@ -685,15 +688,15 @@ const getCapacityGroupLabel = (value: string) => {
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Компания</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Контактное лицо</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Телефон</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.company') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.type') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.contactPerson') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.phone') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.email') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoProfile.actions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -732,14 +735,14 @@ const getCapacityGroupLabel = (value: string) => {
               </tr>
               <tr v-if="filteredCompanies.length === 0">
                 <td colspan="9" class="px-4 py-8 text-center text-gray-500">
-                  Компании не найдены
+                  {{ $t('ecoProfile.companiesNotFound') }}
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <div class="px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-600">
-          Найдено компаний: {{ filteredCompanies.length }}
+          {{ $t('ecoProfile.companiesFound') }}: {{ filteredCompanies.length }}
         </div>
       </div>
     </div>
@@ -762,7 +765,7 @@ const getCapacityGroupLabel = (value: string) => {
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span class="font-medium">Данные успешно обновлены</span>
+          <span class="font-medium">{{ $t('ecoProfile.dataUpdatedSuccess') }}</span>
         </div>
       </Transition>
 
@@ -827,7 +830,7 @@ const getCapacityGroupLabel = (value: string) => {
             </div>
             <div>
               <h1 class="text-2xl font-bold">{{ selectedCompany.shortName }}</h1>
-              <p class="text-lime-100">{{ selectedCompany.typeName }} | ИНН: {{ selectedCompany.inn }}</p>
+              <p class="text-lime-100">{{ selectedCompany.typeName }} | {{ $t('ecoProfile.inn') }}: {{ selectedCompany.inn }}</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -852,34 +855,34 @@ const getCapacityGroupLabel = (value: string) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">Данные организации</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoProfile.organizationData') }}</h3>
             </div>
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Краткое наименование</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.shortName') }}</label>
               <p class="text-gray-900">{{ selectedCompany.shortName }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Полное наименование</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.fullName') }}</label>
               <p class="text-gray-900">{{ selectedCompany.fullName }}</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">ИНН</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.inn') }}</label>
                 <p class="text-gray-900 font-mono">{{ selectedCompany.inn }}</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">ОКПО</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.okpo') }}</label>
                 <p class="text-gray-900 font-mono">{{ selectedCompany.okpo }}</p>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Вид деятельности</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.activityType') }}</label>
               <p class="text-gray-900">{{ selectedCompany.activityType }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Тип компании</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.companyType') }}</label>
               <span :class="['text-sm px-3 py-1 rounded-full font-medium', getTypeColor(selectedCompany.type)]">
                 {{ selectedCompany.typeName }}
               </span>
@@ -897,20 +900,20 @@ const getCapacityGroupLabel = (value: string) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">Адреса</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoProfile.addresses') }}</h3>
             </div>
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Регион</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.region') }}</label>
               <p class="text-gray-900">{{ selectedCompany.region }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Юридический адрес</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.legalAddress') }}</label>
               <p class="text-gray-900">{{ selectedCompany.legalAddress }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Фактический адрес</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.actualAddress') }}</label>
               <input
                 v-if="isEditing"
                 v-model="editFormData.actualAddress"
@@ -931,12 +934,12 @@ const getCapacityGroupLabel = (value: string) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">Контакты</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoProfile.contacts') }}</h3>
             </div>
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Руководитель</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.director') }}</label>
               <input
                 v-if="isEditing"
                 v-model="editFormData.director"
@@ -946,7 +949,7 @@ const getCapacityGroupLabel = (value: string) => {
               <p v-else class="text-gray-900">{{ selectedCompany.director }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Контактное лицо</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.contactPerson') }}</label>
               <input
                 v-if="isEditing"
                 v-model="editFormData.contactPerson"
@@ -954,7 +957,7 @@ const getCapacityGroupLabel = (value: string) => {
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
               />
               <p v-else class="text-gray-900">{{ selectedCompany.contactPerson }}</p>
-              <label v-if="isEditing" class="block text-sm font-medium text-gray-500 mb-1 mt-3">Должность</label>
+              <label v-if="isEditing" class="block text-sm font-medium text-gray-500 mb-1 mt-3">{{ $t('ecoProfile.position') }}</label>
               <input
                 v-if="isEditing"
                 v-model="editFormData.contactPosition"
@@ -965,7 +968,7 @@ const getCapacityGroupLabel = (value: string) => {
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">Телефон</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.phone') }}</label>
                 <input
                   v-if="isEditing"
                   v-model="editFormData.phone"
@@ -975,7 +978,7 @@ const getCapacityGroupLabel = (value: string) => {
                 <p v-else class="text-gray-900">{{ selectedCompany.phone }}</p>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.email') }}</label>
                 <input
                   v-if="isEditing"
                   v-model="editFormData.email"
@@ -986,7 +989,7 @@ const getCapacityGroupLabel = (value: string) => {
               </div>
             </div>
             <div v-if="selectedCompany.website || isEditing">
-              <label class="block text-sm font-medium text-gray-500 mb-1">Веб-сайт</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.website') }}</label>
               <input
                 v-if="isEditing"
                 v-model="editFormData.website"
@@ -1008,16 +1011,16 @@ const getCapacityGroupLabel = (value: string) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">Лицензия и регистрация</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoProfile.licenseAndRegistration') }}</h3>
             </div>
           </div>
           <div class="p-6 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Номер лицензии</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.licenseNumber') }}</label>
               <p class="text-gray-900 font-mono">{{ selectedCompany.licenseNumber }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Срок действия лицензии</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.licenseExpiry') }}</label>
               <div class="flex items-center gap-2">
                 <p :class="[
                   'font-medium',
@@ -1027,19 +1030,19 @@ const getCapacityGroupLabel = (value: string) => {
                   {{ formatDate(selectedCompany.licenseExpiry) }}
                 </p>
                 <span v-if="isLicenseExpired(selectedCompany.licenseExpiry)" class="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
-                  Истекла
+                  {{ $t('status.expired') }}
                 </span>
                 <span v-else-if="isLicenseExpiring(selectedCompany.licenseExpiry)" class="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
-                  Истекает скоро
+                  {{ $t('status.expiring') }}
                 </span>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Дата регистрации в системе</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.registrationDate') }}</label>
               <p class="text-gray-900">{{ formatDate(selectedCompany.registrationDate) }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Статус</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('ecoProfile.status') }}</label>
               <span :class="['text-sm px-3 py-1 rounded-full font-medium', getStatusColor(selectedCompany.status)]">
                 {{ getStatusText(selectedCompany.status) }}
               </span>
@@ -1056,22 +1059,22 @@ const getCapacityGroupLabel = (value: string) => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">Мощности переработки</h3>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoProfile.recyclingCapacities') }}</h3>
             </div>
           </div>
           <div class="p-6">
             <!-- KPI row -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div class="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
-                <p class="text-xs text-[#059669] font-medium mb-1">Общая мощность</p>
-                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalCapacity(matchedRecycler) }} т/год</p>
+                <p class="text-xs text-[#059669] font-medium mb-1">{{ $t('ecoProfile.totalCapacity') }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalCapacity(matchedRecycler) }} {{ $t('ecoProfile.tonsPerYear') }}</p>
               </div>
               <div class="bg-[#eff6ff] rounded-xl p-4 border border-[#bfdbfe]">
-                <p class="text-xs text-[#2563eb] font-medium mb-1">Текущая загрузка</p>
-                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalLoad(matchedRecycler) }} т/год</p>
+                <p class="text-xs text-[#2563eb] font-medium mb-1">{{ $t('ecoProfile.currentLoad') }}</p>
+                <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getTotalLoad(matchedRecycler) }} {{ $t('ecoProfile.tonsPerYear') }}</p>
               </div>
               <div class="rounded-xl p-4 border" :class="recyclerStore.getLoadPercent(matchedRecycler) >= 90 ? 'bg-red-50 border-red-200' : recyclerStore.getLoadPercent(matchedRecycler) >= 70 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'">
-                <p class="text-xs font-medium mb-1" :class="recyclerStore.getLoadPercent(matchedRecycler) >= 90 ? 'text-red-600' : recyclerStore.getLoadPercent(matchedRecycler) >= 70 ? 'text-amber-600' : 'text-green-600'">Загрузка</p>
+                <p class="text-xs font-medium mb-1" :class="recyclerStore.getLoadPercent(matchedRecycler) >= 90 ? 'text-red-600' : recyclerStore.getLoadPercent(matchedRecycler) >= 70 ? 'text-amber-600' : 'text-green-600'">{{ $t('ecoProfile.loadPercent') }}</p>
                 <p class="text-xl font-bold text-gray-900">{{ recyclerStore.getLoadPercent(matchedRecycler) }}%</p>
               </div>
             </div>
@@ -1080,11 +1083,11 @@ const getCapacityGroupLabel = (value: string) => {
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left text-gray-500 border-b border-gray-200">
-                  <th class="pb-2 font-medium">Вид отходов</th>
-                  <th class="pb-2 font-medium text-right">Мощность (т/год)</th>
-                  <th class="pb-2 font-medium text-right">Загрузка (т/год)</th>
-                  <th class="pb-2 font-medium text-right">Свободно</th>
-                  <th class="pb-2 font-medium" style="width: 140px">Загрузка</th>
+                  <th class="pb-2 font-medium">{{ $t('ecoProfile.wasteType') }}</th>
+                  <th class="pb-2 font-medium text-right">{{ $t('ecoProfile.capacityTonsYear') }}</th>
+                  <th class="pb-2 font-medium text-right">{{ $t('ecoProfile.loadTonsYear') }}</th>
+                  <th class="pb-2 font-medium text-right">{{ $t('ecoProfile.available') }}</th>
+                  <th class="pb-2 font-medium" style="width: 140px">{{ $t('ecoProfile.loadPercent') }}</th>
                 </tr>
               </thead>
               <tbody>

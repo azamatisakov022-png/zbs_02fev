@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { ReportStatus } from '../../constants/statuses'
 import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
@@ -10,6 +12,7 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -21,10 +24,10 @@ const report = computed(() => {
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Черновик': return 'bg-gray-100 text-gray-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Принят': return 'bg-green-100 text-green-800'
-    case 'Отклонён': return 'bg-red-100 text-red-800'
+    case ReportStatus.DRAFT: return 'bg-gray-100 text-gray-800'
+    case ReportStatus.UNDER_REVIEW: return 'bg-yellow-100 text-yellow-800'
+    case ReportStatus.APPROVED: return 'bg-green-100 text-green-800'
+    case ReportStatus.REJECTED: return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -144,11 +147,11 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">Отчёт не найден</h2>
-      <p class="text-[#64748b] mb-6">Запрошенный отчёт не существует</p>
+      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('ecoReportDetail.notFound') }}</h2>
+      <p class="text-[#64748b] mb-6">{{ $t('ecoReportDetail.notFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
     </div>
 
@@ -157,7 +160,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <!-- Back link -->
       <button @click="goBack" class="btn-back mb-4">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Назад
+        {{ $t('common.back') }}
       </button>
 
       <!-- Header -->
@@ -166,17 +169,17 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           <div class="flex items-center gap-3 mb-1">
             <h1 class="text-xl font-bold text-[#1e293b]">{{ report.number }}</h1>
             <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(report.status)]">
-              {{ report.status }}
+              {{ $t('status.' + (report.status === 'under_review' ? 'underReview' : report.status === 'approved' ? 'approvedMasc' : report.status === 'rejected' ? 'rejectedMasc' : report.status)) }}
             </span>
           </div>
           <div class="flex items-center gap-4 text-sm text-[#64748b]">
-            <span>Организация: <strong class="text-[#1e293b]">{{ report.company }}</strong></span>
-            <span>Период: <strong class="text-[#1e293b]">{{ report.year }} год</strong></span>
-            <span>Подача: <strong class="text-[#1e293b]">{{ report.date }}</strong></span>
+            <span>{{ $t('ecoReportDetail.organization') }} <strong class="text-[#1e293b]">{{ report.company }}</strong></span>
+            <span>{{ $t('ecoReportDetail.period') }} <strong class="text-[#1e293b]">{{ report.year }} {{ $t('ecoReportDetail.yearSuffix') }}</strong></span>
+            <span>{{ $t('ecoReportDetail.submission') }} <strong class="text-[#1e293b]">{{ report.date }}</strong></span>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm text-[#64748b]">Выполнение:</span>
+          <span class="text-sm text-[#64748b]">{{ $t('ecoReportDetail.completion') }}</span>
           <span :class="[
             'text-lg font-bold',
             report.processingPercent >= 100 ? 'text-[#10b981]' : report.processingPercent >= 80 ? 'text-[#f59e0b]' : 'text-[#ef4444]'
@@ -185,39 +188,39 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
 
       <!-- Rejection reason -->
-      <div v-if="report.status === 'Отклонён' && report.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+      <div v-if="report.status === 'rejected' && report.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
         <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
         <div>
-          <p class="font-medium text-red-800">Причина отклонения</p>
+          <p class="font-medium text-red-800">{{ $t('ecoReportDetail.rejectionReason') }}</p>
           <p class="text-sm text-red-700 mt-1">{{ report.rejectionReason }}</p>
         </div>
       </div>
 
       <!-- Section 1: General info -->
       <div class="rd-section mb-6">
-        <h2 class="rd-section__title">Общие сведения</h2>
+        <h2 class="rd-section__title">{{ $t('ecoReportDetail.generalInfo') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <p class="rd-label">Наименование организации</p>
+            <p class="rd-label">{{ $t('ecoReportDetail.orgName') }}</p>
             <p class="rd-value">{{ report.company }}</p>
           </div>
           <div>
-            <p class="rd-label">ИНН</p>
+            <p class="rd-label">{{ $t('ecoReportDetail.inn') }}</p>
             <p class="rd-value font-mono">{{ report.inn }}</p>
           </div>
           <div>
-            <p class="rd-label">Отчётный период</p>
-            <p class="rd-value">{{ report.year }} год</p>
+            <p class="rd-label">{{ $t('ecoReportDetail.reportPeriod') }}</p>
+            <p class="rd-value">{{ report.year }} {{ $t('ecoReportDetail.yearSuffix') }}</p>
           </div>
           <div>
-            <p class="rd-label">Дата подачи</p>
+            <p class="rd-label">{{ $t('ecoReportDetail.submissionDate') }}</p>
             <p class="rd-value">{{ report.date }}</p>
           </div>
           <div>
-            <p class="rd-label">Тип плательщика</p>
-            <p class="rd-value">Импортёр / Производитель</p>
+            <p class="rd-label">{{ $t('ecoReportDetail.payerType') }}</p>
+            <p class="rd-value">{{ $t('ecoReportDetail.payerTypeValue') }}</p>
           </div>
         </div>
       </div>
@@ -225,18 +228,18 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <!-- Summary cards -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
-          <p class="text-xs text-[#64748b] mb-1">Декларировано</p>
-          <p class="text-xl font-bold text-[#2563eb]">{{ report.totalDeclared }} т</p>
+          <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoReportDetail.declared') }}</p>
+          <p class="text-xl font-bold text-[#2563eb]">{{ report.totalDeclared }} {{ $t('ecoReportDetail.unitTon') }}</p>
         </div>
         <div class="bg-green-50 rounded-xl p-4 text-center border border-green-100">
-          <p class="text-xs text-[#64748b] mb-1">Переработано</p>
-          <p class="text-xl font-bold text-[#10b981]">{{ report.totalProcessed }} т</p>
+          <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoReportDetail.processed') }}</p>
+          <p class="text-xl font-bold text-[#10b981]">{{ report.totalProcessed }} {{ $t('ecoReportDetail.unitTon') }}</p>
         </div>
         <div :class="[
           'rounded-xl p-4 text-center border',
           report.processingPercent >= 100 ? 'bg-green-50 border-green-100' : report.processingPercent >= 80 ? 'bg-yellow-50 border-yellow-100' : 'bg-red-50 border-red-100'
         ]">
-          <p class="text-xs text-[#64748b] mb-1">Выполнение</p>
+          <p class="text-xs text-[#64748b] mb-1">{{ $t('ecoReportDetail.completionLabel') }}</p>
           <p :class="[
             'text-xl font-bold',
             report.processingPercent >= 100 ? 'text-[#10b981]' : report.processingPercent >= 80 ? 'text-[#f59e0b]' : 'text-[#ef4444]'
@@ -247,28 +250,28 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <!-- Section 2: Product items table -->
       <div class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
         <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">1. Информация о товарах (без упаковки товаров)</h2>
-          <p class="text-xs text-[#64748b] mt-1">Приложение 1 к Порядку, утверждённому постановлением Кабинета Министров КР №563</p>
+          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('ecoReportDetail.productInfoTitle') }}</h2>
+          <p class="text-xs text-[#64748b] mt-1">{{ $t('ecoReportDetail.productInfoSubtitle') }}</p>
         </div>
 
         <div v-if="productItems.length > 0" class="rd-table-wrap">
           <table class="rd-table">
             <thead>
               <tr>
-                <th class="rd-th" style="min-width:40px">Гр.1<br><span class="rd-th-sub">№ п/п</span></th>
-                <th class="rd-th" style="min-width:180px">Гр.2<br><span class="rd-th-sub">Наименование товара</span></th>
-                <th class="rd-th" style="min-width:80px">Гр.3<br><span class="rd-th-sub">Код ГСКП</span></th>
-                <th class="rd-th" style="min-width:140px">Гр.4<br><span class="rd-th-sub">Наимен. ТН ВЭД</span></th>
-                <th class="rd-th" style="min-width:90px">Гр.5<br><span class="rd-th-sub">Код ТН ВЭД</span></th>
-                <th class="rd-th rd-th--num" style="min-width:90px">Гр.6<br><span class="rd-th-sub">Выпущено (кг)</span></th>
-                <th class="rd-th rd-th--num" style="min-width:70px">Гр.7<br><span class="rd-th-sub">Норматив</span></th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Гр.8<br><span class="rd-th-sub">К перераб. (кг)</span></th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Гр.9<br><span class="rd-th-sub">Перераб. (кг)</span></th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Гр.10<br><span class="rd-th-sub">Пред. период</span></th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Гр.11<br><span class="rd-th-sub">Итого перераб.</span></th>
-                <th class="rd-th rd-th--num" style="min-width:110px">Гр.12<br><span class="rd-th-sub">Утильсбор (кг)</span></th>
-                <th class="rd-th" style="min-width:140px">Гр.13<br><span class="rd-th-sub">Документы</span></th>
-                <th class="rd-th" style="min-width:80px">Гр.14<br><span class="rd-th-sub">Примечание</span></th>
+                <th class="rd-th" style="min-width:40px">{{ $t('ecoReportDetail.thCol1') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol1Sub') }}</span></th>
+                <th class="rd-th" style="min-width:180px">{{ $t('ecoReportDetail.thCol2') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol2Sub') }}</span></th>
+                <th class="rd-th" style="min-width:80px">{{ $t('ecoReportDetail.thCol3') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol3Sub') }}</span></th>
+                <th class="rd-th" style="min-width:140px">{{ $t('ecoReportDetail.thCol4') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol4Sub') }}</span></th>
+                <th class="rd-th" style="min-width:90px">{{ $t('ecoReportDetail.thCol5') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol5Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:90px">{{ $t('ecoReportDetail.thCol6') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol6Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:70px">{{ $t('ecoReportDetail.thCol7') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol7Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thCol8') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol8Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thCol9') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol9Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thCol10') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol10Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thCol11') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol11Sub') }}</span></th>
+                <th class="rd-th rd-th--num" style="min-width:110px">{{ $t('ecoReportDetail.thCol12') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol12Sub') }}</span></th>
+                <th class="rd-th" style="min-width:140px">{{ $t('ecoReportDetail.thCol13') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol13Sub') }}</span></th>
+                <th class="rd-th" style="min-width:80px">{{ $t('ecoReportDetail.thCol14') }}<br><span class="rd-th-sub">{{ $t('ecoReportDetail.thCol14Sub') }}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -291,7 +294,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
             </tbody>
             <tfoot>
               <tr class="rd-row--total">
-                <td class="rd-td" colspan="5"><strong>ИТОГО</strong></td>
+                <td class="rd-td" colspan="5"><strong>{{ $t('ecoReportDetail.totalRow') }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalDeclared * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num">—</td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalSubjectTo * 1000) }}</strong></td>
@@ -305,34 +308,34 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           </table>
         </div>
         <div v-else class="px-5 py-8 text-center text-sm text-[#64748b]">
-          Нет данных о товарах
+          {{ $t('ecoReportDetail.noProductData') }}
         </div>
       </div>
 
       <!-- Section 3: Packaging items table -->
       <div class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
         <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">2. Информация об упаковке товаров</h2>
+          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('ecoReportDetail.packagingInfoTitle') }}</h2>
         </div>
 
         <div v-if="packagingItems.length > 0" class="rd-table-wrap">
           <table class="rd-table">
             <thead>
               <tr>
-                <th class="rd-th" style="min-width:40px">№ п/п</th>
-                <th class="rd-th" style="min-width:140px">Материал упаковки</th>
-                <th class="rd-th" style="min-width:80px">Букв. обозн.</th>
-                <th class="rd-th" style="min-width:70px">Цифр. код</th>
-                <th class="rd-th" style="min-width:160px">Наименование</th>
-                <th class="rd-th rd-th--num" style="min-width:90px">Выпущено (кг)</th>
-                <th class="rd-th rd-th--num" style="min-width:70px">Норматив</th>
-                <th class="rd-th rd-th--num" style="min-width:100px">К перераб. (кг)</th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Перераб. (кг)</th>
-                <th class="rd-th rd-th--num" style="min-width:90px">Пред. период</th>
-                <th class="rd-th rd-th--num" style="min-width:100px">Итого перераб.</th>
-                <th class="rd-th rd-th--num" style="min-width:110px">Утильсбор (кг)</th>
-                <th class="rd-th" style="min-width:120px">Документы</th>
-                <th class="rd-th" style="min-width:80px">Примечание</th>
+                <th class="rd-th" style="min-width:40px">{{ $t('ecoReportDetail.thPkgNum') }}</th>
+                <th class="rd-th" style="min-width:140px">{{ $t('ecoReportDetail.thPkgMaterial') }}</th>
+                <th class="rd-th" style="min-width:80px">{{ $t('ecoReportDetail.thPkgLetterCode') }}</th>
+                <th class="rd-th" style="min-width:70px">{{ $t('ecoReportDetail.thPkgDigitCode') }}</th>
+                <th class="rd-th" style="min-width:160px">{{ $t('ecoReportDetail.thPkgName') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:90px">{{ $t('ecoReportDetail.thPkgReleased') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:70px">{{ $t('ecoReportDetail.thPkgNorm') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thPkgToRecycle') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thPkgProcessed') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:90px">{{ $t('ecoReportDetail.thPkgPrevPeriod') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:100px">{{ $t('ecoReportDetail.thPkgTotalProcessed') }}</th>
+                <th class="rd-th rd-th--num" style="min-width:110px">{{ $t('ecoReportDetail.thPkgRecyclingFee') }}</th>
+                <th class="rd-th" style="min-width:120px">{{ $t('ecoReportDetail.thPkgDocs') }}</th>
+                <th class="rd-th" style="min-width:80px">{{ $t('ecoReportDetail.thPkgNotes') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -355,7 +358,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
             </tbody>
             <tfoot>
               <tr class="rd-row--total">
-                <td class="rd-td" colspan="5"><strong>ИТОГО</strong></td>
+                <td class="rd-td" colspan="5"><strong>{{ $t('ecoReportDetail.totalRow') }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(packagingTotals.totalDeclared * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num">—</td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(packagingTotals.totalSubjectTo * 1000) }}</strong></td>
@@ -369,14 +372,14 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           </table>
         </div>
         <div v-else class="px-5 py-8 text-center text-sm text-[#64748b]">
-          Нет данных об упаковке
+          {{ $t('ecoReportDetail.noPackagingData') }}
         </div>
       </div>
 
       <!-- Documents section -->
       <div v-if="report.files.length > 0" class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
         <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">Прикреплённые документы ({{ report.files.length }})</h2>
+          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('ecoReportDetail.attachedDocs') }} ({{ report.files.length }})</h2>
         </div>
         <div class="p-5 space-y-2">
           <div v-for="file in report.files" :key="file.id" class="flex items-center gap-3 bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
@@ -396,11 +399,11 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 
       <!-- Reject form -->
       <div v-if="showRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
-        <h3 class="font-semibold text-red-800 mb-3">Укажите причину отклонения</h3>
+        <h3 class="font-semibold text-red-800 mb-3">{{ $t('ecoReportDetail.rejectFormTitle') }}</h3>
         <textarea
           v-model="rejectionReason"
           rows="3"
-          placeholder="Опишите причину отклонения отчёта..."
+          :placeholder="$t('ecoReportDetail.rejectPlaceholder')"
           class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
         ></textarea>
         <div class="flex justify-end gap-3 mt-3">
@@ -420,20 +423,20 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <!-- Bottom actions -->
       <div class="flex flex-wrap items-center gap-3">
         <!-- Review actions for pending reports -->
-        <template v-if="report.status === 'На проверке' && !showRejectForm">
+        <template v-if="report.status === 'under_review' && !showRejectForm">
           <button
             @click="approveReport"
             class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-full bg-[#10b981] text-white hover:bg-[#059669] transition-colors shadow-sm"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            Принять отчёт
+            {{ $t('ecoReportDetail.acceptReport') }}
           </button>
           <button
             @click="showRejectForm = true"
             class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            Отклонить
+            {{ $t('ecoReportDetail.reject') }}
           </button>
           <div class="w-px h-6 bg-[#e2e8f0] mx-1"></div>
         </template>
@@ -443,20 +446,20 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#059669] text-white hover:bg-[#047857] transition-colors shadow-sm"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-          Скачать Excel
+          {{ $t('ecoReportDetail.downloadExcel') }}
         </button>
         <button
           @click="downloadPdf"
           class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Скачать PDF
+          {{ $t('ecoReportDetail.downloadPdf') }}
         </button>
       </div>
       <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;">
         <button @click="goBack" class="btn-back">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          Назад
+          {{ $t('common.back') }}
         </button>
       </div>
       </div>

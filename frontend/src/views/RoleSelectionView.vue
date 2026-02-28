@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 
 interface Role {
   id: string
@@ -10,32 +13,32 @@ interface Role {
   icon: string
 }
 
-const roles: Role[] = [
+const roles = computed<Role[]>(() => [
   {
     id: 'admin',
-    title: 'Администратор',
-    description: 'Управление системой',
+    title: t('roleSelection.roles.admin.title'),
+    description: t('roleSelection.roles.admin.description'),
     icon: 'gear'
   },
   {
     id: 'employee',
-    title: 'Сотрудник МПРЭТН КР',
-    description: 'Министерство природных ресурсов, экологии и технического надзора',
+    title: t('roleSelection.roles.employee.title'),
+    description: t('roleSelection.roles.employee.description'),
     icon: 'id-card'
   },
   {
     id: 'eco-operator',
-    title: 'ГП «Эко Оператор»',
-    description: '',
+    title: t('roleSelection.roles.ecoOperator.title'),
+    description: t('roleSelection.roles.ecoOperator.description'),
     icon: 'recycle'
   },
   {
     id: 'business',
-    title: 'Плательщик',
-    description: 'Импортёры, производители товаров и упаковки',
+    title: t('roleSelection.roles.business.title'),
+    description: t('roleSelection.roles.business.description'),
     icon: 'briefcase'
   }
-]
+])
 
 const handleRoleSelect = (_role: Role) => {
   // All roles go through the same login page
@@ -61,11 +64,11 @@ const goBack = () => {
           </svg>
         </button>
         <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase">
-          Вход в систему
+          {{ $t('roleSelection.title') }}
         </h1>
       </div>
       <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] ml-14">
-        Выберите вашу роль для входа в личный кабинет
+        {{ $t('roleSelection.subtitle') }}
       </p>
     </div>
 
@@ -140,9 +143,9 @@ const goBack = () => {
     <div class="container-main pt-8 lg:pt-[40px]">
       <div class="text-center">
         <p class="text-[#70868f] text-sm lg:text-[16px]">
-          Нет аккаунта?
+          {{ $t('roleSelection.noAccount') }}
           <router-link to="/register" class="text-[#0e888d] font-medium hover:underline">
-            Зарегистрироваться
+            {{ $t('roleSelection.register') }}
           </router-link>
         </p>
       </div>

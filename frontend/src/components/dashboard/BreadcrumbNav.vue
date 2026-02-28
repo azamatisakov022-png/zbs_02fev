@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface BreadcrumbItem {
   label: string
   path?: string
@@ -17,13 +21,13 @@ defineProps<{
         :to="item.path"
         class="text-[13px] text-[#94a3b8] hover:text-[#0e888d] transition-colors"
       >
-        {{ item.label }}
+        {{ t(item.label) }}
       </router-link>
       <span
         v-else
         class="text-[13px] text-[#1e293b] font-medium"
       >
-        {{ item.label }}
+        {{ t(item.label) }}
       </span>
       <span
         v-if="index < items.length - 1"

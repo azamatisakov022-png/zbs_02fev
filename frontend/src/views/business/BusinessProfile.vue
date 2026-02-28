@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { validators, scrollToFirstError } from '../../utils/validators'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import { toastStore } from '../../stores/toast'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 // Company data
@@ -61,7 +63,7 @@ const saveProducts = async () => {
   selectedProductGroups.value = [...editProductGroups.value]
   savingProducts.value = false
   editingProducts.value = false
-  toastStore.show({ type: 'success', title: 'Виды продукции обновлены' })
+  toastStore.show({ type: 'success', title: t('businessProfile.productGroupsUpdated') })
 }
 
 const contactData = ref({
@@ -111,17 +113,17 @@ const formErrors = computed(() => {
   const errors: Record<string, string> = {}
 
   // --- Company section ---
-  const nameErr = validators.required(companyData.value.name, 'Краткое наименование')
+  const nameErr = validators.required(companyData.value.name, t('businessProfile.shortName'))
   if (nameErr) errors.companyName = nameErr
 
-  const innReq = validators.required(companyData.value.inn, 'ИНН')
+  const innReq = validators.required(companyData.value.inn, t('businessProfile.inn'))
   if (innReq) errors.inn = innReq
   else {
     const innFmt = validators.inn(companyData.value.inn)
     if (innFmt) errors.inn = innFmt
   }
 
-  const legalAddrErr = validators.required(companyData.value.legalAddress, 'Юридический адрес')
+  const legalAddrErr = validators.required(companyData.value.legalAddress, t('businessProfile.legalAddress'))
   if (legalAddrErr) errors.legalAddress = legalAddrErr
 
   // --- Contact section ---
@@ -237,7 +239,7 @@ const saveSection = async () => {
 
 const changePassword = async () => {
   if (securityData.value.newPassword !== securityData.value.confirmPassword) {
-    toastStore.show({ type: 'error', title: 'Ошибка', message: 'Пароли не совпадают' })
+    toastStore.show({ type: 'error', title: t('businessProfile.error'), message: t('businessProfile.passwordsDoNotMatch') })
     return
   }
   saving.value = true
@@ -246,7 +248,7 @@ const changePassword = async () => {
   securityData.value.currentPassword = ''
   securityData.value.newPassword = ''
   securityData.value.confirmPassword = ''
-  toastStore.show({ type: 'success', title: 'Пароль успешно изменён' })
+  toastStore.show({ type: 'success', title: t('businessProfile.passwordChanged') })
 }
 
 const toggleTwoFactor = () => {
@@ -265,8 +267,8 @@ const toggleTwoFactor = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Профиль компании</h1>
-          <p class="text-gray-600 mt-1">Управление данными вашей организации</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('businessProfile.title') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('businessProfile.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <!-- Verification Badge -->
@@ -277,7 +279,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <span class="font-medium">Верифицирован</span>
+            <span class="font-medium">{{ $t('businessProfile.verified') }}</span>
           </div>
           <div
             v-else-if="verificationStatus === 'pending'"
@@ -286,7 +288,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="font-medium">На проверке</span>
+            <span class="font-medium">{{ $t('businessProfile.pending') }}</span>
           </div>
           <div
             v-else
@@ -295,7 +297,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span class="font-medium">Не верифицирован</span>
+            <span class="font-medium">{{ $t('businessProfile.notVerified') }}</span>
           </div>
         </div>
       </div>
@@ -310,9 +312,9 @@ const toggleTwoFactor = () => {
               </svg>
             </div>
             <div>
-              <h2 class="text-xl font-bold">Заполненность профиля: {{ profileCompletion }}%</h2>
+              <h2 class="text-xl font-bold">{{ $t('businessProfile.profileCompletion') }}: {{ profileCompletion }}%</h2>
               <p class="text-teal-100 mt-1">
-                {{ profileCompletion === 100 ? 'Отлично! Все данные заполнены' : 'Заполните все данные для полноценной работы в системе' }}
+                {{ profileCompletion === 100 ? $t('businessProfile.allDataFilled') : $t('businessProfile.fillAllData') }}
               </p>
             </div>
           </div>
@@ -348,7 +350,7 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Данные организации</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.companyData') }}</h3>
           </div>
           <button
             v-if="editingSection !== 'company'"
@@ -358,13 +360,13 @@ const toggleTwoFactor = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Краткое наименование</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.shortName') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.name"
@@ -377,7 +379,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.name }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Полное наименование</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.fullName') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.fullName"
@@ -387,7 +389,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900">{{ companyData.fullName }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">ИНН</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.inn') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.inn"
@@ -400,7 +402,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'company'" class="text-gray-900 font-mono">{{ companyData.inn }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">ОКПО</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.okpo') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.okpo"
@@ -410,7 +412,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900 font-mono">{{ companyData.okpo }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Регистрационный номер</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.registrationNumber') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.registrationNumber"
@@ -420,17 +422,17 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900 font-mono">{{ companyData.registrationNumber }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Дата регистрации</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.registrationDate') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.registrationDate"
                 type="date"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ new Date(companyData.registrationDate).toLocaleDateString('ru-RU') }}</p>
+              <p v-else class="text-gray-900">{{ new Date(companyData.registrationDate).toLocaleDateString() }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-500 mb-1">Юридический адрес</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.legalAddress') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.legalAddress"
@@ -443,7 +445,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.legalAddress }}</p>
             </div>
             <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-500 mb-1">Фактический адрес</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.actualAddress') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.actualAddress"
@@ -453,7 +455,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900">{{ companyData.actualAddress }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Вид деятельности</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.activityType') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.activityType"
@@ -463,7 +465,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900">{{ companyData.activityType }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">ОКВЭД</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.okved') }}</label>
               <input
                 v-if="editingSection === 'company'"
                 v-model="companyData.okved"
@@ -479,7 +481,7 @@ const toggleTwoFactor = () => {
               @click="cancelEditing"
               class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="saveSection"
@@ -490,7 +492,7 @@ const toggleTwoFactor = () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -506,8 +508,8 @@ const toggleTwoFactor = () => {
               </svg>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-gray-900">Виды продукции</h3>
-              <p class="text-sm text-gray-500">Группы товаров, указанные при регистрации</p>
+              <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.productTypes') }}</h3>
+              <p class="text-sm text-gray-500">{{ $t('businessProfile.productGroupsDesc') }}</p>
             </div>
           </div>
           <button
@@ -518,7 +520,7 @@ const toggleTwoFactor = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
         <div class="p-6">
@@ -535,7 +537,7 @@ const toggleTwoFactor = () => {
                 </svg>
                 {{ getProductGroupLabel(gv) }}
               </span>
-              <span v-if="selectedProductGroups.length === 0" class="text-sm text-gray-400">Не выбрано</span>
+              <span v-if="selectedProductGroups.length === 0" class="text-sm text-gray-400">{{ $t('businessProfile.notSelected') }}</span>
             </div>
           </template>
 
@@ -544,13 +546,13 @@ const toggleTwoFactor = () => {
             <!-- Select all / Deselect all -->
             <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
               <span class="text-sm text-gray-500">
-                Выбрано: <span class="font-semibold text-gray-900">{{ editProductGroups.length }}</span> из {{ productGroups.length }}
+                {{ $t('businessProfile.selected') }}: <span class="font-semibold text-gray-900">{{ editProductGroups.length }}</span> {{ $t('businessProfile.outOf') }} {{ productGroups.length }}
               </span>
               <button
                 @click="toggleAllProducts"
                 class="text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
               >
-                {{ allProductsSelected ? 'Снять все' : 'Выбрать все' }}
+                {{ allProductsSelected ? $t('businessProfile.deselectAll') : $t('businessProfile.selectAll') }}
               </button>
             </div>
 
@@ -578,7 +580,7 @@ const toggleTwoFactor = () => {
                 @click="cancelEditingProducts"
                 class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Отмена
+                {{ $t('common.cancel') }}
               </button>
               <button
                 @click="saveProducts"
@@ -589,7 +591,7 @@ const toggleTwoFactor = () => {
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {{ savingProducts ? 'Сохранение...' : 'Сохранить' }}
+                {{ savingProducts ? $t('businessProfile.saving') : $t('common.save') }}
               </button>
             </div>
           </template>
@@ -605,7 +607,7 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Контактная информация</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.contactInfo') }}</h3>
           </div>
           <button
             v-if="editingSection !== 'contact'"
@@ -615,13 +617,13 @@ const toggleTwoFactor = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Основной телефон</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.mainPhone') }}</label>
               <input
                 v-if="editingSection === 'contact'"
                 v-model="contactData.phone"
@@ -634,7 +636,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.phone }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Дополнительный телефон</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.additionalPhone') }}</label>
               <input
                 v-if="editingSection === 'contact'"
                 v-model="contactData.additionalPhone"
@@ -647,7 +649,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.additionalPhone || '---' }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Факс</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.fax') }}</label>
               <input
                 v-if="editingSection === 'contact'"
                 v-model="contactData.fax"
@@ -670,7 +672,7 @@ const toggleTwoFactor = () => {
               <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.email }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Веб-сайт</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.website') }}</label>
               <input
                 v-if="editingSection === 'contact'"
                 v-model="contactData.website"
@@ -686,7 +688,7 @@ const toggleTwoFactor = () => {
               @click="cancelEditing"
               class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="saveSection"
@@ -697,7 +699,7 @@ const toggleTwoFactor = () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -712,7 +714,7 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Представители</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.representatives') }}</h3>
           </div>
           <button
             v-if="editingSection !== 'representative'"
@@ -722,7 +724,7 @@ const toggleTwoFactor = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
         <div class="p-6">
@@ -733,11 +735,11 @@ const toggleTwoFactor = () => {
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Руководитель
+                {{ $t('businessProfile.director') }}
               </h4>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">ФИО</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.fullNamePerson') }}</label>
                   <input
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.directorName"
@@ -747,7 +749,7 @@ const toggleTwoFactor = () => {
                   <p v-else class="text-gray-900">{{ representativeData.directorName }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Должность</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.position') }}</label>
                   <input
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.directorPosition"
@@ -765,11 +767,11 @@ const toggleTwoFactor = () => {
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Контактное лицо
+                {{ $t('businessProfile.contactPerson') }}
               </h4>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">ФИО</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.fullNamePerson') }}</label>
                   <input
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.contactPersonName"
@@ -779,7 +781,7 @@ const toggleTwoFactor = () => {
                   <p v-else class="text-gray-900">{{ representativeData.contactPersonName }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Должность</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.position') }}</label>
                   <input
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.contactPersonPosition"
@@ -789,7 +791,7 @@ const toggleTwoFactor = () => {
                   <p v-else class="text-gray-900">{{ representativeData.contactPersonPosition }}</p>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-500 mb-1">Телефон</label>
+                  <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.phone') }}</label>
                   <input
                     v-if="editingSection === 'representative'"
                     v-model="representativeData.contactPersonPhone"
@@ -823,7 +825,7 @@ const toggleTwoFactor = () => {
               @click="cancelEditing"
               class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="saveSection"
@@ -834,7 +836,7 @@ const toggleTwoFactor = () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -849,7 +851,7 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Банковские реквизиты</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.bankDetails') }}</h3>
           </div>
           <button
             v-if="editingSection !== 'bank'"
@@ -859,13 +861,13 @@ const toggleTwoFactor = () => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Редактировать
+            {{ $t('common.edit') }}
           </button>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Наименование банка</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.bankName') }}</label>
               <input
                 v-if="editingSection === 'bank'"
                 v-model="bankData.bankName"
@@ -875,7 +877,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900">{{ bankData.bankName }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">БИК</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.bik') }}</label>
               <input
                 v-if="editingSection === 'bank'"
                 v-model="bankData.bik"
@@ -885,7 +887,7 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900 font-mono">{{ bankData.bik }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Расчётный счёт</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.settlementAccount') }}</label>
               <input
                 v-if="editingSection === 'bank'"
                 v-model="bankData.accountNumber"
@@ -895,12 +897,12 @@ const toggleTwoFactor = () => {
               <p v-else class="text-gray-900 font-mono">{{ bankData.accountNumber }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">Корреспондентский счёт</label>
+              <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.correspondentAccount') }}</label>
               <input
                 v-if="editingSection === 'bank'"
                 v-model="bankData.correspondentAccount"
                 type="text"
-                placeholder="Не указан"
+                :placeholder="$t('businessProfile.notSpecified')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
               <p v-else class="text-gray-900 font-mono">{{ bankData.correspondentAccount || '—' }}</p>
@@ -912,7 +914,7 @@ const toggleTwoFactor = () => {
               @click="cancelEditing"
               class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              Отмена
+              {{ $t('common.cancel') }}
             </button>
             <button
               @click="saveSection"
@@ -923,7 +925,7 @@ const toggleTwoFactor = () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
             </button>
           </div>
         </div>
@@ -938,15 +940,15 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Настройки уведомлений</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.notificationSettings') }}</h3>
           </div>
         </div>
         <div class="p-6">
           <div class="space-y-4">
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">Email-уведомления</p>
-                <p class="text-sm text-gray-500">Получать уведомления на электронную почту</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.emailNotifications') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.emailNotificationsDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.emailNotifications" class="sr-only" />
@@ -964,8 +966,8 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">SMS-уведомления</p>
-                <p class="text-sm text-gray-500">Получать SMS о важных событиях</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.smsNotifications') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.smsNotificationsDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.smsNotifications" class="sr-only" />
@@ -983,8 +985,8 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">Напоминания о декларациях</p>
-                <p class="text-sm text-gray-500">Уведомлять о сроках подачи деклараций</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.declarationReminders') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.declarationRemindersDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.declarationReminders" class="sr-only" />
@@ -1002,8 +1004,8 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">Напоминания об оплате</p>
-                <p class="text-sm text-gray-500">Уведомлять о сроках оплаты утильсбора</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.paymentReminders') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.paymentRemindersDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.paymentReminders" class="sr-only" />
@@ -1021,8 +1023,8 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">Сроки отчётности</p>
-                <p class="text-sm text-gray-500">Напоминать о приближающихся сроках сдачи отчётов</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.reportDeadlines') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.reportDeadlinesDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.reportDeadlines" class="sr-only" />
@@ -1040,8 +1042,8 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">Новости и обновления</p>
-                <p class="text-sm text-gray-500">Получать информацию об изменениях в законодательстве</p>
+                <p class="font-medium text-gray-900">{{ $t('businessProfile.newsAndUpdates') }}</p>
+                <p class="text-sm text-gray-500">{{ $t('businessProfile.newsAndUpdatesDesc') }}</p>
               </div>
               <div class="relative">
                 <input type="checkbox" v-model="notificationSettings.newsAndUpdates" class="sr-only" />
@@ -1069,16 +1071,16 @@ const toggleTwoFactor = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900">Безопасность</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessProfile.security') }}</h3>
           </div>
         </div>
         <div class="p-6 space-y-6">
           <!-- Change Password -->
           <div>
-            <h4 class="font-medium text-gray-900 mb-4">Изменение пароля</h4>
+            <h4 class="font-medium text-gray-900 mb-4">{{ $t('businessProfile.changePassword') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">Текущий пароль</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.currentPassword') }}</label>
                 <input
                   v-model="securityData.currentPassword"
                   type="password"
@@ -1087,7 +1089,7 @@ const toggleTwoFactor = () => {
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">Новый пароль</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.newPassword') }}</label>
                 <input
                   v-model="securityData.newPassword"
                   type="password"
@@ -1096,7 +1098,7 @@ const toggleTwoFactor = () => {
                 />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-500 mb-1">Подтвердите пароль</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('businessProfile.confirmPassword') }}</label>
                 <input
                   v-model="securityData.confirmPassword"
                   type="password"
@@ -1110,7 +1112,7 @@ const toggleTwoFactor = () => {
               :disabled="!securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword || saving"
               class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Изменить пароль
+              {{ $t('businessProfile.changePasswordBtn') }}
             </button>
           </div>
 
@@ -1118,8 +1120,8 @@ const toggleTwoFactor = () => {
           <div class="pt-6 border-t border-gray-200">
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="font-medium text-gray-900">Двухфакторная аутентификация</h4>
-                <p class="text-sm text-gray-500 mt-1">Дополнительная защита вашего аккаунта</p>
+                <h4 class="font-medium text-gray-900">{{ $t('businessProfile.twoFactorAuth') }}</h4>
+                <p class="text-sm text-gray-500 mt-1">{{ $t('businessProfile.twoFactorAuthDesc') }}</p>
               </div>
               <button
                 @click="toggleTwoFactor"
@@ -1130,7 +1132,7 @@ const toggleTwoFactor = () => {
                     : 'bg-teal-600 text-white hover:bg-teal-700'
                 ]"
               >
-                {{ securityData.twoFactorEnabled ? 'Отключить' : 'Включить' }}
+                {{ securityData.twoFactorEnabled ? $t('businessProfile.disable') : $t('businessProfile.enable') }}
               </button>
             </div>
             <div
@@ -1140,13 +1142,13 @@ const toggleTwoFactor = () => {
               <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <span class="text-green-700">Двухфакторная аутентификация включена</span>
+              <span class="text-green-700">{{ $t('businessProfile.twoFactorEnabled') }}</span>
             </div>
           </div>
 
           <!-- Session Info -->
           <div class="pt-6 border-t border-gray-200">
-            <h4 class="font-medium text-gray-900 mb-4">Активные сессии</h4>
+            <h4 class="font-medium text-gray-900 mb-4">{{ $t('businessProfile.activeSessions') }}</h4>
             <div class="space-y-3">
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div class="flex items-center gap-3">
@@ -1157,10 +1159,10 @@ const toggleTwoFactor = () => {
                   </div>
                   <div>
                     <p class="font-medium text-gray-900">Windows — Chrome</p>
-                    <p class="text-sm text-gray-500">Бишкек, Кыргызстан · Текущая сессия</p>
+                    <p class="text-sm text-gray-500">{{ $t('businessProfile.currentSession') }}</p>
                   </div>
                 </div>
-                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">Активна</span>
+                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">{{ $t('businessProfile.active') }}</span>
               </div>
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div class="flex items-center gap-3">
@@ -1171,10 +1173,10 @@ const toggleTwoFactor = () => {
                   </div>
                   <div>
                     <p class="font-medium text-gray-900">iOS — Safari</p>
-                    <p class="text-sm text-gray-500">Бишкек, Кыргызстан · 2 дня назад</p>
+                    <p class="text-sm text-gray-500">{{ $t('businessProfile.previousSession') }}</p>
                   </div>
                 </div>
-                <button class="text-red-600 hover:text-red-700 text-sm font-medium">Завершить</button>
+                <button class="text-red-600 hover:text-red-700 text-sm font-medium">{{ $t('businessProfile.terminate') }}</button>
               </div>
             </div>
           </div>

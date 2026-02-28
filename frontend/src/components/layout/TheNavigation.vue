@@ -1,26 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-
-interface NavItem {
-  name: string
-  path: string
-  label: string
-}
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
+const { t } = useI18n()
 const mobileNavOpen = ref(false)
 
-const navItems: NavItem[] = [
-  { name: 'home', path: '/', label: 'Главная' },
-  { name: 'about', path: '/about', label: 'О портале' },
-  { name: 'legislation', path: '/legislation', label: 'Законодательство' },
-  { name: 'licenses', path: '/licenses', label: 'Лицензии' },
-  { name: 'publications', path: '/publications', label: 'Публикации' },
-  { name: 'gis-map', path: '/registries', label: 'ГИС-Карта' },
-  { name: 'calculator', path: '/calculator', label: 'Калькулятор РОП' },
-  { name: 'contests', path: '/contests', label: 'Конкурсы' },
-]
+const navItems = computed(() => [
+  { name: 'home', path: '/', label: t('nav.home') },
+  { name: 'about', path: '/about', label: t('nav.about') },
+  { name: 'legislation', path: '/legislation', label: t('nav.legislation') },
+  { name: 'licenses', path: '/licenses', label: t('nav.licenses') },
+  { name: 'publications', path: '/publications', label: t('nav.publications') },
+  { name: 'gis-map', path: '/registries', label: t('nav.gisMap') },
+  { name: 'calculator', path: '/calculator', label: t('nav.calculator') },
+  { name: 'contests', path: '/contests', label: t('nav.contests') },
+])
 
 const isActive = (path: string) => {
   return route.path === path
@@ -57,7 +53,7 @@ const closeNav = () => {
           @click="mobileNavOpen = !mobileNavOpen"
           class="flex items-center justify-between w-full text-[#415861]"
         >
-          <span class="font-medium">Меню</span>
+          <span class="font-medium">{{ $t('common.menu') }}</span>
           <svg
             :class="['w-5 h-5 transition-transform', mobileNavOpen ? 'rotate-180' : '']"
             fill="none"

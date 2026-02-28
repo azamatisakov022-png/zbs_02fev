@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -7,6 +8,7 @@ import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Organization interface
@@ -70,7 +72,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Импорт пластиковой упаковки',
     licenseNumber: 'ЛЦ-2024/0156',
     licenseExpiry: '31.12.2025',
-    status: 'Активен',
+    status: 'active',
     region: 'г. Бишкек',
     registeredAt: '15.03.2024',
     productGroupValues: ['group_6', 'group_7', 'group_9', 'group_10', 'group_15', 'group_16'],
@@ -99,7 +101,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Переработка пластика и бумаги',
     licenseNumber: 'ЭО-2024/0012',
     licenseExpiry: '31.12.2026',
-    status: 'Активен',
+    status: 'active',
     region: 'г. Бишкек',
     registeredAt: '10.02.2024',
     productGroupValues: ['group_1', 'group_2', 'group_6', 'group_19', 'group_22'],
@@ -128,7 +130,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Производство строительных материалов',
     licenseNumber: 'ЛЦ-2024/0089',
     licenseExpiry: '30.06.2025',
-    status: 'Активен',
+    status: 'active',
     region: 'Чуйская обл.',
     registeredAt: '22.01.2024',
     productGroupValues: ['group_4', 'group_5', 'group_8', 'group_24'],
@@ -157,7 +159,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Производство продуктов питания',
     licenseNumber: 'ПР-2023/0234',
     licenseExpiry: '31.12.2024',
-    status: 'Активен',
+    status: 'active',
     region: 'г. Ош',
     registeredAt: '05.01.2024',
     productGroupValues: ['group_19', 'group_20', 'group_21', 'group_22', 'group_23'],
@@ -186,7 +188,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Торговля товарами',
     licenseNumber: '',
     licenseExpiry: '',
-    status: 'На проверке',
+    status: 'under_review',
     region: 'г. Бишкек',
     registeredAt: '20.01.2025',
     productGroupValues: ['group_3', 'group_6', 'group_7'],
@@ -215,7 +217,7 @@ const organizations = ref<Organization[]>([
     activityType: 'Переработка стекла',
     licenseNumber: 'ЛЦ-2023/0145',
     licenseExpiry: '31.12.2025',
-    status: 'Активен',
+    status: 'active',
     region: 'Иссык-Кульская обл.',
     registeredAt: '18.12.2023',
     productGroupValues: ['group_8', 'group_24'],
@@ -264,9 +266,9 @@ const emptyForm = (): Organization => ({
   activityType: '',
   licenseNumber: '',
   licenseExpiry: '',
-  status: 'На проверке',
+  status: 'under_review',
   region: '',
-  registeredAt: new Date().toLocaleDateString('ru-RU'),
+  registeredAt: new Date().toLocaleDateString(),
 })
 
 const formData = ref<Organization>(emptyForm())
@@ -292,7 +294,7 @@ const stats = computed(() => ({
   ecoOperators: organizations.value.filter(o => o.type === 'Эко Оператор').length,
   recyclers: organizations.value.filter(o => o.type === 'Переработчик').length,
   producers: organizations.value.filter(o => o.type === 'Производитель').length,
-  pending: organizations.value.filter(o => o.status === 'На проверке').length,
+  pending: organizations.value.filter(o => o.status === 'under_review').length,
 }))
 
 // Regions list
@@ -301,15 +303,29 @@ const regions = ['г. Бишкек', 'г. Ош', 'Чуйская обл.', 'Ош
 // Organization types
 const orgTypes = ['Плательщик РОП', 'Эко Оператор', 'Переработчик', 'Производитель']
 
+const orgTypeLabels = computed<Record<string, string>>(() => ({
+  'Плательщик РОП': t('ecoOrganizations.typePayer'),
+  'Эко Оператор': t('ecoOrganizations.typeEcoOperator'),
+  'Переработчик': t('ecoOrganizations.typeRecycler'),
+  'Производитель': t('ecoOrganizations.typeProducer'),
+}))
+
+const getOrgTypeLabel = (type: string): string => orgTypeLabels.value[type] || type
+
 // Statuses
-const statuses = ['Активен', 'На проверке', 'Приостановлен']
+const statuses = ['active', 'under_review', 'suspended']
+const statusLabels = computed<Record<string, string>>(() => ({
+  active: t('ecoOrganizations.statusActive'),
+  under_review: t('ecoOrganizations.statusUnderReview'),
+  suspended: t('ecoOrganizations.statusSuspended'),
+}))
 
 // Status classes
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'Активен': return 'bg-green-100 text-green-800'
-    case 'На проверке': return 'bg-yellow-100 text-yellow-800'
-    case 'Приостановлен': return 'bg-red-100 text-red-800'
+    case 'active': return 'bg-green-100 text-green-800'
+    case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'suspended': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -353,14 +369,14 @@ const saveOrganization = () => {
   if (isCreating.value) {
     organizations.value.push({ ...formData.value })
     showNotification.value = true
-    notificationMessage.value = 'Организация успешно создана'
+    notificationMessage.value = t('ecoOrganizations.orgCreated')
   } else {
     const index = organizations.value.findIndex(o => o.id === formData.value.id)
     if (index !== -1) {
       organizations.value[index] = { ...formData.value }
     }
     showNotification.value = true
-    notificationMessage.value = 'Данные организации обновлены'
+    notificationMessage.value = t('ecoOrganizations.orgUpdated')
   }
   showEditModal.value = false
   setTimeout(() => { showNotification.value = false }, 3000)
@@ -371,7 +387,7 @@ const deleteOrganization = () => {
     organizations.value = organizations.value.filter(o => o.id !== selectedOrg.value!.id)
     showDeleteConfirm.value = false
     showNotification.value = true
-    notificationMessage.value = 'Организация удалена'
+    notificationMessage.value = t('ecoOrganizations.orgDeleted')
     setTimeout(() => { showNotification.value = false }, 3000)
   }
 }
@@ -402,41 +418,41 @@ const copyLegalToActual = () => {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          Добавить организацию
+          {{ $t('ecoOrganizations.addOrganization') }}
         </AppButton>
       </div>
 
       <SectionGuide
-        title="Профили компаний"
-        description="Управление данными организаций — плательщиков и переработчиков."
-        :actions="['Просмотр профилей компаний', 'Проверка регистрационных данных', 'Контроль актуальности информации']"
+        :title="$t('ecoOrganizations.guideTitle')"
+        :description="$t('ecoOrganizations.guideDescription')"
+        :actions="[$t('ecoOrganizations.guideAction1'), $t('ecoOrganizations.guideAction2'), $t('ecoOrganizations.guideAction3')]"
         storageKey="eco-companies"
       />
 
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">Всего</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsTotal') }}</p>
           <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">Плательщики РОП</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsPayers') }}</p>
           <p class="text-2xl font-bold text-blue-600">{{ stats.payers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">Эко Операторы</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsEcoOperators') }}</p>
           <p class="text-2xl font-bold text-teal-600">{{ stats.ecoOperators }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">Переработчики</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsRecyclers') }}</p>
           <p class="text-2xl font-bold text-green-600">{{ stats.recyclers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">Производители</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsProducers') }}</p>
           <p class="text-2xl font-bold text-purple-600">{{ stats.producers }}</p>
         </div>
         <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p class="text-sm text-gray-500 mb-1">На проверке</p>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.statsUnderReview') }}</p>
           <p class="text-2xl font-bold text-yellow-600">{{ stats.pending }}</p>
         </div>
       </div>
@@ -452,22 +468,22 @@ const copyLegalToActual = () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Поиск по ИНН или названию..."
+                :placeholder="$t('ecoOrganizations.searchPlaceholder')"
                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
           </div>
           <select v-model="filterType" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="">Все типы</option>
-            <option v-for="t in orgTypes" :key="t" :value="t">{{ t }}</option>
+            <option value="">{{ $t('ecoOrganizations.allTypes') }}</option>
+            <option v-for="ot in orgTypes" :key="ot" :value="ot">{{ getOrgTypeLabel(ot) }}</option>
           </select>
           <select v-model="filterRegion" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="">Все регионы</option>
+            <option value="">{{ $t('ecoOrganizations.allRegions') }}</option>
             <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
           </select>
           <select v-model="filterStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="">Все статусы</option>
-            <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+            <option value="">{{ $t('ecoOrganizations.allStatuses') }}</option>
+            <option v-for="s in statuses" :key="s" :value="s">{{ statusLabels[s] || s }}</option>
           </select>
         </div>
       </div>
@@ -478,14 +494,14 @@ const copyLegalToActual = () => {
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ИНН</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Наименование</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Тип</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Виды продукции</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Регион</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Дата рег.</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Статус</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Действия</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thInn') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thName') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thType') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thProductTypes') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thRegion') }}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thRegDate') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thStatus') }}</th>
+                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoOrganizations.thActions') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -512,7 +528,7 @@ const copyLegalToActual = () => {
                       v-if="org.productGroupValues.length > 2"
                       class="inline-block px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 whitespace-nowrap"
                     >
-                      +{{ org.productGroupValues.length - 2 }} ещё
+                      +{{ org.productGroupValues.length - 2 }} {{ $t('ecoOrganizations.more') }}
                     </span>
                   </div>
                   <span v-else class="text-sm text-gray-400">—</span>
@@ -548,8 +564,8 @@ const copyLegalToActual = () => {
           <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <h3 class="text-lg font-medium text-gray-900 mb-1">Организации не найдены</h3>
-          <p class="text-gray-500">Попробуйте изменить параметры поиска</p>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('ecoOrganizations.orgsNotFound') }}</h3>
+          <p class="text-gray-500">{{ $t('ecoOrganizations.tryChangeSearch') }}</p>
         </div>
       </div>
     </div>
@@ -559,7 +575,7 @@ const copyLegalToActual = () => {
       <div v-if="showViewModal && selectedOrg" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-            <h3 class="text-lg font-semibold text-gray-900">Информация об организации</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoOrganizations.orgInfo') }}</h3>
             <button @click="showViewModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -587,27 +603,27 @@ const copyLegalToActual = () => {
             <!-- Details grid -->
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">ИНН</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.inn') }}</p>
                 <p class="font-mono font-medium text-gray-900">{{ selectedOrg.inn }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">ОКПО</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.okpo') }}</p>
                 <p class="font-mono font-medium text-gray-900">{{ selectedOrg.okpo }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Руководитель</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.director') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.director }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Контактное лицо</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.contactPerson') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.contactPerson }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Телефон</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.phone') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.phone }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Email</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.email') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.email }}</p>
               </div>
             </div>
@@ -615,15 +631,15 @@ const copyLegalToActual = () => {
             <!-- Addresses -->
             <div class="space-y-4">
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Юридический адрес</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.legalAddress') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.legalRegion }}, {{ selectedOrg.legalCity }}, {{ selectedOrg.legalStreet }}, {{ selectedOrg.legalBuilding }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Фактический адрес</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.actualAddress') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.actualRegion }}, {{ selectedOrg.actualCity }}, {{ selectedOrg.actualStreet }}, {{ selectedOrg.actualBuilding }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">GPS координаты</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.gpsCoordinates') }}</p>
                 <p class="font-mono font-medium text-gray-900">{{ selectedOrg.gpsLat }}, {{ selectedOrg.gpsLng }}</p>
               </div>
             </div>
@@ -631,26 +647,26 @@ const copyLegalToActual = () => {
             <!-- Activity & License -->
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Вид деятельности</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.activityType') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.activityType }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Дата регистрации</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.registrationDate') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.registeredAt }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Номер лицензии</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.licenseNumber') }}</p>
                 <p class="font-mono font-medium text-gray-900">{{ selectedOrg.licenseNumber || '—' }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500 mb-1">Срок действия лицензии</p>
+                <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.licenseExpiry') }}</p>
                 <p class="font-medium text-gray-900">{{ selectedOrg.licenseExpiry || '—' }}</p>
               </div>
             </div>
 
             <!-- Product Groups -->
             <div v-if="selectedOrg.productGroupValues && selectedOrg.productGroupValues.length > 0">
-              <p class="text-sm font-semibold text-gray-700 mb-2">Виды продукции</p>
+              <p class="text-sm font-semibold text-gray-700 mb-2">{{ $t('ecoOrganizations.productTypes') }}</p>
               <div class="flex flex-wrap gap-1.5">
                 <span
                   v-for="gv in selectedOrg.productGroupValues"
@@ -690,7 +706,7 @@ const copyLegalToActual = () => {
         <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
             <h3 class="text-lg font-semibold text-gray-900">
-              {{ isCreating ? 'Новая организация' : 'Редактирование организации' }}
+              {{ isCreating ? $t('ecoOrganizations.newOrganization') : $t('ecoOrganizations.editOrganization') }}
             </h3>
             <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -701,28 +717,28 @@ const copyLegalToActual = () => {
           <div class="p-6 space-y-6">
             <!-- Basic info -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">Основная информация</h4>
+              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.basicInfo') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">ИНН *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.inn') }} *</label>
                   <input v-model="formData.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">ОКПО</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.okpo') }}</label>
                   <input v-model="formData.okpo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Тип организации *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.orgType') }} *</label>
                   <select v-model="formData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                    <option v-for="t in orgTypes" :key="t" :value="t">{{ t }}</option>
+                    <option v-for="ot in orgTypes" :key="ot" :value="ot">{{ getOrgTypeLabel(ot) }}</option>
                   </select>
                 </div>
                 <div class="md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Краткое наименование *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.shortName') }} *</label>
                   <input v-model="formData.shortName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div class="md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Полное наименование *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.fullName') }} *</label>
                   <input v-model="formData.fullName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
               </div>
@@ -730,22 +746,22 @@ const copyLegalToActual = () => {
 
             <!-- Contact info -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">Контактная информация</h4>
+              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.contactInfo') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Руководитель (ФИО) *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.directorFio') }} *</label>
                   <input v-model="formData.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Контактное лицо</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.contactPerson') }}</label>
                   <input v-model="formData.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Телефон *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.phone') }} *</label>
                   <input v-model="formData.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.email') }} *</label>
                   <input v-model="formData.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
               </div>
@@ -753,25 +769,25 @@ const copyLegalToActual = () => {
 
             <!-- Legal address -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">Юридический адрес</h4>
+              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.legalAddress') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Область/город *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.regionCity') }} *</label>
                   <select v-model="formData.legalRegion" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                    <option value="">Выберите</option>
+                    <option value="">{{ $t('ecoOrganizations.select') }}</option>
                     <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Город/село</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.cityVillage') }}</label>
                   <input v-model="formData.legalCity" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Улица</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.street') }}</label>
                   <input v-model="formData.legalStreet" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Дом</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.building') }}</label>
                   <input v-model="formData.legalBuilding" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
               </div>
@@ -780,29 +796,29 @@ const copyLegalToActual = () => {
             <!-- Actual address -->
             <div>
               <div class="flex items-center justify-between mb-4">
-                <h4 class="text-sm font-semibold text-gray-700 uppercase">Фактический адрес</h4>
+                <h4 class="text-sm font-semibold text-gray-700 uppercase">{{ $t('ecoOrganizations.actualAddress') }}</h4>
                 <button @click="copyLegalToActual" type="button" class="text-sm text-sky-600 hover:text-sky-700">
-                  Скопировать из юридического
+                  {{ $t('ecoOrganizations.copyFromLegal') }}
                 </button>
               </div>
               <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Область/город</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.regionCity') }}</label>
                   <select v-model="formData.actualRegion" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                    <option value="">Выберите</option>
+                    <option value="">{{ $t('ecoOrganizations.select') }}</option>
                     <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Город/село</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.cityVillage') }}</label>
                   <input v-model="formData.actualCity" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Улица</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.street') }}</label>
                   <input v-model="formData.actualStreet" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Дом</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.building') }}</label>
                   <input v-model="formData.actualBuilding" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
               </div>
@@ -810,14 +826,14 @@ const copyLegalToActual = () => {
 
             <!-- GPS -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">GPS координаты (для ГИС-карты)</h4>
+              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.gpsCoordinatesForMap') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Широта (Latitude)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.latitude') }}</label>
                   <input v-model="formData.gpsLat" type="text" placeholder="42.8746" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Долгота (Longitude)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.longitude') }}</label>
                   <input v-model="formData.gpsLng" type="text" placeholder="74.5698" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
               </div>
@@ -825,31 +841,31 @@ const copyLegalToActual = () => {
 
             <!-- Activity & License -->
             <div>
-              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">Деятельность и лицензия</h4>
+              <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.activityAndLicense') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Вид деятельности</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.activityType') }}</label>
                   <input v-model="formData.activityType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Номер лицензии</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.licenseNumber') }}</label>
                   <input v-model="formData.licenseNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Срок действия лицензии</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.licenseExpiry') }}</label>
                   <input v-model="formData.licenseExpiry" type="text" placeholder="31.12.2025" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Регион (для фильтрации)</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.regionForFilter') }}</label>
                   <select v-model="formData.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                    <option value="">Выберите</option>
+                    <option value="">{{ $t('ecoOrganizations.select') }}</option>
                     <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Статус *</label>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.status') }} *</label>
                   <select v-model="formData.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                    <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+                    <option v-for="s in statuses" :key="s" :value="s">{{ statusLabels[s] || s }}</option>
                   </select>
                 </div>
               </div>
@@ -887,9 +903,9 @@ const copyLegalToActual = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Удалить организацию?</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('ecoOrganizations.deleteOrgTitle') }}</h3>
             <p class="text-gray-500 mb-6">
-              Вы уверены, что хотите удалить организацию <strong>{{ selectedOrg.shortName }}</strong>? Это действие нельзя отменить.
+              {{ $t('ecoOrganizations.deleteOrgConfirm') }} <strong>{{ selectedOrg.shortName }}</strong>{{ $t('ecoOrganizations.deleteOrgIrreversible') }}
             </p>
             <div class="flex gap-3">
               <AppButton

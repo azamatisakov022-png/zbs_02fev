@@ -1,16 +1,30 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { getLocale, setLocale } from '../../i18n'
 import IconChevron from '../icons/IconChevron.vue'
 
-const currentLang = ref('РУС')
-const languages = ['РУС', 'КЫР', 'ENG']
-const mobileMenuOpen = ref(false)
+const { t } = useI18n()
+
+const langOptions = [
+  { code: 'ru' as const, label: 'РУС' },
+  { code: 'ky' as const, label: 'КЫР' },
+]
+
+const currentLangLabel = computed(() => {
+  const locale = getLocale()
+  return langOptions.find(l => l.code === locale)?.label ?? 'РУС'
+})
 
 const toggleLang = () => {
-  const currentIndex = languages.indexOf(currentLang.value)
-  currentLang.value = languages[(currentIndex + 1) % languages.length] ?? 'РУС'
+  const locale = getLocale()
+  const currentIndex = langOptions.findIndex(l => l.code === locale)
+  const next = langOptions[(currentIndex + 1) % langOptions.length]
+  setLocale(next.code)
 }
+
+const mobileMenuOpen = ref(false)
 
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
@@ -24,11 +38,11 @@ const toggleMobileMenu = () => {
       <div class="flex items-center justify-between py-4 lg:py-5 h-[100px] lg:h-[144px]">
         <!-- Logo -->
         <router-link to="/" class="flex items-center gap-2">
-          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 36px; width: 36px; object-fit: cover; object-position: left;" class="lg:hidden" />
-          <img src="/images/logo-eco.png" alt="ГП Эко Оператор" style="height: 72px; width: 72px; object-fit: cover; object-position: left;" class="hidden lg:block" />
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 36px; width: 36px; object-fit: cover; object-position: left;" class="lg:hidden" />
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 72px; width: 72px; object-fit: cover; object-position: left;" class="hidden lg:block" />
           <div class="flex flex-col whitespace-nowrap">
-            <span class="text-[13px] lg:text-[16px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">ГП Эко Оператор</span>
-            <span class="text-[10px] lg:text-[12px] font-normal text-[#6b7280]">Государственное предприятие</span>
+            <span class="text-[13px] lg:text-[16px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">{{ $t('common.companyName') }}</span>
+            <span class="text-[10px] lg:text-[12px] font-normal text-[#6b7280]">{{ $t('common.companyType') }}</span>
           </div>
         </router-link>
 
@@ -47,8 +61,8 @@ const toggleMobileMenu = () => {
           <div class="flex items-center gap-3">
             <img src="/images/icons/clock.svg" alt="clock" class="w-6 h-6" />
             <div class="text-[#415861] text-xs leading-[15px]">
-              <p>Пн-Пт: 9:00 - 18:00</p>
-              <p>Сб-Вс: выходной</p>
+              <p>{{ $t('common.workHours') }}</p>
+              <p>{{ $t('common.weekendHours') }}</p>
             </div>
           </div>
 
@@ -56,8 +70,8 @@ const toggleMobileMenu = () => {
           <div class="flex items-center gap-3">
             <img src="/images/icons/map-pin.svg" alt="location" class="w-6 h-6" />
             <div class="text-[#415861] text-xs leading-[15px]">
-              <p>720040, г. Бишкек</p>
-              <p>ул. Токтогула, 228</p>
+              <p>{{ $t('common.addressZip') }}</p>
+              <p>{{ $t('common.addressStreet') }}</p>
             </div>
           </div>
         </div>
@@ -71,7 +85,7 @@ const toggleMobileMenu = () => {
               @click="toggleLang"
               class="flex items-center gap-2 px-4 lg:px-[31px] text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
             >
-              {{ currentLang }}
+              {{ currentLangLabel }}
               <IconChevron class="w-[10px] h-[10px]" />
             </button>
             <div class="w-px h-5 bg-gray-300"></div>
@@ -97,7 +111,7 @@ const toggleMobileMenu = () => {
 
             <!-- Registration link -->
             <RouterLink to="/register" class="hidden lg:block text-[#415861] text-sm font-bold uppercase hover:text-[#0e888d] transition-colors">
-              регистрация
+              {{ $t('nav.registration') }}
             </RouterLink>
 
             <!-- Login button -->
@@ -105,7 +119,7 @@ const toggleMobileMenu = () => {
               to="/login"
               class="flex items-center gap-3 bg-[#fea629] text-[#415861] font-bold text-sm uppercase px-5 py-[15px] rounded-[30px] hover:bg-[#e5951f] transition-colors"
             >
-              войти
+              {{ $t('nav.login') }}
               <svg width="21" height="22" viewBox="0 0 21 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path d="M10.5 11C13.5376 11 16 8.53756 16 5.5C16 2.46244 13.5376 0 10.5 0C7.46244 0 5 2.46244 5 5.5C5 8.53756 7.46244 11 10.5 11ZM10.5 13.75C6.66313 13.75 0 15.6744 0 19.5V22H21V19.5C21 15.6744 14.3369 13.75 10.5 13.75Z"/>
               </svg>
@@ -137,23 +151,34 @@ const toggleMobileMenu = () => {
           </div>
           <div class="flex items-center gap-3">
             <img src="/images/icons/clock.svg" alt="clock" class="w-5 h-5" />
-            <span class="text-[#415861] text-sm">Пн-Пт: 9:00 - 18:00</span>
+            <span class="text-[#415861] text-sm">{{ $t('common.workHours') }}</span>
           </div>
           <div class="flex items-center gap-3">
             <img src="/images/icons/map-pin.svg" alt="location" class="w-5 h-5" />
-            <span class="text-[#415861] text-sm">г. Бишкек, ул. Токтогула, 228</span>
+            <span class="text-[#415861] text-sm">{{ $t('common.addressFull') }}</span>
           </div>
+        </div>
+
+        <!-- Language switcher (mobile) -->
+        <div class="sm:hidden flex items-center gap-2 mb-4 pt-3 border-t border-gray-100">
+          <button
+            @click="toggleLang"
+            class="text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
+          >
+            {{ currentLangLabel }}
+            <IconChevron class="w-[10px] h-[10px] inline" />
+          </button>
         </div>
 
         <!-- Auth buttons -->
         <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
-          <RouterLink to="/register" class="text-[#415861] text-sm font-bold uppercase" @click="mobileMenuOpen = false">регистрация</RouterLink>
+          <RouterLink to="/register" class="text-[#415861] text-sm font-bold uppercase" @click="mobileMenuOpen = false">{{ $t('nav.registration') }}</RouterLink>
           <RouterLink
             to="/login"
             class="flex items-center gap-2 bg-[#fea629] text-[#415861] font-bold text-sm uppercase px-4 py-2.5 rounded-full"
             @click="mobileMenuOpen = false"
           >
-            войти
+            {{ $t('nav.login') }}
             <svg width="16" height="16" viewBox="0 0 21 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M10.5 11C13.5376 11 16 8.53756 16 5.5C16 2.46244 13.5376 0 10.5 0C7.46244 0 5 2.46244 5 5.5C5 8.53756 7.46244 11 10.5 11ZM10.5 13.75C6.66313 13.75 0 15.6744 0 19.5V22H21V19.5C21 15.6744 14.3369 13.75 10.5 13.75Z"/>
             </svg>

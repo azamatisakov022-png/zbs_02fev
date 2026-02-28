@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
@@ -10,42 +11,46 @@ import { statsIcons } from '../../utils/menuIcons'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { CalcStatus } from '../../constants/statuses'
+import { statusI18nKey } from '../../constants/statuses'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
 
+const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 
-const actionCards = [
+const actionCards = computed(() => [
   {
     icon: '💰',
-    title: 'Расчёт утилизационного сбора',
-    description: 'Расчёт суммы утилизационного сбора за товары и упаковку',
+    title: t('businessDashboard.actionCalcTitle'),
+    description: t('businessDashboard.actionCalcDesc'),
     route: '/business/calculator',
     color: 'orange'
   },
   {
     icon: '📊',
-    title: 'Подать отчёт о переработке',
-    description: 'Отчёт о переработке отходов от использования товаров',
+    title: t('businessDashboard.actionReportTitle'),
+    description: t('businessDashboard.actionReportDesc'),
     route: '/business/reports',
     color: 'green'
   },
   {
     icon: '📝',
-    title: 'Подать декларацию',
-    description: 'Заполните и отправьте декларацию о товарах и упаковке',
+    title: t('businessDashboard.actionDeclTitle'),
+    description: t('businessDashboard.actionDeclDesc'),
     route: '/business/declarations',
     color: 'blue'
   }
-]
+])
 
 const myCalcs = computed(() => calculationStore.getBusinessCalculations('ОсОО «ТехПром»'))
 
 const stats = computed(() => [
-  { title: 'Всего расчётов', value: String(myCalcs.value.length), icon: statsIcons.applications, color: 'blue' as const },
-  { title: 'Оплачено', value: String(myCalcs.value.filter(c => c.status === 'Оплачено').length), icon: statsIcons.approved, color: 'green' as const },
-  { title: 'На проверке', value: String(myCalcs.value.filter(c => c.status === 'На проверке' || c.status === 'Оплата на проверке').length), icon: statsIcons.pending, color: 'orange' as const },
+  { title: t('businessDashboard.totalCalcs'), value: String(myCalcs.value.length), icon: statsIcons.applications, color: 'blue' as const },
+  { title: t('businessDashboard.paid'), value: String(myCalcs.value.filter(c => c.status === CalcStatus.PAID).length), icon: statsIcons.approved, color: 'green' as const },
+  { title: t('businessDashboard.underReview'), value: String(myCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.PAYMENT_PENDING).length), icon: statsIcons.pending, color: 'orange' as const },
   {
-    title: 'Общая сумма',
-    value: myCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString('ru-RU') + ' сом',
+    title: t('businessDashboard.totalAmount'),
+    value: myCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString() + ' ' + t('businessDashboard.som'),
     icon: statsIcons.money,
     color: 'purple' as const
   },
@@ -79,19 +84,14 @@ const normativeItems = [
 ]
 
 const recentDocuments = [
-  { name: 'Декларация Q4 2024', status: 'Принята', date: '20.01.2025', type: 'declaration' },
-  { name: 'Отчёт о переработке 2024', status: 'На проверке', date: '18.01.2025', type: 'report' },
-  { name: 'Расчёт утильсбора Q4', status: 'Оплачен', date: '15.01.2025', type: 'calculation' },
+  { name: 'Декларация Q4 2024', status: 'approved', date: '20.01.2025', type: 'declaration' },
+  { name: 'Отчёт о переработке 2024', status: 'under_review', date: '18.01.2025', type: 'report' },
+  { name: 'Расчёт утильсбора Q4', status: 'paid', date: '15.01.2025', type: 'calculation' },
 ]
 
 const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'Принята': return 'badge badge-success'
-    case 'На проверке': return 'badge badge-warning'
-    case 'Оплачен': return 'badge badge-info'
-    case 'Отклонена': return 'badge badge-danger'
-    default: return 'badge badge-neutral'
-  }
+  const variant = getStatusBadgeVariant(status)
+  return `badge badge-${variant}`
 }
 
 const isLoading = ref(true)
@@ -108,8 +108,8 @@ onMounted(() => {
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">Главная</h1>
-      <p class="text-[#64748b]">Управление расчётами, отчётами и декларациями</p>
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDashboard.pageTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('businessDashboard.pageSubtitle') }}</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -159,22 +159,22 @@ onMounted(() => {
                   'text-sm font-medium',
                   accountStore.getCurrentBalance() > 0 ? 'text-green-800' :
                   accountStore.getCurrentBalance() < 0 ? 'text-red-800' : 'text-slate-600'
-                ]">Лицевой счёт</p>
+                ]">{{ $t('businessDashboard.personalAccount') }}</p>
                 <p :class="[
                   'text-2xl font-bold',
                   accountStore.getCurrentBalance() > 0 ? 'text-green-900' :
                   accountStore.getCurrentBalance() < 0 ? 'text-red-900' : 'text-slate-800'
                 ]">
-                  {{ accountStore.getCurrentBalance() > 0 ? '+' : '' }}{{ accountStore.getCurrentBalance().toLocaleString('ru-RU') }} сом
+                  {{ accountStore.getCurrentBalance() > 0 ? '+' : '' }}{{ accountStore.getCurrentBalance().toLocaleString() }} {{ $t('businessDashboard.som') }}
                 </p>
                 <p :class="[
                   'text-xs mt-0.5',
                   accountStore.getCurrentBalance() > 0 ? 'text-green-600' :
                   accountStore.getCurrentBalance() < 0 ? 'text-red-600' : 'text-slate-500'
                 ]">
-                  {{ accountStore.getCurrentBalance() > 0 ? 'Переплата — доступно для зачёта' :
-                     accountStore.getCurrentBalance() < 0 ? 'Задолженность — необходимо оплатить' :
-                     'Задолженности нет' }}
+                  {{ accountStore.getCurrentBalance() > 0 ? $t('businessDashboard.overpayment') :
+                     accountStore.getCurrentBalance() < 0 ? $t('businessDashboard.debt') :
+                     $t('businessDashboard.noDebt') }}
                 </p>
               </div>
             </div>
@@ -208,12 +208,12 @@ onMounted(() => {
           :data="monthlyData"
           color="#2563eb"
           :height="280"
-          title="Утилизационный сбор по месяцам"
+          :title="$t('businessDashboard.chartMonthlyTitle')"
         />
         <PieChart
           :data="pieData"
           :size="200"
-          title="Распределение по группам товаров"
+          :title="$t('businessDashboard.chartGroupsTitle')"
         />
       </div>
 
@@ -221,16 +221,16 @@ onMounted(() => {
       <div class="mb-8">
         <ProgressBar
           :items="normativeItems"
-          title="Выполнение нормативов переработки"
+          :title="$t('businessDashboard.progressTitle')"
         />
       </div>
 
       <!-- Recent Documents -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">Последние документы</h2>
+          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('businessDashboard.recentDocuments') }}</h2>
           <router-link to="/business/documents" class="text-[#2563eb] text-sm font-medium hover:underline">
-            Все документы →
+            {{ $t('businessDashboard.allDocuments') }}
           </router-link>
         </div>
         <div class="divide-y divide-[#f1f5f9]">
@@ -251,7 +251,7 @@ onMounted(() => {
               </div>
             </div>
             <span :class="getStatusClass(doc.status)">
-              {{ doc.status }}
+              {{ $t(statusI18nKey[doc.status] || doc.status) }}
             </span>
           </div>
         </div>
@@ -264,13 +264,13 @@ onMounted(() => {
             ℹ️
           </div>
           <div>
-            <h4 class="font-semibold text-lg mb-2">Напоминание о сроках подачи отчетности:</h4>
+            <h4 class="font-semibold text-lg mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
             <ul class="opacity-90 list-none pl-1" style="margin: 0;">
-              <li style="margin-bottom: 4px;">— Расчет утилизационного сбора (для импортеров) — в течение 15 рабочих дней с момента ввоза.</li>
-              <li style="margin-bottom: 4px;">— Для производителей — ежеквартально, не позднее 15 числа месяца, следующего за отчетным кварталом.</li>
-              <li style="margin-bottom: 4px;">— Декларация и отчет о переработке — ежегодно, до 1 апреля.</li>
+              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
+              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
+              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderDeclaration') }}</li>
             </ul>
-            <p class="opacity-90" style="margin-top: 12px; font-style: italic;">Просим своевременно подавать отчетность.</p>
+            <p class="opacity-90" style="margin-top: 12px; font-style: italic;">{{ $t('businessDashboard.reminderFooter') }}</p>
           </div>
         </div>
       </div>

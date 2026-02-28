@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
@@ -9,6 +10,7 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -68,23 +70,23 @@ const filteredTransactions = computed((): AccountTransaction[] => {
 const balance = computed(() => account.value?.balance ?? 0)
 
 // Format helpers
-const formatAmount = (amount: number) => amount.toLocaleString('ru-RU') + ' сом'
+const formatAmount = (amount: number) => amount.toLocaleString() + ' ' + t('ecoAccountDetail.som')
 
 const formatBalance = (val: number): string => {
-  const formatted = Math.abs(val).toLocaleString('ru-RU')
-  if (val > 0) return '+' + formatted + ' сом'
-  if (val < 0) return '-' + formatted + ' сом'
-  return '0 сом'
+  const formatted = Math.abs(val).toLocaleString()
+  if (val > 0) return '+' + formatted + ' ' + t('ecoAccountDetail.som')
+  if (val < 0) return '-' + formatted + ' ' + t('ecoAccountDetail.som')
+  return '0 ' + t('ecoAccountDetail.som')
 }
 
 // Type labels
 const getTypeLabel = (type: string) => {
   switch (type) {
-    case 'charge': return 'Начисление'
-    case 'payment': return 'Оплата'
-    case 'correction': return 'Корректировка'
-    case 'offset': return 'Зачёт'
-    case 'refund': return 'Возврат'
+    case 'charge': return t('ecoAccountDetail.typeCharge')
+    case 'payment': return t('ecoAccountDetail.typePayment')
+    case 'correction': return t('ecoAccountDetail.typeCorrection')
+    case 'offset': return t('ecoAccountDetail.typeOffset')
+    case 'refund': return t('ecoAccountDetail.typeRefund')
     default: return type
   }
 }
@@ -102,14 +104,14 @@ const getTypeBadgeClass = (type: string) => {
 }
 
 // Table columns
-const columns = [
-  { key: 'date', label: 'Дата', width: '10%' },
-  { key: 'type', label: 'Тип', width: '12%' },
-  { key: 'calculationNumber', label: 'Расчёт', width: '14%' },
-  { key: 'description', label: 'Описание', width: '24%' },
-  { key: 'chargeAmount', label: 'Сумма', width: '15%' },
-  { key: 'balance', label: 'Баланс', width: '15%' },
-]
+const columns = computed(() => [
+  { key: 'date', label: t('ecoAccountDetail.colDate'), width: '10%' },
+  { key: 'type', label: t('ecoAccountDetail.colType'), width: '12%' },
+  { key: 'calculationNumber', label: t('ecoAccountDetail.colCalculation'), width: '14%' },
+  { key: 'description', label: t('ecoAccountDetail.colDescription'), width: '24%' },
+  { key: 'chargeAmount', label: t('ecoAccountDetail.colAmount'), width: '15%' },
+  { key: 'balance', label: t('ecoAccountDetail.colBalance'), width: '15%' },
+])
 
 // Reset filters
 const resetFilters = () => {
@@ -125,7 +127,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
   <DashboardLayout
     role="eco-operator"
     :roleTitle="roleTitle"
-    userName="Экологический оператор"
+    :userName="$t('ecoAccountDetail.userName')"
     :menuItems="menuItems"
   >
     <!-- Loading State -->
@@ -154,13 +156,13 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
         </div>
-        <h2 class="text-xl font-bold text-[#1e293b] mb-2">Лицевой счёт не найден</h2>
-        <p class="text-[#64748b] mb-6">Лицевой счёт с указанным идентификатором не существует или был удалён.</p>
+        <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('ecoAccountDetail.accountNotFound') }}</h2>
+        <p class="text-[#64748b] mb-6">{{ $t('ecoAccountDetail.accountNotFoundDesc') }}</p>
         <router-link
           to="/eco-operator/accounts"
           class="inline-flex items-center gap-2 px-5 py-3 bg-[#2563eb] text-white rounded-xl font-semibold hover:bg-[#1d4ed8] transition-colors"
         >
-          Вернуться к списку
+          {{ $t('ecoAccountDetail.backToList') }}
         </router-link>
       </div>
     </template>
@@ -182,7 +184,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
       <!-- Page title -->
       <div class="mb-6">
         <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ account.company }}</h1>
-        <p class="text-[#64748b]">Детализация лицевого счёта и история операций</p>
+        <p class="text-[#64748b]">{{ $t('ecoAccountDetail.subtitle') }}</p>
       </div>
 
       <!-- Company Info Card -->
@@ -196,7 +198,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             </div>
             <div>
               <h2 class="text-lg font-bold text-[#1e293b]">{{ account.company }}</h2>
-              <p class="text-sm text-[#64748b]">ИНН: <span class="font-mono">{{ account.inn }}</span></p>
+              <p class="text-sm text-[#64748b]">{{ $t('ecoAccountDetail.inn') }}: <span class="font-mono">{{ account.inn }}</span></p>
             </div>
           </div>
           <div>
@@ -246,11 +248,11 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
                 {{ formatAmount(Math.abs(balance)) }}
               </p>
               <p v-else class="text-2xl lg:text-3xl font-bold text-slate-600">
-                0 сом
+                0 {{ $t('ecoAccountDetail.som') }}
               </p>
-              <p v-if="balance > 0" class="text-sm text-green-600 mt-1">Переплата</p>
-              <p v-else-if="balance < 0" class="text-sm text-red-600 mt-1">Задолженность</p>
-              <p v-else class="text-sm text-slate-500 mt-1">Баланс нулевой</p>
+              <p v-if="balance > 0" class="text-sm text-green-600 mt-1">{{ $t('ecoAccountDetail.overpayment') }}</p>
+              <p v-else-if="balance < 0" class="text-sm text-red-600 mt-1">{{ $t('ecoAccountDetail.debt') }}</p>
+              <p v-else class="text-sm text-slate-500 mt-1">{{ $t('ecoAccountDetail.zeroBalance') }}</p>
             </div>
           </div>
         </div>
@@ -260,7 +262,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
         <div class="flex flex-wrap items-end gap-4">
           <div class="flex flex-col">
-            <label class="text-xs font-medium text-[#64748b] mb-1">Дата с</label>
+            <label class="text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAccountDetail.dateFrom') }}</label>
             <input
               v-model="filterDateFrom"
               type="date"
@@ -268,7 +270,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             />
           </div>
           <div class="flex flex-col">
-            <label class="text-xs font-medium text-[#64748b] mb-1">Дата по</label>
+            <label class="text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAccountDetail.dateTo') }}</label>
             <input
               v-model="filterDateTo"
               type="date"
@@ -276,17 +278,17 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             />
           </div>
           <div class="flex flex-col">
-            <label class="text-xs font-medium text-[#64748b] mb-1">Тип операции</label>
+            <label class="text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAccountDetail.operationType') }}</label>
             <select
               v-model="filterType"
               class="px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] bg-white min-w-[180px]"
             >
-              <option value="">Все</option>
-              <option value="charge">Начисление</option>
-              <option value="payment">Оплата</option>
-              <option value="correction">Корректировка</option>
-              <option value="offset">Зачёт</option>
-              <option value="refund">Возврат</option>
+              <option value="">{{ $t('common.all') }}</option>
+              <option value="charge">{{ $t('ecoAccountDetail.typeCharge') }}</option>
+              <option value="payment">{{ $t('ecoAccountDetail.typePayment') }}</option>
+              <option value="correction">{{ $t('ecoAccountDetail.typeCorrection') }}</option>
+              <option value="offset">{{ $t('ecoAccountDetail.typeOffset') }}</option>
+              <option value="refund">{{ $t('ecoAccountDetail.typeRefund') }}</option>
             </select>
           </div>
           <button
@@ -301,8 +303,8 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
 
       <!-- Transaction History Header -->
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-[#1e293b]">История операций</h2>
-        <p class="text-sm text-[#64748b]">{{ filteredTransactions.length }} {{ filteredTransactions.length === 1 ? 'операция' : filteredTransactions.length >= 2 && filteredTransactions.length <= 4 ? 'операции' : 'операций' }}</p>
+        <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoAccountDetail.transactionHistory') }}</h2>
+        <p class="text-sm text-[#64748b]">{{ filteredTransactions.length }} {{ filteredTransactions.length === 1 ? $t('ecoAccountDetail.operationOne') : filteredTransactions.length >= 2 && filteredTransactions.length <= 4 ? $t('ecoAccountDetail.operationFew') : $t('ecoAccountDetail.operationMany') }}</p>
       </div>
 
       <!-- Transaction Table -->
@@ -335,13 +337,13 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
         <!-- Amount (chargeAmount column used for combined display) -->
         <template #cell-chargeAmount="{ row }">
           <span v-if="row.chargeAmount > 0" class="text-sm font-medium text-red-600">
-            -{{ row.chargeAmount.toLocaleString('ru-RU') }} сом
+            -{{ row.chargeAmount.toLocaleString() }} {{ $t('ecoAccountDetail.som') }}
           </span>
           <span v-else-if="row.paymentAmount > 0" class="text-sm font-medium text-green-600">
-            +{{ row.paymentAmount.toLocaleString('ru-RU') }} сом
+            +{{ row.paymentAmount.toLocaleString() }} {{ $t('ecoAccountDetail.som') }}
           </span>
           <span v-else-if="row.offsetAmount > 0" class="text-sm font-medium text-blue-600">
-            {{ row.offsetAmount.toLocaleString('ru-RU') }} сом
+            {{ row.offsetAmount.toLocaleString() }} {{ $t('ecoAccountDetail.som') }}
           </span>
           <span v-else class="text-sm text-[#cbd5e1]">&mdash;</span>
         </template>
@@ -354,7 +356,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
               value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-[#94a3b8]'
             ]"
           >
-            {{ value > 0 ? '+' : '' }}{{ value.toLocaleString('ru-RU') }} сом
+            {{ value > 0 ? '+' : '' }}{{ value.toLocaleString() }} {{ $t('ecoAccountDetail.som') }}
           </span>
         </template>
 
@@ -366,7 +368,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              Просмотреть расчёт
+              {{ $t('ecoAccountDetail.viewCalculation') }}
             </AppButton>
           </div>
         </template>
@@ -379,9 +381,9 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-[#1e293b] mb-1">Нет операций</h3>
-            <p v-if="isFiltersActive" class="text-sm text-[#64748b] mb-4">По выбранным фильтрам операции не найдены</p>
-            <p v-else class="text-sm text-[#64748b]">Операции появятся после первого начисления</p>
+            <h3 class="text-lg font-semibold text-[#1e293b] mb-1">{{ $t('ecoAccountDetail.noOperations') }}</h3>
+            <p v-if="isFiltersActive" class="text-sm text-[#64748b] mb-4">{{ $t('ecoAccountDetail.noOperationsFiltered') }}</p>
+            <p v-else class="text-sm text-[#64748b]">{{ $t('ecoAccountDetail.noOperationsYet') }}</p>
             <button
               v-if="isFiltersActive"
               @click="resetFilters"

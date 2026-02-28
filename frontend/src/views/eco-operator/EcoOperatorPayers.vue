@@ -1,25 +1,27 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import {
   payerStore,
   formatMoney,
-  categoryLabels,
+  getCategoryLabel,
   categoryColors,
-  subcategoryLabels,
-  reportingLabels,
+  getSubcategoryLabel,
+  getReportingLabel,
   reportingColors,
-  settlementLabels,
+  getSettlementLabel,
   settlementColors,
-  systemStatusLabels,
+  getSystemStatusLabel,
   systemStatusColors,
   type Payer,
 } from '../../stores/payers'
 
 const router = useRouter()
+const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // ── Column definitions ──────────────────────────────────────
@@ -29,33 +31,33 @@ interface ColumnDef {
   defaultVisible: boolean
 }
 
-const allColumns: ColumnDef[] = [
+const allColumns = computed<ColumnDef[]>(() => [
   { id: 'rowNum', label: '№', defaultVisible: true },
-  { id: 'name', label: 'Наименование', defaultVisible: true },
-  { id: 'inn', label: 'ИНН', defaultVisible: true },
-  { id: 'region', label: 'Регион', defaultVisible: true },
-  { id: 'category', label: 'Категория', defaultVisible: true },
-  { id: 'subcategory', label: 'Подкатегория', defaultVisible: false },
-  { id: 'declarationsCount', label: 'Кол-во деклараций', defaultVisible: true },
-  { id: 'lastCalculationDate', label: 'Дата расчёта', defaultVisible: false },
-  { id: 'reportingStatus', label: 'Статус отчётности', defaultVisible: true },
-  { id: 'lastPaymentDate', label: 'Дата платежа', defaultVisible: false },
-  { id: 'lastPaymentAmount', label: 'Сумма платежа', defaultVisible: false },
-  { id: 'totalCharged', label: 'Начислено', defaultVisible: true },
-  { id: 'totalPaid', label: 'Оплачено', defaultVisible: true },
-  { id: 'settlementStatus', label: 'Состояние расчётов', defaultVisible: true },
-  { id: 'registeredAt', label: 'Дата учёта', defaultVisible: false },
-  { id: 'contactPerson', label: 'Контакт', defaultVisible: false },
-  { id: 'contactPhone', label: 'Телефон', defaultVisible: false },
+  { id: 'name', label: t('ecoPayers.colName'), defaultVisible: true },
+  { id: 'inn', label: t('ecoPayers.colInn'), defaultVisible: true },
+  { id: 'region', label: t('ecoPayers.colRegion'), defaultVisible: true },
+  { id: 'category', label: t('ecoPayers.colCategory'), defaultVisible: true },
+  { id: 'subcategory', label: t('ecoPayers.colSubcategory'), defaultVisible: false },
+  { id: 'declarationsCount', label: t('ecoPayers.colDeclarationsCount'), defaultVisible: true },
+  { id: 'lastCalculationDate', label: t('ecoPayers.colCalculationDate'), defaultVisible: false },
+  { id: 'reportingStatus', label: t('ecoPayers.colReportingStatus'), defaultVisible: true },
+  { id: 'lastPaymentDate', label: t('ecoPayers.colPaymentDate'), defaultVisible: false },
+  { id: 'lastPaymentAmount', label: t('ecoPayers.colPaymentAmount'), defaultVisible: false },
+  { id: 'totalCharged', label: t('ecoPayers.colTotalCharged'), defaultVisible: true },
+  { id: 'totalPaid', label: t('ecoPayers.colTotalPaid'), defaultVisible: true },
+  { id: 'settlementStatus', label: t('ecoPayers.colSettlementStatus'), defaultVisible: true },
+  { id: 'registeredAt', label: t('ecoPayers.colRegisteredAt'), defaultVisible: false },
+  { id: 'contactPerson', label: t('ecoPayers.colContact'), defaultVisible: false },
+  { id: 'contactPhone', label: t('ecoPayers.colPhone'), defaultVisible: false },
   { id: 'contactEmail', label: 'Email', defaultVisible: false },
-  { id: 'legalAddress', label: 'Юр. адрес', defaultVisible: false },
-  { id: 'actualAddress', label: 'Факт. адрес', defaultVisible: false },
-  { id: 'director', label: 'Руководитель', defaultVisible: false },
-  { id: 'systemStatus', label: 'Статус', defaultVisible: true },
-  { id: 'suspensionReason', label: 'Причина', defaultVisible: false },
-  { id: 'lastUpdated', label: 'Обновлено', defaultVisible: false },
-  { id: 'lastUpdatedBy', label: 'Кем обновлено', defaultVisible: false },
-]
+  { id: 'legalAddress', label: t('ecoPayers.colLegalAddress'), defaultVisible: false },
+  { id: 'actualAddress', label: t('ecoPayers.colActualAddress'), defaultVisible: false },
+  { id: 'director', label: t('ecoPayers.colDirector'), defaultVisible: false },
+  { id: 'systemStatus', label: t('ecoPayers.colStatus'), defaultVisible: true },
+  { id: 'suspensionReason', label: t('ecoPayers.colReason'), defaultVisible: false },
+  { id: 'lastUpdated', label: t('ecoPayers.colUpdated'), defaultVisible: false },
+  { id: 'lastUpdatedBy', label: t('ecoPayers.colUpdatedBy'), defaultVisible: false },
+])
 
 // ── Visible columns (persisted) ─────────────────────────────
 const STORAGE_KEY = 'payersVisibleColumns'
@@ -70,7 +72,7 @@ function loadVisibleColumns(): string[] {
   } catch {
     // ignore
   }
-  return allColumns.filter(c => c.defaultVisible).map(c => c.id)
+  return allColumns.value.filter(c => c.defaultVisible).map(c => c.id)
 }
 
 const visibleColumnIds = ref<string[]>(loadVisibleColumns())
@@ -80,7 +82,7 @@ watch(visibleColumnIds, (val) => {
 }, { deep: true })
 
 const visibleColumns = computed(() =>
-  allColumns.filter(c => visibleColumnIds.value.includes(c.id))
+  allColumns.value.filter(c => visibleColumnIds.value.includes(c.id))
 )
 
 function isColumnVisible(id: string): boolean {
@@ -182,9 +184,9 @@ const filteredPayers = computed<Payer[]>(() => {
   // System status
   if (filterSystemStatus.value !== 'Все') {
     const statusMap: Record<string, string> = {
-      'Активен': 'active',
-      'Приостановлен': 'suspended',
-      'Исключён': 'excluded',
+      'active': 'active',
+      'suspended': 'suspended',
+      'excluded': 'excluded',
     }
     const mapped = statusMap[filterSystemStatus.value]
     if (mapped) result = result.filter(p => p.systemStatus === mapped)
@@ -380,18 +382,18 @@ onMounted(() => {
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Реестр плательщиков утильсбора</h1>
-          <p class="text-gray-500 mt-1">Внутренний реестр организаций-плательщиков</p>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('ecoPayers.title') }}</h1>
+          <p class="text-gray-500 mt-1">{{ $t('ecoPayers.subtitle') }}</p>
         </div>
         <div class="text-sm text-gray-600">
-          Найдено: <span class="font-semibold text-gray-900">{{ filteredCount }}</span> из <span class="font-semibold text-gray-900">{{ totalCount }}</span> плательщиков
+          {{ $t('ecoPayers.found') }}: <span class="font-semibold text-gray-900">{{ filteredCount }}</span> {{ $t('ecoPayers.of') }} <span class="font-semibold text-gray-900">{{ totalCount }}</span> {{ $t('ecoPayers.payers') }}
         </div>
       </div>
 
       <SectionGuide
-        title="Реестр плательщиков утилизационного сбора"
-        description="Полный реестр организаций-плательщиков с финансовой информацией."
-        :actions="['Поиск по наименованию или ИНН', 'Просмотр карточки плательщика', 'Контроль статуса отчётности', 'Экспорт данных в Excel/PDF/CSV']"
+        :title="$t('ecoPayers.guideTitle')"
+        :description="$t('ecoPayers.guideDescription')"
+        :actions="[$t('ecoPayers.guideAction1'), $t('ecoPayers.guideAction2'), $t('ecoPayers.guideAction3'), $t('ecoPayers.guideAction4')]"
         storageKey="eco-payers"
       />
 
@@ -437,7 +439,7 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            Настроить столбцы
+            {{ $t('ecoPayers.configureColumns') }}
           </button>
           <div
             v-if="showColumnSettings"
@@ -445,7 +447,7 @@ onMounted(() => {
             @click.stop
           >
             <div class="p-3 border-b border-gray-100">
-              <p class="text-sm font-semibold text-gray-900">Отображаемые столбцы</p>
+              <p class="text-sm font-semibold text-gray-900">{{ $t('ecoPayers.displayedColumns') }}</p>
             </div>
             <div class="p-2">
               <label
@@ -480,7 +482,7 @@ onMounted(() => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Поиск по наименованию или ИНН"
+              :placeholder="$t('ecoPayers.searchPlaceholder')"
               class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
             />
           </div>
@@ -490,7 +492,7 @@ onMounted(() => {
             v-model="filterRegion"
             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           >
-            <option v-for="r in regions" :key="r" :value="r">{{ r === 'Все' ? 'Регион: Все' : r }}</option>
+            <option v-for="r in regions" :key="r" :value="r">{{ r === 'Все' ? $t('ecoPayers.regionAll') : r }}</option>
           </select>
 
           <!-- System Status -->
@@ -498,10 +500,10 @@ onMounted(() => {
             v-model="filterSystemStatus"
             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           >
-            <option value="Все">Статус: Все</option>
-            <option value="Активен">Активен</option>
-            <option value="Приостановлен">Приостановлен</option>
-            <option value="Исключён">Исключён</option>
+            <option value="Все">{{ $t('ecoPayers.statusAll') }}</option>
+            <option value="active">{{ $t('status.active') }}</option>
+            <option value="suspended">{{ $t('status.suspended') }}</option>
+            <option value="excluded">{{ $t('status.revoked') }}</option>
           </select>
 
           <!-- Toggle advanced -->
@@ -513,7 +515,7 @@ onMounted(() => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            Ещё фильтры
+            {{ $t('ecoPayers.moreFilters') }}
             <svg
               class="w-3.5 h-3.5 transition-transform"
               :class="showAdvancedFilters ? 'rotate-180' : ''"
@@ -531,10 +533,10 @@ onMounted(() => {
             v-model="filterCategory"
             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           >
-            <option value="Все">Категория: Все</option>
-            <option value="Импортер">Импортер</option>
-            <option value="Производитель">Производитель</option>
-            <option value="Оба">Оба</option>
+            <option value="Все">{{ $t('ecoPayers.categoryAll') }}</option>
+            <option value="Импортер">{{ $t('ecoPayers.catImporter') }}</option>
+            <option value="Производитель">{{ $t('ecoPayers.catProducer') }}</option>
+            <option value="Оба">{{ $t('ecoPayers.catBoth') }}</option>
           </select>
 
           <!-- Settlement Status -->
@@ -542,10 +544,10 @@ onMounted(() => {
             v-model="filterSettlementStatus"
             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           >
-            <option value="Все">Расчёты: Все</option>
-            <option value="Без задолженности">Без задолженности</option>
-            <option value="Задолженность">Задолженность</option>
-            <option value="Переплата">Переплата</option>
+            <option value="Все">{{ $t('ecoPayers.settlementAll') }}</option>
+            <option value="Без задолженности">{{ $t('ecoPayers.settlementClear') }}</option>
+            <option value="Задолженность">{{ $t('ecoPayers.settlementDebt') }}</option>
+            <option value="Переплата">{{ $t('ecoPayers.settlementOverpaid') }}</option>
           </select>
 
           <!-- Reporting Status -->
@@ -553,10 +555,10 @@ onMounted(() => {
             v-model="filterReportingStatus"
             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
           >
-            <option value="Все">Отчётность: Все</option>
-            <option value="Сдана вовремя">Сдана вовремя</option>
-            <option value="Ожидается">Ожидается</option>
-            <option value="Просрочена">Просрочена</option>
+            <option value="Все">{{ $t('ecoPayers.reportingAll') }}</option>
+            <option value="Сдана вовремя">{{ $t('ecoPayers.reportingOnTime') }}</option>
+            <option value="Ожидается">{{ $t('ecoPayers.reportingExpected') }}</option>
+            <option value="Просрочена">{{ $t('ecoPayers.reportingOverdue') }}</option>
           </select>
 
           <!-- Date range -->
@@ -565,14 +567,14 @@ onMounted(() => {
               v-model="registeredFrom"
               type="date"
               class="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              title="Дата учёта от"
+              :title="$t('ecoPayers.dateFrom')"
             />
             <span class="text-gray-400 text-sm flex-shrink-0">—</span>
             <input
               v-model="registeredTo"
               type="date"
               class="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              title="Дата учёта до"
+              :title="$t('ecoPayers.dateTo')"
             />
           </div>
 
@@ -584,7 +586,7 @@ onMounted(() => {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Сбросить фильтры
+            {{ $t('ecoPayers.resetFilters') }}
           </button>
         </div>
       </div>
@@ -607,7 +609,7 @@ onMounted(() => {
                   class="sticky-col sticky-col-second px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer hover:bg-gray-100 transition-colors whitespace-nowrap"
                   @click="toggleSort('name')"
                 >
-                  Наименование{{ sortIcon('name') }}
+                  {{ $t('ecoPayers.colName') }}{{ sortIcon('name') }}
                 </th>
                 <template v-for="col in visibleColumns" :key="col.id">
                   <th
@@ -627,8 +629,8 @@ onMounted(() => {
                     <svg class="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p class="text-sm font-medium">Плательщики не найдены</p>
-                    <p class="text-xs text-gray-400">Попробуйте изменить параметры поиска</p>
+                    <p class="text-sm font-medium">{{ $t('ecoPayers.noPayersFound') }}</p>
+                    <p class="text-xs text-gray-400">{{ $t('ecoPayers.tryChangingSearch') }}</p>
                   </div>
                 </td>
               </tr>
@@ -670,14 +672,14 @@ onMounted(() => {
                 <!-- category -->
                 <td v-if="isColumnVisible('category')" class="px-3 py-3 whitespace-nowrap">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', categoryColors[payer.category]]">
-                    {{ categoryLabels[payer.category] }}
+                    {{ getCategoryLabel(payer.category) }}
                   </span>
                 </td>
 
                 <!-- subcategory -->
                 <td v-if="isColumnVisible('subcategory')" class="px-3 py-3 whitespace-nowrap">
                   <span v-if="payer.subcategory" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                    {{ subcategoryLabels[payer.subcategory] }}
+                    {{ getSubcategoryLabel(payer.subcategory) }}
                   </span>
                   <span v-else class="text-gray-400">&mdash;</span>
                 </td>
@@ -695,7 +697,7 @@ onMounted(() => {
                 <!-- reportingStatus -->
                 <td v-if="isColumnVisible('reportingStatus')" class="px-3 py-3 whitespace-nowrap">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', reportingColors[payer.reportingStatus]]">
-                    {{ reportingLabels[payer.reportingStatus] }}
+                    {{ getReportingLabel(payer.reportingStatus) }}
                   </span>
                 </td>
 
@@ -706,7 +708,7 @@ onMounted(() => {
 
                 <!-- lastPaymentAmount -->
                 <td v-if="isColumnVisible('lastPaymentAmount')" class="px-3 py-3 text-gray-700 text-right whitespace-nowrap">
-                  {{ payer.lastPaymentAmount ? formatMoney(payer.lastPaymentAmount) + ' сом' : '—' }}
+                  {{ payer.lastPaymentAmount ? formatMoney(payer.lastPaymentAmount) + ' ' + $t('ecoPayers.som') : '—' }}
                 </td>
 
                 <!-- totalCharged -->
@@ -722,7 +724,7 @@ onMounted(() => {
                 <!-- settlementStatus -->
                 <td v-if="isColumnVisible('settlementStatus')" class="px-3 py-3 whitespace-nowrap">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', settlementColors[payer.settlementStatus]]">
-                    {{ settlementLabels[payer.settlementStatus] }}
+                    {{ getSettlementLabel(payer.settlementStatus) }}
                   </span>
                   <span
                     v-if="payer.settlementStatus !== 'clear' && payer.settlementAmount"
@@ -770,7 +772,7 @@ onMounted(() => {
                 <!-- systemStatus -->
                 <td v-if="isColumnVisible('systemStatus')" class="px-3 py-3 whitespace-nowrap">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-semibold', systemStatusColors[payer.systemStatus]]">
-                    {{ systemStatusLabels[payer.systemStatus] }}
+                    {{ getSystemStatusLabel(payer.systemStatus) }}
                   </span>
                 </td>
 
@@ -797,7 +799,7 @@ onMounted(() => {
         <!-- Pagination -->
         <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-gray-50/50">
           <div class="flex items-center gap-3">
-            <label class="text-sm text-gray-600">Показывать:</label>
+            <label class="text-sm text-gray-600">{{ $t('ecoPayers.showPerPage') }}:</label>
             <select
               v-model.number="perPage"
               class="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -807,7 +809,7 @@ onMounted(() => {
               <option :value="100">100</option>
             </select>
             <span class="text-sm text-gray-500">
-              Показаны {{ paginationFrom }}-{{ paginationTo }} из {{ filteredCount }}
+              {{ $t('ecoPayers.showing') }} {{ paginationFrom }}-{{ paginationTo }} {{ $t('ecoPayers.of') }} {{ filteredCount }}
             </span>
           </div>
 
