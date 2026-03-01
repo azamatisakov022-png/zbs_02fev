@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '../router'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1',
@@ -47,17 +48,17 @@ api.interceptors.response.use(
           localStorage.setItem('refresh_token', data.refreshToken)
           originalRequest.headers.Authorization = `Bearer ${data.token}`
           return api(originalRequest)
-        } catch {
-          // Refresh failed — clear auth
+        } catch (refreshError) {
+          if (import.meta.env.DEV) console.warn('[auth] Token refresh failed:', refreshError)
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('auth_user')
-          window.location.href = '/login'
+          router.replace('/login')
         }
       } else {
         localStorage.removeItem('access_token')
         localStorage.removeItem('auth_user')
-        window.location.href = '/login'
+        router.replace('/login')
       }
     }
 

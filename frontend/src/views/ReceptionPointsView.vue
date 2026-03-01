@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, shallowRef, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { escapeHtml } from '../utils/sanitize'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -110,11 +111,11 @@ const updateMarkers = () => {
 
     const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
       <div style="font-family: system-ui, sans-serif; padding: 8px;">
-        <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #415861;">${point.name}</h3>
-        <p style="margin: 0 0 4px; font-size: 13px; color: #666;">${point.address}</p>
-        <p style="margin: 0 0 8px; font-size: 13px; color: #666;">${point.phone}</p>
+        <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #415861;">${escapeHtml(point.name)}</h3>
+        <p style="margin: 0 0 4px; font-size: 13px; color: #666;">${escapeHtml(point.address)}</p>
+        <p style="margin: 0 0 8px; font-size: 13px; color: #666;">${escapeHtml(point.phone)}</p>
         <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-          ${point.materials.map(m => `<span style="background: #e8f5f5; color: #0e888d; padding: 2px 8px; border-radius: 12px; font-size: 11px;">${m}</span>`).join('')}
+          ${point.materials.map(m => `<span style="background: #e8f5f5; color: #0e888d; padding: 2px 8px; border-radius: 12px; font-size: 11px;">${escapeHtml(m)}</span>`).join('')}
         </div>
       </div>
     `)

@@ -5,6 +5,6 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
-    allowedHosts: ['hitless-zahra-nondoubtingly.ngrok-free.dev'],
+    allowedHosts: process.env.VITE_ALLOWED_HOSTS?.split(',').filter(Boolean) || [],
   },
 })

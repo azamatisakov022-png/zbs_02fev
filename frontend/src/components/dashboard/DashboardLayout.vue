@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getLocale, setLocale } from '../../i18n'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { authStore } from '../../stores/auth'
 import { notificationStore } from '../../stores/notifications'
 import NotificationBell from './NotificationBell.vue'
@@ -161,7 +162,7 @@ const breadcrumbs = computed(() => {
           style="border-radius: var(--radius-sm)"
           :aria-current="isActive(item.route) ? 'page' : undefined"
         >
-          <span class="nav-icon w-6 h-6 flex items-center justify-center transition-transform" v-html="item.icon" aria-hidden="true"></span>
+          <span class="nav-icon w-6 h-6 flex items-center justify-center transition-transform" v-html="sanitizeHtml(item.icon)" aria-hidden="true"></span>
           <span class="text-[15px]">{{ item.label }}</span>
           <span
             v-if="item.badge && item.badge > 0"

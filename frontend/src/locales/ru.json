@@ -242,7 +242,10 @@
     "addAtLeastOneItem": "Добавьте хотя бы одну позицию",
     "fillAllItems": "Заполните все обязательные поля в позициях",
     "selectYear": "Укажите отчётный год",
-    "commentMinLength": "Комментарий должен быть не менее {min} символов"
+    "commentMinLength": "Комментарий должен быть не менее {min} символов",
+    "passwordMinLength": "Пароль должен быть не менее {min} символов",
+    "passwordMaxLength": "Пароль не может превышать {max} символов",
+    "passwordComplexity": "Пароль должен содержать буквы и цифры"
   },
   "empty": {
     "noCalculations": "У вас пока нет расчётов",
@@ -285,7 +288,10 @@
     "serverError": "Ошибка сервера",
     "apiError": "Ошибка API",
     "authError": "Ошибка авторизации",
-    "registrationError": "Ошибка регистрации"
+    "registrationError": "Ошибка регистрации",
+    "componentError": "Произошла ошибка в компоненте",
+    "tryAgain": "Попробовать снова",
+    "unknown": "Неизвестная ошибка"
   },
   "notFound": {
     "title": "Страница не найдена",

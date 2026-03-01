@@ -76,15 +76,17 @@ async function login(inn: string, password: string): Promise<AuthUser> {
   state.loading = true
   state.error = null
 
-  // Demo mode: if INN matches a demo account, login locally without API
-  const demo = demoAccounts[inn]
-  if (demo) {
-    state.token = 'demo-token-' + demo.role
-    state.refreshToken = 'demo-refresh-' + demo.role
-    state.user = { ...demo }
-    saveToStorage()
-    state.loading = false
-    return demo
+  // Demo mode: only available in development builds (tree-shaken in production)
+  if (import.meta.env.DEV) {
+    const demo = demoAccounts[inn]
+    if (demo) {
+      state.token = 'demo-token-' + demo.role
+      state.refreshToken = 'demo-refresh-' + demo.role
+      state.user = { ...demo }
+      saveToStorage()
+      state.loading = false
+      return demo
+    }
   }
 
   try {

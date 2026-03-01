@@ -5,6 +5,7 @@ import TheHeader from './components/layout/TheHeader.vue'
 import TheNavigation from './components/layout/TheNavigation.vue'
 import TheFooter from './components/layout/TheFooter.vue'
 import AppToast from './components/ui/AppToast.vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
 
 const route = useRoute()
 
@@ -30,11 +31,13 @@ const isDashboard = computed(() => {
     </template>
 
     <main class="flex-1">
-      <router-view v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </router-view>
+      <ErrorBoundary>
+        <router-view v-slot="{ Component }">
+          <Transition name="page" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
+      </ErrorBoundary>
     </main>
 
     <!-- Public footer - only show on public pages -->

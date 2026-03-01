@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import i18n from '../i18n'
+import { silentCatch } from '../utils/logError'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
 export type NotificationRole = 'business' | 'eco-operator' | 'employee' | 'admin'
@@ -65,7 +66,7 @@ function add(notification: { type: NotificationType; title: string; message: str
 
 function remove(id: number) {
   state.notifications = state.notifications.filter(n => n.id !== id)
-  silentApi.delete(`/notifications/${id}`).catch(() => {})
+  silentApi.delete(`/notifications/${id}`).catch(silentCatch('notifications.remove'))
 }
 
 function clear() {
@@ -86,14 +87,14 @@ function getUnreadCount(role: NotificationRole) {
 function markAsRead(id: number) {
   const n = state.notifications.find(n => n.id === id)
   if (n) n.read = true
-  silentApi.post(`/notifications/${id}/read`).catch(() => {})
+  silentApi.post(`/notifications/${id}/read`).catch(silentCatch('notifications.markAsRead'))
 }
 
 function markAllAsRead(role: NotificationRole) {
   state.notifications.forEach(n => {
     if (n.role === role) n.read = true
   })
-  silentApi.post('/notifications/read-all').catch(() => {})
+  silentApi.post('/notifications/read-all').catch(silentCatch('notifications.markAllAsRead'))
 }
 
 async function fetchAll() {

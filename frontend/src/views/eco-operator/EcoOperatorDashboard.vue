@@ -7,6 +7,7 @@ import StatsCard from '../../components/dashboard/StatsCard.vue'
 import LineChart from '../../components/charts/LineChart.vue'
 import BarChart from '../../components/charts/BarChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { calculationStore } from '../../stores/calculations'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -151,21 +152,21 @@ onMounted(() => {
           <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoDashboard.quickActions') }}</h3>
           <div class="space-y-3">
             <router-link to="/eco-operator/incoming-declarations" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#2563eb] flex items-center justify-center text-white" v-html="icons.document"></div>
+              <div class="w-10 h-10 rounded-lg bg-[#2563eb] flex items-center justify-center text-white" v-html="sanitizeHtml(icons.document)"></div>
               <div>
                 <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.incomingDeclarations') }}</span>
                 <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.newCount12') }}</span>
               </div>
             </router-link>
             <router-link to="/eco-operator/incoming-reports" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#10b981] flex items-center justify-center text-white" v-html="icons.report"></div>
+              <div class="w-10 h-10 rounded-lg bg-[#10b981] flex items-center justify-center text-white" v-html="sanitizeHtml(icons.report)"></div>
               <div>
                 <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.recyclingReports') }}</span>
                 <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.newCount5') }}</span>
               </div>
             </router-link>
             <router-link to="/eco-operator/analytics" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
-              <div class="w-10 h-10 rounded-lg bg-[#f59e0b] flex items-center justify-center text-white" v-html="icons.registries"></div>
+              <div class="w-10 h-10 rounded-lg bg-[#f59e0b] flex items-center justify-center text-white" v-html="sanitizeHtml(icons.registries)"></div>
               <div>
                 <span class="font-medium text-[#1e293b] block">{{ $t('ecoDashboard.submitRecyclingReport') }}</span>
                 <span class="text-sm text-[#64748b]">{{ $t('ecoDashboard.reportingForPeriod') }}</span>

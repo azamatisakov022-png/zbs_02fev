@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
+import { silentCatch } from '../utils/logError'
 
 export type CollectionPointStatus = 'active' | 'paused' | 'closed'
 
@@ -43,7 +44,7 @@ async function fetchAll() {
 function addPoint(data: Omit<CollectionPoint, 'id'>): CollectionPoint {
   const point: CollectionPoint = { id: nextId++, ...data }
   state.points.push(point)
-  silentApi.post('/collection-points', data).catch(() => {})
+  silentApi.post('/collection-points', data).catch(silentCatch('collectionPoints.add'))
   return point
 }
 
@@ -52,7 +53,7 @@ function updatePoint(id: number, updates: Partial<CollectionPoint>) {
   if (idx !== -1) {
     state.points[idx] = { ...state.points[idx], ...updates }
   }
-  silentApi.put(`/collection-points/${id}`, updates).catch(() => {})
+  silentApi.put(`/collection-points/${id}`, updates).catch(silentCatch('collectionPoints.update'))
 }
 
 function deletePoint(id: number) {
@@ -60,7 +61,7 @@ function deletePoint(id: number) {
   if (idx !== -1) {
     state.points.splice(idx, 1)
   }
-  silentApi.delete(`/collection-points/${id}`).catch(() => {})
+  silentApi.delete(`/collection-points/${id}`).catch(silentCatch('collectionPoints.delete'))
 }
 
 function getPointById(id: number): CollectionPoint | undefined {

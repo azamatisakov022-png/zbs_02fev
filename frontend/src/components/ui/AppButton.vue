@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { sanitizeHtml } from '../../utils/sanitize'
+
 defineProps<{
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline'
   size?: 'sm' | 'md' | 'lg'
@@ -26,7 +28,7 @@ defineEmits<{
     @click="$emit('click', $event)"
   >
     <span v-if="loading" class="app-btn__spinner" />
-    <span v-else-if="icon" class="app-btn__icon" v-html="icon" />
+    <span v-else-if="icon" class="app-btn__icon" v-html="sanitizeHtml(icon)" />
     <slot>{{ label }}</slot>
   </button>
 </template>

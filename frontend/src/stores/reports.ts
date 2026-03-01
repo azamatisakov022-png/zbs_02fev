@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { ReportStatus, type ReportStatusType } from '../constants/statuses'
 import i18n from '../i18n'
+import { silentCatch } from '../utils/logError'
 
 export interface ProcessingItem {
   id: number
@@ -153,10 +154,10 @@ function addReport(data: {
       report.number = resp.data.number || report.number
       // If submitting immediately, trigger submit on backend
       if (status === ReportStatus.UNDER_REVIEW) {
-        silentApi.post(`/reports/${resp.data.id}/submit`).catch(() => {})
+        silentApi.post(`/reports/${resp.data.id}/submit`).catch(silentCatch('reports.submitAfterCreate'))
       }
     }
-  }).catch(() => {})
+  }).catch(silentCatch('reports.create'))
   return report
 }
 
@@ -166,7 +167,7 @@ function submitForReview(id: number) {
     report.status = ReportStatus.UNDER_REVIEW
     report.rejectionReason = undefined
   }
-  silentApi.post(`/reports/${id}/submit`).catch(() => {})
+  silentApi.post(`/reports/${id}/submit`).catch(silentCatch('reports.submit'))
 }
 
 function approveReport(id: number, comment?: string) {
@@ -184,7 +185,7 @@ function approveReport(id: number, comment?: string) {
       comment,
     })
   }
-  silentApi.post(`/reports/${id}/approve`, { comment }).catch(() => {})
+  silentApi.post(`/reports/${id}/approve`, { comment }).catch(silentCatch('reports.approve'))
 }
 
 function rejectReport(id: number, reason: string) {
@@ -203,7 +204,7 @@ function rejectReport(id: number, reason: string) {
       comment: reason,
     })
   }
-  silentApi.post(`/reports/${id}/reject`, { reason }).catch(() => {})
+  silentApi.post(`/reports/${id}/reject`, { reason }).catch(silentCatch('reports.reject'))
 }
 
 function returnReportForRevision(id: number, comment: string) {
@@ -222,7 +223,7 @@ function returnReportForRevision(id: number, comment: string) {
       comment,
     })
   }
-  silentApi.post(`/reports/${id}/return`, { comment }).catch(() => {})
+  silentApi.post(`/reports/${id}/return`, { comment }).catch(silentCatch('reports.returnForRevision'))
 }
 
 function getBusinessReports(_company?: string) {

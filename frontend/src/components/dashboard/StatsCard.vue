@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { sanitizeHtml } from '../../utils/sanitize'
 
 interface Props {
   title: string
@@ -92,7 +93,7 @@ watch(() => props.value, () => {
       <div
         v-if="icon"
         :class="['stats-icon w-12 h-12 rounded-xl flex items-center justify-center', colorClasses[color]]"
-        v-html="icon"
+        v-html="sanitizeHtml(icon)"
       ></div>
     </div>
   </div>

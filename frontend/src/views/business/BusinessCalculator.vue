@@ -25,6 +25,7 @@ import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { notificationStore } from '../../stores/notifications'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import PaymentPanel from '../../components/payment/PaymentPanel.vue'
@@ -1646,7 +1647,7 @@ const downloadReceipt = () => {
                 </div>
                 <div>
                   <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.paymentTermsTitle') }}</p>
-                  <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentTermsText')"></p>
+                  <p class="text-sm text-[#64748b]" v-html="sanitizeHtml($t('businessCalc.paymentTermsText'))"></p>
                 </div>
               </div>
             </div>
