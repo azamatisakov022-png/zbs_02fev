@@ -1,5 +1,6 @@
 package kg.eco.operator.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -28,9 +29,13 @@ public class LandfillCreateRequest {
     private String status;
     private String operator;
 
+    @Valid
     private List<WasteAcceptanceRequest> wasteAcceptance;
+    @Valid
     private InfrastructureRequest infrastructure;
+    @Valid
     private EquipmentRequest equipment;
+    @Valid
     private MorphologyRequest morphology;
 
     @Data

@@ -5,6 +5,7 @@ import { calculatePenalty, getOverdueDays } from '../utils/penalty'
 import { CalcStatus, type CalcStatusType } from '../constants/statuses'
 import i18n from '../i18n'
 import { notificationStore } from './notifications'
+import { silentCatch } from '../utils/logError'
 
 export type DocumentType = 'gtd' | 'act' | 'invoice_goods' | 'invoice' | 'contract' | 'other'
 
@@ -271,10 +272,10 @@ function addCalculation(data: {
       calc.number = resp.data.number || calc.number
       // If submitting immediately, trigger submit on backend
       if (status === CalcStatus.UNDER_REVIEW) {
-        silentApi.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
+        silentApi.post(`/calculations/${resp.data.id}/submit`).catch(silentCatch('calculations.submitAfterCreate'))
       }
     }
-  }).catch(() => {})
+  }).catch(silentCatch('calculations.create'))
 
   return calc
 }
@@ -300,7 +301,7 @@ function submitForReview(id: number) {
       link: `/eco-operator/calculations/${calc.id}`,
     })
   }
-  silentApi.post(`/calculations/${id}/submit`).catch(() => {})
+  silentApi.post(`/calculations/${id}/submit`).catch(silentCatch('calculations.submit'))
 }
 
 function approveCalculation(id: number) {
@@ -323,7 +324,7 @@ function approveCalculation(id: number) {
       link: `/business/calculations/${calc.id}/payment`,
     })
   }
-  silentApi.post(`/calculations/${id}/approve`).catch(() => {})
+  silentApi.post(`/calculations/${id}/approve`).catch(silentCatch('calculations.approve'))
 }
 
 function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
@@ -343,7 +344,7 @@ function rejectCalculation(id: number, reason: string, rejectedBy?: string) {
       link: `/business/calculations/${calc.id}`,
     })
   }
-  silentApi.post(`/calculations/${id}/reject`, { reason, rejectedBy }).catch(() => {})
+  silentApi.post(`/calculations/${id}/reject`, { reason, rejectedBy }).catch(silentCatch('calculations.reject'))
 }
 
 function submitPayment(id: number, payment: PaymentData) {
@@ -353,7 +354,7 @@ function submitPayment(id: number, payment: PaymentData) {
     calc.status = CalcStatus.PAYMENT_PENDING
     calc.paymentRejectionReason = undefined
   }
-  silentApi.post(`/calculations/${id}/payment`, payment).catch(() => {})
+  silentApi.post(`/calculations/${id}/payment`, payment).catch(silentCatch('calculations.submitPayment'))
 }
 
 function approvePayment(id: number) {
@@ -362,7 +363,7 @@ function approvePayment(id: number) {
     calc.status = CalcStatus.PAID
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
-  silentApi.post(`/calculations/${id}/payment/approve`).catch(() => {})
+  silentApi.post(`/calculations/${id}/payment/approve`).catch(silentCatch('calculations.approvePayment'))
 }
 
 function rejectPayment(id: number, reason: string) {
@@ -371,7 +372,7 @@ function rejectPayment(id: number, reason: string) {
     calc.status = CalcStatus.PAYMENT_REJECTED
     calc.paymentRejectionReason = reason
   }
-  silentApi.post(`/calculations/${id}/payment/reject`, { reason }).catch(() => {})
+  silentApi.post(`/calculations/${id}/payment/reject`, { reason }).catch(silentCatch('calculations.rejectPayment'))
 }
 
 function markAsPaid(id: number) {
@@ -380,7 +381,7 @@ function markAsPaid(id: number) {
     calc.status = CalcStatus.PAID
     calc.paidAt = new Date().toLocaleDateString('ru-RU')
   }
-  silentApi.post(`/calculations/${id}/mark-paid`).catch(() => {})
+  silentApi.post(`/calculations/${id}/mark-paid`).catch(silentCatch('calculations.markAsPaid'))
 }
 
 function resubmitCalculation(id: number) {
@@ -396,7 +397,7 @@ function resubmitCalculation(id: number) {
       userRole: 'payer',
     })
   }
-  silentApi.post(`/calculations/${id}/resubmit`).catch(() => {})
+  silentApi.post(`/calculations/${id}/resubmit`).catch(silentCatch('calculations.resubmit'))
 }
 
 function updateCalculationItems(id: number, items: ProductItem[], totalAmount: number) {
@@ -405,7 +406,7 @@ function updateCalculationItems(id: number, items: ProductItem[], totalAmount: n
     calc.items = items
     calc.totalAmount = totalAmount
   }
-  silentApi.put(`/calculations/${id}/items`, { items, totalAmount }).catch(() => {})
+  silentApi.put(`/calculations/${id}/items`, { items, totalAmount }).catch(silentCatch('calculations.updateItems'))
 }
 
 function updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
@@ -413,7 +414,7 @@ function updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
   if (calc) {
     calc.documents = documents
   }
-  silentApi.put(`/calculations/${id}/documents`, { documents }).catch(() => {})
+  silentApi.put(`/calculations/${id}/documents`, { documents }).catch(silentCatch('calculations.updateDocuments'))
 }
 
 function copyCalculation(sourceId: number): Calculation | undefined {
@@ -465,7 +466,7 @@ function assignToMe(id: number, userId: string, userName: string) {
     calc.assignedName = userName
     addAuditEntry(id, { action: 'assigned', userId, userName, userRole: 'operator' })
   }
-  silentApi.post(`/calculations/${id}/assign`).catch(() => {})
+  silentApi.post(`/calculations/${id}/assign`).catch(silentCatch('calculations.assign'))
 }
 
 function unassign(id: number) {
@@ -476,7 +477,7 @@ function unassign(id: number) {
     calc.assignedTo = undefined
     calc.assignedName = undefined
   }
-  silentApi.post(`/calculations/${id}/unassign`).catch(() => {})
+  silentApi.post(`/calculations/${id}/unassign`).catch(silentCatch('calculations.unassign'))
 }
 
 function sendToRevision(id: number, comment: string) {
@@ -494,7 +495,7 @@ function sendToRevision(id: number, comment: string) {
       link: `/business/calculations/${calc.id}`,
     })
   }
-  silentApi.post(`/calculations/${id}/revision`, { comment }).catch(() => {})
+  silentApi.post(`/calculations/${id}/revision`, { comment }).catch(silentCatch('calculations.sendToRevision'))
 }
 
 function uploadFeeReceipt(id: number, data: PaymentData) {
@@ -511,7 +512,7 @@ function uploadFeeReceipt(id: number, data: PaymentData) {
       link: `/eco-operator/calculations/${calc.id}`,
     })
   }
-  silentApi.post(`/calculations/${id}/fee-receipt`, data).catch(() => {})
+  silentApi.post(`/calculations/${id}/fee-receipt`, data).catch(silentCatch('calculations.uploadFeeReceipt'))
 }
 
 function confirmFeePayment(id: number) {
@@ -564,7 +565,7 @@ function confirmFeePayment(id: number) {
     })
   }
 
-  silentApi.post(`/calculations/${id}/confirm-fee`).catch(() => {})
+  silentApi.post(`/calculations/${id}/confirm-fee`).catch(silentCatch('calculations.confirmFee'))
 }
 
 function uploadPenaltyReceipt(id: number, data: PaymentData) {
@@ -581,7 +582,7 @@ function uploadPenaltyReceipt(id: number, data: PaymentData) {
       link: `/eco-operator/calculations/${calc.id}`,
     })
   }
-  silentApi.post(`/calculations/${id}/penalty-receipt`, data).catch(() => {})
+  silentApi.post(`/calculations/${id}/penalty-receipt`, data).catch(silentCatch('calculations.uploadPenaltyReceipt'))
 }
 
 function confirmPenaltyPayment(id: number) {
@@ -599,7 +600,7 @@ function confirmPenaltyPayment(id: number) {
     role: 'business',
     link: `/business/calculations/${calc.id}/payment`,
   })
-  silentApi.post(`/calculations/${id}/confirm-penalty`).catch(() => {})
+  silentApi.post(`/calculations/${id}/confirm-penalty`).catch(silentCatch('calculations.confirmPenalty'))
 }
 
 function getSubmittedCount() {

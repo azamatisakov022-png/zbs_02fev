@@ -2,6 +2,7 @@ package kg.eco.operator.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import kg.eco.operator.entity.enums.PayerCategory;
 import lombok.Data;
@@ -11,6 +12,7 @@ public class RegisterRequest {
 
     @NotBlank(message = "ИНН обязателен")
     @Size(min = 14, max = 14, message = "ИНН должен содержать 14 цифр")
+    @Pattern(regexp = "\\d{14}", message = "ИНН должен содержать только цифры")
     private String inn;
 
     @NotBlank(message = "Название компании обязательно")
@@ -28,6 +30,6 @@ public class RegisterRequest {
     private String phone;
 
     @NotBlank(message = "Пароль обязателен")
-    @Size(min = 6, message = "Пароль должен содержать минимум 6 символов")
+    @Size(min = 8, max = 72, message = "Пароль должен содержать от 8 до 72 символов")
     private String password;
 }

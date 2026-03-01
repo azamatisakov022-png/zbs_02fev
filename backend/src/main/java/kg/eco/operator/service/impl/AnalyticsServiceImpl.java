@@ -14,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         long totalPayers = payerRepository.count();
         long activePayers = payerRepository.countActive();
 
-        BigDecimal totalCharged = accountRepository.sumTotalPaid(); // total charged across all accounts
+        BigDecimal totalCharged = accountRepository.sumTotalCharged();
         BigDecimal totalCollected = accountRepository.sumTotalPaid();
 
         BigDecimal collectionRate = BigDecimal.ZERO;
@@ -79,8 +80,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         // In production, this would query transactions grouped by period
         List<IncomeDataResponse> result = new ArrayList<>();
         result.add(IncomeDataResponse.builder()
-                .period("2025")
-                .charged(accountRepository.sumTotalPaid())
+                .period(String.valueOf(LocalDate.now().getYear()))
+                .charged(accountRepository.sumTotalCharged())
                 .collected(accountRepository.sumTotalPaid())
                 .refunded(BigDecimal.ZERO)
                 .build());
@@ -100,7 +101,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                             : BigDecimal.ZERO;
 
                     // Get norm for current year
-                    var norm = recyclingNormRepository.findByCategory_IdAndYear(cat.getId(), 2025);
+                    var norm = recyclingNormRepository.findByCategory_IdAndYear(cat.getId(), LocalDate.now().getYear());
                     BigDecimal normPercent = norm.map(kg.eco.operator.entity.RecyclingNorm::getNormPercent)
                             .orElse(BigDecimal.ZERO);
 

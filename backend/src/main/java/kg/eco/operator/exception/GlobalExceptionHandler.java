@@ -1,7 +1,9 @@
 package kg.eco.operator.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import kg.eco.operator.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
@@ -91,6 +94,37 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.badRequest()
                 .body(ErrorResponse.of("BAD_REQUEST", "Некорректный параметр: " + ex.getName()));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        List<ErrorResponse.FieldError> details = ex.getConstraintViolations().stream()
+                .map(cv -> ErrorResponse.FieldError.builder()
+                        .field(cv.getPropertyPath().toString())
+                        .message(cv.getMessage())
+                        .build())
+                .toList();
+
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.builder()
+                        .error("VALIDATION_ERROR")
+                        .message("Ошибка валидации данных")
+                        .details(details)
+                        .build());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("CONFLICT", "Нарушение целостности данных. Возможно, запись уже существует."));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+        log.warn("File upload too large: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ErrorResponse.of("FILE_TOO_LARGE", "Размер файла превышает допустимый лимит"));
     }
 
     @ExceptionHandler(Exception.class)

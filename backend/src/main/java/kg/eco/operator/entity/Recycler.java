@@ -3,7 +3,9 @@ package kg.eco.operator.entity;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.InspectionStatus;
 import kg.eco.operator.entity.enums.RecyclerStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +13,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"capacities"})
 @Entity
 @Table(name = "recyclers")
 public class Recycler {
@@ -137,5 +141,18 @@ public class Recycler {
     @PreUpdate
     protected void onUpdate() {
         lastUpdated = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Recycler that = (Recycler) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

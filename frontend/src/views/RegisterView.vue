@@ -12,15 +12,24 @@ const { t } = useI18n()
 const registrationMode = ref<'choose' | 'esi' | 'manual'>('choose')
 const isEsiLoading = ref(false)
 
-// ESI mock data
-const esiData = {
-  inn: '02301200510234',
-  shortName: 'ОсОО "ЭкоИмпорт Бишкек"',
-  directorFullName: 'Асанов Бакыт Жумабекович',
-  legalAddress: 'г. Бишкек, ул. Московская, 187',
-  phone: '+996 312 90-12-34',
-  email: 'info@ecoimport.kg',
-}
+// ESI data — mock in dev, will be populated from ESI API in production
+const esiData = import.meta.env.DEV
+  ? {
+      inn: '02301200510234',
+      shortName: 'ОсОО "ЭкоИмпорт Бишкек"',
+      directorFullName: 'Асанов Бакыт Жумабекович',
+      legalAddress: 'г. Бишкек, ул. Московская, 187',
+      phone: '+996 312 90-12-34',
+      email: 'info@ecoimport.kg',
+    }
+  : {
+      inn: '',
+      shortName: '',
+      directorFullName: '',
+      legalAddress: '',
+      phone: '',
+      email: '',
+    }
 
 // ESI simplified form
 const esiForm = reactive({
@@ -67,6 +76,7 @@ const esiFormErrors = reactive<Record<string, string>>({})
 
 const handleEsiLogin = async () => {
   isEsiLoading.value = true
+  // TODO: Заменить на реальный ESI callback когда будет готов API
   await new Promise(resolve => setTimeout(resolve, 2000))
   isEsiLoading.value = false
   registrationMode.value = 'esi'
@@ -118,10 +128,12 @@ const submitEsiRegistration = async () => {
   if (!validateEsiForm()) return
 
   isEsiSubmitting.value = true
+  // TODO: Заменить на реальный API вызов регистрации через ESI
   await new Promise(resolve => setTimeout(resolve, 2000))
 
+  // Номер регистрации должен генерироваться бэкендом
   const num = String(Math.floor(Math.random() * 9000) + 1000)
-  esiRegistrationNumber.value = `РЕГ-2026-${num}`
+  esiRegistrationNumber.value = `РЕГ-${new Date().getFullYear()}-${num}`
 
   isEsiSubmitting.value = false
   isEsiSuccess.value = true
@@ -463,9 +475,11 @@ const submitRegistration = async () => {
     return
   }
   isSubmitting.value = true
+  // TODO: Заменить на реальный API вызов регистрации
   await new Promise(resolve => setTimeout(resolve, 2000))
+  // Номер регистрации должен генерироваться бэкендом
   const num = String(Math.floor(Math.random() * 9000) + 1000)
-  registrationNumber.value = `РЕГ-2026-${num}`
+  registrationNumber.value = `РЕГ-${new Date().getFullYear()}-${num}`
   isSubmitting.value = false
   isSuccess.value = true
 }

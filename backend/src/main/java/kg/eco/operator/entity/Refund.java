@@ -2,14 +2,18 @@ package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.RefundStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"items"})
 @Entity
 @Table(name = "refunds")
 public class Refund {
@@ -28,7 +32,7 @@ public class Refund {
     @OneToMany(mappedBy = "refund", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RefundItem> items = new ArrayList<>();
 
-    @Column(name = "total_amount", precision = 15, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
@@ -54,5 +58,18 @@ public class Refund {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Refund that = (Refund) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

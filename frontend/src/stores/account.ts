@@ -3,6 +3,7 @@ import api, { silentApi } from '../api/client'
 import { authStore } from './auth'
 import { CorrectionStatus, AccountStatus, type CorrectionStatusType, type AccountStatusType } from '../constants/statuses'
 import i18n from '../i18n'
+import { silentCatch } from '../utils/logError'
 
 export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund' | 'penalty' | 'penalty_payment'
 
@@ -147,7 +148,7 @@ function addCharge(calcId: number, calcNumber: string, amount: number): void {
   if (!acc) return
   acc.balance -= amount
   acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'charge', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.chargeDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/charge`, { calculationId: calcId, amount }).catch(() => {})
+  silentApi.post(`/accounts/${acc.id}/charge`, { calculationId: calcId, amount }).catch(silentCatch('account.charge'))
 }
 
 function addPayment(calcId: number, calcNumber: string, amount: number): void {
@@ -155,7 +156,7 @@ function addPayment(calcId: number, calcNumber: string, amount: number): void {
   if (!acc) return
   acc.balance += amount
   acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.paymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/payment`, { calculationId: calcId, amount }).catch(() => {})
+  silentApi.post(`/accounts/${acc.id}/payment`, { calculationId: calcId, amount }).catch(silentCatch('account.payment'))
 }
 
 function addCorrection(calcId: number, calcNumber: string, correctionAmount: number, description: string): void {
@@ -177,7 +178,7 @@ function addPenalty(calcId: number, calcNumber: string, amount: number, overdueD
   if (!acc) return
   acc.balance -= amount
   acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/penalty`, { calculationId: calcId, amount, overdueDays }).catch(() => {})
+  silentApi.post(`/accounts/${acc.id}/penalty`, { calculationId: calcId, amount, overdueDays }).catch(silentCatch('account.penalty'))
 }
 
 function addPenaltyPayment(calcId: number, calcNumber: string, amount: number): void {
@@ -185,7 +186,7 @@ function addPenaltyPayment(calcId: number, calcNumber: string, amount: number): 
   if (!acc) return
   acc.balance += amount
   acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty_payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyPaymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/penalty-payment`, { calculationId: calcId, amount }).catch(() => {})
+  silentApi.post(`/accounts/${acc.id}/penalty-payment`, { calculationId: calcId, amount }).catch(silentCatch('account.penaltyPayment'))
 }
 
 function requestRefund(calcId: number, calcNumber: string, amount: number): void {
@@ -207,7 +208,7 @@ function submitCorrection(data: {
 }): CorrectionRequest {
   const correction: CorrectionRequest = { id: nextCorrId++, date: new Date().toLocaleDateString(), ...data, status: CorrectionStatus.UNDER_REVIEW }
   state.corrections.unshift(correction)
-  silentApi.post(`/accounts/${_getMyAccount()?.id}/corrections`, data).catch(() => {})
+  silentApi.post(`/accounts/${_getMyAccount()?.id}/corrections`, data).catch(silentCatch('account.submitCorrection'))
   return correction
 }
 
@@ -217,7 +218,7 @@ function approveCorrection(id: number): void {
     corr.status = CorrectionStatus.APPROVED
     addCorrection(corr.calculationId, corr.calculationNumber, corr.totalCorrectionAmount, `Корректировка по расчёту ${corr.calculationNumber}`)
   }
-  silentApi.post(`/accounts/corrections/${id}/approve`).catch(() => {})
+  silentApi.post(`/accounts/corrections/${id}/approve`).catch(silentCatch('account.approveCorrection'))
 }
 
 function rejectCorrection(id: number): void {
@@ -225,7 +226,7 @@ function rejectCorrection(id: number): void {
   if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
     corr.status = CorrectionStatus.REJECTED
   }
-  silentApi.post(`/accounts/corrections/${id}/reject`).catch(() => {})
+  silentApi.post(`/accounts/corrections/${id}/reject`).catch(silentCatch('account.rejectCorrection'))
 }
 
 function getPendingCorrectionsCount(): number {

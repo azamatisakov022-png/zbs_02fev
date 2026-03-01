@@ -1,14 +1,18 @@
 package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"transactions"})
 @Entity
 @Table(name = "accounts")
 public class Account {
@@ -21,16 +25,16 @@ public class Account {
     @JoinColumn(name = "company_id", nullable = false, unique = true)
     private Company company;
 
-    @Column(precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal balance;
 
-    @Column(name = "total_charged", precision = 15, scale = 2)
+    @Column(name = "total_charged", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalCharged;
 
-    @Column(name = "total_paid", precision = 15, scale = 2)
+    @Column(name = "total_paid", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalPaid;
 
-    @Column(name = "total_offset", precision = 15, scale = 2)
+    @Column(name = "total_offset", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalOffset;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -55,5 +59,18 @@ public class Account {
     @PreUpdate
     protected void onUpdate() {
         lastUpdated = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account that = (Account) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -38,7 +38,17 @@ export const validators = {
 
   email: (value: string): string | null => {
     if (!value) return null
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return t('validation.email')
+    if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(value))
+      return t('validation.email')
+    return null
+  },
+
+  password: (value: string): string | null => {
+    if (!value) return null
+    if (value.length < 8) return t('validation.passwordMinLength', { min: 8 })
+    if (value.length > 72) return t('validation.passwordMaxLength', { max: 72 })
+    if (!/[A-Za-zА-Яа-яЁё]/.test(value) || !/\d/.test(value))
+      return t('validation.passwordComplexity')
     return null
   },
 

@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import i18n from '../i18n'
+import { silentCatch } from '../utils/logError'
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ function addComment(payerId: number, author: string, text: string): void {
       text,
     })
   }
-  silentApi.post(`/payers/${payerId}/comments`, { author, text }).catch(() => {})
+  silentApi.post(`/payers/${payerId}/comments`, { author, text }).catch(silentCatch('payers.addComment'))
 }
 
 let nextDocId = 1
@@ -228,7 +229,7 @@ function addDocument(payerId: number, name: string, type: string, size: string):
       uploadedAt: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     })
   }
-  silentApi.post(`/payers/${payerId}/documents`, { name, type, size }).catch(() => {})
+  silentApi.post(`/payers/${payerId}/documents`, { name, type, size }).catch(silentCatch('payers.addDocument'))
 }
 
 export function formatMoney(value: number): string {

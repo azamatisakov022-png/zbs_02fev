@@ -2,11 +2,13 @@ package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.CollectionPointStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "collection_points")
 public class CollectionPoint {
@@ -58,5 +60,18 @@ public class CollectionPoint {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CollectionPoint that = (CollectionPoint) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

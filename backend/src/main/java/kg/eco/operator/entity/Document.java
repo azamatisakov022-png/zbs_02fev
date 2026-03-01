@@ -2,11 +2,13 @@ package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.DocumentType;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "documents")
 public class Document {
@@ -39,5 +41,18 @@ public class Document {
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Document that = (Document) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

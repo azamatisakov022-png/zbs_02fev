@@ -3,6 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAdminMenu } from '../../composables/useRoleMenu'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { UTILIZATION_RATES_2025 } from '../../data/rates'
 
 const { t } = useI18n()
@@ -441,7 +442,7 @@ const cardIconBg: Record<string, string> = {
                 'w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
                 activeReference === refType.id ? 'bg-[#0e888d] text-white' : cardIconBg[refType.id]
               ]"
-              v-html="refType.icon"
+              v-html="sanitizeHtml(refType.icon)"
             />
 
             <!-- Content -->
@@ -496,7 +497,7 @@ const cardIconBg: Record<string, string> = {
               <div class="flex items-center gap-3">
                 <div
                   :class="['w-10 h-10 rounded-lg flex items-center justify-center', cardIconBg[activeReference]]"
-                  v-html="activeRefType.icon"
+                  v-html="sanitizeHtml(activeRefType.icon)"
                 />
                 <div>
                   <h2 class="text-lg font-bold text-[#415861]">{{ activeRefType.title }}</h2>

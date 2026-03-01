@@ -10,6 +10,7 @@ import {
 } from '../data/product-groups'
 import { getNormativeForGroup, normativeTiers, getNormativeTier } from '../data/recycling-norms'
 import { toastStore } from '../stores/toast'
+import { sanitizeHtml } from '../utils/sanitize'
 import ProductGroupSelector from '../components/ProductGroupSelector.vue'
 import PenaltyCalculator from '../components/penalty/PenaltyCalculator.vue'
 import { calculatePenalty } from '../utils/penalty'
@@ -377,7 +378,7 @@ async function downloadPdf() {
                 <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
+                <p class="text-xs text-[#92400e]" v-html="sanitizeHtml($t('calculatorPage.disclaimer'))"></p>
               </div>
             </div>
           </div>
@@ -694,19 +695,19 @@ async function downloadPdf() {
               <ul class="space-y-3 text-sm text-[#64748b]">
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem1')"></span>
+                  <span v-html="sanitizeHtml($t('calculatorPage.aboutItem1'))"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem2')"></span>
+                  <span v-html="sanitizeHtml($t('calculatorPage.aboutItem2'))"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem3')"></span>
+                  <span v-html="sanitizeHtml($t('calculatorPage.aboutItem3'))"></span>
                 </li>
                 <li class="flex items-start gap-2">
                   <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem4')"></span>
+                  <span v-html="sanitizeHtml($t('calculatorPage.aboutItem4'))"></span>
                 </li>
               </ul>
 
@@ -759,7 +760,7 @@ async function downloadPdf() {
                 <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
+                <p class="text-xs text-[#92400e]" v-html="sanitizeHtml($t('calculatorPage.disclaimer'))"></p>
               </div>
             </div>
           </div>

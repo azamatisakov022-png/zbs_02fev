@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { RefundStatus, type RefundStatusType } from '../constants/statuses'
+import { silentCatch } from '../utils/logError'
 
 export type { RefundStatusType }
 
@@ -79,7 +80,7 @@ function createRefund(data: {
     documents: data.documents,
   }
   state.refunds.unshift(refund)
-  silentApi.post('/refunds', data).catch(() => {})
+  silentApi.post('/refunds', data).catch(silentCatch('refunds.create'))
   return refund
 }
 
@@ -88,7 +89,7 @@ function approveRefund(id: number) {
   if (refund && (refund.status === RefundStatus.UNDER_REVIEW || refund.status === RefundStatus.NEW)) {
     refund.status = RefundStatus.APPROVED
   }
-  silentApi.post(`/refunds/${id}/approve`).catch(() => {})
+  silentApi.post(`/refunds/${id}/approve`).catch(silentCatch('refunds.approve'))
 }
 
 function rejectRefund(id: number, reason: string) {
@@ -97,7 +98,7 @@ function rejectRefund(id: number, reason: string) {
     refund.status = RefundStatus.REJECTED
     refund.rejectionReason = reason
   }
-  silentApi.post(`/refunds/${id}/reject`, { reason }).catch(() => {})
+  silentApi.post(`/refunds/${id}/reject`, { reason }).catch(silentCatch('refunds.reject'))
 }
 
 function getPendingRefundsCount(): number {

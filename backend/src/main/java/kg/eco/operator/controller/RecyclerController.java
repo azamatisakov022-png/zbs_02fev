@@ -85,6 +85,7 @@ public class RecyclerController {
      * GET /recyclers/active — Только активные переработчики
      */
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<List<RecyclerResponse>> getActive() {
         return ResponseEntity.ok(recyclerService.getActive());
     }
@@ -93,6 +94,7 @@ public class RecyclerController {
      * GET /recyclers/by-group/{wasteGroup} — Переработчики по группе отходов
      */
     @GetMapping("/by-group/{wasteGroup}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<List<RecyclerResponse>> getByGroup(@PathVariable String wasteGroup) {
         return ResponseEntity.ok(recyclerService.getByGroup(wasteGroup));
     }

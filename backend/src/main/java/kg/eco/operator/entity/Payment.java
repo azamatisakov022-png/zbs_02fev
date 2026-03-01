@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.PaymentConfirmationStatus;
 import kg.eco.operator.entity.enums.PaymentMethod;
 import kg.eco.operator.entity.enums.PaymentType;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "payments")
 public class Payment {
@@ -62,5 +64,18 @@ public class Payment {
         createdAt = LocalDateTime.now();
         if (status == null) status = PaymentConfirmationStatus.PENDING;
         if (paymentType == null) paymentType = PaymentType.FEE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Payment that = (Payment) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -186,7 +187,7 @@ const alertConfig = {
         <div class="flex items-center gap-4">
           <div
             :class="['w-12 h-12 rounded-xl flex items-center justify-center text-white flex-shrink-0 transition-transform group-hover:scale-110', action.bgColor]"
-            v-html="action.icon"
+            v-html="sanitizeHtml(action.icon)"
           ></div>
           <span class="font-semibold text-[#1e293b] group-hover:text-[#0e888d] transition-colors">{{ action.label }}</span>
         </div>

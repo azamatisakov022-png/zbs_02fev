@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { DeclStatus, type DeclStatusType } from '../constants/statuses'
 import i18n from '../i18n'
+import { silentCatch } from '../utils/logError'
 
 export type DeclarationStatus = DeclStatusType
 
@@ -119,7 +120,7 @@ function approveDeclaration(id: number, comment?: string) {
     user: 'Асанов Б.Т.',
     comment: comment || undefined,
   })
-  silentApi.post(`/declarations/${id}/approve`, { comment }).catch(() => {})
+  silentApi.post(`/declarations/${id}/approve`, { comment }).catch(silentCatch('declarations.approve'))
 }
 
 function rejectDeclaration(id: number, reason: string) {
@@ -137,7 +138,7 @@ function rejectDeclaration(id: number, reason: string) {
     user: 'Асанов Б.Т.',
     comment: reason,
   })
-  silentApi.post(`/declarations/${id}/reject`, { reason }).catch(() => {})
+  silentApi.post(`/declarations/${id}/reject`, { reason }).catch(silentCatch('declarations.reject'))
 }
 
 function returnForRevision(id: number, comment: string) {
@@ -155,7 +156,7 @@ function returnForRevision(id: number, comment: string) {
     user: 'Асанов Б.Т.',
     comment,
   })
-  silentApi.post(`/declarations/${id}/return`, { comment }).catch(() => {})
+  silentApi.post(`/declarations/${id}/return`, { comment }).catch(silentCatch('declarations.returnForRevision'))
 }
 
 function resubmitDeclaration(id: number) {
@@ -172,7 +173,7 @@ function resubmitDeclaration(id: number) {
     date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
-  silentApi.post(`/declarations/${id}/resubmit`).catch(() => {})
+  silentApi.post(`/declarations/${id}/resubmit`).catch(silentCatch('declarations.resubmit'))
 }
 
 let nextId = 1
@@ -212,7 +213,7 @@ function addDeclaration(data: {
     }],
   }
   state.declarations.unshift(decl)
-  silentApi.post('/declarations', data).catch(() => {})
+  silentApi.post('/declarations', data).catch(silentCatch('declarations.create'))
   return decl
 }
 
@@ -228,7 +229,7 @@ function submitDraft(id: number) {
     date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
     user: decl.submittedBy,
   })
-  silentApi.post(`/declarations/${id}/submit`).catch(() => {})
+  silentApi.post(`/declarations/${id}/submit`).catch(silentCatch('declarations.submit'))
 }
 
 function getPendingCount() {

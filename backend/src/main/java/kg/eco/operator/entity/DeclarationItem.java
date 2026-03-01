@@ -2,11 +2,13 @@ package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.CalculationStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "declaration_items")
 public class DeclarationItem {
@@ -35,4 +37,17 @@ public class DeclarationItem {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private CalculationStatus status;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeclarationItem that = (DeclarationItem) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

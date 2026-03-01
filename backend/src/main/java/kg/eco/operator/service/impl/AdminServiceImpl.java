@@ -92,12 +92,15 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void updateRates(List<Map<String, Object>> rates) {
+        // Preload all categories once to avoid N+1 queries
+        var allCategories = categoryRepository.findAll();
+
         for (Map<String, Object> rateData : rates) {
             String productGroup = (String) rateData.get("productGroup");
             Number rateValue = (Number) rateData.get("rate");
 
             if (productGroup != null && rateValue != null) {
-                var categories = categoryRepository.findAll().stream()
+                var categories = allCategories.stream()
                         .filter(c -> c.getName().equals(productGroup))
                         .toList();
 

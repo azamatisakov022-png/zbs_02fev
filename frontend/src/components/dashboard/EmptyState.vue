@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { sanitizeHtml } from '../../utils/sanitize'
+
 defineProps<{
   icon?: string
   title: string
@@ -16,7 +18,7 @@ const emit = defineEmits<{
     <div
       v-if="icon"
       class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#94a3b8]"
-      v-html="icon"
+      v-html="sanitizeHtml(icon)"
     ></div>
     <h3 class="text-lg font-semibold text-[#64748b] mb-2 text-center">{{ title }}</h3>
     <p v-if="description" class="text-sm text-[#94a3b8] text-center max-w-sm mb-5">{{ description }}</p>

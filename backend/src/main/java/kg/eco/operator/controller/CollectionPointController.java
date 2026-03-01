@@ -95,6 +95,7 @@ public class CollectionPointController {
      * GET /collection-points/active — Активные пункты
      */
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'MINISTRY')")
     public ResponseEntity<List<CollectionPointResponse>> getActive() {
         return ResponseEntity.ok(collectionPointService.getActive());
     }

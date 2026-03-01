@@ -6,6 +6,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
 import PieChart from '../../components/charts/PieChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
+import { sanitizeHtml } from '../../utils/sanitize'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
@@ -169,7 +170,7 @@ onMounted(() => {
               <div
                 class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
                 :style="{ backgroundColor: action.color }"
-                v-html="action.icon"
+                v-html="sanitizeHtml(action.icon)"
               ></div>
               <div class="min-w-0">
                 <span class="font-medium text-[#1e293b] block group-hover:text-[#0e888d] transition-colors">{{ action.label }}</span>

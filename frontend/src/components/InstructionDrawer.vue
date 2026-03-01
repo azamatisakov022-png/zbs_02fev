@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { sanitizeHtml } from '../utils/sanitize'
 
 const { t } = useI18n()
 
@@ -57,7 +58,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Body -->
-          <div class="drawer-body" v-html="contentHtml"></div>
+          <div class="drawer-body" v-html="sanitizeHtml(contentHtml)"></div>
 
           <!-- Footer -->
           <div class="drawer-footer">

@@ -81,7 +81,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void addCharge(Long companyId, ChargeRequest request) {
-        Account account = findAccountByCompanyId(companyId);
+        Account account = findAccountByCompanyIdForUpdate(companyId);
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
@@ -108,7 +108,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void addPayment(Long companyId, AccountPaymentRequest request) {
-        Account account = findAccountByCompanyId(companyId);
+        Account account = findAccountByCompanyIdForUpdate(companyId);
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
@@ -133,7 +133,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void addOffset(Long companyId, OffsetRequest request) {
-        Account account = findAccountByCompanyId(companyId);
+        Account account = findAccountByCompanyIdForUpdate(companyId);
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
@@ -157,7 +157,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void requestRefund(Long companyId, AccountRefundRequest request) {
-        Account account = findAccountByCompanyId(companyId);
+        Account account = findAccountByCompanyIdForUpdate(companyId);
 
         if (account.getBalance().compareTo(request.getAmount()) < 0) {
             throw new BusinessLogicException("Недостаточно средств для возврата");
@@ -183,7 +183,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void addCorrection(Long companyId, CorrectionCreateRequest request) {
-        Account account = findAccountByCompanyId(companyId);
+        Account account = findAccountByCompanyIdForUpdate(companyId);
 
         if (request.getItems() != null) {
             for (CorrectionCreateRequest.CorrectionItemRequest item : request.getItems()) {
@@ -282,6 +282,12 @@ public class AccountServiceImpl implements AccountService {
 
     private Account findAccountByCompanyId(Long companyId) {
         return accountRepository.findByCompany_Id(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Лицевой счёт для компании " + companyId + " не найден"));
+    }
+
+    private Account findAccountByCompanyIdForUpdate(Long companyId) {
+        return accountRepository.findByCompanyIdForUpdate(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Лицевой счёт для компании " + companyId + " не найден"));
     }

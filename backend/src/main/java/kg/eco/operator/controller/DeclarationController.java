@@ -1,5 +1,7 @@
 package kg.eco.operator.controller;
 
+import jakarta.validation.Valid;
+import kg.eco.operator.dto.request.DeclarationCreateRequest;
 import kg.eco.operator.dto.request.ReviewRequest;
 import kg.eco.operator.dto.response.CountResponse;
 import kg.eco.operator.dto.response.DeclarationResponse;
@@ -13,7 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/declarations")
@@ -39,12 +40,12 @@ public class DeclarationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<DeclarationResponse> create(
             Authentication auth,
-            @RequestBody Map<String, Object> body) {
-        Integer year = body.get("year") != null ? Integer.parseInt(body.get("year").toString()) : null;
+            @RequestBody DeclarationCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(declarationService.create(auth.getName(), year));
+                .body(declarationService.create(auth.getName(), request.getYear()));
     }
 
     @GetMapping("/{id}")
@@ -53,11 +54,13 @@ public class DeclarationController {
     }
 
     @PostMapping("/{id}/submit-draft")
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<DeclarationResponse> submitDraft(@PathVariable Long id) {
         return ResponseEntity.ok(declarationService.submitDraft(id));
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<DeclarationResponse> submit(@PathVariable Long id) {
         return ResponseEntity.ok(declarationService.submit(id));
     }
@@ -87,16 +90,19 @@ public class DeclarationController {
     }
 
     @PostMapping("/{id}/resubmit")
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<DeclarationResponse> resubmit(@PathVariable Long id) {
         return ResponseEntity.ok(declarationService.resubmit(id));
     }
 
     @GetMapping("/pending-count")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<CountResponse> getPendingCount() {
         return ResponseEntity.ok(new CountResponse(declarationService.getPendingCount()));
     }
 
     @GetMapping("/by-company/{companyId}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<List<DeclarationResponse>> getByCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(declarationService.getByCompany(companyId));
     }

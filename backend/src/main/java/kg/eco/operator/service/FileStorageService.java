@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.PostConstruct;
 import java.io.InputStream;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +23,10 @@ public class FileStorageService {
 
     @Value("${minio.bucket}")
     private String bucket;
+
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".jpg", ".jpeg", ".png", ".gif", ".zip");
+    private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
     @PostConstruct
     public void init() {
@@ -43,11 +48,21 @@ public class FileStorageService {
      */
     public String upload(MultipartFile file, String folder) {
         try {
+            if (file.getSize() > MAX_FILE_SIZE) {
+                throw new IllegalArgumentException("Размер файла превышает допустимый лимит: " + MAX_FILE_SIZE / (1024 * 1024) + " МБ");
+            }
+
             String originalFilename = file.getOriginalFilename();
             String extension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                extension = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
             }
+
+            if (!ALLOWED_EXTENSIONS.contains(extension)) {
+                throw new IllegalArgumentException("Недопустимый тип файла: " + extension
+                        + ". Разрешены: " + ALLOWED_EXTENSIONS);
+            }
+
             String objectKey = folder + "/" + UUID.randomUUID() + extension;
 
             minioClient.putObject(

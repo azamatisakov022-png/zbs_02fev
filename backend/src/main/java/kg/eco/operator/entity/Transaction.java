@@ -3,12 +3,14 @@ package kg.eco.operator.entity;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.ReferenceType;
 import kg.eco.operator.entity.enums.TransactionType;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "transactions")
 public class Transaction {
@@ -30,13 +32,13 @@ public class Transaction {
 
     private String description;
 
-    @Column(precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal debit;
 
-    @Column(precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal credit;
 
-    @Column(precision = 15, scale = 2)
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal balance;
 
     @Column(name = "reference_id")
@@ -45,4 +47,17 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     @Column(name = "reference_type", length = 20)
     private ReferenceType referenceType;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Transaction that = (Transaction) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

@@ -6,6 +6,7 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { UserStatus } from '../../constants/statuses'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { sanitizeHtml } from '../../utils/sanitize'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
 const { t } = useI18n()
@@ -826,7 +827,7 @@ const copyLegalToActual = () => {
               </svg>
             </div>
             <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('employeeOrgs.deleteTitle') }}</h3>
-            <p class="text-gray-500 mb-6" v-html="$t('employeeOrgs.deleteMessage', { name: selectedOrg.shortName })"></p>
+            <p class="text-gray-500 mb-6" v-html="sanitizeHtml($t('employeeOrgs.deleteMessage', { name: selectedOrg.shortName }))"></p>
             <div class="flex gap-3">
               <AppButton variant="danger" fullWidth @click="deleteOrganization">
                 {{ $t('common.delete') }}

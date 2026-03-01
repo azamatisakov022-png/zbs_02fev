@@ -2,13 +2,18 @@ package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.DeclarationStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"items"})
 @Entity
 @Table(name = "declarations")
 public class Declaration {
@@ -35,16 +40,16 @@ public class Declaration {
     private DeclarationStatus status;
 
     @Column(name = "total_charged", precision = 15, scale = 2)
-    private java.math.BigDecimal totalCharged;
+    private BigDecimal totalCharged;
 
     @Column(name = "total_paid", precision = 15, scale = 2)
-    private java.math.BigDecimal totalPaid;
+    private BigDecimal totalPaid;
 
     @Column(name = "total_offset", precision = 15, scale = 2)
-    private java.math.BigDecimal totalOffset;
+    private BigDecimal totalOffset;
 
     @Column(precision = 15, scale = 2)
-    private java.math.BigDecimal balance;
+    private BigDecimal balance;
 
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
@@ -65,5 +70,18 @@ public class Declaration {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Declaration that = (Declaration) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
