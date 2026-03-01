@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, computed, onMounted, onUnmounted } from 'vue'
+import { watch, computed, onMounted, onUnmounted, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 interface Props {
@@ -32,9 +32,29 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
+const modalRef = ref<HTMLElement | null>(null)
+let previouslyFocused: HTMLElement | null = null
+
 const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape' && props.visible) {
     emit('cancel')
+  }
+}
+
+const trapFocus = (e: KeyboardEvent) => {
+  if (e.key !== 'Tab' || !modalRef.value) return
+  const focusableEls = modalRef.value.querySelectorAll<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+  if (focusableEls.length === 0) return
+  const first = focusableEls[0]
+  const last = focusableEls[focusableEls.length - 1]
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault()
+    first.focus()
   }
 }
 
@@ -45,8 +65,17 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
-watch(() => props.visible, (val) => {
+watch(() => props.visible, async (val) => {
   document.body.style.overflow = val ? 'hidden' : ''
+  if (val) {
+    previouslyFocused = document.activeElement as HTMLElement
+    await nextTick()
+    const firstBtn = modalRef.value?.querySelector('button') as HTMLElement
+    firstBtn?.focus()
+  } else if (previouslyFocused) {
+    previouslyFocused.focus()
+    previouslyFocused = null
+  }
 })
 </script>
 
@@ -55,7 +84,15 @@ watch(() => props.visible, (val) => {
     <Transition name="cd-fade">
       <div v-if="visible" class="cd-overlay" @click.self="emit('cancel')">
         <Transition name="cd-scale" appear>
-          <div class="cd-modal">
+          <div
+            ref="modalRef"
+            class="cd-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="cd-dialog-title"
+            :aria-describedby="message ? 'cd-dialog-message' : undefined"
+            @keydown="trapFocus"
+          >
             <!-- Icon -->
             <div
               :class="[
@@ -94,10 +131,10 @@ watch(() => props.visible, (val) => {
             </div>
 
             <!-- Title -->
-            <h3 class="cd-title">{{ displayTitle }}</h3>
+            <h3 id="cd-dialog-title" class="cd-title">{{ displayTitle }}</h3>
 
             <!-- Message -->
-            <p v-if="message" class="cd-message">{{ message }}</p>
+            <p v-if="message" id="cd-dialog-message" class="cd-message">{{ message }}</p>
 
             <!-- Buttons -->
             <div class="cd-buttons">

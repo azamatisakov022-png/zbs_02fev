@@ -38,6 +38,8 @@ const handlePasswordLogin = async () => {
   }
 }
 
+const isDev = import.meta.env.DEV
+
 const goBack = () => {
   router.push('/login')
 }
@@ -105,29 +107,35 @@ const goBack = () => {
             <h3 class="text-[#415861] font-semibold text-center mb-2">{{ $t('login.loginByInn') }}</h3>
 
             <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('login.innOrganization') }}</label>
+              <label for="login-inn" class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('login.innOrganization') }}</label>
               <input
+                id="login-inn"
                 v-model="loginForm.inn"
                 type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
                 maxlength="14"
                 placeholder="12345678901234"
+                autocomplete="username"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 font-mono"
                 @keyup.enter="handlePasswordLogin"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('login.password') }}</label>
+              <label for="login-password" class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('login.password') }}</label>
               <input
+                id="login-password"
                 v-model="loginForm.password"
                 type="password"
+                autocomplete="current-password"
                 :placeholder="$t('login.enterPassword')"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
                 @keyup.enter="handlePasswordLogin"
               />
             </div>
 
-            <p v-if="loginError" class="text-sm text-red-600">{{ loginError }}</p>
+            <p v-if="loginError" class="text-sm text-red-600" role="alert" aria-live="assertive">{{ loginError }}</p>
 
             <button
               @click="handlePasswordLogin"
@@ -138,8 +146,8 @@ const goBack = () => {
             </button>
           </div>
 
-          <!-- Demo accounts hint -->
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <!-- Demo accounts hint (dev only) -->
+          <div v-if="isDev" class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
             <p class="text-sm font-semibold text-amber-800">{{ $t('login.demoTitle') }}</p>
             <div class="grid grid-cols-1 gap-1 text-xs text-amber-700 font-mono">
               <button type="button" @click="loginForm.inn = '00000000000001'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">
