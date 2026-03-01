@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "intercept",
+            "command": "bash -c 'if echo \"$TOOL_INPUT\" | grep -qE \"\\.env\"; then echo \"BLOCK: Нельзя редактировать .env файлы — содержат секреты\"; else echo \"PROCEED\"; fi'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$TOOL_INPUT\" | grep -qE \"frontend/src/.*\\.ts|frontend/src/.*\\.vue\"; then cd frontend && npx vue-tsc --noEmit 2>&1 | tail -20; fi'"
+          }
+        ]
+      }
+    ]
+  }
+}
