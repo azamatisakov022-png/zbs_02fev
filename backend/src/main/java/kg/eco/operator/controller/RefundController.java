@@ -50,6 +50,7 @@ public class RefundController {
      * GET /refunds/{id} — Заявка по ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<RefundResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(refundService.getById(id));
     }
@@ -70,7 +71,7 @@ public class RefundController {
     @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<RefundResponse> reject(
             @PathVariable Long id,
-            @RequestBody(required = false) RefundRejectRequest request) {
+            @Valid @RequestBody(required = false) RefundRejectRequest request) {
 
         return ResponseEntity.ok(refundService.reject(id, request));
     }

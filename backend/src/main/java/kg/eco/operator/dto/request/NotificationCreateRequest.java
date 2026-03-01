@@ -13,9 +13,9 @@ public class NotificationCreateRequest {
     @NotBlank
     private String message;
 
-    @NotNull
+    @NotBlank(message = "Тип уведомления обязателен")
     private String type;
 
-    @NotNull
+    @NotBlank(message = "Роль обязательна")
     private String role;
 }

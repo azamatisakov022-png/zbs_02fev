@@ -69,6 +69,7 @@ public class CalculationController {
      * GET /calculations/{id} — Получить расчёт по ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<CalculationResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(calculationService.getById(id));
     }
@@ -251,6 +252,7 @@ public class CalculationController {
      * GET /calculations/by-company/{companyId} — Расчёты компании
      */
     @GetMapping("/by-company/{companyId}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<List<CalculationResponse>> getByCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(calculationService.getByCompany(companyId));
     }
@@ -259,6 +261,7 @@ public class CalculationController {
      * GET /calculations/{id}/penalty — Расчёт пени (ст.37 Кодекса КР)
      */
     @GetMapping("/{id}/penalty")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<PenaltyResponse> getPenalty(@PathVariable Long id) {
         return ResponseEntity.ok(calculationService.calculatePenalty(id));
     }
@@ -267,6 +270,7 @@ public class CalculationController {
      * GET /calculations/{id}/history — История статусов расчёта
      */
     @GetMapping("/{id}/history")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<List<AuditEntryResponse>> getHistory(@PathVariable Long id) {
         return ResponseEntity.ok(calculationService.getHistory(id));
     }

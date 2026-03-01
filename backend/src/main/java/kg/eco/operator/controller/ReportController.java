@@ -1,5 +1,6 @@
 package kg.eco.operator.controller;
 
+import jakarta.validation.Valid;
 import kg.eco.operator.dto.request.ReportCreateRequest;
 import kg.eco.operator.dto.request.ReviewRequest;
 import kg.eco.operator.dto.response.CountResponse;
@@ -42,9 +43,10 @@ public class ReportController {
      * POST /reports — Создать отчёт о переработке
      */
     @PostMapping
+    @PreAuthorize("hasRole('BUSINESS')")
     public ResponseEntity<ReportResponse> create(
             Authentication auth,
-            @RequestBody ReportCreateRequest request) {
+            @Valid @RequestBody ReportCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(reportService.create(auth.getName(), request));
     }
@@ -115,6 +117,7 @@ public class ReportController {
      * GET /reports/by-company/{companyId} — Отчёты компании
      */
     @GetMapping("/by-company/{companyId}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<List<ReportResponse>> getByCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(reportService.getByCompany(companyId));
     }
@@ -123,6 +126,7 @@ public class ReportController {
      * GET /reports/pending-count — Количество отчётов на рассмотрении
      */
     @GetMapping("/pending-count")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<CountResponse> getPendingCount() {
         return ResponseEntity.ok(new CountResponse(reportService.getPendingCount()));
     }

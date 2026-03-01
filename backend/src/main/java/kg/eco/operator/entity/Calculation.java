@@ -3,7 +3,9 @@ package kg.eco.operator.entity;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.CalculationStatus;
 import kg.eco.operator.entity.enums.DocumentType;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +13,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"items"})
 @Entity
 @Table(name = "calculations")
 public class Calculation {
@@ -46,7 +50,7 @@ public class Calculation {
     @OneToMany(mappedBy = "calculation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CalculationItem> items = new ArrayList<>();
 
-    @Column(name = "total_amount", precision = 15, scale = 2)
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
@@ -93,5 +97,18 @@ public class Calculation {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Calculation that = (Calculation) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

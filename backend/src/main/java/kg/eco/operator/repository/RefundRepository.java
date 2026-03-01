@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,5 +27,5 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
 
     @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(r.number, 10) AS long)), 0) FROM Refund r " +
            "WHERE r.number LIKE CONCAT('ВОЗ-', :year, '-%')")
-    long findMaxNumberForYear(String year);
+    long findMaxNumberForYear(@Param("year") String year);
 }

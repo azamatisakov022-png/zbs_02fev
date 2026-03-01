@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -28,15 +29,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT COALESCE(SUM(t.debit), 0) FROM Transaction t " +
            "WHERE t.account.id = :accountId AND t.referenceId = :referenceId " +
            "AND t.referenceType = :referenceType AND t.type = 'CHARGE'")
-    BigDecimal sumChargedForReference(Long accountId, Long referenceId, ReferenceType referenceType);
+    BigDecimal sumChargedForReference(@Param("accountId") Long accountId, @Param("referenceId") Long referenceId, @Param("referenceType") ReferenceType referenceType);
 
     @Query("SELECT COALESCE(SUM(t.credit), 0) FROM Transaction t " +
            "WHERE t.account.id = :accountId AND t.referenceId = :referenceId " +
            "AND t.referenceType = :referenceType AND t.type = 'PAYMENT'")
-    BigDecimal sumPaidForReference(Long accountId, Long referenceId, ReferenceType referenceType);
+    BigDecimal sumPaidForReference(@Param("accountId") Long accountId, @Param("referenceId") Long referenceId, @Param("referenceType") ReferenceType referenceType);
 
     @Query("SELECT COALESCE(SUM(t.credit), 0) FROM Transaction t " +
            "WHERE t.account.id = :accountId AND t.referenceId = :referenceId " +
            "AND t.referenceType = :referenceType AND t.type = 'OFFSET'")
-    BigDecimal sumOffsetForReference(Long accountId, Long referenceId, ReferenceType referenceType);
+    BigDecimal sumOffsetForReference(@Param("accountId") Long accountId, @Param("referenceId") Long referenceId, @Param("referenceType") ReferenceType referenceType);
 }

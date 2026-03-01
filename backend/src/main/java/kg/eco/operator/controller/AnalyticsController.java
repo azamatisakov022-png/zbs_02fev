@@ -73,10 +73,14 @@ public class AnalyticsController {
             @RequestParam(required = false) String periodFrom,
             @RequestParam(required = false) String periodTo) {
 
-        byte[] reportData = analyticsService.exportReport(format, reportType, periodFrom, periodTo);
+        // Sanitize format and reportType to prevent header injection
+        String safeFormat = format.replaceAll("[^a-zA-Z0-9]", "");
+        String safeReportType = reportType.replaceAll("[^a-zA-Z0-9_]", "");
 
-        String filename = "report_" + reportType + "." + format;
-        MediaType mediaType = "xlsx".equals(format)
+        byte[] reportData = analyticsService.exportReport(safeFormat, safeReportType, periodFrom, periodTo);
+
+        String filename = "report_" + safeReportType + "." + safeFormat;
+        MediaType mediaType = "xlsx".equals(safeFormat)
                 ? MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 : MediaType.APPLICATION_PDF;
 

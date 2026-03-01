@@ -627,9 +627,8 @@ public class CalculationServiceImpl implements CalculationService {
 
     private String generateNumber() {
         String prefix = "РС-" + Year.now().getValue() + "-";
-        // Simple sequential: find max existing number
-        long count = calculationRepository.count() + 1;
-        return prefix + String.format("%06d", count);
+        int maxNum = calculationRepository.findMaxNumberByPrefix(prefix + "%");
+        return prefix + String.format("%06d", maxNum + 1);
     }
 
     private String generatePaymentNumber() {
@@ -638,9 +637,7 @@ public class CalculationServiceImpl implements CalculationService {
     }
 
     private Payment findPaymentByCalculation(Calculation calc) {
-        return paymentRepository.findAll().stream()
-                .filter(p -> p.getCalculation() != null && p.getCalculation().getId().equals(calc.getId()))
-                .findFirst()
+        return paymentRepository.findByCalculation_Id(calc.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Платёж не найден для расчёта " + calc.getNumber()));
     }
 
@@ -667,9 +664,7 @@ public class CalculationServiceImpl implements CalculationService {
         response.setDocuments(calculationMapper.toDocumentResponseList(docs));
 
         // Load payment
-        paymentRepository.findAll().stream()
-                .filter(p -> p.getCalculation() != null && p.getCalculation().getId().equals(calc.getId()))
-                .findFirst()
+        paymentRepository.findByCalculation_Id(calc.getId())
                 .ifPresent(p -> response.setPayment(calculationMapper.toPaymentResponse(p)));
 
         return response;

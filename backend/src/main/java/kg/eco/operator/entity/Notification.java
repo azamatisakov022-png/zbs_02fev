@@ -3,11 +3,13 @@ package kg.eco.operator.entity;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.NotificationType;
 import kg.eco.operator.entity.enums.RoleEnum;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "notifications")
 public class Notification {
@@ -50,5 +52,18 @@ public class Notification {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (isRead == null) isRead = false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Notification that = (Notification) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

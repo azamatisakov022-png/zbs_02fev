@@ -3,6 +3,7 @@ package kg.eco.operator.repository;
 import kg.eco.operator.entity.RecyclerCapacity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ public interface RecyclerCapacityRepository extends JpaRepository<RecyclerCapaci
 
     @Query("SELECT rc FROM RecyclerCapacity rc JOIN rc.recycler r " +
            "WHERE r.status = 'ACTIVE' AND rc.wasteGroup = :wasteGroup")
-    List<RecyclerCapacity> findByWasteGroupAndRecyclerActive(String wasteGroup);
+    List<RecyclerCapacity> findByWasteGroupAndRecyclerActive(@Param("wasteGroup") String wasteGroup);
 
     @Query("SELECT COALESCE(SUM(rc.monthlyCapacity), 0) FROM RecyclerCapacity rc JOIN rc.recycler r " +
            "WHERE r.status = 'ACTIVE'")
@@ -29,9 +30,9 @@ public interface RecyclerCapacityRepository extends JpaRepository<RecyclerCapaci
 
     @Query("SELECT COALESCE(SUM(rc.monthlyCapacity), 0) FROM RecyclerCapacity rc JOIN rc.recycler r " +
            "WHERE r.status = 'ACTIVE' AND rc.wasteGroup = :wasteGroup")
-    BigDecimal sumCapacityByGroup(String wasteGroup);
+    BigDecimal sumCapacityByGroup(@Param("wasteGroup") String wasteGroup);
 
     @Query("SELECT COALESCE(SUM(rc.currentLoad), 0) FROM RecyclerCapacity rc JOIN rc.recycler r " +
            "WHERE r.status = 'ACTIVE' AND rc.wasteGroup = :wasteGroup")
-    BigDecimal sumLoadByGroup(String wasteGroup);
+    BigDecimal sumLoadByGroup(@Param("wasteGroup") String wasteGroup);
 }

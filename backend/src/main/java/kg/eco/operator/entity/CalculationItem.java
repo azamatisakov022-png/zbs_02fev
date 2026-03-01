@@ -1,11 +1,13 @@
 package kg.eco.operator.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "calculation_items")
 public class CalculationItem {
@@ -50,4 +52,17 @@ public class CalculationItem {
 
     @Column(name = "recycling_norm", precision = 5, scale = 2)
     private BigDecimal recyclingNorm;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CalculationItem that = (CalculationItem) o;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

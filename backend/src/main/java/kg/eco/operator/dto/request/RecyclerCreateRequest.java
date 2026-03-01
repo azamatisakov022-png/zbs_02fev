@@ -1,7 +1,9 @@
 package kg.eco.operator.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -17,6 +19,7 @@ public class RecyclerCreateRequest {
     private String legalForm;
 
     @NotBlank
+    @Pattern(regexp = "\\d{14}", message = "ИНН должен содержать 14 цифр")
     private String inn;
 
     private String region;
@@ -36,6 +39,7 @@ public class RecyclerCreateRequest {
     private String ecoPassportNumber;
     private LocalDate ecoPassportDate;
 
+    @Valid
     private List<CapacityRequest> capacities;
     private List<String> technologies;
     private String equipment;

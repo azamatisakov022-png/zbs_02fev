@@ -107,12 +107,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.markAllAsReadByUserId(user.getId());
         // Also mark role-targeted notifications as read
         if (user.getRole() != null) {
-            notificationRepository.findByTargetRoleOrderByCreatedAtDesc(user.getRole()).stream()
-                    .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
-                    .forEach(n -> {
-                        n.setIsRead(true);
-                        notificationRepository.save(n);
-                    });
+            notificationRepository.markAllAsReadByRole(user.getRole());
         }
         return SuccessResponse.ok("Все прочитаны");
     }
@@ -133,9 +128,7 @@ public class NotificationServiceImpl implements NotificationService {
         long userCount = notificationRepository.countByUser_IdAndIsReadFalse(user.getId());
         long roleCount = 0;
         if (user.getRole() != null) {
-            roleCount = notificationRepository.findByTargetRoleOrderByCreatedAtDesc(user.getRole()).stream()
-                    .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
-                    .count();
+            roleCount = notificationRepository.countByTargetRoleAndIsReadFalse(user.getRole());
         }
         return new CountResponse(userCount + roleCount);
     }

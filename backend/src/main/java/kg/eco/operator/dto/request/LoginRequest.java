@@ -1,6 +1,7 @@
 package kg.eco.operator.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -9,6 +10,7 @@ public class LoginRequest {
 
     @NotBlank(message = "ИНН обязателен")
     @Size(min = 14, max = 14, message = "ИНН должен содержать 14 цифр")
+    @Pattern(regexp = "\\d{14}", message = "ИНН должен содержать только цифры")
     private String inn;
 
     @NotBlank(message = "Пароль обязателен")

@@ -3,6 +3,7 @@ package kg.eco.operator.controller;
 import kg.eco.operator.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -18,6 +19,7 @@ public class GisController {
     private final CollectionPointRepository collectionPointRepository;
 
     @GetMapping("/objects")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'MINISTRY')")
     public ResponseEntity<List<Map<String, Object>>> getGisObjects(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String region,

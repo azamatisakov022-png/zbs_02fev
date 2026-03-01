@@ -45,6 +45,7 @@ public class AccountController {
      * GET /accounts/{companyId} — Лицевой счёт компании
      */
     @GetMapping("/{companyId}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<AccountResponse> getAccountByCompanyId(@PathVariable Long companyId) {
         return ResponseEntity.ok(accountService.getAccountByCompanyId(companyId));
     }
@@ -53,6 +54,7 @@ public class AccountController {
      * GET /accounts/{companyId}/transactions — Транзакции лицевого счёта
      */
     @GetMapping("/{companyId}/transactions")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<List<AccountTransactionResponse>> getTransactions(
             @PathVariable Long companyId,
             @RequestParam(required = false) String periodFrom,
@@ -120,7 +122,7 @@ public class AccountController {
     @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<SuccessResponse> addCorrection(
             @PathVariable Long companyId,
-            @RequestBody CorrectionCreateRequest request) {
+            @Valid @RequestBody CorrectionCreateRequest request) {
 
         accountService.addCorrection(companyId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -154,7 +156,7 @@ public class AccountController {
     @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN')")
     public ResponseEntity<SuccessResponse> rejectCorrection(
             @PathVariable Long id,
-            @RequestBody(required = false) CorrectionRejectRequest request) {
+            @Valid @RequestBody(required = false) CorrectionRejectRequest request) {
 
         accountService.rejectCorrection(id, request);
         return ResponseEntity.ok(SuccessResponse.ok("Отклонена"));
@@ -173,6 +175,7 @@ public class AccountController {
      * GET /accounts/{companyId}/reconciliation/{calculationId} — Сверка платежей
      */
     @GetMapping("/{companyId}/reconciliation/{calculationId}")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE', 'ADMIN', 'BUSINESS')")
     public ResponseEntity<ReconciliationResponse> getReconciliation(
             @PathVariable Long companyId,
             @PathVariable Long calculationId) {
