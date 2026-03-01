@@ -7,6 +7,12 @@ export const CalcStatus = {
   PAYMENT_PENDING: 'payment_pending',
   PAID: 'paid',
   PAYMENT_REJECTED: 'payment_rejected',
+  SUBMITTED: 'submitted',
+  IN_REVIEW: 'in_review',
+  REVISION: 'revision',
+  FEE_PAID: 'fee_paid',
+  PENALTY_PAID: 'penalty_paid',
+  COMPLETED: 'completed',
 } as const
 export type CalcStatusType = typeof CalcStatus[keyof typeof CalcStatus]
 
@@ -95,4 +101,9 @@ export const statusI18nKey: Record<string, string> = {
   suspended: 'status.suspended',
   closed: 'status.closed',
   recultivation: 'status.recultivation',
+  submitted: 'status.submitted',
+  in_review: 'status.inReview',
+  fee_paid: 'status.feePaid',
+  penalty_paid: 'status.penaltyPaid',
+  completed: 'status.completed',
 }

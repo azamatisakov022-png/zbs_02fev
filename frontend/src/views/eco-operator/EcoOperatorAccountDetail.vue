@@ -8,6 +8,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { accountStore, type CompanyAccount, type AccountTransaction } from '../../stores/account'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -202,7 +203,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             </div>
           </div>
           <div>
-            <AppBadge :variant="getStatusBadgeVariant(account.status)">{{ account.status }}</AppBadge>
+            <AppBadge :variant="getStatusBadgeVariant(account.status)">{{ $t(statusI18nKey[account.status] || account.status) }}</AppBadge>
           </div>
         </div>
       </div>

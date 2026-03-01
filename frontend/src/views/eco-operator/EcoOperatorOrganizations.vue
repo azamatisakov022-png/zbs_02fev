@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -536,7 +537,7 @@ const copyLegalToActual = () => {
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.region }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.registeredAt }}</td>
                 <td class="px-6 py-4 text-center">
-                  <AppBadge :variant="getStatusBadgeVariant(org.status)">{{ org.status }}</AppBadge>
+                  <AppBadge :variant="getStatusBadgeVariant(org.status)">{{ $t(statusI18nKey[org.status] || org.status) }}</AppBadge>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex items-center justify-center gap-2">
@@ -595,7 +596,7 @@ const copyLegalToActual = () => {
                 <p class="text-gray-500 text-sm">{{ selectedOrg.fullName }}</p>
                 <div class="flex items-center gap-2 mt-2">
                   <AppBadge :variant="getStatusBadgeVariant(selectedOrg.type)">{{ selectedOrg.type }}</AppBadge>
-                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.status)">{{ selectedOrg.status }}</AppBadge>
+                  <AppBadge :variant="getStatusBadgeVariant(selectedOrg.status)">{{ $t(statusI18nKey[selectedOrg.status] || selectedOrg.status) }}</AppBadge>
                 </div>
               </div>
             </div>

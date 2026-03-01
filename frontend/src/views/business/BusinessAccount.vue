@@ -13,6 +13,11 @@ import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import QRCode from 'qrcode'
 import { CalcStatus } from '../../constants/statuses'
+import PenaltyCalculator from '../../components/penalty/PenaltyCalculator.vue'
+import { calculatePaymentDeadline } from '../../utils/dateUtils'
+import { getOverdueDays, calculatePenalty } from '../../utils/penalty'
+import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
+import { formatNum } from '../../utils/formatNumber'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -26,13 +31,13 @@ const companyName = 'ОсОО «ТехПром»'
 
 const approvedCalcs = computed(() =>
   calculationStore.getBusinessCalculations(companyName).filter(c =>
-    [CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(c.status as any)
+    [CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED, CalcStatus.FEE_PAID, CalcStatus.PENALTY_PAID, CalcStatus.COMPLETED].includes(c.status as any)
   )
 )
 
 const totalCharged = computed(() => approvedCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
 const totalPaid = computed(() =>
-  approvedCalcs.value.filter(c => c.status === CalcStatus.PAID).reduce((s, c) => s + c.totalAmount, 0)
+  approvedCalcs.value.filter(c => c.status === CalcStatus.PAID || c.status === CalcStatus.COMPLETED).reduce((s, c) => s + c.totalAmount, 0)
 )
 const accountBalance = computed(() => totalPaid.value - totalCharged.value)
 
@@ -52,6 +57,39 @@ const unpaidCalcs = computed(() =>
   calculationStore.getBusinessCalculations(companyName).filter(c => c.status === CalcStatus.APPROVED)
 )
 const totalUnpaid = computed(() => unpaidCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
+
+const overdueCalcs = computed(() =>
+  unpaidCalcs.value.filter(c => {
+    const deadline = calculatePaymentDeadline(c.payerType || 'producer', {
+      quarter: c.quarter,
+      year: c.year,
+      importDate: c.importDate,
+    })
+    return deadline && getOverdueDays(deadline) > 0
+  })
+)
+
+const oldestOverdueDueDate = computed(() => {
+  let oldest: Date | null = null
+  for (const c of overdueCalcs.value) {
+    const deadline = calculatePaymentDeadline(c.payerType || 'producer', {
+      quarter: c.quarter,
+      year: c.year,
+      importDate: c.importDate,
+    })
+    if (deadline && (!oldest || deadline < oldest)) oldest = deadline
+  }
+  return oldest
+})
+
+const totalOverdueAmount = computed(() =>
+  overdueCalcs.value.reduce((s, c) => s + c.totalAmount, 0)
+)
+
+const aggregatePenalty = computed(() => {
+  if (!oldestOverdueDueDate.value || totalOverdueAmount.value <= 0) return null
+  return calculatePenalty(totalOverdueAmount.value, oldestOverdueDueDate.value)
+})
 
 // ── BLOCK 3: Payment methods (collapsible) ──
 const showPaymentMethods = ref(false)
@@ -102,13 +140,13 @@ const tableData = computed(() =>
     id: tx.id,
     date: tx.date,
     type: tx.type,
-    typeLabel: tx.type === 'charge' ? t('businessAccount.typeCharge') : tx.type === 'payment' ? t('businessAccount.typePayment') : tx.type === 'correction' ? t('businessAccount.typeCorrection') : tx.type === 'offset' ? t('businessAccount.typeOffset') : t('businessAccount.typeRefund'),
+    typeLabel: tx.type === 'charge' ? t('businessAccount.typeCharge') : tx.type === 'payment' ? t('businessAccount.typePayment') : tx.type === 'correction' ? t('businessAccount.typeCorrection') : tx.type === 'offset' ? t('businessAccount.typeOffset') : tx.type === 'penalty' ? t('businessAccount.typePenalty') : tx.type === 'penalty_payment' ? t('businessAccount.typePenaltyPayment') : t('businessAccount.typeRefund'),
     description: tx.description,
     calculationId: tx.calculationId,
     calculationNumber: tx.calculationNumber,
     chargeAmount: tx.chargeAmount,
     paymentAmount: tx.paymentAmount,
-    amount: tx.type === 'charge' ? -tx.chargeAmount : tx.paymentAmount || tx.offsetAmount,
+    amount: (tx.type === 'charge' || tx.type === 'penalty') ? -tx.chargeAmount : tx.type === 'penalty_payment' ? tx.paymentAmount : tx.paymentAmount || tx.offsetAmount,
     balance: tx.balance,
   }))
 )
@@ -179,14 +217,8 @@ const closePayment = () => {
   paymentFileName.value = ''
 }
 
-// Bank details
-const bankDetails = {
-  recipient: 'ГП «Эко Оператор»',
-  inn: '01712202610151',
-  bank: 'ОАО «РСК Банк»',
-  bik: '017012',
-  account: '1091620100830049',
-}
+// Bank details — use config
+const bankDetails = PAYMENT_ACCOUNTS.utilization_fee
 
 const copyRequisites = () => {
   const c = payingCalc.value
@@ -317,6 +349,29 @@ const downloadPaymentPdf = async () => {
         </div>
       </div>
 
+      <!-- Penalty block: aggregate overdue penalty -->
+      <PenaltyCalculator
+        v-if="overdueCalcs.length > 0 && oldestOverdueDueDate && totalOverdueAmount > 0"
+        :debtAmount="totalOverdueAmount"
+        :dueDate="oldestOverdueDueDate"
+        class="mb-4"
+      />
+      <!-- Separate account info for debt + penalty -->
+      <div v-if="aggregatePenalty && aggregatePenalty.overdueDays > 0" class="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 mb-6 text-sm">
+        <div class="flex justify-between py-1">
+          <span class="text-[#64748b]">{{ $t('businessCalc.feeAmountLabel') }}</span>
+          <span class="font-semibold">{{ totalOverdueAmount.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-xs text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</span></span>
+        </div>
+        <div class="flex justify-between py-1">
+          <span class="text-[#DC2626]">{{ $t('penalty.totalPenalty') }}</span>
+          <span class="font-semibold text-[#DC2626]">{{ aggregatePenalty.totalPenalty.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-xs text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.penalty.recipient }}</span></span>
+        </div>
+        <div class="border-t border-[#e2e8f0] mt-1 pt-1 flex justify-between font-bold">
+          <span>{{ $t('payment.grandTotal') }}</span>
+          <span>{{ aggregatePenalty.totalToPay.toLocaleString() }} {{ $t('penalty.som') }}</span>
+        </div>
+      </div>
+
       <!-- BLOCK 2: Unpaid Invoices -->
       <template v-if="unpaidCalcs.length > 0">
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
@@ -351,10 +406,10 @@ const downloadPaymentPdf = async () => {
                     <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline">{{ c.number }}</router-link>
                   </td>
                   <td class="px-4 py-3 text-[#64748b]">{{ c.period }}</td>
-                  <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ c.totalAmount.toLocaleString() }} {{ $t('common.som') }}</td>
+                  <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</td>
                   <td class="px-4 py-3 text-[#64748b]">{{ c.date }}</td>
                   <td class="px-4 py-3 text-right">
-                    <button @click="openPayment(c.id)" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] text-white rounded-lg text-xs font-medium hover:bg-[#16a34a] transition-colors">
+                    <button @click="router.push('/business/calculations/' + c.id + '/payment')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] text-white rounded-lg text-xs font-medium hover:bg-[#16a34a] transition-colors">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                       {{ $t('businessAccount.pay') }}
                     </button>
@@ -372,9 +427,9 @@ const downloadPaymentPdf = async () => {
               </div>
               <div class="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div><span class="text-[#94a3b8] text-xs">{{ $t('common.period') }}</span><br>{{ c.period }}</div>
-                <div><span class="text-[#94a3b8] text-xs">{{ $t('common.amount') }}</span><br><strong class="text-[#1e293b]">{{ c.totalAmount.toLocaleString() }} {{ $t('common.som') }}</strong></div>
+                <div><span class="text-[#94a3b8] text-xs">{{ $t('common.amount') }}</span><br><strong class="text-[#1e293b]">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</strong></div>
               </div>
-              <button @click="openPayment(c.id)" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#22c55e] text-white rounded-lg text-sm font-medium hover:bg-[#16a34a] transition-colors">
+              <button @click="router.push('/business/calculations/' + c.id + '/payment')" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#22c55e] text-white rounded-lg text-sm font-medium hover:bg-[#16a34a] transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 {{ $t('businessAccount.pay') }}
               </button>

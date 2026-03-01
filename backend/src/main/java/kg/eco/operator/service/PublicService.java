@@ -16,4 +16,6 @@ public interface PublicService {
     List<Map<String, Object>> getRates();
 
     List<Map<String, Object>> getFaq();
+
+    Map<String, Object> getPaymentAccounts();
 }

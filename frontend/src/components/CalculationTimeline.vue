@@ -15,6 +15,11 @@ interface TimelineDates {
   invoiced?: string
   paid?: string
   rejected?: string
+  assigned?: string
+  feePaid?: string
+  penaltyPaid?: string
+  revision?: string
+  completed?: string
 }
 
 interface Props {
@@ -33,7 +38,61 @@ interface Step {
   state: 'completed' | 'current' | 'rejected' | 'future'
 }
 
+const isNewFlow = computed(() => {
+  const newStatuses = [CalcStatus.SUBMITTED, CalcStatus.IN_REVIEW, CalcStatus.REVISION, CalcStatus.FEE_PAID, CalcStatus.PENALTY_PAID, CalcStatus.COMPLETED]
+  return newStatuses.includes(props.status as any)
+})
+
 const steps = computed<Step[]>(() => {
+  // New flow
+  if (isNewFlow.value) {
+    const isRevision = props.status === CalcStatus.REVISION
+    const baseSteps = [
+      { key: 'created', label: t('timeline.created') },
+      { key: 'submitted', label: t('timeline.submitted') },
+      { key: 'reviewed', label: t('timeline.underReview') },
+    ]
+
+    if (isRevision) {
+      baseSteps.push({ key: 'revision', label: t('status.revision') })
+    } else {
+      baseSteps.push(
+        { key: 'approved', label: t('timeline.approved') },
+        { key: 'feePaid', label: t('status.feePaid') },
+        { key: 'completed', label: t('status.completed') },
+      )
+    }
+
+    let currentIdx: number
+    switch (props.status) {
+      case CalcStatus.SUBMITTED: currentIdx = 1; break
+      case CalcStatus.IN_REVIEW: currentIdx = 2; break
+      case CalcStatus.REVISION: currentIdx = 3; break
+      case CalcStatus.APPROVED: currentIdx = 3; break
+      case CalcStatus.FEE_PAID: currentIdx = 4; break
+      case CalcStatus.PENALTY_PAID: currentIdx = 4; break
+      case CalcStatus.COMPLETED: currentIdx = 5; break
+      default: currentIdx = 0
+    }
+
+    return baseSteps.map((s, i) => {
+      let state: Step['state']
+      if (isRevision && i === 3) {
+        state = 'rejected'
+      } else if (props.status === CalcStatus.COMPLETED) {
+        state = 'completed'
+      } else if (i < currentIdx) {
+        state = 'completed'
+      } else if (i === currentIdx) {
+        state = 'current'
+      } else {
+        state = 'future'
+      }
+      return { ...s, date: props.dates?.[s.key as keyof TimelineDates], state }
+    })
+  }
+
+  // Legacy flow
   const isRejected = props.status === CalcStatus.REJECTED
 
   const baseSteps = [

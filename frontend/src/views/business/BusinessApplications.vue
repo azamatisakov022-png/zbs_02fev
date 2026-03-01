@@ -74,7 +74,7 @@ const applications = ref([
         <span class="font-mono font-medium text-[#0e888d]">{{ value }}</span>
       </template>
       <template #cell-status="{ value }">
-        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">

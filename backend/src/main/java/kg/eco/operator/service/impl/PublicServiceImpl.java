@@ -9,6 +9,7 @@ import kg.eco.operator.entity.enums.RecyclerStatus;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.service.PublicService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +29,26 @@ public class PublicServiceImpl implements PublicService {
     private final CollectionPointRepository collectionPointRepository;
     private final CategoryRepository categoryRepository;
     private final RecyclingNormRepository recyclingNormRepository;
+
+    @Value("${payment.accounts.utilization-fee.recipient:ГП «Эко Оператор» при МПРЭТН КР}")
+    private String feeRecipient;
+    @Value("${payment.accounts.utilization-fee.bank:РСК Банк}")
+    private String feeBank;
+    @Value("${payment.accounts.utilization-fee.account:1280021000000730}")
+    private String feeAccount;
+    @Value("${payment.accounts.utilization-fee.bik:128001}")
+    private String feeBik;
+    @Value("${payment.accounts.utilization-fee.inn:02109202010072}")
+    private String feeInn;
+
+    @Value("${payment.accounts.penalty.recipient:Центральное казначейство КР}")
+    private String penaltyRecipient;
+    @Value("${payment.accounts.penalty.bank:Национальный банк КР}")
+    private String penaltyBank;
+    @Value("${payment.accounts.penalty.account:4402013100100330}")
+    private String penaltyAccount;
+    @Value("${payment.accounts.penalty.bik:440001}")
+    private String penaltyBik;
 
     @Override
     public Map<String, Object> calculate(Map<String, Object> request) {
@@ -240,6 +261,28 @@ public class PublicServiceImpl implements PublicService {
                 "Общие вопросы"));
 
         return faq;
+    }
+
+    @Override
+    public Map<String, Object> getPaymentAccounts() {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        Map<String, Object> fee = new LinkedHashMap<>();
+        fee.put("recipient", feeRecipient);
+        fee.put("bank", feeBank);
+        fee.put("account", feeAccount);
+        fee.put("bik", feeBik);
+        fee.put("inn", feeInn);
+        result.put("utilizationFee", fee);
+
+        Map<String, Object> penalty = new LinkedHashMap<>();
+        penalty.put("recipient", penaltyRecipient);
+        penalty.put("bank", penaltyBank);
+        penalty.put("account", penaltyAccount);
+        penalty.put("bik", penaltyBik);
+        result.put("penalty", penalty);
+
+        return result;
     }
 
     private Map<String, Object> faqItem(int id, String question, String answer, String category) {

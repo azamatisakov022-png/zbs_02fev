@@ -3,6 +3,7 @@ package kg.eco.operator.entity;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.PaymentConfirmationStatus;
 import kg.eco.operator.entity.enums.PaymentMethod;
+import kg.eco.operator.entity.enums.PaymentType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -43,6 +44,13 @@ public class Payment {
     @Column(nullable = false, length = 20)
     private PaymentConfirmationStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", length = 20)
+    private PaymentType paymentType;
+
+    @Column(length = 500)
+    private String purpose;
+
     @Column(name = "document_url")
     private String documentUrl;
 
@@ -53,5 +61,6 @@ public class Payment {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) status = PaymentConfirmationStatus.PENDING;
+        if (paymentType == null) paymentType = PaymentType.FEE;
     }
 }

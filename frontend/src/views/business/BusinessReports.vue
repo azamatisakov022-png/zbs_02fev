@@ -20,7 +20,7 @@ import { validators, scrollToFirstError } from '../../utils/validators'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
-import { ReportStatus } from '../../constants/statuses'
+import { ReportStatus, statusI18nKey } from '../../constants/statuses'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -665,7 +665,7 @@ const downloadReportExcel = (reportId: number) => {
           <span :class="['font-semibold', getPercentClass(value)]">{{ value }}%</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="act-wrap">
@@ -1058,6 +1058,8 @@ const downloadReportExcel = (reportId: number) => {
                     <input
                       type="date"
                       v-model="item.contractDate"
+                      min="2020-01-01"
+                      :max="`${new Date().getFullYear() + 1}-12-31`"
                       class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
                     />
                   </div>

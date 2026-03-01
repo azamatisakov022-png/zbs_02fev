@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { refundStore, type Refund } from '../../stores/refunds'
-import { RefundStatus } from '../../constants/statuses'
+import { RefundStatus, statusI18nKey } from '../../constants/statuses'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -116,7 +116,7 @@ const confirmReject = () => {
           <div>
             <div class="flex items-center gap-3 mb-1">
               <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('ecoRefundDetail.requestNumber', { number: refund.number }) }}</h1>
-              <AppBadge :variant="getStatusBadgeVariant(refund.status)">{{ refund.status }}</AppBadge>
+              <AppBadge :variant="getStatusBadgeVariant(refund.status)">{{ $t(statusI18nKey[refund.status] || refund.status) }}</AppBadge>
             </div>
             <p class="text-[#64748b]">{{ $t('ecoRefundDetail.fromDate') }} {{ refund.date }}</p>
           </div>

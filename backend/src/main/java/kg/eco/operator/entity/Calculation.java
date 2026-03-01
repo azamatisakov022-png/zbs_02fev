@@ -62,6 +62,18 @@ public class Calculation {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    @Column(name = "penalty_fixed_date")
+    private LocalDate penaltyFixedDate;
+
+    @Column(name = "penalty_fixed_amount", precision = 18, scale = 2)
+    private BigDecimal penaltyFixedAmount;
+
+    @Column(name = "penalty_fixed_days")
+    private Integer penaltyFixedDays;
+
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 

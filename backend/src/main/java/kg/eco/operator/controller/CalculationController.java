@@ -2,10 +2,7 @@ package kg.eco.operator.controller;
 
 import jakarta.validation.Valid;
 import kg.eco.operator.dto.request.*;
-import kg.eco.operator.dto.response.CalculationResponse;
-import kg.eco.operator.dto.response.CountResponse;
-import kg.eco.operator.dto.response.PaginatedResponse;
-import kg.eco.operator.dto.response.SuccessResponse;
+import kg.eco.operator.dto.response.*;
 import kg.eco.operator.service.CalculationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -256,5 +253,21 @@ public class CalculationController {
     @GetMapping("/by-company/{companyId}")
     public ResponseEntity<List<CalculationResponse>> getByCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(calculationService.getByCompany(companyId));
+    }
+
+    /**
+     * GET /calculations/{id}/penalty — Расчёт пени (ст.37 Кодекса КР)
+     */
+    @GetMapping("/{id}/penalty")
+    public ResponseEntity<PenaltyResponse> getPenalty(@PathVariable Long id) {
+        return ResponseEntity.ok(calculationService.calculatePenalty(id));
+    }
+
+    /**
+     * GET /calculations/{id}/history — История статусов расчёта
+     */
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<AuditEntryResponse>> getHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(calculationService.getHistory(id));
     }
 }

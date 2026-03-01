@@ -22,6 +22,9 @@ import {
   paymentStatusColors,
   type Payer,
 } from '../../stores/payers'
+import PenaltyCalculator from '../../components/penalty/PenaltyCalculator.vue'
+import type { PenaltyExemption, PenaltyExemptionReason } from '../../utils/penalty'
+import { isExemptFromPenalty } from '../../utils/penalty'
 
 const route = useRoute()
 const router = useRouter()
@@ -102,6 +105,66 @@ const sortedComments = computed(() => {
   if (!payer.value) return []
   return [...payer.value.comments].reverse()
 })
+
+// --- Penalty exemptions ---
+const penaltyExemptions = ref<PenaltyExemption[]>([])
+const showExemptionModal = ref(false)
+const exemptionForm = ref<{
+  reason: PenaltyExemptionReason
+  documentNumber: string
+  date: string
+  notes: string
+}>({
+  reason: 'government_decision',
+  documentNumber: '',
+  date: '',
+  notes: '',
+})
+
+const isPenaltyExempt = computed(() => isExemptFromPenalty(penaltyExemptions.value))
+
+const hasDebt = computed(() => {
+  if (!payer.value) return false
+  return payer.value.settlementStatus === 'debt' && payer.value.settlementAmount > 0
+})
+
+const payerDebtAmount = computed(() => {
+  if (!payer.value || !hasDebt.value) return 0
+  return payer.value.settlementAmount
+})
+
+// Approximate due date: use a fixed date for demo (30 days ago)
+const payerDueDate = computed(() => {
+  if (!hasDebt.value) return null
+  const d = new Date()
+  d.setDate(d.getDate() - 45)
+  return d
+})
+
+const exemptionReasons: { value: PenaltyExemptionReason; labelKey: string }[] = [
+  { value: 'government_decision', labelKey: 'penalty.reasonGovernmentDecision' },
+  { value: 'court_decision', labelKey: 'penalty.reasonCourtDecision' },
+  { value: 'force_majeure', labelKey: 'penalty.reasonForceMajeure' },
+  { value: 'restructuring', labelKey: 'penalty.reasonRestructuring' },
+  { value: 'tax_authority_decision', labelKey: 'penalty.reasonTaxAuthorityDecision' },
+]
+
+function openExemptionModal() {
+  exemptionForm.value = { reason: 'government_decision', documentNumber: '', date: '', notes: '' }
+  showExemptionModal.value = true
+}
+
+function grantExemption() {
+  penaltyExemptions.value.push({
+    ...exemptionForm.value,
+    active: true,
+  })
+  showExemptionModal.value = false
+}
+
+function revokeExemption(idx: number) {
+  penaltyExemptions.value[idx].active = false
+}
 
 // --- Document helpers ---
 function docIconColor(type: string): string {
@@ -321,6 +384,91 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
       </div>
+
+      <!-- ==================== PENALTY SECTION ==================== -->
+      <div v-if="hasDebt && payerDueDate" class="mb-6">
+        <!-- Compact penalty display -->
+        <div v-if="!isPenaltyExempt" class="mb-3">
+          <PenaltyCalculator
+            :debtAmount="payerDebtAmount"
+            :dueDate="payerDueDate"
+            :payerName="payer.shortName"
+            compact
+          />
+        </div>
+
+        <!-- Active exemption badge -->
+        <div v-if="isPenaltyExempt" class="flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-sm font-medium text-green-700">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            {{ $t('penalty.exemptionActive') }}
+          </span>
+        </div>
+
+        <!-- Exemption info + controls -->
+        <div class="flex flex-wrap items-center gap-2">
+          <template v-for="(ex, idx) in penaltyExemptions" :key="idx">
+            <div v-if="ex.active" class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
+              <span>{{ $t(exemptionReasons.find(r => r.value === ex.reason)?.labelKey || '') }}</span>
+              <span class="text-gray-400">|</span>
+              <span>{{ ex.documentNumber }}</span>
+              <button @click="revokeExemption(idx)" class="ml-1 text-red-400 hover:text-red-600" :title="$t('penalty.exemptionRevoke')">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </template>
+          <button
+            v-if="!isPenaltyExempt"
+            @click="openExemptionModal"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            {{ $t('penalty.exemptionGrant') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Exemption modal -->
+      <Teleport to="body">
+        <div v-if="showExemptionModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showExemptionModal = false">
+          <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $t('penalty.exemptionGrant') }}</h3>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionReason') }}</label>
+                <select v-model="exemptionForm.reason" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                  <option v-for="r in exemptionReasons" :key="r.value" :value="r.value">{{ $t(r.labelKey) }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionDocument') }}</label>
+                <input v-model="exemptionForm.documentNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionDate') }}</label>
+                <input v-model="exemptionForm.date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionNotes') }}</label>
+                <textarea v-model="exemptionForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"></textarea>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+              <button @click="showExemptionModal = false" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                {{ $t('common.cancel') }}
+              </button>
+              <button @click="grantExemption" :disabled="!exemptionForm.documentNumber.trim() || !exemptionForm.date" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                {{ $t('penalty.exemptionGrant') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
       <!-- ==================== BLOCK 3: Declarations History ==================== -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">

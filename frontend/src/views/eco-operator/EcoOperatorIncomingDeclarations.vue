@@ -9,7 +9,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { declarationStore } from '../../stores/declarations'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { DeclStatus } from '../../constants/statuses'
+import { DeclStatus, statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
@@ -243,7 +243,7 @@ const formatBalance = (value: number) => {
           <span :class="['font-medium', value < 0 ? 'text-[#ef4444]' : 'text-[#10b981]']">{{ formatBalance(value) }}</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ shortStatus(value) }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-center gap-2">

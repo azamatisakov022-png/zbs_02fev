@@ -8,6 +8,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { refundStore } from '../../stores/refunds'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
@@ -122,7 +123,7 @@ const goToNewRefund = () => {
           <span class="font-semibold text-[#1e293b]">{{ formatAmount(value) }}</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">

@@ -12,7 +12,7 @@ import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { ReportStatus } from '../../constants/statuses'
+import { ReportStatus, statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -325,7 +325,7 @@ const resetFilters = () => {
         <span :class="getPercentClass(value)">{{ value }}%</span>
       </template>
       <template #cell-status="{ value }">
-        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex flex-wrap items-center justify-end gap-2">
@@ -378,7 +378,7 @@ const resetFilters = () => {
               <p class="text-sm text-[#64748b]">{{ $t('ecoIncomingReports.fromDate') }} {{ selectedReport.date }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <AppBadge :variant="getStatusBadgeVariant(selectedReport.status)">{{ selectedReport.status }}</AppBadge>
+              <AppBadge :variant="getStatusBadgeVariant(selectedReport.status)">{{ $t(statusI18nKey[selectedReport.status] || selectedReport.status) }}</AppBadge>
               <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

@@ -16,7 +16,7 @@ import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { notificationStore } from '../../stores/notifications'
 import { useRouter } from 'vue-router'
-import { CalcStatus, ReportStatus, DeclStatus } from '../../constants/statuses'
+import { CalcStatus, ReportStatus, DeclStatus, statusI18nKey } from '../../constants/statuses'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -516,7 +516,7 @@ const signDeclaration = (id: number) => {
           <span class="font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="act-wrap">

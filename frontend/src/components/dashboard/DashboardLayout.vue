@@ -50,7 +50,6 @@ const navigateTo = (itemRoute: string) => {
 }
 
 const handleLogout = () => {
-  notificationStore.clear()
   authStore.logout()
   router.push('/login')
 }

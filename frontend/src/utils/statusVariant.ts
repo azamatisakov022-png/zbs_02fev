@@ -25,6 +25,14 @@ const variantMap: Record<string, BadgeVariant> = {
   [UserStatus.BLOCKED]: 'danger',
   [UserStatus.TEMP_BLOCKED]: 'danger',
 
+  // New workflow statuses
+  [CalcStatus.SUBMITTED]: 'warning',
+  [CalcStatus.IN_REVIEW]: 'warning',
+  [CalcStatus.REVISION]: 'info',
+  [CalcStatus.FEE_PAID]: 'info',
+  [CalcStatus.PENALTY_PAID]: 'success',
+  [CalcStatus.COMPLETED]: 'success',
+
   // Info (blue)
   [RefundStatus.NEW]: 'info',
 

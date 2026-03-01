@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { refundStore } from '../../stores/refunds'
-import { RefundStatus } from '../../constants/statuses'
+import { RefundStatus, statusI18nKey } from '../../constants/statuses'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -200,7 +200,7 @@ const resetFilters = () => {
         <span class="font-semibold text-[#10b981]">{{ value.toLocaleString() }} {{ $t('ecoRefunds.som') }}</span>
       </template>
       <template #cell-status="{ value }">
-        <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">

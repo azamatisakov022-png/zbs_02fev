@@ -136,6 +136,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
               </button>
             </slot>
           </div>
+          <slot name="row-after" :row="row" :index="index" :colspan="1" />
         </div>
       </template>
       <template v-else>

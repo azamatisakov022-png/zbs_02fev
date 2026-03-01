@@ -88,9 +88,9 @@ function getNotificationLink(n: Notification): string | null {
 }
 
 function handleNavigate(n: Notification) {
+  notificationStore.markAsRead(n.id)
   const link = getNotificationLink(n)
   if (link) {
-    notificationStore.markAsRead(n.id)
     isOpen.value = false
     router.push(link)
   }
@@ -155,7 +155,7 @@ const typeConfig = {
           <div
             v-for="n in notifications"
             :key="n.id"
-            @click="handleMarkRead(n.id)"
+            @click="handleNavigate(n)"
             :class="[
               'px-4 py-3 flex gap-3 cursor-pointer transition-colors border-b border-[#f1f5f9] last:border-0',
               n.read ? 'bg-white hover:bg-[#f8fafc]' : 'bg-blue-50/50 hover:bg-blue-50/70'
@@ -184,7 +184,7 @@ const typeConfig = {
                 <button
                   v-if="getNotificationLink(n)"
                   @click.stop="handleNavigate(n)"
-                  class="text-[11px] text-[#0e888d] hover:text-[#0a6d71] font-medium transition-colors"
+                  class="text-[11px] text-[#0e888d] hover:text-[#0a6d71] font-semibold transition-colors bg-[#f0fdfa] px-2 py-0.5 rounded"
                 >{{ t('notifications.goTo') }} &rarr;</button>
               </div>
             </div>

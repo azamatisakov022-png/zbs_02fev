@@ -10,6 +10,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
@@ -316,7 +317,7 @@ const goToCalculation = (calcId: number) => {
         </template>
         <template #cell-number="{ value }"><span class="font-mono font-medium text-[#8b5cf6]">{{ value }}</span></template>
         <template #cell-amount="{ value }"><span class="font-semibold text-[#1e293b]">{{ value }}</span></template>
-        <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge></template>
+        <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge></template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
             <AppButton variant="ghost" size="sm" @click="openPaymentDetail(row)">
@@ -472,7 +473,7 @@ const goToCalculation = (calcId: number) => {
                   <div class="pt-2 border-t border-[#e2e8f0]"><span class="text-[#64748b]">{{ $t('businessPayments.purpose') }}:</span><p class="font-medium text-[#1e293b] mt-1">{{ bankRequisites.purpose }}</p></div>
                 </div>
               </div>
-              <button @click="toastStore.show({ type: 'info', title: t('businessPayments.receiptToastTitle'), message: t('businessPayments.receiptToastMsg') })" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#8b5cf6] text-[#8b5cf6] rounded-xl hover:bg-purple-50 transition-colors">
+              <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#cbd5e1] text-[#94a3b8] rounded-xl cursor-not-allowed opacity-60">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 {{ $t('businessPayments.downloadReceipt') }}
               </button>
@@ -546,7 +547,7 @@ const goToCalculation = (calcId: number) => {
         </div>
         <p class="text-[#64748b] mb-8">{{ $t('businessPayments.receiptSentToEmail') }}</p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button @click="toastStore.show({ type: 'info', title: t('businessPayments.receiptToastTitle'), message: t('businessPayments.receiptToastMsg') })" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] rounded-xl text-[#1e293b] hover:bg-[#f8fafc] transition-colors">
+          <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#cbd5e1] text-[#94a3b8] rounded-xl cursor-not-allowed opacity-60">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>{{ $t('businessPayments.downloadReceipt') }}
           </button>
           <button @click="backToList" class="flex items-center justify-center gap-2 px-6 py-3 bg-[#8b5cf6] text-white rounded-xl font-medium hover:bg-[#7c3aed] transition-colors">

@@ -2,10 +2,7 @@ package kg.eco.operator.service.impl;
 
 import kg.eco.operator.dto.mapper.CalculationMapper;
 import kg.eco.operator.dto.request.*;
-import kg.eco.operator.dto.response.CalculationResponse;
-import kg.eco.operator.dto.response.DocumentResponse;
-import kg.eco.operator.dto.response.PaginatedResponse;
-import kg.eco.operator.dto.response.PaymentResponse;
+import kg.eco.operator.dto.response.*;
 import kg.eco.operator.entity.*;
 import kg.eco.operator.entity.enums.*;
 import kg.eco.operator.exception.BusinessLogicException;
@@ -26,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,11 +35,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CalculationServiceImpl implements CalculationService {
 
+    private static final BigDecimal DAILY_RATE = new BigDecimal("0.0009");
+
     private final CalculationRepository calculationRepository;
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PaymentRepository paymentRepository;
     private final DocumentRepository documentRepository;
+    private final AuditLogRepository auditLogRepository;
     private final CalculationMapper calculationMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -313,6 +315,16 @@ public class CalculationServiceImpl implements CalculationService {
         payment.setStatus(PaymentConfirmationStatus.CONFIRMED);
         paymentRepository.save(payment);
 
+        // Fix penalty at the moment fee payment is confirmed
+        if (calc.getPenaltyFixedDate() == null && calc.getDueDate() != null) {
+            PenaltyResponse penalty = calculatePenalty(calc.getId());
+            if (penalty.isOverdue() && penalty.getTotalPenalty().compareTo(BigDecimal.ZERO) > 0) {
+                calc.setPenaltyFixedDate(LocalDate.now());
+                calc.setPenaltyFixedAmount(penalty.getTotalPenalty());
+                calc.setPenaltyFixedDays((int) penalty.getDaysOverdue());
+            }
+        }
+
         // If fully paid
         if (payment.getAmount().compareTo(calc.getTotalAmount()) >= 0) {
             calc.setStatus(CalculationStatus.PAID);
@@ -450,6 +462,103 @@ public class CalculationServiceImpl implements CalculationService {
                 PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "createdAt")));
         return page.getContent().stream()
                 .map(this::toFullResponse)
+                .toList();
+    }
+
+    // ─── PENALTY ───
+
+    @Override
+    @Transactional(readOnly = true)
+    public PenaltyResponse calculatePenalty(Long id) {
+        Calculation calc = findById(id);
+        BigDecimal amount = calc.getTotalAmount();
+        LocalDate dueDate = calc.getDueDate();
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return PenaltyResponse.noPenalty(amount != null ? amount : BigDecimal.ZERO,
+                    dueDate != null ? dueDate : LocalDate.now());
+        }
+
+        if (dueDate == null) {
+            return PenaltyResponse.noPenalty(amount, LocalDate.now());
+        }
+
+        // If penalty was fixed (fee already paid), return the fixed values
+        if (calc.getPenaltyFixedDate() != null && calc.getPenaltyFixedAmount() != null) {
+            int fixedDays = calc.getPenaltyFixedDays() != null ? calc.getPenaltyFixedDays() : 0;
+            BigDecimal fixedAmount = calc.getPenaltyFixedAmount();
+            BigDecimal maxPenalty = amount;
+            BigDecimal dailyPen = fixedDays > 0
+                    ? fixedAmount.divide(BigDecimal.valueOf(fixedDays), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            double progress = maxPenalty.compareTo(BigDecimal.ZERO) > 0
+                    ? fixedAmount.multiply(BigDecimal.valueOf(100))
+                            .divide(maxPenalty, 2, RoundingMode.HALF_UP).doubleValue()
+                    : 0;
+
+            return PenaltyResponse.builder()
+                    .debtAmount(amount)
+                    .dueDate(dueDate)
+                    .daysOverdue(fixedDays)
+                    .dailyRate(DAILY_RATE)
+                    .dailyPenalty(dailyPen)
+                    .totalPenalty(fixedAmount)
+                    .maxPenalty(maxPenalty)
+                    .progressPercent(Math.min(progress, 100))
+                    .overdue(true)
+                    .fixedDate(calc.getPenaltyFixedDate())
+                    .fixedAmount(fixedAmount)
+                    .build();
+        }
+
+        // Dynamic penalty calculation
+        long days = ChronoUnit.DAYS.between(dueDate, LocalDate.now());
+        if (days <= 0) {
+            return PenaltyResponse.noPenalty(amount, dueDate);
+        }
+
+        BigDecimal dailyPenalty = amount.multiply(DAILY_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalPenalty = dailyPenalty.multiply(BigDecimal.valueOf(days)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal maxPenalty = amount; // 100% cap
+        if (totalPenalty.compareTo(maxPenalty) > 0) {
+            totalPenalty = maxPenalty;
+        }
+
+        double progress = maxPenalty.compareTo(BigDecimal.ZERO) > 0
+                ? totalPenalty.multiply(BigDecimal.valueOf(100))
+                        .divide(maxPenalty, 2, RoundingMode.HALF_UP).doubleValue()
+                : 0;
+
+        return PenaltyResponse.builder()
+                .debtAmount(amount)
+                .dueDate(dueDate)
+                .daysOverdue(days)
+                .dailyRate(DAILY_RATE)
+                .dailyPenalty(dailyPenalty)
+                .totalPenalty(totalPenalty)
+                .maxPenalty(maxPenalty)
+                .progressPercent(Math.min(progress, 100))
+                .overdue(true)
+                .build();
+    }
+
+    // ─── HISTORY ───
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AuditEntryResponse> getHistory(Long id) {
+        findById(id); // verify calculation exists
+        return auditLogRepository
+                .findByEntityTypeAndEntityId("CALCULATION", id,
+                        PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .getContent().stream()
+                .map(log -> AuditEntryResponse.builder()
+                        .id(log.getId())
+                        .action(log.getAction())
+                        .user(log.getUserName())
+                        .date(log.getCreatedAt())
+                        .details(log.getDetails())
+                        .build())
                 .toList();
     }
 

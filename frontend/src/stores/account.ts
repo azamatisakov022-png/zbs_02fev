@@ -4,7 +4,7 @@ import { authStore } from './auth'
 import { CorrectionStatus, AccountStatus, type CorrectionStatusType, type AccountStatusType } from '../constants/statuses'
 import i18n from '../i18n'
 
-export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund'
+export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund' | 'penalty' | 'penalty_payment'
 
 export interface AccountTransaction {
   id: number
@@ -172,6 +172,22 @@ function addOffset(calcId: number, calcNumber: string, amount: number): void {
   acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'offset', calculationId: calcId, calculationNumber: calcNumber, description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
 }
 
+function addPenalty(calcId: number, calcNumber: string, amount: number, overdueDays: number): void {
+  const acc = _getMyAccount()
+  if (!acc) return
+  acc.balance -= amount
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
+  silentApi.post(`/accounts/${acc.id}/penalty`, { calculationId: calcId, amount, overdueDays }).catch(() => {})
+}
+
+function addPenaltyPayment(calcId: number, calcNumber: string, amount: number): void {
+  const acc = _getMyAccount()
+  if (!acc) return
+  acc.balance += amount
+  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty_payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyPaymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
+  silentApi.post(`/accounts/${acc.id}/penalty-payment`, { calculationId: calcId, amount }).catch(() => {})
+}
+
 function requestRefund(calcId: number, calcNumber: string, amount: number): void {
   const acc = _getMyAccount()
   if (!acc) return
@@ -288,6 +304,8 @@ export const accountStore = {
   addPayment,
   addCorrection,
   addOffset,
+  addPenalty,
+  addPenaltyPayment,
   requestRefund,
   submitCorrection,
   approveCorrection,

@@ -7,6 +7,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
@@ -125,7 +126,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
         </button>
         <div class="flex flex-wrap items-center gap-3 mb-1">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessDeclDetail.declaration') }} {{ declaration.number }}</h1>
-          <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ declaration.status }}</AppBadge>
+          <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ $t(statusI18nKey[declaration.status] || declaration.status) }}</AppBadge>
         </div>
         <p class="text-[#64748b]">{{ $t('businessDeclDetail.submittedAt') }} {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
       </div>
@@ -331,7 +332,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ calc.mass }}</td>
                   <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ formatCurrency(calc.amount) }}</td>
                   <td class="px-4 py-3">
-                    <AppBadge :variant="getStatusBadgeVariant(calc.calcStatus)">{{ calc.calcStatus }}</AppBadge>
+                    <AppBadge :variant="getStatusBadgeVariant(calc.calcStatus)">{{ $t(statusI18nKey[calc.calcStatus] || calc.calcStatus) }}</AppBadge>
                   </td>
                   <td class="px-4 py-3 text-[#64748b]">{{ calc.acceptedDate }}</td>
                 </tr>
@@ -364,7 +365,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ report.processed }}</td>
                   <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ formatCurrency(report.credited) }}</td>
                   <td class="px-4 py-3">
-                    <AppBadge :variant="getStatusBadgeVariant(report.reportStatus)">{{ report.reportStatus }}</AppBadge>
+                    <AppBadge :variant="getStatusBadgeVariant(report.reportStatus)">{{ $t(statusI18nKey[report.reportStatus] || report.reportStatus) }}</AppBadge>
                   </td>
                   <td class="px-4 py-3 text-[#64748b]">{{ report.acceptedDate }}</td>
                 </tr>
@@ -394,7 +395,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ formatCurrency(payment.amount) }}</td>
                   <td class="px-4 py-3 text-[#64748b]">{{ payment.method }}</td>
                   <td class="px-4 py-3">
-                    <AppBadge :variant="getStatusBadgeVariant(payment.paymentStatus)">{{ payment.paymentStatus }}</AppBadge>
+                    <AppBadge :variant="getStatusBadgeVariant(payment.paymentStatus)">{{ $t(statusI18nKey[payment.paymentStatus] || payment.paymentStatus) }}</AppBadge>
                   </td>
                 </tr>
               </tbody>

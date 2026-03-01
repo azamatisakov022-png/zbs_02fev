@@ -1109,6 +1109,8 @@ const goHome = () => {
                       <input
                         v-model="formData.passportDate"
                         type="date"
+                        min="2000-01-01"
+                        :max="`${new Date().getFullYear() + 1}-12-31`"
                         class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
                       />
                     </div>

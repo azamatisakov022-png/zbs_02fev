@@ -11,6 +11,10 @@ import {
 import { getNormativeForGroup, normativeTiers, getNormativeTier } from '../data/recycling-norms'
 import { toastStore } from '../stores/toast'
 import ProductGroupSelector from '../components/ProductGroupSelector.vue'
+import PenaltyCalculator from '../components/penalty/PenaltyCalculator.vue'
+import { calculatePenalty } from '../utils/penalty'
+import { downloadElementAsPdf } from '../utils/pdfExport'
+import { PAYMENT_ACCOUNTS } from '../config/payment-accounts'
 
 const { t } = useI18n()
 
@@ -26,6 +30,45 @@ interface CalcRow {
   rate: number
   amount: number
 }
+
+// ─── Tab state ───
+const activeTab = ref<'calculator' | 'penalty'>('calculator')
+
+// ─── Penalty calculator state ───
+const penaltyDebtAmount = ref('')
+const penaltyDueDate = ref('')
+const penaltyResult = ref<ReturnType<typeof calculatePenalty> | null>(null)
+
+function calculatePenaltyForm() {
+  const amount = parseFloat(penaltyDebtAmount.value)
+  if (!amount || amount <= 0 || !penaltyDueDate.value) return
+  // Parse yyyy-MM-dd from input[type=date] to Date
+  const [y, m, d] = penaltyDueDate.value.split('-')
+  const dueDate = new Date(+y, +m - 1, +d)
+  penaltyResult.value = calculatePenalty(amount, dueDate)
+}
+
+function clearPenaltyForm() {
+  penaltyDebtAmount.value = ''
+  penaltyDueDate.value = ''
+  penaltyResult.value = null
+}
+
+const isPenaltyFormValid = computed(() => {
+  const amount = parseFloat(penaltyDebtAmount.value)
+  return amount > 0 && !!penaltyDueDate.value
+})
+
+// ─── Inline penalty in result ───
+const showInlinePenalty = ref(false)
+const inlinePenaltyDate = ref('')
+const inlinePenaltyResult = computed(() => {
+  if (!inlinePenaltyDate.value || totalAmount.value <= 0) return null
+  const [y, m, d] = inlinePenaltyDate.value.split('-')
+  const dueDate = new Date(+y, +m - 1, +d)
+  const result = calculatePenalty(totalAmount.value, dueDate)
+  return result.overdueDays > 0 ? result : null
+})
 
 // ─── State ───
 let nextRowId = 1
@@ -183,86 +226,23 @@ function getSubgroupLabel(row: CalcRow): string {
 }
 
 // ─── PDF Export ───
-function downloadPdf() {
-  const now = new Date()
-  const dateStr = now.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+const pdfLoading = ref(false)
 
-  const tableRows = resultRows.value.map(r => {
-    return `<tr>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:left">${getGroupLabel(r.group)}</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:left;font-size:11px">${getSubgroupLabel(r)}</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:right">${fmtDec(parseFloat(String(r.volume)) || 0)}</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:center">${r.recyclingStandard}%</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:right">${fmtDec(r.volumeToRecycle)}</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:right">${fmt(r.rate)}</td>
-      <td style="padding:6px 10px;border:1px solid #d1d5db;text-align:right;font-weight:600">${fmtDec(r.amount)}</td>
-    </tr>`
-  }).join('')
+async function downloadPdf() {
+  const el = document.getElementById('calculation-result')
+  if (!el) return
 
-  const totalVol = resultRows.value.reduce((s, r) => s + (parseFloat(String(r.volume)) || 0), 0)
-
-  const html = `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8">
-<title>${t('calculatorPage.pdfTitle')}</title>
-<style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1e293b; font-size: 13px; }
-  h1 { font-size: 18px; text-align: center; margin-bottom: 4px; }
-  h2 { font-size: 14px; text-align: center; color: #64748b; font-weight: normal; margin-bottom: 24px; }
-  .header-line { text-align: center; font-size: 13px; color: #64748b; margin-bottom: 6px; }
-  table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-  th { padding: 6px 10px; border: 1px solid #94a3b8; background: #f1f5f9; text-align: center; font-weight: 600; font-size: 12px; }
-  .total-row td { font-weight: 700; background: #f8fafc; }
-  .formula { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 8px; margin: 16px 0; }
-  .total-box { background: #ecfdf5; border: 2px solid #22c55e; padding: 16px; border-radius: 8px; text-align: center; margin: 16px 0; }
-  .total-amount { font-size: 22px; font-weight: 700; color: #15803d; }
-  .disclaimer { margin-top: 32px; padding: 12px 16px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; font-size: 12px; color: #92400e; }
-  @media print { body { margin: 20px; } }
-</style></head><body>
-  <div class="header-line">${t('calculatorPage.pdfAisTitle')}</div>
-  <h1>${t('calculatorPage.pdfTitle')}</h1>
-  <h2>${t('calculatorPage.pdfDate')} ${dateStr}, ${timeStr}</h2>
-  <div style="margin-bottom:8px">
-    <strong>${t('calculatorPage.pdfOperationType')}</strong> ${operationType.value === 'import' ? t('calculatorPage.import') : t('calculatorPage.production')} &nbsp;
-    <strong>${t('calculatorPage.pdfYear')}</strong> ${year.value}
-  </div>
-  <div class="formula"><strong>${t('calculatorPage.formulaLabel')}</strong> Усб = (Масса &times; Норматив / 100) &times; Ставка</div>
-  <table>
-    <thead><tr>
-      <th style="text-align:left">${t('calculatorPage.group')}</th>
-      <th style="text-align:left">${t('calculatorPage.subgroup')}</th>
-      <th>${t('calculatorPage.massT')}</th>
-      <th>${t('calculatorPage.normPercent')}</th>
-      <th>${t('calculatorPage.toRecycleT')}</th>
-      <th>${t('calculatorPage.rateSomT')}</th>
-      <th>${t('calculatorPage.amountSom')}</th>
-    </tr></thead>
-    <tbody>${tableRows}
-      <tr class="total-row">
-        <td style="padding:6px 10px;border:1px solid #94a3b8" colspan="2"><strong>${t('calculatorPage.total')}</strong></td>
-        <td style="padding:6px 10px;border:1px solid #94a3b8;text-align:right"><strong>${fmtDec(totalVol)}</strong></td>
-        <td style="padding:6px 10px;border:1px solid #94a3b8" colspan="2"></td>
-        <td style="padding:6px 10px;border:1px solid #94a3b8"></td>
-        <td style="padding:6px 10px;border:1px solid #94a3b8;text-align:right"><strong>${fmtDec(totalAmount.value)}</strong></td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="total-box">
-    <div style="color:#64748b;margin-bottom:4px">${t('calculatorPage.totalFee')}</div>
-    <div class="total-amount">${fmtDec(totalAmount.value)} ${t('calculatorPage.som')}</div>
-  </div>
-  <div class="disclaimer">${t('calculatorPage.pdfDisclaimer')}</div>
-  <div style="font-size:12px;color:#64748b;margin-top:24px">
-    <p>${t('calculatorPage.pdfRates')}</p>
-    <p>${t('calculatorPage.pdfNorms')}</p>
-  </div>
-</body></html>`
-
-  const w = window.open('', '_blank')
-  if (!w) { toastStore.show({ type: 'warning', title: t('calculatorPage.popupBlockedTitle'), message: t('calculatorPage.popupBlockedMessage') }); return }
-  w.document.write(html)
-  w.document.close()
-  w.onload = () => { w.print() }
+  pdfLoading.value = true
+  try {
+    const now = new Date()
+    const dateStr = now.toISOString().slice(0, 10)
+    const filename = `Расчёт_УС_${dateStr}.pdf`
+    await downloadElementAsPdf(el, filename)
+  } catch {
+    toastStore.show({ type: 'error', title: t('calculatorPage.pdfErrorTitle'), message: t('calculatorPage.pdfErrorMessage') })
+  } finally {
+    pdfLoading.value = false
+  }
 }
 </script>
 
@@ -271,15 +251,141 @@ function downloadPdf() {
     <!-- Banner (contained, rounded, same width as content) -->
     <div class="container-main pt-8 lg:pt-10">
       <div class="text-white rounded-2xl py-10 lg:py-14 px-6 text-center" style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%)">
-        <h1 class="text-3xl lg:text-4xl font-bold mb-3">{{ $t('calculatorPage.title') }}</h1>
+        <h1 class="text-3xl lg:text-4xl font-bold mb-3">{{ activeTab === 'calculator' ? $t('calculatorPage.title') : $t('penalty.penaltyTabTitle') }}</h1>
         <p class="text-white/80 text-base lg:text-lg max-w-2xl mx-auto">
-          {{ $t('calculatorPage.subtitle') }}
+          {{ activeTab === 'calculator' ? $t('calculatorPage.subtitle') : $t('penalty.penaltyTabSubtitle') }}
         </p>
       </div>
     </div>
 
+    <!-- Tab switcher -->
+    <div class="container-main mt-6">
+      <div class="inline-flex bg-[#f1f5f9] rounded-xl p-1">
+        <button
+          @click="activeTab = 'calculator'"
+          :class="['px-5 py-2.5 rounded-lg text-sm font-semibold transition-all',
+            activeTab === 'calculator'
+              ? 'bg-white text-[#1e293b] shadow-sm'
+              : 'text-[#64748b] hover:text-[#1e293b]']"
+        >{{ $t('calculatorPage.tabFeeCalculator') }}</button>
+        <button
+          @click="activeTab = 'penalty'"
+          :class="['px-5 py-2.5 rounded-lg text-sm font-semibold transition-all',
+            activeTab === 'penalty'
+              ? 'bg-white text-[#1e293b] shadow-sm'
+              : 'text-[#64748b] hover:text-[#1e293b]']"
+        >{{ $t('calculatorPage.tabPenaltyCalculator') }}</button>
+      </div>
+    </div>
+
     <div class="container-main py-8 lg:py-10">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- ════════ PENALTY CALCULATOR TAB ════════ -->
+      <div v-if="activeTab === 'penalty'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- LEFT: Penalty form + result -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Input form -->
+          <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
+            <h2 class="text-lg font-bold text-[#1e293b] mb-5">{{ $t('penalty.title') }}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('penalty.debtAmount') }}</label>
+                <div class="relative">
+                  <input
+                    type="number"
+                    v-model="penaltyDebtAmount"
+                    :placeholder="$t('penalty.enterAmount')"
+                    step="0.01" min="0"
+                    class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm pr-16"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">{{ $t('penalty.som') }}</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('penalty.dueDate') }}</label>
+                <input
+                  type="date"
+                  v-model="penaltyDueDate"
+                  min="2020-01-01"
+                  :max="`${new Date().getFullYear() + 1}-12-31`"
+                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm"
+                />
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-3 mt-5">
+              <button @click="calculatePenaltyForm" :disabled="!isPenaltyFormValid"
+                :class="['flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm',
+                  isPenaltyFormValid
+                    ? 'bg-[#10b981] text-white hover:bg-[#059669] hover:shadow-md'
+                    : 'bg-[#e2e8f0] text-[#94a3b8] cursor-not-allowed']">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                {{ $t('penalty.calculate') }}
+              </button>
+              <button @click="clearPenaltyForm"
+                class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border border-[#e2e8f0] text-[#64748b] hover:bg-white hover:border-[#94a3b8] transition-colors">
+                {{ $t('calculatorPage.clear') }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Penalty result -->
+          <Transition
+            enter-active-class="transition-all duration-500 ease-out"
+            enter-from-class="opacity-0 translate-y-4"
+            enter-to-class="opacity-100 translate-y-0"
+          >
+            <div v-if="penaltyResult && penaltyResult.overdueDays > 0">
+              <PenaltyCalculator
+                :debtAmount="penaltyResult.debtAmount"
+                :dueDate="penaltyResult.dueDate"
+              />
+            </div>
+          </Transition>
+
+          <!-- Not overdue message -->
+          <div v-if="penaltyResult && penaltyResult.overdueDays === 0" class="bg-green-50 rounded-2xl border border-green-200 p-6 text-center">
+            <svg class="w-12 h-12 text-green-500 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <p class="text-lg font-semibold text-green-800">{{ $t('penalty.notOverdue') }}</p>
+          </div>
+        </div>
+
+        <!-- RIGHT: Article 37 sidebar -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-6 space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h3 class="font-bold text-[#1e293b]">{{ $t('penalty.article37Title') }}</h3>
+              </div>
+              <p class="text-sm text-[#64748b] leading-relaxed mb-4">
+                {{ $t('penalty.article37Text') }}
+              </p>
+              <p class="text-xs text-[#94a3b8]">{{ $t('penalty.article37Source') }}</p>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="bg-[#fefce8] rounded-2xl border border-[#fde68a] p-5">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════ FEE CALCULATOR TAB ════════ -->
+      <div v-if="activeTab === 'calculator'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- LEFT: Calculator Form -->
         <div class="lg:col-span-2 space-y-6">
 
@@ -463,7 +569,7 @@ function downloadPdf() {
             enter-to-class="opacity-100 translate-y-0"
           >
             <div v-if="showResult" id="calc-result" class="space-y-6">
-              <div class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
+              <div id="calculation-result" class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
                 <h3 class="text-lg font-bold text-[#065f46] mb-4">{{ $t('calculatorPage.result') }}</h3>
 
                 <!-- Result table -->
@@ -510,9 +616,14 @@ function downloadPdf() {
 
               <!-- Action buttons -->
               <div class="flex flex-wrap gap-3">
-                <button @click="downloadPdf"
-                  class="flex items-center gap-2 px-5 py-2.5 bg-white rounded-xl text-sm font-medium border border-[#e2e8f0] text-[#1e293b] hover:border-[#10b981] hover:text-[#10b981] transition-colors shadow-sm">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <button @click="downloadPdf" :disabled="pdfLoading"
+                  :class="['flex items-center gap-2 px-5 py-2.5 bg-white rounded-xl text-sm font-medium border border-[#e2e8f0] transition-colors shadow-sm',
+                    pdfLoading ? 'text-[#94a3b8] cursor-wait' : 'text-[#1e293b] hover:border-[#10b981] hover:text-[#10b981]']">
+                  <svg v-if="pdfLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   {{ $t('calculatorPage.downloadPdf') }}
@@ -521,6 +632,46 @@ function downloadPdf() {
                   class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] rounded-xl text-sm font-semibold text-white hover:bg-[#059669] transition-colors shadow-sm">
                   {{ $t('calculatorPage.newCalc') }}
                 </button>
+              </div>
+
+              <!-- Expandable inline penalty calculator -->
+              <div class="border border-[#e2e8f0] rounded-xl overflow-hidden">
+                <button @click="showInlinePenalty = !showInlinePenalty" class="w-full flex items-center justify-between px-5 py-3 bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors text-left">
+                  <span class="text-sm font-medium text-[#1e293b]">{{ $t('payment.inlinePenaltyTitle') }}</span>
+                  <svg :class="['w-4 h-4 text-[#94a3b8] transition-transform', showInlinePenalty ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                <div v-if="showInlinePenalty" class="p-5 border-t border-[#e2e8f0] bg-white">
+                  <div class="flex flex-col sm:flex-row gap-3 mb-4">
+                    <div class="flex-1">
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.dueDate') }}</label>
+                      <input type="date" v-model="inlinePenaltyDate" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#10b981]" />
+                    </div>
+                    <div class="flex-1">
+                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.debtAmount') }}</label>
+                      <p class="px-3 py-2 text-sm font-semibold text-[#1e293b]">{{ fmtDec(totalAmount) }} {{ $t('calculatorPage.som') }}</p>
+                    </div>
+                  </div>
+                  <div v-if="inlinePenaltyResult" class="space-y-3">
+                    <div class="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-4 text-sm">
+                      <div class="flex justify-between py-1"><span class="text-[#64748b]">{{ $t('penalty.overdueDays') }}</span><span class="font-semibold text-[#DC2626]">{{ inlinePenaltyResult.overdueDays }} {{ $t('payment.calDays') }}</span></div>
+                      <div class="flex justify-between py-1"><span class="text-[#64748b]">{{ $t('penalty.dailyPenalty') }}</span><span class="font-semibold">{{ inlinePenaltyResult.dailyPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span></div>
+                      <div class="border-t border-[#fecaca] mt-1 pt-1 flex justify-between"><span class="font-semibold">{{ $t('penalty.totalPenalty') }}</span><span class="font-bold text-[#DC2626] text-lg">{{ inlinePenaltyResult.totalPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div class="bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg p-3">
+                        <p class="font-semibold text-[#065f46] mb-1">{{ $t('payment.payment1Title') }}</p>
+                        <p>{{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</p>
+                        <p class="font-mono">{{ $t('payment.accountNumber') }}: {{ PAYMENT_ACCOUNTS.utilization_fee.account }}</p>
+                      </div>
+                      <div class="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-3">
+                        <p class="font-semibold text-[#991b1b] mb-1">{{ $t('payment.payment2Title') }}</p>
+                        <p>{{ PAYMENT_ACCOUNTS.penalty.recipient }}</p>
+                        <p class="font-mono">{{ $t('payment.accountNumber') }}: {{ PAYMENT_ACCOUNTS.penalty.account }}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p v-else-if="inlinePenaltyDate" class="text-sm text-[#10b981]">{{ $t('penalty.notOverdue') }}</p>
+                </div>
               </div>
             </div>
           </Transition>

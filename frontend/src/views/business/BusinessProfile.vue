@@ -427,6 +427,8 @@ const toggleTwoFactor = () => {
                 v-if="editingSection === 'company'"
                 v-model="companyData.registrationDate"
                 type="date"
+                min="2000-01-01"
+                :max="`${new Date().getFullYear() + 1}-12-31`"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
               <p v-else class="text-gray-900">{{ new Date(companyData.registrationDate).toLocaleDateString() }}</p>

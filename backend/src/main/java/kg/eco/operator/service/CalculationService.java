@@ -3,6 +3,8 @@ package kg.eco.operator.service;
 import kg.eco.operator.dto.request.*;
 import kg.eco.operator.dto.response.CalculationResponse;
 import kg.eco.operator.dto.response.PaginatedResponse;
+import kg.eco.operator.dto.response.PenaltyResponse;
+import kg.eco.operator.dto.response.AuditEntryResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -48,4 +50,8 @@ public interface CalculationService {
     long getReviewCount();
 
     List<CalculationResponse> getByCompany(Long companyId);
+
+    PenaltyResponse calculatePenalty(Long id);
+
+    List<AuditEntryResponse> getHistory(Long id);
 }

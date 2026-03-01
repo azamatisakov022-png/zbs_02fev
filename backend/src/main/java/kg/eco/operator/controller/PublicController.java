@@ -66,4 +66,12 @@ public class PublicController {
     public ResponseEntity<List<Map<String, Object>>> getFaq() {
         return ResponseEntity.ok(publicService.getFaq());
     }
+
+    /**
+     * GET /public/payment-accounts — Реквизиты для оплаты
+     */
+    @GetMapping("/payment-accounts")
+    public ResponseEntity<Map<String, Object>> getPaymentAccounts() {
+        return ResponseEntity.ok(publicService.getPaymentAccounts());
+    }
 }

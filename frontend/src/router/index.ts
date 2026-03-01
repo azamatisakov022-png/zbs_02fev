@@ -265,6 +265,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.businessCalculator' },
   },
   {
+    path: '/business/calculations/:id/payment',
+    name: 'calculation-payment',
+    component: () => import('../views/business/PaymentView.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  {
     path: '/business/calculations/:id',
     name: 'calculation-detail',
     component: () => import('../views/business/CalculationDetailView.vue'),

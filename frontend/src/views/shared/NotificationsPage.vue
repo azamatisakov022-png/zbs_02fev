@@ -82,9 +82,9 @@ function getNotificationLink(n: Notification): string | null {
 }
 
 function handleNavigate(n: Notification) {
+  notificationStore.markAsRead(n.id)
   const link = getNotificationLink(n)
   if (link) {
-    notificationStore.markAsRead(n.id)
     router.push(link)
   }
 }
@@ -159,7 +159,7 @@ const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: 
           <div
             v-for="n in notifications"
             :key="n.id"
-            @click="handleMarkRead(n.id)"
+            @click="handleNavigate(n)"
             :class="[
               'px-6 py-4 flex gap-4 cursor-pointer transition-colors border-b border-[#f1f5f9] last:border-0',
               n.read ? 'bg-white hover:bg-[#f8fafc]' : 'bg-blue-50/40 hover:bg-blue-50/60'

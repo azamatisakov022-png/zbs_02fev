@@ -6,6 +6,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
@@ -392,7 +393,7 @@ const resetDocFilters = () => {
           </span>
 
           <!-- Status -->
-          <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ doc.status }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ $t(statusI18nKey[doc.status] || doc.status) }}</AppBadge>
 
           <!-- Actions -->
           <div class="flex items-center gap-2">
@@ -442,7 +443,7 @@ const resetDocFilters = () => {
               <p class="font-medium text-[#1e293b] text-sm truncate">{{ doc.name }}</p>
               <p class="text-xs text-[#64748b] mt-0.5">{{ doc.type }} &middot; {{ doc.size }} &middot; {{ doc.uploadedAt }}</p>
             </div>
-            <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ doc.status }}</AppBadge>
+            <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ $t(statusI18nKey[doc.status] || doc.status) }}</AppBadge>
           </div>
           <div class="flex gap-2">
             <AppButton variant="ghost" size="sm" class="flex-1" @click="viewDocument(doc)">

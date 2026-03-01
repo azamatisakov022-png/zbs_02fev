@@ -138,6 +138,26 @@ const goBack = () => {
             </button>
           </div>
 
+          <!-- Demo accounts hint -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+            <p class="text-sm font-semibold text-amber-800">{{ $t('login.demoTitle') }}</p>
+            <div class="grid grid-cols-1 gap-1 text-xs text-amber-700 font-mono">
+              <button type="button" @click="loginForm.inn = '00000000000001'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">
+                00000000000001 — {{ $t('roles.business') }}
+              </button>
+              <button type="button" @click="loginForm.inn = '00000000000002'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">
+                00000000000002 — {{ $t('roles.ecoOperator') }}
+              </button>
+              <button type="button" @click="loginForm.inn = '00000000000003'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">
+                00000000000003 — {{ $t('roles.employee') }}
+              </button>
+              <button type="button" @click="loginForm.inn = '00000000000004'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">
+                00000000000004 — {{ $t('roles.admin') }}
+              </button>
+            </div>
+            <p class="text-xs text-amber-600">{{ $t('login.demoPassword') }}: demo</p>
+          </div>
+
           <!-- Register Link -->
           <div class="text-center">
             <p class="text-[#70868f] text-sm">
