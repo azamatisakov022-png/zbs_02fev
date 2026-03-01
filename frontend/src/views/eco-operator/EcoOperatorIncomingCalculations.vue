@@ -9,9 +9,11 @@ import { calculationStore, type Calculation } from '../../stores/calculations'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { CalcStatus } from '../../constants/statuses'
+import { CalcStatus, statusI18nKey } from '../../constants/statuses'
+import { calculatePenalty, getOverdueDays } from '../../utils/penalty'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { formatNum } from '../../utils/formatNumber'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -25,12 +27,13 @@ const activeTab = ref<'calculations' | 'payments'>('calculations')
 // ========================
 const columns = computed(() => [
   { key: 'number', label: t('ecoIncomingCalcs.colNumber'), width: '9%' },
-  { key: 'company', label: t('ecoIncomingCalcs.colPayer'), width: '14%' },
-  { key: 'inn', label: t('ecoIncomingCalcs.colInn'), width: '10%' },
-  { key: 'payerTypeLabel', label: t('ecoIncomingCalcs.colType'), width: '8%' },
+  { key: 'company', label: t('ecoIncomingCalcs.colPayer'), width: '13%' },
+  { key: 'inn', label: t('ecoIncomingCalcs.colInn'), width: '9%' },
+  { key: 'payerTypeLabel', label: t('ecoIncomingCalcs.colType'), width: '7%' },
   { key: 'date', label: t('ecoIncomingCalcs.colDateSubmitted'), width: '8%' },
-  { key: 'itemCount', label: t('ecoIncomingCalcs.colItems'), width: '6%' },
+  { key: 'itemCount', label: t('ecoIncomingCalcs.colItems'), width: '5%' },
   { key: 'totalAmount', label: t('ecoIncomingCalcs.colAmount'), width: '10%' },
+  { key: 'assignedName', label: t('workflow.assignedTo'), width: '9%' },
   { key: 'status', label: t('ecoIncomingCalcs.colStatus'), width: '10%' },
 ])
 
@@ -38,6 +41,7 @@ const columns = computed(() => [
 const searchQuery = ref('')
 const statusFilter = ref('')
 const periodFilter = ref('')
+const assigneeFilter = ref<'all' | 'unassigned' | 'mine'>('all')
 
 const filteredCalculations = computed(() => {
   let list = calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT)
@@ -51,35 +55,59 @@ const filteredCalculations = computed(() => {
   if (periodFilter.value) {
     list = list.filter(c => c.year === periodFilter.value)
   }
+  if (assigneeFilter.value === 'unassigned') {
+    list = list.filter(c => !c.assignedTo)
+  } else if (assigneeFilter.value === 'mine') {
+    list = list.filter(c => c.assignedTo === 'operator-1')
+  }
   return list
     .sort((a, b) => {
-      // Sort by date descending (newer first)
       const da = a.date.split('.').reverse().join('')
       const db = b.date.split('.').reverse().join('')
       return db.localeCompare(da)
     })
-    .map(c => ({
-      ...c,
-      totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
-      payerTypeLabel: c.payerType === 'importer' ? t('ecoIncomingCalcs.importer') : t('ecoIncomingCalcs.producer'),
-      itemCount: c.items.length,
-    }))
+    .map(c => {
+      let penaltyInfo: { overdueDays: number; totalPenalty: number } | null = null
+      if (c.dueDate && c.status !== CalcStatus.PAID && c.status !== CalcStatus.COMPLETED && c.totalAmount > 0) {
+        const days = getOverdueDays(c.dueDate)
+        if (days > 0) {
+          const p = calculatePenalty(c.totalAmount, c.dueDate)
+          penaltyInfo = { overdueDays: p.overdueDays, totalPenalty: p.totalPenalty }
+        }
+      }
+      return {
+        ...c,
+        assignedName: c.assignedName || '—',
+        totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
+        payerTypeLabel: c.payerType === 'importer' ? t('ecoIncomingCalcs.importer') : t('ecoIncomingCalcs.producer'),
+        itemCount: c.items.length,
+        penaltyInfo,
+        totalToPay: c.totalAmount + (penaltyInfo ? penaltyInfo.totalPenalty : 0),
+      }
+    })
 })
 
 // Stats
 const totalCount = computed(() => calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT).length)
-const pendingCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW).length)
-const approvedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_PENDING).length)
+const pendingCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.SUBMITTED).length)
+const inReviewCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.IN_REVIEW).length)
+const approvedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED).length)
 const rejectedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
     case 'draft': return 'bg-gray-100 text-gray-800'
     case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'submitted': return 'bg-yellow-100 text-yellow-800'
+    case 'in_review': return 'bg-yellow-100 text-yellow-800'
+    case 'revision': return 'bg-amber-100 text-amber-800'
     case 'approved': return 'bg-green-100 text-green-800'
     case 'rejected': return 'bg-red-100 text-red-800'
     case 'payment_pending': return 'bg-purple-100 text-purple-800'
     case 'paid': return 'bg-blue-100 text-blue-800'
+    case 'fee_paid': return 'bg-blue-100 text-blue-800'
+    case 'penalty_paid': return 'bg-green-100 text-green-800'
+    case 'completed': return 'bg-green-100 text-green-800'
     case 'payment_rejected': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
@@ -150,9 +178,13 @@ const paymentSearchQuery = ref('')
 
 const paymentPendingCount = computed(() => calculationStore.getPaymentPendingCount())
 
+const awaitingFeePaymentCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED).length)
+const feeReceiptsToReviewCount = computed(() => calculationStore.state.calculations.filter(c => (c as any).feePayment && !c.feeConfirmedAt && c.status !== CalcStatus.COMPLETED).length)
+const penaltyReceiptsToReviewCount = computed(() => calculationStore.state.calculations.filter(c => (c as any).penaltyPayment && !c.penaltyConfirmedAt && c.status === CalcStatus.FEE_PAID).length)
+
 const filteredPayments = computed(() => {
   let list = calculationStore.state.calculations.filter(c =>
-    c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED
+    c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED
   )
   if (paymentSearchQuery.value) {
     const q = paymentSearchQuery.value.toLowerCase()
@@ -160,9 +192,11 @@ const filteredPayments = computed(() => {
   }
   return list.map(c => ({
     ...c,
-    totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
-    paymentDate: c.payment?.paymentDate || '',
+    totalAmountFormatted: formatNum(c.totalAmount, 0) + ' ' + t('ecoIncomingCalcs.som'),
+    paymentDate: c.payment?.paymentDate || (c as any).feePayment?.uploadedAt || '',
     paymentOrderNumber: c.payment?.paymentOrderNumber || '',
+    hasFeeReceipt: !!(c as any).feePayment,
+    hasPenaltyReceipt: !!(c as any).penaltyPayment,
   }))
 })
 
@@ -189,7 +223,7 @@ const allCalculations = computed(() => calculationStore.state.calculations.filte
 const isCalcFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
 
 const allPayments = computed(() => calculationStore.state.calculations.filter(c =>
-  c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED
+  c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED
 ))
 const isPaymentFiltersActive = computed(() => !!paymentSearchQuery.value)
 
@@ -246,8 +280,15 @@ const resetPaymentFilters = () => {
           </div>
           <p class="text-sm font-medium text-purple-800">{{ $t('ecoIncomingCalcs.statPaymentReview') }}</p>
         </div>
-        <p class="text-3xl font-bold text-purple-900">{{ paymentPendingCount }}</p>
-        <p class="text-xs text-purple-600 mt-1">{{ $t('ecoIncomingCalcs.statAwaitingPaymentConfirm') }}</p>
+        <p class="text-3xl font-bold text-purple-900">{{ paymentPendingCount + feeReceiptsToReviewCount + penaltyReceiptsToReviewCount }}</p>
+        <p class="text-xs text-purple-600 mt-1">
+          <span v-if="awaitingFeePaymentCount > 0">{{ $t('ecoIncomingCalcs.awaitingFeePayment') }}: {{ awaitingFeePaymentCount }}</span>
+          <span v-if="awaitingFeePaymentCount > 0 && (feeReceiptsToReviewCount > 0 || penaltyReceiptsToReviewCount > 0)"> · </span>
+          <span v-if="feeReceiptsToReviewCount > 0">{{ $t('ecoIncomingCalcs.feeReceiptsToReview') }}: {{ feeReceiptsToReviewCount }}</span>
+          <span v-if="feeReceiptsToReviewCount > 0 && penaltyReceiptsToReviewCount > 0"> · </span>
+          <span v-if="penaltyReceiptsToReviewCount > 0">{{ $t('ecoIncomingCalcs.penaltyReceiptsToReview') }}: {{ penaltyReceiptsToReviewCount }}</span>
+          <span v-if="awaitingFeePaymentCount === 0 && feeReceiptsToReviewCount === 0 && penaltyReceiptsToReviewCount === 0">{{ $t('ecoIncomingCalcs.statAwaitingPaymentConfirm') }}</span>
+        </p>
       </div>
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
         <div class="flex items-center gap-3 mb-3">
@@ -331,11 +372,21 @@ const resetPaymentFilters = () => {
           <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
             <option value="">{{ $t('common.allStatuses') }}</option>
             <option value="under_review">{{ $t('status.underReview') }}</option>
+            <option value="in_review">{{ $t('status.inReview') }}</option>
+            <option value="revision">{{ $t('status.revision') }}</option>
             <option value="approved">{{ $t('status.approved') }}</option>
             <option value="rejected">{{ $t('status.rejected') }}</option>
+            <option value="fee_paid">{{ $t('status.feePaid') }}</option>
             <option value="payment_pending">{{ $t('status.paymentPending') }}</option>
             <option value="paid">{{ $t('status.paid') }}</option>
+            <option value="penalty_paid">{{ $t('status.penaltyPaid') }}</option>
+            <option value="completed">{{ $t('status.completed') }}</option>
             <option value="payment_rejected">{{ $t('status.paymentRejected') }}</option>
+          </select>
+          <select v-model="assigneeFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
+            <option value="all">{{ $t('common.all') }}</option>
+            <option value="unassigned">{{ $t('workflow.notAssigned') }}</option>
+            <option value="mine">{{ $t('workflow.assignedTo') }}: Я</option>
           </select>
           <select v-model="periodFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
             <option value="">{{ $t('ecoIncomingCalcs.allPeriods') }}</option>
@@ -360,10 +411,21 @@ const resetPaymentFilters = () => {
           <span class="text-[#1e293b]">{{ value }}</span>
         </template>
         <template #cell-totalAmount="{ row }">
-          <span class="font-semibold text-[#1e293b]">{{ row.totalAmountFormatted }}</span>
+          <div>
+            <span class="font-bold text-[#1e293b]">{{ formatNum(row.totalAmount, 0) }} {{ $t('ecoIncomingCalcs.som') }}</span>
+          </div>
+          <div v-if="row.penaltyInfo" style="font-size: 12px; color: #d97706; margin-top: 2px">
+            {{ $t('ecoIncomingCalcs.amountPenalty', { amount: formatNum(row.penaltyInfo.totalPenalty, 0), days: row.penaltyInfo.overdueDays }) }}
+          </div>
+          <div v-if="row.penaltyInfo" style="font-size: 12px; color: #64748b; margin-top: 1px">
+            {{ $t('ecoIncomingCalcs.amountTotal', { amount: formatNum(row.totalToPay, 0) }) }}
+          </div>
+        </template>
+        <template #cell-assignedName="{ value }">
+          <span class="text-xs text-[#64748b]">{{ value }}</span>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
@@ -420,13 +482,23 @@ const resetPaymentFilters = () => {
         </template>
         <template #cell-totalAmount="{ row }">
           <span class="font-semibold text-[#1e293b]">{{ row.totalAmountFormatted }}</span>
+          <div class="flex flex-wrap gap-1 mt-1">
+            <span v-if="row.hasFeeReceipt" class="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              {{ $t('ecoIncomingCalcs.feeReceiptUploaded') }}
+            </span>
+            <span v-if="row.hasPenaltyReceipt" class="inline-flex items-center gap-1 text-[10px] font-medium text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              {{ $t('ecoIncomingCalcs.penaltyReceiptUploaded') }}
+            </span>
+          </div>
         </template>
         <template #cell-status="{ value }">
-          <AppBadge :variant="getStatusBadgeVariant(value)">{{ value }}</AppBadge>
+          <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
         </template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
-            <AppButton variant="ghost" size="sm" @click="openDetailModal(row)">
+            <AppButton variant="ghost" size="sm" @click="openDetail(row)">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -442,6 +514,22 @@ const resetPaymentFilters = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
               {{ $t('ecoIncomingCalcs.review') }}
+            </AppButton>
+            <AppButton
+              v-if="row.hasFeeReceipt && !row.feeConfirmedAt && row.status !== 'completed'"
+              variant="primary" size="sm"
+              @click="openDetail(row)"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              {{ $t('ecoIncomingCalcs.confirmFeeBtn') }}
+            </AppButton>
+            <AppButton
+              v-if="row.hasPenaltyReceipt && !row.penaltyConfirmedAt && row.status === 'fee_paid'"
+              variant="danger" size="sm"
+              @click="openDetail(row)"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+              {{ $t('ecoIncomingCalcs.confirmPenaltyBtn') }}
             </AppButton>
           </div>
         </template>
@@ -475,7 +563,7 @@ const resetPaymentFilters = () => {
               <p class="text-sm text-[#64748b]">{{ $t('ecoIncomingCalcs.fromDate') }} {{ selectedCalculation.date }}</p>
             </div>
             <div class="flex items-center gap-3">
-              <AppBadge :variant="getStatusBadgeVariant(selectedCalculation.status)">{{ selectedCalculation.status }}</AppBadge>
+              <AppBadge :variant="getStatusBadgeVariant(selectedCalculation.status)">{{ $t(statusI18nKey[selectedCalculation.status] || selectedCalculation.status) }}</AppBadge>
               <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -540,9 +628,9 @@ const resetPaymentFilters = () => {
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
                       </template>
-                      <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
-                      <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }} {{ $t('ecoIncomingCalcs.somPerTon') }}</td>
-                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }} {{ $t('ecoIncomingCalcs.som') }}</td>
+                      <td class="px-4 py-3 text-right font-medium">{{ formatNum(item.volume) }}</td>
+                      <td class="px-4 py-3 text-right">{{ formatNum(item.rate, 0) }} {{ $t('ecoIncomingCalcs.somPerTon') }}</td>
+                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ formatNum(item.amount, 0) }} {{ $t('ecoIncomingCalcs.som') }}</td>
                     </tr>
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">

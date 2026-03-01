@@ -9,10 +9,15 @@ import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
 import { accountStore } from '../../stores/account'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
-import { CalcStatus } from '../../constants/statuses'
+import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
+import AuditLog from '../../components/AuditLog.vue'
+import { formatNum } from '../../utils/formatNumber'
+import { calculatePenalty, getOverdueDays, PENALTY_DAILY_RATE } from '../../utils/penalty'
+import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
+import PenaltyInfo from '../../components/PenaltyInfo.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -25,10 +30,16 @@ const calc = computed<Calculation | undefined>(() => calculationStore.getCalcula
 const getStatusClass = (status: string) => {
   switch (status) {
     case 'under_review': return 'bg-yellow-100 text-yellow-800'
+    case 'submitted': return 'bg-yellow-100 text-yellow-800'
+    case 'in_review': return 'bg-yellow-100 text-yellow-800'
     case 'approved': return 'bg-green-100 text-green-800'
     case 'rejected': return 'bg-red-100 text-red-800'
+    case 'revision': return 'bg-amber-100 text-amber-800'
     case 'payment_pending': return 'bg-purple-100 text-purple-800'
     case 'paid': return 'bg-blue-100 text-blue-800'
+    case 'fee_paid': return 'bg-blue-100 text-blue-800'
+    case 'penalty_paid': return 'bg-green-100 text-green-800'
+    case 'completed': return 'bg-green-100 text-green-800'
     default: return 'bg-gray-100 text-gray-800'
   }
 }
@@ -39,10 +50,13 @@ const timelineDates = computed(() => {
   const d: Record<string, string | undefined> = { created: calc.value.date }
   const s = calc.value.status
   if (s !== CalcStatus.DRAFT) d.submitted = calc.value.date
-  if ([CalcStatus.UNDER_REVIEW, CalcStatus.APPROVED, CalcStatus.REJECTED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) d.reviewed = calc.value.date
-  if ([CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED].includes(s as any)) { d.approved = calc.value.date; d.invoiced = calc.value.date }
+  if ([CalcStatus.UNDER_REVIEW, CalcStatus.APPROVED, CalcStatus.REJECTED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED, CalcStatus.IN_REVIEW, CalcStatus.REVISION, CalcStatus.FEE_PAID, CalcStatus.PENALTY_PAID, CalcStatus.COMPLETED].includes(s as any)) d.reviewed = calc.value.date
+  if ([CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED, CalcStatus.FEE_PAID, CalcStatus.PENALTY_PAID, CalcStatus.COMPLETED].includes(s as any)) { d.approved = calc.value.approvedAt || calc.value.date; d.invoiced = calc.value.date }
   if (s === CalcStatus.PAID) d.paid = calc.value.paidAt || calc.value.date
   if (s === CalcStatus.REJECTED) d.rejected = calc.value.rejectedAt || calc.value.date
+  if (s === CalcStatus.FEE_PAID || s === CalcStatus.COMPLETED) d.feePaid = calc.value.feeConfirmedAt || calc.value.date
+  if (s === CalcStatus.COMPLETED) d.completed = calc.value.penaltyConfirmedAt || calc.value.feeConfirmedAt || calc.value.date
+  if (s === CalcStatus.REVISION) d.revision = calc.value.date
   return d
 })
 
@@ -80,22 +94,89 @@ const reconciliation = computed(() => {
   return accountStore.getReconciliationForCalculationGlobal(calc.value.id)
 })
 
+const penaltyData = computed(() => {
+  if (!calc.value || !calc.value.dueDate) return null
+  const days = getOverdueDays(calc.value.dueDate)
+  if (days <= 0) return null
+  return calculatePenalty(calc.value.totalAmount, calc.value.dueDate)
+})
+
 // Approve / Reject
+const showApproveModal = ref(false)
 const showRejectModal = ref(false)
 const rejectionReason = ref('')
 const showToast = ref(false)
 const toastMessage = ref('')
 
+// Assignment
+const assignToMe = () => {
+  if (!calc.value) return
+  calculationStore.assignToMe(calc.value.id, 'operator-1', 'Оператор')
+  notificationStore.add({
+    type: 'info',
+    title: t('workflow.assignToMe'),
+    message: `${calc.value.number}`,
+    role: 'eco-operator'
+  })
+  toastMessage.value = t('workflow.assignToMe')
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+const unassignCalc = () => {
+  if (!calc.value) return
+  calculationStore.unassign(calc.value.id)
+  toastMessage.value = t('workflow.returnToQueue')
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+// Send to revision
+const showRevisionModal = ref(false)
+const revisionComment = ref('')
+
+const openRevisionModal = () => {
+  revisionComment.value = ''
+  showRevisionModal.value = true
+}
+
+const sendToRevision = () => {
+  if (!calc.value || revisionComment.value.trim().length < 10) return
+  calculationStore.sendToRevision(calc.value.id, revisionComment.value.trim())
+  showRevisionModal.value = false
+  toastMessage.value = t('workflow.sendToRevision')
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+// Fee/Penalty confirmation
+const confirmFee = () => {
+  if (!calc.value) return
+  calculationStore.confirmFeePayment(calc.value.id)
+  accountStore.addPayment(calc.value.id, calc.value.number, calc.value.totalAmount)
+  toastMessage.value = t('workflow.feeConfirmed')
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+const confirmPenalty = () => {
+  if (!calc.value) return
+  calculationStore.confirmPenaltyPayment(calc.value.id)
+  accountStore.addPenaltyPayment(calc.value.id, calc.value.number, calc.value.penaltyFixedAmount || 0)
+  toastMessage.value = t('workflow.penaltyConfirmed')
+  showToast.value = true
+  setTimeout(() => { showToast.value = false }, 3000)
+}
+
+const openApproveModal = () => {
+  showApproveModal.value = true
+}
+
 const approveCalc = () => {
   if (!calc.value) return
   calculationStore.approveCalculation(calc.value.id)
-  notificationStore.add({
-    type: 'success',
-    title: t('ecoCalcDetail.notifApprovedTitle'),
-    message: t('ecoCalcDetail.notifApprovedMessage', { number: calc.value.number }),
-    role: 'business',
-    link: `/business/calculations/${calc.value.id}`
-  })
+  accountStore.addCharge(calc.value.id, calc.value.number, calc.value.totalAmount)
+  showApproveModal.value = false
   toastMessage.value = t('ecoCalcDetail.toastAccepted', { number: calc.value.number })
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
@@ -109,12 +190,6 @@ const openRejectModal = () => {
 const rejectCalc = () => {
   if (!calc.value || rejectionReason.value.trim().length < 10) return
   calculationStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
-  notificationStore.add({
-    type: 'warning',
-    title: t('ecoCalcDetail.notifRejectedTitle'),
-    message: t('ecoCalcDetail.notifRejectedMessage', { number: calc.value.number, reason: rejectionReason.value.trim() }),
-    role: 'business'
-  })
   showRejectModal.value = false
   toastMessage.value = t('ecoCalcDetail.toastRejected', { number: calc.value.number })
   showToast.value = true
@@ -161,7 +236,7 @@ const downloadExcel = () => {
         <div>
           <div class="flex items-center gap-3 mb-1">
             <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ calc.number }}</h1>
-            <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(calc.status)]">{{ calc.status }}</span>
+            <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(calc.status)]">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
           </div>
           <p class="text-[#64748b]">{{ $t('ecoCalcDetail.submissionDate') }} {{ calc.date }}</p>
         </div>
@@ -249,14 +324,14 @@ const downloadExcel = () => {
                   <div v-if="item.gskpCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">{{ $t('ecoCalcDetail.gskpPrefix') }} {{ item.gskpCode }}</div>
                   <div v-if="item.tnvedCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">{{ $t('ecoCalcDetail.tnvedPrefix') }} <TnvedCode :code="item.tnvedCode" /></div>
                 </td>
-                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.volume }}</td>
+                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ formatNum(item.volume) }}</td>
                 <td class="px-4 py-3 text-right text-[#64748b]">{{ item.recyclingStandard != null ? item.recyclingStandard + '%' : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? item.volumeToRecycle : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#10b981] font-medium">{{ item.transferredToRecycling || '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#2563eb] font-medium">{{ item.exportedFromKR || '—' }}</td>
-                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.taxableVolume != null ? item.taxableVolume : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.rate.toLocaleString() }}</td>
-                <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
+                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '—' }}</td>
+                <td class="px-4 py-3 text-right text-[#10b981] font-medium">{{ item.transferredToRecycling ? formatNum(item.transferredToRecycling) : '—' }}</td>
+                <td class="px-4 py-3 text-right text-[#2563eb] font-medium">{{ item.exportedFromKR ? formatNum(item.exportedFromKR) : '—' }}</td>
+                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '—' }}</td>
+                <td class="px-4 py-3 text-right text-[#64748b]">{{ formatNum(item.rate, 0) }}</td>
+                <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ formatNum(item.amount, 0) }}</td>
               </tr>
             </tbody>
           </table>
@@ -287,27 +362,47 @@ const downloadExcel = () => {
         <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalVolumeLabel') }}</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalVolume.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ formatNum(totalVolume) }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalToRecycleLabel') }}</p>
-            <p class="text-xl font-bold text-[#64748b]">{{ totalVolumeToRecycle.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
+            <p class="text-xl font-bold text-[#64748b]">{{ formatNum(totalVolumeToRecycle) }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalTransferredLabel') }}</p>
-            <p class="text-xl font-bold text-[#10b981]">{{ totalTransferredToRecycling.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
+            <p class="text-xl font-bold text-[#10b981]">{{ formatNum(totalTransferredToRecycling) }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalExportedLabel') }}</p>
-            <p class="text-xl font-bold text-[#2563eb]">{{ totalExportedFromKR.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
+            <p class="text-xl font-bold text-[#2563eb]">{{ formatNum(totalExportedFromKR) }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalTaxableLabel') }}</p>
-            <p class="text-xl font-bold text-[#1e293b]">{{ totalTaxableVolume.toLocaleString() }} {{ $t('ecoCalcDetail.unitTon') }}</p>
+            <p class="text-xl font-bold text-[#1e293b]">{{ formatNum(totalTaxableVolume) }} {{ $t('ecoCalcDetail.unitTon') }}</p>
           </div>
           <div>
             <p class="text-sm text-[#64748b] mb-1">{{ $t('ecoCalcDetail.totalPayableLabel') }}</p>
-            <p class="text-2xl font-bold text-[#10b981]">{{ calc.totalAmount.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</p>
+            <p class="text-2xl font-bold text-[#10b981]">{{ formatNum(calc.totalAmount, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Penalty Block -->
+      <PenaltyInfo v-if="penaltyData" :debtAmount="calc.totalAmount" :dueDate="calc.dueDate" class="my-4" />
+
+      <!-- Payment Requisites -->
+      <div v-if="penaltyData" style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px">
+        <p style="font-size: 14px; font-weight: 600; color: #0c4a6e; margin-bottom: 10px">{{ $t('ecoCalcDetail.paymentRequisitesTitle') }}</p>
+        <div style="font-size: 13px; color: #1e293b; display: flex; flex-direction: column; gap: 6px">
+          <div>
+            <span style="color: #64748b">{{ $t('ecoCalcDetail.feePaymentTo') }}:</span>
+            <span style="font-weight: 600"> {{ formatNum(calc.totalAmount, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            <span style="color: #64748b"> &rarr; {{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}, р/с {{ PAYMENT_ACCOUNTS.utilization_fee.account }}</span>
+          </div>
+          <div>
+            <span style="color: #64748b">{{ $t('ecoCalcDetail.penaltyPaymentTo') }}:</span>
+            <span style="font-weight: 600; color: #ef4444"> {{ formatNum(penaltyData.totalPenalty, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            <span style="color: #64748b"> &rarr; {{ PAYMENT_ACCOUNTS.penalty.recipient }}, р/с {{ PAYMENT_ACCOUNTS.penalty.account }}</span>
           </div>
         </div>
       </div>
@@ -329,19 +424,55 @@ const downloadExcel = () => {
             <span class="g13-card__value">{{ reconciliation.charged.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</span>
             <span class="g13-card__sub">{{ $t('ecoCalcDetail.fromPersonalAccount') }}</span>
           </div>
+          <div v-if="penaltyData" class="g13-card" style="border-left: 3px solid #d97706; background: #fffbeb">
+            <span class="g13-card__label">{{ $t('ecoCalcDetail.penaltyG13Label') }}</span>
+            <span class="g13-card__value g13-card__value--red">{{ penaltyData.totalPenalty.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            <span class="g13-card__sub">{{ penaltyData.overdueDays }} {{ $t('ecoCalcDetail.penaltyCalendarDays') }}</span>
+          </div>
           <div class="g13-card">
             <span class="g13-card__label">{{ $t('ecoCalcDetail.paidForPeriod') }}</span>
             <span class="g13-card__value g13-card__value--green">{{ reconciliation.paid.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</span>
             <span class="g13-card__sub">{{ $t('ecoCalcDetail.fromPersonalAccount') }}</span>
           </div>
-          <div :class="['g13-card g13-card--diff', reconciliation.difference > 0 ? 'g13-card--debt' : reconciliation.difference < 0 ? 'g13-card--overpay' : 'g13-card--zero']">
-            <span class="g13-card__label">{{ $t('ecoCalcDetail.differenceLabel') }}</span>
-            <span class="g13-card__value" :class="{ 'g13-card__value--red': reconciliation.difference > 0, 'g13-card__value--green': reconciliation.difference < 0, 'g13-card__value--gray': reconciliation.difference === 0 }">
-              <template v-if="reconciliation.difference > 0">{{ $t('ecoCalcDetail.arrears') }} +{{ reconciliation.difference.toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
-              <template v-else-if="reconciliation.difference < 0">{{ $t('ecoCalcDetail.overpayment') }} {{ Math.abs(reconciliation.difference).toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
+          <div :class="['g13-card g13-card--diff', (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) > 0 ? 'g13-card--debt' : (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) < 0 ? 'g13-card--overpay' : 'g13-card--zero']">
+            <span class="g13-card__label">{{ penaltyData ? $t('ecoCalcDetail.debtWithPenalty') : $t('ecoCalcDetail.differenceLabel') }}</span>
+            <span class="g13-card__value" :class="{ 'g13-card__value--red': (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) > 0, 'g13-card__value--green': (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) < 0, 'g13-card__value--gray': (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) === 0 }">
+              <template v-if="(reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) > 0">{{ $t('ecoCalcDetail.arrears') }} +{{ (reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid).toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
+              <template v-else-if="(reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid) < 0">{{ $t('ecoCalcDetail.overpayment') }} {{ Math.abs(reconciliation.charged + (penaltyData ? penaltyData.totalPenalty : 0) - reconciliation.paid).toLocaleString() }} {{ $t('ecoCalcDetail.unitSom') }}</template>
               <template v-else>{{ $t('ecoCalcDetail.noDebt') }}</template>
             </span>
           </div>
+        </div>
+      </div>
+
+      <!-- Audit Log -->
+      <AuditLog v-if="calc.history && calc.history.length > 0" :entries="calc.history" viewerRole="operator" :compact="true" class="mb-6" />
+
+      <!-- Fee Payment Confirmation (when receipt uploaded) -->
+      <div v-if="calc.feePayment && calc.status !== 'completed' && !calc.feeConfirmedAt" class="bg-white rounded-2xl border border-blue-200 p-6 mb-6">
+        <h3 class="text-base font-semibold text-[#1e293b] mb-3">{{ $t('workflow.confirmFeePayment') }}</h3>
+        <div class="flex items-center gap-3 mb-4 p-3 bg-blue-50 rounded-lg">
+          <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <span class="text-sm font-medium text-blue-800">{{ calc.feePayment.fileName }}</span>
+        </div>
+        <div class="flex gap-3">
+          <button @click="confirmFee" class="px-5 py-2.5 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669]">
+            {{ $t('workflow.confirmFeePayment') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Penalty Payment Confirmation (when receipt uploaded) -->
+      <div v-if="calc.penaltyPayment && calc.status === 'fee_paid' && !calc.penaltyConfirmedAt" class="bg-white rounded-2xl border border-red-200 p-6 mb-6">
+        <h3 class="text-base font-semibold text-[#1e293b] mb-3">{{ $t('workflow.confirmPenaltyPayment') }}</h3>
+        <div class="flex items-center gap-3 mb-4 p-3 bg-red-50 rounded-lg">
+          <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <span class="text-sm font-medium text-red-800">{{ calc.penaltyPayment.fileName }}</span>
+        </div>
+        <div class="flex gap-3">
+          <button @click="confirmPenalty" class="px-5 py-2.5 bg-[#dc2626] text-white rounded-lg text-sm font-medium hover:bg-[#b91c1c]">
+            {{ $t('workflow.confirmPenaltyPayment') }}
+          </button>
         </div>
       </div>
 
@@ -355,12 +486,41 @@ const downloadExcel = () => {
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                   {{ $t('ecoCalcDetail.downloadExcel') }}
                 </button>
-        <div v-if="calc.status === 'under_review'" class="flex items-center gap-3">
+
+        <!-- Take assignment (submitted/under_review) -->
+        <div v-if="calc.status === 'under_review' && !calc.assignedTo" class="flex items-center gap-3">
+          <button @click="assignToMe" class="flex items-center gap-2 px-5 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors text-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            {{ $t('workflow.assignToMe') }}
+          </button>
+        </div>
+
+        <!-- In review actions (assigned to me) -->
+        <div v-if="calc.status === 'in_review'" class="flex items-center gap-3">
+          <button @click="unassignCalc" class="flex items-center gap-2 px-4 py-2.5 border border-[#e2e8f0] text-[#64748b] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
+            {{ $t('workflow.returnToQueue') }}
+          </button>
+          <button @click="openRevisionModal" class="flex items-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-600 rounded-lg font-medium hover:bg-amber-50 transition-colors text-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            {{ $t('workflow.sendToRevision') }}
+          </button>
+          <button @click="openRejectModal" class="flex items-center gap-2 px-4 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            {{ $t('ecoCalcDetail.reject') }}
+          </button>
+          <button @click="openApproveModal" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            {{ $t('ecoCalcDetail.acceptCalc') }}
+          </button>
+        </div>
+
+        <!-- Legacy under_review with assignment -->
+        <div v-if="calc.status === 'under_review' && calc.assignedTo" class="flex items-center gap-3">
           <button @click="openRejectModal" class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             {{ $t('ecoCalcDetail.reject') }}
           </button>
-          <button @click="approveCalc" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
+          <button @click="openApproveModal" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             {{ $t('ecoCalcDetail.acceptCalc') }}
           </button>
@@ -396,6 +556,79 @@ const downloadExcel = () => {
               class="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ $t('ecoCalcDetail.reject') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Revision Modal -->
+    <Teleport to="body">
+      <div v-if="showRevisionModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showRevisionModal = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+          <div class="p-6 border-b border-[#e2e8f0]">
+            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('workflow.sendRevisionTitle') }}</h3>
+            <p class="text-sm text-[#64748b] mt-1">{{ $t('workflow.sendRevisionSubtitle', { number: calc?.number }) }}</p>
+          </div>
+          <div class="p-6">
+            <label class="block text-sm font-medium text-[#1e293b] mb-2">
+              {{ $t('workflow.revisionComment') }} <span class="text-[#EF4444]">*</span>
+            </label>
+            <textarea
+              v-model="revisionComment"
+              rows="4"
+              :placeholder="$t('workflow.revisionCommentPlaceholder')"
+              class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-amber-400 text-sm resize-none"
+            ></textarea>
+            <p class="text-xs text-[#94a3b8] mt-1">{{ revisionComment.length }} / 10+</p>
+          </div>
+          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+            <button @click="showRevisionModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
+              {{ $t('common.cancel') }}
+            </button>
+            <button
+              @click="sendToRevision"
+              :disabled="revisionComment.trim().length < 10"
+              class="px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ $t('workflow.sendToRevision') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Approve Modal -->
+    <Teleport to="body">
+      <div v-if="showApproveModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showApproveModal = false">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+          <div class="p-6 border-b border-[#e2e8f0]">
+            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.approveModalTitle') }}</h3>
+            <p class="text-sm text-[#64748b] mt-1">{{ calc?.number }}</p>
+          </div>
+          <div class="p-6 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-[#64748b]">{{ $t('ecoCalcDetail.approveModalFee') }}</span>
+              <span class="font-semibold text-[#1e293b]">{{ formatNum(calc?.totalAmount || 0, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            </div>
+            <div v-if="penaltyData" class="flex justify-between text-sm">
+              <span class="text-[#ef4444]">{{ $t('ecoCalcDetail.approveModalPenalty', { days: penaltyData.overdueDays }) }}</span>
+              <span class="font-semibold text-[#ef4444]">{{ formatNum(penaltyData.totalPenalty, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+            </div>
+            <div class="border-t border-[#e2e8f0] pt-3">
+              <div class="flex justify-between">
+                <span class="font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.approveModalTotal') }}</span>
+                <span class="font-bold text-lg text-[#1e293b]">{{ formatNum(penaltyData ? penaltyData.totalToPay : (calc?.totalAmount || 0), 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+              </div>
+            </div>
+            <p class="text-xs text-[#94a3b8] mt-2">{{ $t('ecoCalcDetail.approveModalCharge') }}</p>
+          </div>
+          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
+            <button @click="showApproveModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
+              {{ $t('common.cancel') }}
+            </button>
+            <button @click="approveCalc" class="px-5 py-2.5 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669]">
+              {{ $t('ecoCalcDetail.approveAndCharge') }}
             </button>
           </div>
         </div>

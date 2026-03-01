@@ -17,6 +17,10 @@ import { toastStore } from '../../stores/toast'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import PenaltyInfo from '../../components/PenaltyInfo.vue'
+import AuditLog from '../../components/AuditLog.vue'
+import { getOverdueDays } from '../../utils/penalty'
+import { formatNum } from '../../utils/formatNumber'
 
 const router = useRouter()
 const route = useRoute()
@@ -202,7 +206,7 @@ function changeDocType(doc: AttachedDocument, type: DocumentType) {
 
 // Auto-enter edit mode if ?edit=true
 onMounted(() => {
-  if (route.query.edit === 'true' && calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED)) {
+  if (route.query.edit === 'true' && calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED || calc.value.status === CalcStatus.REVISION)) {
     startEditing()
   }
   if (route.query.print === 'true') {
@@ -292,7 +296,17 @@ const reconciliation = computed(() => {
   return accountStore.getReconciliationForCalculation(calc.value.id)
 })
 
-const canEdit = computed(() => calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED))
+const isOverdue = computed(() => {
+  if (!computedDueDate.value || !deadlineStatus.value) return false
+  return deadlineStatus.value.overdue
+})
+
+const unpaidAmount = computed(() => {
+  if (!calc.value) return 0
+  return Math.max(0, reconciliation.value.difference)
+})
+
+const canEdit = computed(() => calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED || calc.value.status === CalcStatus.REVISION))
 
 const goBack = () => {
   const from = route.query.from as string
@@ -354,6 +368,11 @@ const paymentForm = ref({
 const paymentFile = ref<{ name: string; type: string; dataUrl: string } | null>(null)
 const paymentDragOver = ref(false)
 const paymentAmountError = ref('')
+
+function goToPaymentPage() {
+  if (!calc.value) return
+  router.push(`/business/calculations/${calc.value.id}/payment`)
+}
 
 function openPayment() {
   paymentMethod.value = 'transfer'
@@ -474,6 +493,22 @@ function submitPaymentConfirmation() {
         </div>
       </div>
 
+      <!-- Revision Banner -->
+      <div v-if="calc.status === 'revision' && calc.revisionComment" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <div class="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-amber-900">{{ $t('workflow.revisionBanner') }}</p>
+          <p class="text-sm text-amber-800 mt-1">{{ calc.revisionComment }}</p>
+          <button @click="startEditing" class="mt-2 text-sm font-medium text-amber-700 hover:text-amber-900 underline">
+            {{ $t('calcDetail.editCalc') }}
+          </button>
+        </div>
+      </div>
+
       <!-- Payer Data -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-5 flex items-center gap-2">
@@ -518,6 +553,9 @@ function submitPaymentConfirmation() {
 
       <!-- Timeline -->
       <CalculationTimeline v-if="!isEditing" :status="calc.status" :dates="timelineDates" />
+
+      <!-- Audit Log (payer view) -->
+      <AuditLog v-if="!isEditing && calc.history && calc.history.length > 0" :entries="calc.history" viewerRole="payer" :compact="true" class="mb-6" />
 
       <!-- Products Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6" :class="{ 'ring-2 ring-blue-300': isEditing }">
@@ -567,28 +605,28 @@ function submitPaymentConfirmation() {
                 <!-- Volume -->
                 <td class="px-5 py-3 text-right font-medium text-[#1e293b]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.volume" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ item.volume }}</template>
+                  <template v-else>{{ formatNum(item.volume) }}</template>
                 </td>
                 <!-- Standard -->
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '—' }}%</td>
                 <!-- VolumeToRecycle -->
-                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle ?? '—' }}</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '—' }}</td>
                 <!-- Transferred -->
                 <td class="px-5 py-3 text-right text-[#10b981]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.transferredToRecycling" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ item.transferredToRecycling || '0' }}</template>
+                  <template v-else>{{ formatNum(item.transferredToRecycling || '0') }}</template>
                 </td>
                 <!-- Exported -->
                 <td class="px-5 py-3 text-right text-[#2563eb]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.exportedFromKR" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ item.exportedFromKR || '0' }}</template>
+                  <template v-else>{{ formatNum(item.exportedFromKR || '0') }}</template>
                 </td>
                 <!-- Taxable -->
-                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume ?? '—' }}</td>
+                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '—' }}</td>
                 <!-- Rate -->
-                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.rate.toLocaleString() }}</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ formatNum(item.rate, 0) }}</td>
                 <!-- Amount -->
-                <td class="px-5 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
+                <td class="px-5 py-3 text-right font-bold text-[#f59e0b]">{{ formatNum(item.amount, 0) }}</td>
                 <!-- Remove -->
                 <td v-if="isEditing" class="px-3 py-3 text-center">
                   <button v-if="editItems.length > 1" @click="removeRow(index)" class="text-red-400 hover:text-red-600 transition-colors" :title="$t('calcDetail.deleteRow')">
@@ -871,6 +909,14 @@ function submitPaymentConfirmation() {
         </div>
       </div>
 
+      <!-- Penalty block: shown when overdue with unpaid amount -->
+      <PenaltyInfo
+        v-if="isOverdue && unpaidAmount > 0 && computedDueDate"
+        :debtAmount="unpaidAmount"
+        :dueDate="computedDueDate"
+        class="mb-6"
+      />
+
       <!-- Action Bar -->
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-4 lg:-mx-8 px-4 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-3" style="box-shadow: 0 -4px 12px rgba(0,0,0,0.05)">
         <!-- Edit mode buttons -->
@@ -931,9 +977,25 @@ function submitPaymentConfirmation() {
               </button>
             </template>
 
+            <!-- revision actions -->
+            <template v-if="calc.status === 'revision'">
+              <button @click="startEditing" class="btn-action btn-action-primary text-sm" style="background: #f59e0b; border-color: #f59e0b;">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                {{ $t('calcDetail.editCalc') }}
+              </button>
+            </template>
+
+            <!-- fee_paid / penalty_paid / completed status labels -->
+            <template v-if="calc.status === 'fee_paid' || calc.status === 'penalty_paid'">
+              <button @click="goToPaymentPage" class="btn-action btn-action-primary text-sm" style="background: #2563eb; border-color: #2563eb;">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                {{ $t('workflow.goToPayment') }}
+              </button>
+            </template>
+
             <!-- approved actions -->
             <template v-if="calc.status === 'approved'">
-              <button @click="openPayment" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
+              <button @click="goToPaymentPage" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 {{ $t('calcDetail.pay') }}
               </button>
@@ -1029,7 +1091,7 @@ function submitPaymentConfirmation() {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="pay-label">{{ $t('calcDetail.paymentDateLabel') }} *</label>
-                  <input v-model="paymentForm.paymentDate" type="text" :placeholder="$t('calcDetail.datePlaceholder')" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
+                  <input v-model="paymentForm.paymentDate" type="text" :placeholder="$t('calcDetail.datePlaceholder')" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
                 </div>
                 <div>
                   <label class="pay-label">{{ $t('calcDetail.payerBank') }} *</label>

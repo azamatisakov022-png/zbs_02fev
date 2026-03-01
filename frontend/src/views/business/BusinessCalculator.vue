@@ -18,17 +18,28 @@ import { accountStore } from '../../stores/account'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { addWorkingDays, calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
+import { calculatePenalty, getOverdueDays, PENALTY_DAILY_RATE } from '../../utils/penalty'
+import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
+import { formatNum } from '../../utils/formatNumber'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import PaymentPanel from '../../components/payment/PaymentPanel.vue'
+import PenaltyInfo from '../../components/PenaltyInfo.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 const { t } = useI18n()
 
 const router = useRouter()
+
+// Inline payment panel expand
+const expandedCalcId = ref<number | null>(null)
+const togglePayment = (id: number) => {
+  expandedCalcId.value = expandedCalcId.value === id ? null : id
+}
 
 const viewCalculation = (id: number) => {
   router.push({ path: `/business/calculations/${id}`, query: { from: 'calculations' } })
@@ -133,6 +144,67 @@ const importerDeadlinePassed = computed(() => {
   return getRemainingDays(importerDeadline.value).overdue
 })
 
+// Date input range (allow past periods from 2020, up to next year)
+const dateInputMax = computed(() => {
+  const maxYear = new Date().getFullYear() + 1
+  return `${maxYear}-12-31`
+})
+
+// Penalty computation for Step 3 result
+const isOverdue = computed(() => {
+  return !!(deadlineStatus.value && deadlineStatus.value.overdue)
+})
+
+const penaltyData = computed(() => {
+  if (!isOverdue.value || !currentDeadline.value || totalAmount.value <= 0) return null
+  return calculatePenalty(totalAmount.value, currentDeadline.value)
+})
+
+const penaltyOverdueDays = computed(() => {
+  if (!currentDeadline.value) return 0
+  return getOverdueDays(currentDeadline.value)
+})
+
+const penaltyProgressPercent = computed(() => {
+  if (!penaltyData.value) return 0
+  return Math.min(100, Math.round((penaltyData.value.totalPenalty / penaltyData.value.debtAmount) * 100))
+})
+
+const feePurpose = computed(() => {
+  const period = payerType.value === 'producer'
+    ? calculationQuarter.value + ' ' + calculationYear.value
+    : t('businessCalc.importPrefix') + ' ' + (importDate.value ? new Date(importDate.value).toLocaleDateString() : '')
+  return t('payment.feePaymentPurpose', { period, number: calculationResult.value.number })
+})
+
+const penaltyPurpose = computed(() => {
+  if (!penaltyData.value) return ''
+  return t('payment.penaltyPaymentPurpose', { number: calculationResult.value.number, days: penaltyData.value.overdueDays })
+})
+
+const copyRequisites = async (type: 'utilization_fee' | 'penalty') => {
+  const acc = PAYMENT_ACCOUNTS[type]
+  const amount = type === 'utilization_fee'
+    ? totalAmount.value
+    : penaltyData.value?.totalPenalty ?? 0
+  const purpose = type === 'utilization_fee' ? feePurpose.value : penaltyPurpose.value
+  const text = [
+    `${t('payment.recipient')}: ${acc.recipient}`,
+    `${t('payment.bankLabel')}: ${acc.bank}`,
+    `${t('payment.accountNumber')}: ${acc.account}`,
+    `${t('payment.bikLabel')}: ${acc.bik}`,
+    `${t('payment.innLabel')}: ${acc.inn}`,
+    `${t('payment.amountLabel')}: ${amount.toLocaleString()} ${t('penalty.som')}`,
+    `${t('payment.purposeLabel')}: ${purpose}`,
+  ].join('\n')
+  try {
+    await navigator.clipboard.writeText(text)
+    toastStore.show({ type: 'success', title: t('payment.copiedToast') })
+  } catch {
+    toastStore.show({ type: 'info', title: t('payment.copiedToast') })
+  }
+}
+
 // Company data (from profile - readonly)
 const companyData = {
   name: 'ОсОО «ТехПром»',
@@ -236,11 +308,11 @@ const updateItemRate = (item: ProductItem) => {
 const calculateAmount = (item: ProductItem) => {
   const vol = parseFloat(item.volume) || 0
   // Гр.7: Объём к переработке = Гр.5 × Гр.6 / 100
-  item.volumeToRecycle = vol * item.recyclingStandard / 100
+  item.volumeToRecycle = Math.round(vol * item.recyclingStandard / 100 * 100) / 100
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
   // Гр.10: Облагаемый объём = max(0, Гр.7 - Гр.8 - Гр.9)
-  item.taxableVolume = Math.max(0, item.volumeToRecycle - transferred - exported)
+  item.taxableVolume = Math.max(0, Math.round((item.volumeToRecycle - transferred - exported) * 100) / 100)
   // Гр.12: Сумма = Гр.10 × Гр.11
   item.amount = Math.round(item.taxableVolume * item.rate)
 }
@@ -629,21 +701,33 @@ const columns = computed(() => [
 ])
 
 const calculations = computed(() => {
-  return calculationStore.getBusinessCalculations(companyData.name).map(c => ({
-    id: c.id,
-    number: c.number,
-    period: c.period,
-    amount: c.totalAmount.toLocaleString() + ' ' + t('businessCalc.som'),
-    createdAt: c.date,
-    status: c.status,
-    rejectionReason: c.rejectionReason,
-    rejectedAt: c.rejectedAt,
-    rejectedBy: c.rejectedBy,
-    paymentRejectionReason: c.paymentRejectionReason,
-    totalAmount: c.totalAmount,
-    parentId: c.parentId,
-    parentNumber: c.parentId ? calculationStore.getCalculationById(c.parentId)?.number : undefined,
-  }))
+  return calculationStore.getBusinessCalculations(companyData.name).map(c => {
+    // Calculate penalty for overdue unpaid calculations
+    let penaltyInfo: { overdueDays: number; totalPenalty: number } | null = null
+    if (c.dueDate && c.status !== CalcStatus.PAID && c.totalAmount > 0) {
+      const days = getOverdueDays(c.dueDate)
+      if (days > 0) {
+        const p = calculatePenalty(c.totalAmount, c.dueDate)
+        penaltyInfo = { overdueDays: p.overdueDays, totalPenalty: p.totalPenalty }
+      }
+    }
+    return {
+      id: c.id,
+      number: c.number,
+      period: c.period,
+      amount: c.totalAmount.toLocaleString() + ' ' + t('businessCalc.som'),
+      createdAt: c.date,
+      status: c.status,
+      rejectionReason: c.rejectionReason,
+      rejectedAt: c.rejectedAt,
+      rejectedBy: c.rejectedBy,
+      paymentRejectionReason: c.paymentRejectionReason,
+      totalAmount: c.totalAmount,
+      parentId: c.parentId,
+      parentNumber: c.parentId ? calculationStore.getCalculationById(c.parentId)?.number : undefined,
+      penaltyInfo,
+    }
+  })
 })
 
 const statusStyles: Record<string, string> = {
@@ -654,6 +738,9 @@ const statusStyles: Record<string, string> = {
   [CalcStatus.REJECTED]: 'background:#FEE2E2;color:#991B1B',
   [CalcStatus.PAYMENT_PENDING]: 'background:#EDE9FE;color:#6D28D9',
   [CalcStatus.PAYMENT_REJECTED]: 'background:#FEE2E2;color:#991B1B',
+  [CalcStatus.FEE_PAID]: 'background:#FEF3C7;color:#92400E',
+  [CalcStatus.PENALTY_PAID]: 'background:#DBEAFE;color:#1D4ED8',
+  [CalcStatus.COMPLETED]: 'background:#D1FAE5;color:#065F46',
 }
 const getStatusStyle = (status: string) => statusStyles[status] || 'background:#F3F4F6;color:#6B7280'
 
@@ -667,6 +754,9 @@ const calcRowClass = (row: Record<string, any>) => {
     [CalcStatus.REJECTED]: 'calc-row--rejected',
     [CalcStatus.PAYMENT_PENDING]: 'calc-row--pay-review',
     [CalcStatus.PAYMENT_REJECTED]: 'calc-row--pay-rejected',
+    [CalcStatus.FEE_PAID]: 'calc-row--fee-paid',
+    [CalcStatus.PENALTY_PAID]: 'calc-row--penalty-paid',
+    [CalcStatus.COMPLETED]: 'calc-row--completed',
   }
   return map[row.status] || ''
 }
@@ -755,12 +845,13 @@ const submitForReview = () => {
         items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
         totalAmount: totalAmount.value,
       }
-      calculationStore.addCalculation(calcData, CalcStatus.UNDER_REVIEW)
+      const newCalc = calculationStore.addCalculation(calcData, CalcStatus.UNDER_REVIEW)
       notificationStore.add({
         type: 'info',
         title: t('businessCalc.notifNewCalc'),
         message: t('businessCalc.notifNewCalcMessage', { company: companyData.name }),
-        role: 'eco-operator'
+        role: 'eco-operator',
+        link: `/eco-operator/calculations/${newCalc.id}`
       })
       notificationStore.add({
         type: 'success',
@@ -1047,8 +1138,17 @@ const downloadReceipt = () => {
           <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
           <div v-if="row.parentNumber" class="text-[11px] text-amber-600 mt-0.5">{{ $t('businessCalc.resubmitted', { number: row.parentNumber }) }}</div>
         </template>
-        <template #cell-amount="{ value }">
-          <span class="font-semibold text-[#1e293b]">{{ value }}</span>
+        <template #cell-amount="{ value, row }">
+          <div class="amount-cell">
+            <span class="font-semibold text-[#1e293b]">{{ value }}</span>
+            <div v-if="row.penaltyInfo" class="amount-cell__penalty">
+              <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              {{ $t('businessCalc.amountPenalty', { amount: formatNum(row.penaltyInfo.totalPenalty, 0), days: row.penaltyInfo.overdueDays }) }}
+            </div>
+            <div v-if="row.penaltyInfo" class="amount-cell__total">
+              {{ $t('businessCalc.amountTotal', { amount: formatNum(row.totalAmount + row.penaltyInfo.totalPenalty, 0) }) }}
+            </div>
+          </div>
         </template>
         <template #cell-status="{ value, row }">
           <!-- Отклонено: badge + warning icon + tooltip on hover -->
@@ -1062,7 +1162,7 @@ const downloadReceipt = () => {
               :style="getStatusStyle(value)"
               style="display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap;cursor:default"
             >
-              {{ value }}
+              {{ $t(statusI18nKey[value] || value) }}
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </span>
             <!-- Tooltip -->
@@ -1088,14 +1188,14 @@ const downloadReceipt = () => {
             style="display:inline-flex;align-items:center;gap:4px;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
           >
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-            {{ value }}
+            {{ $t(statusI18nKey[value] || value) }}
           </span>
           <!-- All other statuses: simple badge -->
           <span
             v-else
             :style="getStatusStyle(value)"
             style="display:inline-block;border-radius:12px;padding:4px 12px;font-size:12px;font-weight:500;white-space:nowrap"
-          >{{ value }}</span>
+          >{{ $t(statusI18nKey[value] || value) }}</span>
         </template>
         <template #actions="{ row }">
           <div class="act-wrap">
@@ -1126,11 +1226,11 @@ const downloadReceipt = () => {
                 {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
-            <!-- Принято: [Оплатить (filled green)] [Просмотреть (outline)] [⋯ → PDF, Excel] -->
+            <!-- Принято: [Оплатить → PaymentView (filled green)] [Просмотреть (outline)] [⋯ → PDF, Excel] -->
             <template v-else-if="row.status === 'approved'">
-              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--green">
+              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--green']">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                {{ $t('businessCalc.payBtn') }} {{ row.totalAmount.toLocaleString() }} {{ $t('businessCalc.som') }}
+                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payBtn') }} {{ expandedCalcId !== row.id ? formatNum(row.totalAmount, 0) + ' ' + $t('businessCalc.som') : '' }}
               </button>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -1149,6 +1249,46 @@ const downloadReceipt = () => {
                   </button>
                 </div>
               </div>
+            </template>
+            <!-- Подано / На рассмотрении: [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'submitted' || row.status === 'in_review'">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                {{ $t('businessCalc.viewBtn') }}
+              </router-link>
+            </template>
+            <!-- На доработке: [Исправить (filled orange)] [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'revision'">
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                {{ $t('businessCalc.fixBtn') }}
+              </router-link>
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                {{ $t('businessCalc.viewBtn') }}
+              </router-link>
+            </template>
+            <!-- Сбор оплачен: [Оплатить пеню → PaymentView (filled orange)] [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'fee_paid'">
+              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payPenaltyBtn') }}
+              </button>
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                {{ $t('businessCalc.viewBtn') }}
+              </router-link>
+            </template>
+            <!-- Завершено: [Закрыто badge (green)] [Просмотреть (outline)] -->
+            <template v-else-if="row.status === 'completed'">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                {{ $t('businessCalc.closedBadge') }}
+              </span>
+              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                {{ $t('businessCalc.viewBtn') }}
+              </router-link>
             </template>
             <!-- Оплачено: [Просмотреть (outline)] [⋯ → PDF, Excel] -->
             <template v-else-if="row.status === 'paid'">
@@ -1188,11 +1328,11 @@ const downloadReceipt = () => {
                 {{ $t('businessCalc.viewBtn') }}
               </router-link>
             </template>
-            <!-- Оплата отклонена: [Подтвердить оплату (filled orange)] [Просмотреть (outline)] -->
+            <!-- Оплата отклонена: [Подтвердить оплату → PaymentView (filled orange)] [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'payment_rejected'">
-              <button @click="openPaymentForm(row.id, row.totalAmount, row.number)" class="act-btn act-btn--filled act-btn--orange">
+              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                {{ $t('businessCalc.confirmPayment') }}
+                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.confirmPayment') }}
               </button>
               <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -1200,6 +1340,14 @@ const downloadReceipt = () => {
               </router-link>
             </template>
           </div>
+        </template>
+
+        <template #row-after="{ row, colspan }">
+          <tr v-if="expandedCalcId === row.id && (row.status === 'approved' || row.status === 'fee_paid' || row.status === 'payment_rejected')" class="payment-expand-row">
+            <td :colspan="colspan" class="p-0">
+              <PaymentPanel :calculationId="row.id" :modelValue="expandedCalcId === row.id" @close="expandedCalcId = null" />
+            </td>
+          </tr>
         </template>
 
       </DataTable>
@@ -1410,6 +1558,8 @@ const downloadReceipt = () => {
                   <input
                     type="date"
                     v-model="importDate"
+                    min="2020-01-01"
+                    :max="dateInputMax"
                     :class="[
                       'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
                       (validationErrors.importDate || (formSubmitted && formErrors.importDate))
@@ -1786,6 +1936,9 @@ const downloadReceipt = () => {
                 <div>
                   <p class="text-white/80 mb-1">{{ $t('businessCalc.feeAmountLabel') }}</p>
                   <p class="text-3xl lg:text-4xl font-bold">{{ formattedTotalAmount }}</p>
+                  <p v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="text-xs mt-1.5" style="color: #fecaca">
+                    {{ $t('payment.overduePreview', { days: penaltyData.overdueDays, penalty: penaltyData.totalPenalty.toLocaleString() }) }}
+                  </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <span class="px-4 py-2 bg-white/20 rounded-lg text-sm font-medium">
@@ -1881,18 +2034,6 @@ const downloadReceipt = () => {
               </Transition>
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-              <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                </svg>
-              </div>
-              <div>
-                <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.paymentDetailsTitle') }}</p>
-                <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentDetailsText')"></p>
-              </div>
-            </div>
-
             <!-- Графа 13: Сверка платежей -->
             <div class="g13-container mt-4">
               <div class="g13-header">
@@ -1919,6 +2060,94 @@ const downloadReceipt = () => {
                   <span class="g13-card__label">{{ $t('businessCalc.g13Difference') }}</span>
                   <span class="g13-card__value g13-card__value--gray">{{ $t('businessCalc.g13NoDebt') }}</span>
                 </div>
+              </div>
+            </div>
+
+            <!-- ═══ 5. PENALTY BLOCK (moved here, shown only when overdue) ═══ -->
+            <PenaltyInfo
+              v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0"
+              :debtAmount="totalAmount"
+              :dueDate="currentDeadline"
+              class="mt-6"
+            />
+
+            <!-- ═══ 6. PAYMENT DETAILS — two separate cards ═══ -->
+            <div class="pay-details mt-6">
+              <h3 class="pay-details__title">{{ $t('payment.paymentDetailsTitle') }}</h3>
+              <div class="pay-details__cards">
+                <!-- Card 1: Utilization fee -->
+                <div class="pay-card pay-card--fee">
+                  <div class="pay-card__head">
+                    <span class="pay-card__label">{{ $t('payment.payment1Title') }}</span>
+                    <span class="pay-card__amount pay-card__amount--green">{{ totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span>
+                  </div>
+                  <div class="pay-card__rows">
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.recipient') }}</span><span class="pay-card__val">{{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.bankLabel') }}</span><span class="pay-card__val">{{ PAYMENT_ACCOUNTS.utilization_fee.bank }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.accountNumber') }}</span><span class="pay-card__val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.account }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.bikLabel') }}</span><span class="pay-card__val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.bik }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.innLabel') }}</span><span class="pay-card__val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.inn }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.purposeLabel') }}</span><span class="pay-card__val text-xs">{{ feePurpose }}</span></div>
+                  </div>
+                  <div class="pay-card__actions">
+                    <button @click="copyRequisites('utilization_fee')" class="pay-card__btn">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                      {{ $t('payment.copyRequisites') }}
+                    </button>
+                    <button disabled class="pay-card__btn pay-card__btn--disabled" :title="$t('payment.receiptTooltip')">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      {{ $t('payment.downloadReceipt') }}
+                    </button>
+                  </div>
+                </div>
+                <!-- Card 2: Penalty (only if overdue) -->
+                <div v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="pay-card pay-card--penalty">
+                  <div class="pay-card__head">
+                    <span class="pay-card__label">{{ $t('payment.payment2Title') }}</span>
+                    <span class="pay-card__amount pay-card__amount--amber">{{ penaltyData.totalPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span>
+                  </div>
+                  <div class="pay-card__rows">
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.recipient') }}</span><span class="pay-card__val">{{ PAYMENT_ACCOUNTS.penalty.recipient }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.bankLabel') }}</span><span class="pay-card__val">{{ PAYMENT_ACCOUNTS.penalty.bank }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.accountNumber') }}</span><span class="pay-card__val font-mono">{{ PAYMENT_ACCOUNTS.penalty.account }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.bikLabel') }}</span><span class="pay-card__val font-mono">{{ PAYMENT_ACCOUNTS.penalty.bik }}</span></div>
+                    <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.purposeLabel') }}</span><span class="pay-card__val text-xs">{{ penaltyPurpose }}</span></div>
+                  </div>
+                  <div class="pay-card__actions">
+                    <button @click="copyRequisites('penalty')" class="pay-card__btn">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                      {{ $t('payment.copyRequisites') }}
+                    </button>
+                    <button disabled class="pay-card__btn pay-card__btn--disabled" :title="$t('payment.receiptTooltip')">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      {{ $t('payment.downloadReceipt') }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ 7. SUMMARY BLOCK (only when penalty exists) ═══ -->
+            <div v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="summary-block mt-6">
+              <h3 class="summary-block__title">{{ $t('payment.summaryTitle') }}</h3>
+              <div class="summary-block__row">
+                <div>
+                  <span>{{ $t('businessCalc.feeAmountLabel') }}</span>
+                  <p class="summary-block__sub">&rarr; {{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}, {{ $t('payment.accountNumber').toLowerCase() }} ...{{ PAYMENT_ACCOUNTS.utilization_fee.account.slice(-4) }}</p>
+                </div>
+                <span class="font-bold">{{ totalAmount.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span>
+              </div>
+              <div class="summary-block__row" style="color:#fbbf24">
+                <div>
+                  <span>{{ $t('payment.penaltyRowLabel', { days: penaltyData.overdueDays }) }}</span>
+                  <p class="summary-block__sub">&rarr; {{ PAYMENT_ACCOUNTS.penalty.recipient }}, {{ $t('payment.accountNumber').toLowerCase() }} ...{{ PAYMENT_ACCOUNTS.penalty.account.slice(-4) }}</p>
+                </div>
+                <span class="font-bold">{{ penaltyData.totalPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span>
+              </div>
+              <div class="summary-block__sep"></div>
+              <div class="summary-block__row summary-block__row--total">
+                <span>{{ $t('payment.grandTotal') }}</span>
+                <span>{{ penaltyData.totalToPay.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span>
               </div>
             </div>
           </div>
@@ -2081,6 +2310,8 @@ const downloadReceipt = () => {
                 v-model="paymentForm.paymentDate"
                 type="text"
                 :placeholder="$t('businessCalc.paymentDatePlaceholder')"
+                min="2020-01-01"
+                :max="dateInputMax"
                 onfocus="this.type='date'"
                 onblur="if(!this.value)this.type='text'"
                 class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
@@ -2914,5 +3145,119 @@ const downloadReceipt = () => {
 .g13-card__sub {
   font-size: 11px;
   color: #94A3B8;
+}
+
+/* ── Payment details ── */
+.pay-details {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px;
+}
+.pay-details__title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+.pay-details__cards { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .pay-details__cards { grid-template-columns: 1fr 1fr; } }
+.pay-details__note { font-size: 12px; color: #64748b; margin-top: 16px; line-height: 1.5; }
+
+.pay-card { border-radius: 12px; padding: 20px; }
+.pay-card--fee { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.pay-card--penalty { background: #fffbeb; border: 1px solid #fde68a; }
+.pay-card__head { margin-bottom: 12px; }
+.pay-card__label { display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+.pay-card__amount { display: block; font-size: 22px; font-weight: 900; }
+.pay-card__amount--green { color: #059669; }
+.pay-card__amount--red { color: #DC2626; }
+.pay-card__amount--amber { color: #d97706; }
+.pay-card__rows { margin-bottom: 12px; }
+.pay-card__row {
+  display: flex; justify-content: space-between; gap: 8px;
+  padding: 4px 0; font-size: 13px; color: #1e293b;
+}
+.pay-card__key { color: #64748b; flex-shrink: 0; }
+.pay-card__val { text-align: right; word-break: break-all; }
+.pay-card__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pay-card__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 500;
+  border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;
+  color: #1e293b; cursor: pointer; transition: background 0.15s;
+}
+.pay-card__btn:hover { background: #f1f5f9; }
+.pay-card__btn--disabled { opacity: 0.5; cursor: not-allowed; }
+.pay-card__btn--disabled:hover { background: #fff; }
+
+/* ── Summary block ── */
+.summary-block {
+  background: #1e293b; color: #fff; border-radius: 12px; padding: 20px 24px;
+}
+.summary-block__title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+.summary-block__row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 8px 0; font-size: 14px;
+}
+.summary-block__row--total {
+  font-size: 14px; color: rgba(255,255,255,0.7);
+}
+.summary-block__row--total span:last-child {
+  font-size: 24px; font-weight: 900; color: #fff;
+}
+.summary-block__sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.summary-block__sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 4px 0; }
+
+/* Penalty badge in calc list */
+.penalty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #DC2626;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-top: 4px;
+}
+
+/* ── Amount cell 3-line ── */
+.amount-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.amount-cell__penalty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #d97706;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.amount-cell__total {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2px;
+}
+
+/* ── Row status colors (new) ── */
+.calc-row--fee-paid { border-left: 3px solid #f59e0b; }
+.calc-row--penalty-paid { border-left: 3px solid #3b82f6; }
+.calc-row--completed { border-left: 3px solid #059669; }
+
+/* ── Inline payment expand row ── */
+.payment-expand-row td {
+  padding: 0 !important;
+  border-bottom: none;
+}
+
+/* ── Gray (collapse) button variant ── */
+.act-btn--gray {
+  background: #64748b !important;
+  color: #fff !important;
+}
+.act-btn--gray:hover {
+  background: #475569 !important;
 }
 </style>
