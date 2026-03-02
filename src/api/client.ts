@@ -33,33 +33,33 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      const refreshToken = localStorage.getItem('refresh_token')
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(
-            `${api.defaults.baseURL}/auth/refresh`,
-            { refreshToken },
-          )
-          localStorage.setItem('access_token', data.token)
-          localStorage.setItem('refresh_token', data.refreshToken)
-          originalRequest.headers.Authorization = `Bearer ${data.token}`
-          return api(originalRequest)
-        } catch {
-          // Refresh failed — clear auth
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('auth_user')
-          window.location.href = '/login'
-        }
-      } else {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('auth_user')
-        window.location.href = '/login'
-      }
-    }
+    // TODO: re-enable 401 redirect when backend is ready
+    // if (error.response?.status === 401 && !originalRequest._retry) {
+    //   originalRequest._retry = true
+    //
+    //   const refreshToken = localStorage.getItem('refresh_token')
+    //   if (refreshToken) {
+    //     try {
+    //       const { data } = await axios.post(
+    //         `${api.defaults.baseURL}/auth/refresh`,
+    //         { refreshToken },
+    //       )
+    //       localStorage.setItem('access_token', data.token)
+    //       localStorage.setItem('refresh_token', data.refreshToken)
+    //       originalRequest.headers.Authorization = `Bearer ${data.token}`
+    //       return api(originalRequest)
+    //     } catch {
+    //       localStorage.removeItem('access_token')
+    //       localStorage.removeItem('refresh_token')
+    //       localStorage.removeItem('auth_user')
+    //       window.location.href = '/login'
+    //     }
+    //   } else {
+    //     localStorage.removeItem('access_token')
+    //     localStorage.removeItem('auth_user')
+    //     window.location.href = '/login'
+    //   }
+    // }
 
     return Promise.reject(error)
   },

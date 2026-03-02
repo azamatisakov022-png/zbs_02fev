@@ -1,15 +1,15 @@
 import { createI18n } from 'vue-i18n'
 import ru from './locales/ru.json'
-import kg from './locales/kg.json'
+import ky from './locales/kg.json'
 import { SELECTED_LOCAL_STORAGE_KEY } from '@/constants/keys'
 
 const i18n = createI18n({
     legacy: false,
-    locale: localStorage.getItem(SELECTED_LOCAL_STORAGE_KEY) ?? 'kg',
-    fallbackLocale: 'kg',
+    locale: localStorage.getItem(SELECTED_LOCAL_STORAGE_KEY) ?? 'ky',
+    fallbackLocale: 'ky',
     messages: {
         ru,
-        kg,
+        ky,
     },
     silentTranslationWarn: true,
     silentFallbackWarn: true,
