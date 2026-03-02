@@ -1,10 +1,10 @@
 
   .publications-section {
-    @apply mt-10;
+    @apply mt-[40px];
   }
 
   .publications-header-box {
-    @apply pt-7.5 pb-15;
+    @apply pt-[30px] pb-[60px];
   }
 
   .publications-title-group {
@@ -12,145 +12,30 @@
   }
 
   .publications-scroll-container {
-    @apply w-full;
+    @apply w-full overflow-x-auto;
   }
 
   .publications-list {
-    @apply flex flex-wrap gap-7.5;
+    @apply flex gap-[30px];
   }
 
   .publication-card {
-    @apply flex-1 min-w-[280px] max-w-[317px] bg-bg-light rounded-5xl p-7.5 flex flex-col gap-7.5;
+    @apply w-[317px] shrink-0 bg-bg-light rounded-[30px] p-[30px] flex flex-col gap-[30px];
     @apply transition-transform duration-300 hover:-translate-y-1;
   }
 
   .publication-card-content {
-    @apply flex flex-col gap-3;
+    @apply flex flex-col gap-[12px];
   }
 
   .publication-card-title {
-    @apply text-body-lg text-text-main leading-normal;
+    @apply text-[20px] font-medium text-text-main leading-normal;
   }
 
   .publication-card-desc {
-    @apply text-caption text-text-main leading-normal;
+    @apply text-[14px] font-medium text-text-main leading-normal;
   }
 
   .publication-card-date {
-    @apply text-caption-sm text-text-main leading-normal;
+    @apply text-[12px] font-medium text-text-main leading-normal;
   }
-
-/* ── Tablet (≤1024px) ── */
-@media (max-width: 1024px) {
-  .publications-section {
-    margin-top: 24px;
-  }
-
-  .publications-header-box {
-    padding-top: 24px;
-    padding-bottom: 32px;
-  }
-
-  .section-title {
-    font-size: 24px;
-    padding-bottom: 8px;
-  }
-
-  .section-subtitle {
-    font-size: 16px;
-  }
-
-  .publications-list {
-    gap: 16px;
-  }
-
-  .publication-card {
-    min-width: 220px;
-    max-width: 100%;
-    padding: 24px;
-    gap: 20px;
-    border-radius: 20px;
-  }
-
-  .publication-card-title {
-    font-size: 17px;
-  }
-
-  .publication-card-desc {
-    font-size: 13px;
-  }
-
-  .publication-card-date {
-    font-size: 11px;
-  }
-}
-
-/* ── Mobile (≤768px) ── */
-@media (max-width: 768px) {
-  .publications-section {
-    margin-top: 16px;
-    margin-bottom: 40px;
-  }
-
-  .publications-header-box {
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
-
-  .section-title {
-    font-size: 20px;
-    padding-bottom: 6px;
-  }
-
-  .section-subtitle {
-    font-size: 14px;
-  }
-
-  .publications-list {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .publication-card {
-    min-width: 100%;
-    max-width: 100%;
-    padding: 16px;
-    gap: 12px;
-    border-radius: 16px;
-  }
-
-  .publication-card-content {
-    gap: 8px;
-  }
-
-  .publication-card-title {
-    font-size: 15px;
-  }
-
-  .publication-card-desc {
-    font-size: 13px;
-  }
-
-  .publication-card-date {
-    font-size: 11px;
-  }
-}
-
-/* ── Small mobile (≤480px) ── */
-@media (max-width: 480px) {
-  .section-title {
-    font-size: 18px;
-  }
-
-  .section-subtitle {
-    font-size: 13px;
-  }
-
-  .publication-card-title {
-    font-size: 14px;
-  }
-
-  .publication-card-desc {
-    font-size: 12px;
-  }
-}

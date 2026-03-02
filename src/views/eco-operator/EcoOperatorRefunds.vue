@@ -1,0 +1,235 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import DataTable from '../../components/dashboard/DataTable.vue'
+import EmptyState from '../../components/dashboard/EmptyState.vue'
+import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
+import { refundStore } from '../../stores/refunds'
+import { RefundStatus, statusI18nKey } from '../../constants/statuses'
+import { AppButton, AppBadge } from '../../components/ui'
+import { getStatusBadgeVariant } from '../../utils/statusVariant'
+import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import SectionGuide from '../../components/common/SectionGuide.vue'
+
+const { t } = useI18n()
+const router = useRouter()
+const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+// Loading state
+const isLoading = ref(true)
+onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+
+const columns = computed(() => [
+  { key: 'number', label: t('ecoRefunds.colNumber'), width: '12%' },
+  { key: 'company', label: t('ecoRefunds.colPayer'), width: '18%' },
+  { key: 'date', label: t('ecoRefunds.colDate'), width: '9%' },
+  { key: 'calculationNumber', label: t('ecoRefunds.colLinkedCalc'), width: '14%' },
+  { key: 'totalRefund', label: t('ecoRefunds.colRefundAmount'), width: '12%' },
+  { key: 'status', label: t('ecoRefunds.colStatus'), width: '12%' },
+])
+
+// Filters
+const searchQuery = ref('')
+const statusFilter = ref('')
+
+const filteredRefunds = computed(() => {
+  let list = [...refundStore.state.refunds]
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    list = list.filter(r => r.number.toLowerCase().includes(q) || r.company.toLowerCase().includes(q) || r.inn.includes(q))
+  }
+  if (statusFilter.value) {
+    list = list.filter(r => r.status === statusFilter.value)
+  }
+  return list
+})
+
+// Stats
+const totalCount = computed(() => refundStore.state.refunds.length)
+const pendingCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.UNDER_REVIEW || r.status === RefundStatus.NEW).length)
+const approvedCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.APPROVED).length)
+const rejectedCount = computed(() => refundStore.state.refunds.filter(r => r.status === RefundStatus.REJECTED).length)
+
+const getStatusClass = (status: string) => {
+  switch (status) {
+    case RefundStatus.NEW: return 'bg-blue-100 text-blue-800'
+    case RefundStatus.UNDER_REVIEW: return 'bg-yellow-100 text-yellow-800'
+    case RefundStatus.APPROVED: return 'bg-green-100 text-green-800'
+    case RefundStatus.REJECTED: return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+const viewRefund = (row: any) => {
+  router.push(`/eco-operator/refunds/${row.id}`)
+}
+
+// Empty state helpers
+const allRefunds = computed(() => refundStore.state.refunds)
+const isFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value))
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+}
+</script>
+
+<template>
+  <DashboardLayout
+    role="eco-operator"
+    :roleTitle="roleTitle"
+    :userName="$t('ecoRefunds.userName')"
+    :menuItems="menuItems"
+  >
+    <div class="mb-6">
+      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.refundsTitle') }}</h1>
+      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.refundsSubtitle') }}</p>
+    </div>
+
+    <SectionGuide
+      :title="$t('ecoRefunds.guideTitle')"
+      :description="$t('ecoRefunds.guideDescription')"
+      :actions="[$t('ecoRefunds.guideAction1'), $t('ecoRefunds.guideAction2'), $t('ecoRefunds.guideAction3'), $t('ecoRefunds.guideAction4')]"
+      storageKey="eco-refunds"
+    />
+
+    <!-- Gradient Stat Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-5 border border-yellow-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-yellow-800">{{ $t('ecoRefunds.statPending') }}</p>
+        </div>
+        <p class="text-3xl font-bold text-yellow-900">{{ pendingCount }}</p>
+        <p class="text-xs text-yellow-600 mt-1">{{ $t('ecoRefunds.statPendingDesc') }}</p>
+      </div>
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-green-800">{{ $t('ecoRefunds.statApproved') }}</p>
+        </div>
+        <p class="text-3xl font-bold text-green-900">{{ approvedCount }}</p>
+        <p class="text-xs text-green-600 mt-1">{{ $t('ecoRefunds.statApprovedDesc') }}</p>
+      </div>
+      <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-5 border border-red-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-red-800">{{ $t('ecoRefunds.statRejected') }}</p>
+        </div>
+        <p class="text-3xl font-bold text-red-900">{{ rejectedCount }}</p>
+        <p class="text-xs text-red-600 mt-1">{{ $t('ecoRefunds.statRejectedDesc') }}</p>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-5 border border-blue-200 shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p class="text-sm font-medium text-blue-800">{{ $t('ecoRefunds.statTotal') }}</p>
+        </div>
+        <p class="text-3xl font-bold text-blue-900">{{ totalCount }}</p>
+        <p class="text-xs text-blue-600 mt-1">{{ $t('ecoRefunds.statTotalDesc') }}</p>
+      </div>
+    </div>
+
+    <!-- Yellow Alert Banner -->
+    <div v-if="pendingCount > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoRefunds.attentionRequired') }}</p>
+        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoRefunds.newRequestSingular') : $t('ecoRefunds.newRequestPlural') }} {{ $t('ecoRefunds.alertCheckAndDecide') }}</p>
+      </div>
+    </div>
+
+    <template v-if="isLoading">
+      <div class="mb-6"><SkeletonLoader variant="card" /></div>
+      <SkeletonLoader variant="table" />
+    </template>
+
+    <template v-if="!isLoading">
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <div class="flex flex-wrap gap-4">
+        <input
+          v-model="searchQuery"
+          type="text"
+          :placeholder="$t('ecoRefunds.searchPlaceholder')"
+          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+        />
+        <select v-model="statusFilter" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
+          <option value="">{{ $t('ecoRefunds.allStatuses') }}</option>
+          <option value="new">{{ $t('status.new') }}</option>
+          <option value="under_review">{{ $t('status.underReview') }}</option>
+          <option value="approved">{{ $t('status.approvedFem') }}</option>
+          <option value="rejected">{{ $t('status.rejectedFem') }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <DataTable :columns="columns" :data="filteredRefunds" :actions="true">
+      <template #cell-number="{ value }">
+        <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+      </template>
+      <template #cell-company="{ value }">
+        <span class="font-medium text-[#1e293b]">{{ value }}</span>
+      </template>
+      <template #cell-calculationNumber="{ value }">
+        <span class="font-mono text-sm text-[#64748b]">{{ value }}</span>
+      </template>
+      <template #cell-totalRefund="{ value }">
+        <span class="font-semibold text-[#10b981]">{{ value.toLocaleString() }} {{ $t('ecoRefunds.som') }}</span>
+      </template>
+      <template #cell-status="{ value }">
+        <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
+      </template>
+      <template #actions="{ row }">
+        <div class="flex items-center justify-end gap-2">
+          <AppButton variant="ghost" size="sm" @click="viewRefund(row)">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            {{ $t('common.view') }}
+          </AppButton>
+        </div>
+      </template>
+      <template #empty>
+        <EmptyState
+          v-if="isFiltersActive && allRefunds.length > 0"
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>'
+          :title="$t('empty.noSearchResults')"
+          :description="$t('empty.noSearchResultsDesc')"
+          :actionLabel="$t('empty.resetFilters')"
+          @action="resetFilters"
+        />
+        <EmptyState
+          v-else
+          icon='<svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>'
+          :title="$t('empty.noRefunds')"
+          :description="$t('empty.noRefundsDesc')"
+        />
+      </template>
+    </DataTable>
+    </template>
+  </DashboardLayout>
+</template>

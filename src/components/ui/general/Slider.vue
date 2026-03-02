@@ -46,7 +46,7 @@
 
         <div v-if="showPagination" class="slider__pagination">
             <button
-                v-for="(_slide, index) in slides"
+                v-for="(slide, index) in slides"
                 :key="index"
                 class="slider__pagination-dot"
                 :class="{ 'slider__pagination-dot--active': currentSlide === index }"

@@ -1,20 +1,38 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
-
-const emojis = ['🆕', '📊', '🏆', '📊']
-
-const publications = computed(() =>
-  Array.from({ length: 4 }, (_, i) => ({
-    id: i + 1,
-    emoji: emojis[i],
-    title: t(`publications.items.${i}.title`),
-    description: t(`publications.items.${i}.description`),
-    date: t(`publications.items.${i}.date`),
-  }))
-)
+const publications = [
+  {
+    id: 1,
+    emoji: '🆕',
+    title: 'Запущена новая версия калькулятора утилизационного сбора',
+    description:
+      'Обновлённый калькулятор позволяет более точно рассчитать сумму утилизационного сбора с учётом новых категорий товаров и коэффициентов.',
+    date: '15 ноября 2024',
+  },
+  {
+    id: 2,
+    emoji: '📊',
+    title: 'Отчёт по сбору и переработке отходов за III квартал 2024',
+    description:
+      'Собрано 42.3 млн сом утилизационного сбора, переработано 12,450 тонн отходов.',
+    date: '10 ноября 2024',
+  },
+  {
+    id: 3,
+    emoji: '🏆',
+    title: 'Открыт приём заявок на конкурс экологических проектов',
+    description:
+      'Грант до 500 000 сом на проекты в сфере переработки отходов.',
+    date: '10 ноября 2024',
+  },
+  {
+    id: 4,
+    emoji: '📊',
+    title: 'Отчёт по сбору и переработке отходов за III квартал 2024',
+    description:
+      'Собрано 42.3 млн сом утилизационного сбора, переработано 12,450 тонн отходов.',
+    date: '10 ноября 2024',
+  },
+]
 </script>
 
 <template>
@@ -23,10 +41,10 @@ const publications = computed(() =>
     <div class="publications-header-box">
       <div class="publications-title-group">
         <h1 class="section-title">
-          {{ $t('publications.title') }}
+          Публикации
         </h1>
         <p class="section-subtitle">
-          {{ $t('publications.subtitle') }}
+          Новости, отчёты и пресс-релизы
         </p>
       </div>
     </div>

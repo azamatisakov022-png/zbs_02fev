@@ -1,0 +1,164 @@
+<script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  productGroups,
+  productSubgroups,
+  isPackagingGroup,
+  type ProductSubgroup,
+} from '../data/product-groups'
+import SubgroupPickerModal from './SubgroupPickerModal.vue'
+import TnvedCode from './TnvedCode.vue'
+
+const { t } = useI18n()
+
+const props = withDefaults(defineProps<{
+  group: string
+  subgroup: string
+  readonly?: boolean
+  disabled?: boolean
+  showLabels?: boolean
+  accentColor?: string
+}>(), {
+  readonly: false,
+  disabled: false,
+  showLabels: true,
+  accentColor: '#f59e0b',
+})
+
+const emit = defineEmits<{
+  'update:group': [value: string]
+  'update:subgroup': [value: string]
+  'subgroupSelected': [data: ProductSubgroup | null]
+}>()
+
+const availableSubgroups = computed(() => {
+  return productSubgroups[props.group] || []
+})
+
+const selectedSubgroupData = computed<ProductSubgroup | null>(() => {
+  if (!props.group || !props.subgroup) return null
+  return availableSubgroups.value.find(s => s.value === props.subgroup) || null
+})
+
+const isPackaging = computed(() => isPackagingGroup(props.group))
+
+const groupLabel = computed(() => {
+  return productGroups.find(g => g.value === props.group)?.label || ''
+})
+
+const subgroupLabel = computed(() => {
+  return selectedSubgroupData.value?.label || ''
+})
+
+const onGroupChange = (value: string) => {
+  emit('update:group', value)
+  emit('update:subgroup', '')
+  emit('subgroupSelected', null)
+}
+
+const onSubgroupChange = (value: string) => {
+  emit('update:subgroup', value)
+}
+
+const onSubgroupSelected = (data: ProductSubgroup | null) => {
+  emit('subgroupSelected', data)
+}
+
+watch(() => props.subgroup, () => {
+  emit('subgroupSelected', selectedSubgroupData.value)
+})
+</script>
+
+<template>
+  <div class="product-group-selector">
+    <!-- Row 1: Group — full width -->
+    <div class="mb-4">
+      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.label') }}</label>
+      <template v-if="readonly">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="groupLabel">
+          {{ groupLabel || '—' }}
+        </div>
+      </template>
+      <template v-else>
+        <select
+          :value="group"
+          @change="onGroupChange(($event.target as HTMLSelectElement).value)"
+          :disabled="disabled"
+          class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+          :style="{ '--tw-ring-color': accentColor }"
+        >
+          <option value="">{{ $t('productGroup.selectGroup') }}</option>
+          <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+        </select>
+      </template>
+    </div>
+
+    <!-- Row 2: Subgroup — modal picker -->
+    <div class="mb-4">
+      <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.subgroupLabel') }}</label>
+      <template v-if="readonly">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="subgroupLabel">
+          {{ subgroupLabel || '—' }}
+        </div>
+      </template>
+      <template v-else>
+        <SubgroupPickerModal
+          :groupId="group"
+          :modelValue="subgroup"
+          @update:modelValue="onSubgroupChange"
+          @subgroupSelected="onSubgroupSelected"
+        />
+      </template>
+    </div>
+
+    <!-- Row 3: Type-specific readonly fields -->
+    <div v-if="!isPackaging" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4">
+      <div>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.gskpCode') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
+          {{ selectedSubgroupData?.gskpCode || '—' }}
+        </div>
+      </div>
+      <div>
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedCode') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
+          <TnvedCode v-if="selectedSubgroupData?.tnvedCode" :code="selectedSubgroupData.tnvedCode" />
+          <span v-else>—</span>
+        </div>
+      </div>
+      <div class="sm:col-span-2 lg:col-span-3">
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedName') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]" :title="selectedSubgroupData?.tnvedName || ''">
+          {{ selectedSubgroupData?.tnvedName || '—' }}
+        </div>
+      </div>
+    </div>
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-10 gap-3 lg:gap-4">
+      <div class="sm:col-span-2 lg:col-span-4">
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.packagingMaterial') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
+          {{ selectedSubgroupData?.packagingMaterial || '—' }}
+        </div>
+      </div>
+      <div class="lg:col-span-3">
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsDesignation') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
+          {{ selectedSubgroupData?.packagingLetterCode || '—' }}
+        </div>
+      </div>
+      <div class="lg:col-span-3">
+        <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsCode') }}</label>
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
+          {{ selectedSubgroupData?.packagingDigitalCode || '—' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.product-group-selector {
+  max-width: 100%;
+}
+</style>

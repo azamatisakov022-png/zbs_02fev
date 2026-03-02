@@ -1,35 +1,29 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import Select from '@/components/ui/general/Select.vue'
-import Button from '@/components/ui/general/Button.vue'
-import Input from '@/components/ui/general/Input.vue'
-
-const { t } = useI18n()
+import { ref } from 'vue'
 
 type RegistryStatus = 'active' | 'review' | 'suspended'
 
-const statusConfig = computed(() => ({
-  active: { label: t('registriesPage.status.active'), bg: 'rgba(14,136,141,0.2)', text: '#0e888d' },
-  review: { label: t('registriesPage.status.review'), bg: 'rgba(255,183,27,0.2)', text: '#fea629' },
-  suspended: { label: t('registriesPage.status.suspended'), bg: 'rgba(255,86,82,0.2)', text: '#ff5652' },
-}) as Record<RegistryStatus, { label: string; bg: string; text: string }>)
+const statusConfig: Record<RegistryStatus, { label: string; bg: string; text: string }> = {
+  active: { label: 'Активен', bg: 'rgba(14,136,141,0.2)', text: '#0e888d' },
+  review: { label: 'На проверке', bg: 'rgba(255,183,27,0.2)', text: '#fea629' },
+  suspended: { label: 'Приостановлен', bg: 'rgba(255,86,82,0.2)', text: '#ff5652' },
+}
 
-const tabs = computed(() => [
-  { id: 'payers', label: t('registriesPage.tabs.payers'), count: 1247 },
-  { id: 'processors', label: t('registriesPage.tabs.processors'), count: 89 },
-  { id: 'polygons', label: t('registriesPage.tabs.polygons'), count: 47 },
-])
+const tabs = [
+  { id: 'payers', label: 'Плательщики', count: 1247 },
+  { id: 'processors', label: 'Переработчики', count: 89 },
+  { id: 'polygons', label: 'Полигоны', count: 47 },
+]
 
-const regions = computed(() => [
-  { name: t('regions.mapLabels.talas'), count: 4, top: '11%', left: 'calc(50% - 198px)' },
-  { name: t('regions.mapLabels.chuy'), count: 2, top: '4.5%', left: '50%' },
-  { name: t('regions.mapLabels.issykKul'), count: 1, top: '20%', left: 'calc(50% + 201px)' },
-  { name: t('regions.mapLabels.jalalAbad'), count: 7, top: '37.5%', left: 'calc(50% - 140px)' },
-  { name: t('regions.mapLabels.naryn'), count: 7, top: '38%', left: 'calc(50% + 56px)' },
-  { name: t('regions.mapLabels.osh'), count: 12, top: '67%', left: 'calc(50% - 44px)' },
-  { name: t('regions.mapLabels.batken'), count: 19, top: '63%', left: 'calc(50% - 304px)' },
-])
+const regions = [
+  { name: 'Талас', count: 4, top: '11%', left: 'calc(50% - 198px)' },
+  { name: 'Чуй', count: 2, top: '4.5%', left: '50%' },
+  { name: 'Иссык-Куль', count: 1, top: '20%', left: 'calc(50% + 201px)' },
+  { name: 'Джалал-Абад', count: 7, top: '37.5%', left: 'calc(50% - 140px)' },
+  { name: 'Нарын', count: 7, top: '38%', left: 'calc(50% + 56px)' },
+  { name: 'Ош', count: 12, top: '67%', left: 'calc(50% - 44px)' },
+  { name: 'Баткен', count: 19, top: '63%', left: 'calc(50% - 304px)' },
+]
 
 const registries = Array.from({ length: 20 }, (_, i) => ({
   id: i + 1,
@@ -40,96 +34,71 @@ const registries = Array.from({ length: 20 }, (_, i) => ({
 }))
 
 const activeTab = ref('payers')
-
-const typeOptions = computed(() => [
-  { value: '', label: t('registriesPage.typeOptions.all') },
-  { value: 'payers', label: t('registriesPage.typeOptions.payers') },
-  { value: 'processors', label: t('registriesPage.typeOptions.processors') },
-  { value: 'polygons', label: t('registriesPage.typeOptions.polygons') },
-])
-
-const regionOptions = computed(() => [
-  { value: '', label: t('regions.allRegions') },
-  { value: 'bishkek', label: t('regions.bishkek') },
-  { value: 'chuy', label: t('regions.chuy') },
-  { value: 'osh', label: t('regions.osh') },
-  { value: 'jalal-abad', label: t('regions.jalalAbad') },
-  { value: 'naryn', label: t('regions.naryn') },
-  { value: 'talas', label: t('regions.talas') },
-  { value: 'issyk-kul', label: t('regions.issykKul') },
-  { value: 'batken', label: t('regions.batken') },
-])
-
-const searchQuery = ref('')
-const selectedType = ref('')
-const selectedRegion = ref('')
 </script>
 
 <template>
- <div class="registries-page">
-   <div class="container-main registries-container">
+ <div class="mb-[50px]">
+   <div class="container-main pb-16">
     <!-- Title Section -->
-    <div class="section-header pb-10">
-      <div class="registries-title-group">
+    <div class="pt-[40px] pb-[40px]">
+      <div class="flex flex-col max-w-[601px]">
         <h1 class="section-title">
-          {{ $t('registriesPage.title') }}
+          Реестры
         </h1>
         <p class="section-subtitle">
-          {{ $t('registriesPage.subtitle') }}
+          Публичные реестры участников системы (только чтение)
         </p>
       </div>
     </div>
 
     <!-- Search/Filter Bar -->
-    <div class="registries-filter-bar">
-      <div class="registries-filter-row">
-        <span class="registries-filter-title">
-          {{ $t('registriesPage.gisTitle') }}
+    <div class="pb-[27px]">
+      <div class="flex items-center justify-between">
+        <span class="text-[22px] font-semibold text-text-main">
+          ГИС-карта организаций
         </span>
-        <div class="registries-filter-controls">
-          <div class="registries-filter-group">
-            <Input
-              v-model="searchQuery"
+        <div class="flex items-center gap-[40px]">
+          <div class="flex items-center gap-[12px]">
+            <input
               type="text"
-              :placeholder="$t('registriesPage.searchPlaceholder')"
-              variant="outlined"
-              class="registries-search-input"
+              placeholder="Поиск по названию"
+              class="w-[224px] h-[40px] border border-[#ebebeb] rounded-2xl pt-[10px] pb-[10px] text-[14px] text-text-main placeholder:text-text-main outline-none text-center"
             />
-            <Select
-              v-model="selectedType"
-              :options="typeOptions"
-              :placeholder="$t('registriesPage.typeOptions.all')"
-            />
-            <Select
-              v-model="selectedRegion"
-              :options="regionOptions"
-              :placeholder="$t('regions.allRegions')"
-            />
+            <button class="bg-bg-light rounded-2xl px-[30px] py-[12px] flex items-center gap-[8px] text-[14px] font-medium text-text-main">
+              Все типы
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#415861" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="bg-bg-light rounded-2xl px-[30px] py-[12px] flex items-center gap-[8px] text-[14px] font-medium text-text-main">
+              Все области
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#415861" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
-          <Button variant="primary" size="sm" class="registries-search-btn">
-            {{ $t('registriesPage.findBtn') }}
-          </Button>
+          <button class="bg-primary rounded-2xl px-[30px] py-[12px] text-[14px] font-medium text-white hover:opacity-90 transition-opacity">
+            Найти
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Map Section -->
-    <div class="registries-map">
-      <div class="map-container">
-        <div class="map-inner">
-          <img src="@/assets/images/icons/kyrgyzstan-map.svg" :alt="$t('registriesPage.mapAlt')" class="w-full h-full object-contain" />
+    <div class="pb-[30px]">
+      <div class="relative w-full h-[480px] bg-[#ccefe9] rounded-[50px] overflow-hidden">
+        <!-- Map SVG -->
+        <div class="absolute top-[41px] left-1/2 -translate-x-1/2 w-[792px] h-[389px]">
+          <img src="@/assets/images/icons/kyrgyzstan-map.svg" alt="Карта Кыргызстана" class="w-full h-full object-contain" />
         </div>
 
+        <!-- Region Labels -->
         <div
           v-for="region in regions"
           :key="region.name"
-          class="map-label"
+          class="absolute -translate-x-1/2 bg-white rounded-[30px] px-[20px] py-[10px] flex flex-col items-center"
           :style="{ top: region.top, left: region.left }"
         >
-          <span class="map-count">
+          <span class="text-[30px] font-bold text-primary leading-normal">
             {{ region.count }}
           </span>
-          <span class="map-subtitle">
+          <span class="text-[20px] font-medium text-text-main leading-normal">
             {{ region.name }}
           </span>
         </div>
@@ -137,16 +106,17 @@ const selectedRegion = ref('')
     </div>
 
     <!-- Tabs -->
-    <div class="registries-tabs">
-      <div class="registries-tabs-row">
+    <div class="pb-[37px]">
+      <div class="flex gap-[20px]">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           @click="activeTab = tab.id"
           :class="[
+            'px-[30px] py-[12px] rounded-2xl text-[16px] font-medium transition-colors',
             activeTab === tab.id
-              ? 'btn-filter-active'
-              : 'btn-filter hover:bg-bg-table'
+              ? 'bg-primary text-white'
+              : 'bg-bg-light text-text-main hover:bg-[#e8f0f2]'
           ]"
         >
           {{ tab.label }} ({{ tab.count }})
@@ -154,28 +124,28 @@ const selectedRegion = ref('')
       </div>
     </div>
 
-    <!-- Desktop Table -->
-    <div class="registries-table-desktop registries-table-scroll">
-      <div class="table-wrapper">
+
+    <div>
+      <div class="w-full border border-bg-light">
         <!-- Table Header -->
-        <div class="table-header">
-          <div class="table-cell w-[78px] justify-center">
-            <span class="table-cell-text">{{ $t('registriesPage.table.number') }}</span>
+        <div class="flex bg-bg-light">
+          <div class="w-[78px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">№</span>
           </div>
-          <div class="table-cell w-[465px]">
-            <span class="table-cell-text">{{ $t('registriesPage.table.name') }}</span>
+          <div class="w-[465px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">Наименование</span>
           </div>
-          <div class="table-cell w-[190px]">
-            <span class="table-cell-text">{{ $t('registriesPage.table.region') }}</span>
+          <div class="w-[190px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">Регион</span>
           </div>
-          <div class="table-cell flex-1">
-            <span class="table-cell-text">{{ $t('registriesPage.table.activity') }}</span>
+          <div class="flex-1 px-[10px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">Вид деятельности</span>
           </div>
-          <div class="table-cell w-[150px] justify-center">
-            <span class="table-cell-text">{{ $t('registriesPage.table.status') }}</span>
+          <div class="w-[150px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">Статус</span>
           </div>
-          <div class="table-cell w-[150px] justify-center">
-            <span class="table-cell-text">{{ $t('registriesPage.table.actions') }}</span>
+          <div class="w-[150px] shrink-0 px-[10px] py-[16px] flex items-center justify-center">
+            <span class="text-[18px] font-medium text-black">Действия</span>
           </div>
         </div>
 
@@ -183,62 +153,36 @@ const selectedRegion = ref('')
         <div
           v-for="item in registries"
           :key="item.id"
-          class="table-row"
+          class="flex border-t border-bg-light bg-white"
         >
-          <div class="table-cell w-[78px] justify-center">
-            <span class="table-cell-text">{{ item.id }}</span>
+          <div class="w-[78px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">{{ item.id }}</span>
           </div>
-          <div class="table-cell w-[465px]">
-            <span class="table-cell-text">{{ item.name }}</span>
+          <div class="w-[465px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">{{ item.name }}</span>
           </div>
-          <div class="table-cell w-[190px]">
-            <span class="table-cell-text">{{ item.region }}</span>
+          <div class="w-[190px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">{{ item.region }}</span>
           </div>
-          <div class="table-cell flex-1">
-            <span class="table-cell-text">{{ item.activity }}</span>
+          <div class="flex-1 px-[20px] py-[16px] flex items-center border-r border-bg-light">
+            <span class="text-[18px] font-medium text-black">{{ item.activity }}</span>
           </div>
-          <div class="table-cell w-[150px] justify-center">
+          <div class="w-[150px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
             <span
-              class="badge"
+              class="text-[12px] font-medium px-[10px] py-[8px] rounded-xl"
               :style="{ backgroundColor: statusConfig[item.status].bg, color: statusConfig[item.status].text }"
             >
               {{ statusConfig[item.status].label }}
             </span>
           </div>
-          <div class="table-cell w-[150px] justify-center">
-            <Button variant="primary" size="xs">
-              {{ $t('registriesPage.view') }}
-            </Button>
+          <div class="w-[150px] shrink-0 px-[10px] py-[16px] flex items-center justify-center">
+            <button class="bg-primary text-white text-[12px] font-medium px-[10px] py-[8px] rounded-xl hover:opacity-90 transition-opacity">
+              Просмотр
+            </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mobile Cards -->
-    <div class="registries-cards-mobile">
-      <div
-        v-for="item in registries"
-        :key="item.id"
-        class="registry-card"
-      >
-        <div class="registry-card-header">
-          <span class="registry-card-num">№ {{ item.id }}</span>
-          <span
-            class="registry-card-badge"
-            :style="{ backgroundColor: statusConfig[item.status].bg, color: statusConfig[item.status].text }"
-          >
-            {{ statusConfig[item.status].label }}
-          </span>
-        </div>
-        <p class="registry-card-name">{{ item.name }}</p>
-        <p class="registry-card-info">{{ item.region }} · {{ item.activity }}</p>
-        <div class="registry-card-actions">
-          <Button variant="primary" size="xs">{{ $t('registriesPage.view') }}</Button>
         </div>
       </div>
     </div>
   </div>
  </div>
 </template>
-
-<style scoped src="@/assets/styles/views/registries.css"></style>

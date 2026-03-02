@@ -1,39 +1,36 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+
 import slider1 from '@/assets/images/slider_1.png'
 
-const { t } = useI18n()
-
-const slides = computed(() => [
+const slides = [
   {
-    tag: t('hero.slides.0.tag'),
-    image: slider1,
-    title: t('hero.slides.0.title'),
+    tag: '🌱 Устойчивое развитие',
+    image:slider1,
+    title: 'О нас',
     description: [
-      t('hero.slides.0.desc1'),
-      t('hero.slides.0.desc2'),
-      t('hero.slides.0.desc3'),
+      'Эко Оператор Кыргызстан — национальный оператор в сфере управления отходами, созданный для развития экологически устойчивой системы переработки и утилизации отходов на территории страны.',
+      'Мы объединяем государственные органы, бизнес-сообщество, перерабатывающие предприятия и общественность с целью создания эффективной и прозрачной экосистемы обращения с отходами.',
+      'Наша деятельность направлена на внедрение современных стандартов переработки, поддержку экологической инфраструктуры и реализацию механизмов расширенной ответственности производителей.',
     ],
   },
   {
-    tag: t('hero.slides.1.tag'),
-    image: slider1,
-    title: t('hero.slides.1.title'),
+    tag: '♻ Экология',
+        image:slider1,
+    title: 'Наша миссия',
     description: [
-      t('hero.slides.1.desc1'),
-      t('hero.slides.1.desc2'),
+      'Создание современной системы обращения с отходами.',
+      'Поддержка переработки и устойчивого развития.',
     ],
   },
   {
-    tag: t('hero.slides.2.tag'),
-    image: slider1,
-    title: t('hero.slides.2.title'),
+    tag: '🏭 Производители',
+        image:slider1,
+    title: 'РОП',
     description: [
-      t('hero.slides.2.desc1'),
+      'Реализация механизмов расширенной ответственности производителей.',
     ],
   },
-])
+]
 </script>
 
 <template>
@@ -69,10 +66,10 @@ const slides = computed(() => [
             <div class="hero-card-accent-top" />
             <div class="hero-card-content">
               <h3 class="hero-card-title">
-                {{ $t('hero.cardTitle') }}
+                ЗАКЛЮЧИТЬ<br />ДОГОВОР/ПОДАТЬ<br />ОТЧЕТ
               </h3>
               <router-link to="/contract" class="hero-card-link">
-                <span class="hero-card-link-text">{{ $t('hero.cardLink') }}</span>
+                <span class="hero-card-link-text">Подробнее</span>
                 <img src="@/assets/images/icons/hero-arrow.svg" alt="" class="hero-card-arrow" />
               </router-link>
             </div>
@@ -99,7 +96,6 @@ const slides = computed(() => [
 
 .hero-tag {
   @apply absolute top-7.5 left-[50px] bg-white/10 px-5 py-3.5 rounded-4xl;
-  z-index: 2;
 }
 
 .hero-tag-text {
@@ -108,21 +104,14 @@ const slides = computed(() => [
 
 .hero-title {
   @apply absolute top-[112px] left-[50px] text-display text-white uppercase;
-  z-index: 2;
 }
 
 .hero-description {
-  @apply absolute top-[220px] left-[50px] text-body text-white leading-normal;
-  width: 506px;
-  /* Prevent overlap with pagination — stop 80px above bottom */
-  max-height: calc(100% - 220px - 80px);
-  overflow: hidden;
-  z-index: 2;
+  @apply absolute top-[220px] left-[50px] w-[506px] text-body text-white leading-normal;
 }
 
 .hero-card {
   @apply absolute top-1/2 -translate-y-1/2 right-[50px] w-[285px] h-[210px] bg-white/10 rounded-3xl shadow-hero;
-  z-index: 2;
 }
 
 .hero-card-accent-top {
@@ -153,79 +142,53 @@ const slides = computed(() => [
   @apply w-[21px] h-[9px];
 }
 
-/* ── Large desktop to ~1280px — description narrows to avoid card ── */
-@media (max-width: 1280px) {
-  .hero-description {
-    width: 420px;
-  }
+.hero-pagination {
+  @apply absolute bottom-7 left-1/2 -translate-x-1/2 flex items-center gap-2;
+}
 
-  .hero-card {
-    right: 30px;
-    @apply w-[250px] h-[200px];
-  }
+.hero-dot {
+  @apply w-7.5 h-[7px] bg-divider rounded-[7px] transition-all;
+}
 
-  .hero-card-content {
-    @apply h-[180px] p-5;
-  }
+.hero-dot.is-active {
+  @apply w-[34px] h-[9px] bg-accent;
 }
 
 /* ── Tablet (≤1024px) ── */
 @media (max-width: 1024px) {
   .hero-container {
-    @apply h-[540px];
-  }
-
-  .hero-tag {
-    left: 30px;
-    @apply px-4 py-2.5;
-  }
-
-  .hero-title {
-    left: 30px;
-    top: 100px;
-    @apply text-h1;
+    @apply h-[500px];
   }
 
   .hero-description {
-    left: 30px;
-    top: 170px;
-    width: 380px;
-    @apply text-caption;
-    max-height: calc(100% - 170px - 80px);
+    @apply w-[400px];
   }
 
   .hero-card {
-    right: 24px;
-    @apply w-[220px] h-[175px];
+    @apply w-[240px] h-[180px] right-[30px];
   }
 
   .hero-card-content {
-    @apply h-[155px] p-4;
+    @apply h-[160px] p-5;
   }
 
   .hero-card-title {
-    @apply text-body font-black mt-2 leading-tight;
-  }
-
-  .hero-card-link {
-    @apply mt-2;
+    @apply text-body font-black mt-3;
   }
 }
 
-/* ── Small tablet / large mobile (≤768px) ── */
+/* ── Mobile (≤768px) ── */
 @media (max-width: 768px) {
   .hero-section {
     @apply py-3;
   }
 
   .hero-container {
-    @apply h-[560px] rounded-3xl;
+    @apply h-[520px] rounded-3xl;
   }
 
   .hero-tag {
-    top: 20px;
-    left: 20px;
-    @apply px-3 py-2;
+    @apply top-5 left-5 px-3 py-2;
   }
 
   .hero-tag-text {
@@ -233,77 +196,40 @@ const slides = computed(() => [
   }
 
   .hero-title {
-    top: 72px;
-    left: 20px;
-    @apply text-h2;
+    @apply top-[80px] left-5 text-h1;
   }
 
   .hero-description {
-    top: 130px;
-    left: 20px;
-    width: calc(100% - 40px);
-    @apply text-caption-sm;
-    max-height: 160px;
+    @apply top-[150px] left-5 w-[calc(100%-40px)] text-caption;
   }
 
   .hero-card {
+    @apply static translate-y-0 w-[calc(100%-40px)] h-auto mx-5 mt-auto;
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
     top: auto;
-    bottom: 70px;
-    left: 20px;
-    right: 20px;
     transform: none;
+    margin: 0 20px;
     width: calc(100% - 40px);
-    @apply h-[130px];
+    height: auto;
   }
 
   .hero-card-content {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    @apply relative top-auto left-auto right-auto h-auto p-5;
+    position: relative;
+    inset: auto;
     height: auto;
-    @apply p-4 flex flex-row items-center justify-between;
+    margin: 10px;
   }
 
   .hero-card-title {
-    @apply text-caption font-black mt-0 leading-tight;
+    @apply text-body mt-2 leading-tight;
   }
 
   .hero-card-link {
-    @apply mt-0;
-  }
-}
-
-/* ── Small mobile (≤480px) ── */
-@media (max-width: 480px) {
-  .hero-container {
-    @apply h-[500px];
-    border-radius: 20px;
-  }
-
-  .hero-title {
-    top: 65px;
-    @apply text-h3;
-  }
-
-  .hero-description {
-    top: 110px;
-    @apply text-caption-sm;
-    max-height: 130px;
-  }
-
-  .hero-card {
-    bottom: 60px;
-    @apply h-[110px];
-  }
-
-  .hero-card-content {
-    @apply p-3;
-  }
-
-  .hero-card-title {
-    @apply text-caption-sm;
+    @apply mt-2;
   }
 }
 </style>

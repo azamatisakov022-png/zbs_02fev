@@ -113,7 +113,6 @@ router.afterEach(() => {
             v-model="locale"
             :options="langOptions"
             class="lang-select"
-            :background="false"
           />
           <button class="burger-btn" @click="toggleMenu" aria-label="Menu">
             <span :class="['burger-line', { 'is-open': mobileMenuOpen }]"></span>
