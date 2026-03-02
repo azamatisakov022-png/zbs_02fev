@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { authStore } from '../stores/auth'
+import { authStore, isDemoMode } from '../stores/auth'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -138,8 +138,8 @@ const goBack = () => {
             </button>
           </div>
 
-          <!-- Demo accounts hint -->
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <!-- Demo accounts hint (only in demo mode) -->
+          <div v-if="isDemoMode" class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
             <p class="text-sm font-semibold text-amber-800">{{ $t('login.demoTitle') }}</p>
             <div class="grid grid-cols-1 gap-1 text-xs text-amber-700 font-mono">
               <button type="button" @click="loginForm.inn = '00000000000001'; loginForm.password = 'demo'" class="text-left hover:bg-amber-100 rounded px-2 py-1 transition-colors">

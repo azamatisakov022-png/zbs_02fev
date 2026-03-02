@@ -12,6 +12,7 @@ import kg.eco.operator.repository.AccountRepository;
 import kg.eco.operator.repository.AuditLogRepository;
 import kg.eco.operator.repository.DocumentRepository;
 import kg.eco.operator.repository.PayerRepository;
+import kg.eco.operator.service.FileStorageService;
 import kg.eco.operator.service.PayerService;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class PayerServiceImpl implements PayerService {
     private final AuditLogRepository auditLogRepository;
     private final DocumentRepository documentRepository;
     private final PayerMapper payerMapper;
+    private final FileStorageService fileStorageService;
 
     @Override
     public PaginatedResponse<PayerResponse> getAll(int page, int pageSize, String search,
@@ -91,8 +93,8 @@ public class PayerServiceImpl implements PayerService {
         doc.setSize(file.getSize());
         doc.setEntityType("PAYER");
         doc.setEntityId(payer.getId());
-        // TODO: Upload to MinIO and set URL
-        doc.setUrl("/uploads/payers/" + payer.getId() + "/" + file.getOriginalFilename());
+        String objectKey = fileStorageService.upload(file, "payers/" + payer.getId());
+        doc.setUrl(objectKey);
         documentRepository.save(doc);
 
         return SuccessResponse.ok("Документ прикреплён");
@@ -105,8 +107,7 @@ public class PayerServiceImpl implements PayerService {
         long suspended = payerRepository.countSuspended();
         long withDebt = payerRepository.countWithDebt();
 
-        // Sum from account repository
-        BigDecimal totalCharged = accountRepository.sumTotalPaid(); // placeholder
+        BigDecimal totalCharged = accountRepository.sumTotalCharged();
         BigDecimal totalPaid = accountRepository.sumTotalPaid();
 
         return PayerStatsResponse.builder()

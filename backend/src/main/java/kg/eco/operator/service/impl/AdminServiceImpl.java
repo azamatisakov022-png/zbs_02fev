@@ -2,6 +2,7 @@ package kg.eco.operator.service.impl;
 
 import kg.eco.operator.dto.response.UserProfileResponse;
 import kg.eco.operator.entity.NotificationTemplate;
+import kg.eco.operator.entity.SystemSetting;
 import kg.eco.operator.entity.enums.NotificationType;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.service.AdminService;
@@ -9,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class AdminServiceImpl implements AdminService {
     private final RateRepository rateRepository;
     private final RecyclingNormRepository recyclingNormRepository;
     private final CategoryRepository categoryRepository;
+    private final SystemSettingRepository systemSettingRepository;
 
     @Override
     public List<UserProfileResponse> getUsers() {
@@ -128,16 +130,25 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public Map<String, Object> getSettings() {
         Map<String, Object> settings = new LinkedHashMap<>();
-        settings.put("systemName", "АИС «ГП Эко Оператор»");
-        settings.put("defaultCurrency", "KGS");
-        settings.put("maxFileSize", "50MB");
-        settings.put("currentYear", java.time.LocalDate.now().getYear());
+        systemSettingRepository.findAll().forEach(s -> settings.put(s.getKey(), s.getValue()));
+        settings.put("currentYear", LocalDate.now().getYear());
         return settings;
     }
 
     @Override
+    @Transactional
     public void updateSettings(Map<String, Object> settings) {
-        // TODO: persist to a settings table
+        settings.forEach((key, value) -> {
+            if ("currentYear".equals(key)) return;
+            SystemSetting setting = systemSettingRepository.findById(key)
+                    .orElseGet(() -> {
+                        SystemSetting s = new SystemSetting();
+                        s.setKey(key);
+                        return s;
+                    });
+            setting.setValue(value != null ? value.toString() : null);
+            systemSettingRepository.save(setting);
+        });
     }
 
     private String mapRole(kg.eco.operator.entity.enums.RoleEnum role) {

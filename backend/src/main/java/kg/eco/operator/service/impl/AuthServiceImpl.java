@@ -18,6 +18,8 @@ import kg.eco.operator.entity.enums.PaymentStatus;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.exception.UnauthorizedException;
+import kg.eco.operator.integration.taxservice.TaxServicePort;
+import kg.eco.operator.integration.taxservice.dto.TaxInnVerificationResponse;
 import kg.eco.operator.repository.AccountRepository;
 import kg.eco.operator.repository.CompanyRepository;
 import kg.eco.operator.repository.PayerRepository;
@@ -45,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final AccountRepository accountRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final TaxServicePort taxServicePort;
 
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -65,9 +68,18 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessLogicException("Пользователь с ИНН " + request.getInn() + " уже зарегистрирован");
         }
 
-        // Create company
+        // Verify INN against ГНС КР
+        TaxInnVerificationResponse verification = taxServicePort.verifyInn(request.getInn());
+        if (!verification.isValid()) {
+            throw new BusinessLogicException(
+                    "ИНН " + request.getInn() + " не найден в реестре ГНС КР: " + verification.getErrorMessage());
+        }
+
+        // Create company — use official name from tax service if not provided
+        String companyName = request.getCompanyName() != null
+                ? request.getCompanyName() : verification.getOfficialName();
         Company company = new Company();
-        company.setCompanyName(request.getCompanyName());
+        company.setCompanyName(companyName);
         company.setInn(request.getInn());
         company.setLegalForm(request.getLegalForm());
         company.setEmail(request.getEmail());

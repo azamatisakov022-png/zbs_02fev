@@ -15,4 +15,5 @@ public interface DeclarationRepository extends JpaRepository<Declaration, Long> 
     Page<Declaration> findByStatus(DeclarationStatus status, Pageable pageable);
     Optional<Declaration> findByNumber(String number);
     Optional<Declaration> findByCompany_IdAndYear(Long companyId, Integer year);
+    long countByStatus(DeclarationStatus status);
 }
