@@ -9,6 +9,9 @@ spring:
     hibernate:
       ddl-auto: validate
 
+jwt:
+  secret: dev-secret-key-only-for-local-development-do-not-use-in-production
+
 logging:
   level:
     kg.eco.operator: DEBUG
