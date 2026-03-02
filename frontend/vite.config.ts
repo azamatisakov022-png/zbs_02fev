@@ -7,4 +7,8 @@ export default defineConfig({
   server: {
     allowedHosts: ['hitless-zahra-nondoubtingly.ngrok-free.dev'],
   },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+  },
 })
