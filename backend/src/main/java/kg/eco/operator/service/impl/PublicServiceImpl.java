@@ -29,6 +29,7 @@ public class PublicServiceImpl implements PublicService {
     private final CollectionPointRepository collectionPointRepository;
     private final CategoryRepository categoryRepository;
     private final RecyclingNormRepository recyclingNormRepository;
+    private final FaqRepository faqRepository;
 
     @Value("${payment.accounts.utilization-fee.recipient:ГП «Эко Оператор» при МПРЭТН КР}")
     private String feeRecipient;
@@ -226,41 +227,16 @@ public class PublicServiceImpl implements PublicService {
 
     @Override
     public List<Map<String, Object>> getFaq() {
-        List<Map<String, Object>> faq = new ArrayList<>();
-
-        faq.add(faqItem(1, "Что такое утилизационный сбор (РОП)?",
-                "Расширенная ответственность производителя (РОП) — это механизм, при котором производители и импортёры обязаны оплачивать утилизацию своей продукции после окончания её жизненного цикла. Утилизационный сбор рассчитывается по формуле: Усб = Ставка × Масса × (1 - Нпер/100).",
-                "Общие вопросы"));
-
-        faq.add(faqItem(2, "Кто является плательщиком утилизационного сбора?",
-                "Плательщиками являются производители и импортёры товаров, подлежащих утилизации, зарегистрированные на территории Кыргызской Республики. Перечень групп продукции утверждён ПКМ КР №730.",
-                "Общие вопросы"));
-
-        faq.add(faqItem(3, "Как рассчитывается утилизационный сбор?",
-                "Формула расчёта: Усб = Ставка × Масса(тонн) × (1 - Нпер/100), где Ставка — тариф по ПКМ №730, Масса — вес продукции в тоннах, Нпер — норматив переработки по ПКМ №563 (%). Воспользуйтесь калькулятором на нашем сайте для быстрого расчёта.",
-                "Расчёт"));
-
-        faq.add(faqItem(4, "Как подать декларацию?",
-                "Декларация подаётся через личный кабинет системы АИС «ГП Эко Оператор». Необходимо зарегистрироваться, заполнить данные о компании, затем создать расчёт утилизационного сбора с указанием видов продукции и объёмов.",
-                "Декларирование"));
-
-        faq.add(faqItem(5, "Какие документы необходимы для регистрации?",
-                "Для регистрации необходимы: ИНН организации, свидетельство о регистрации юридического лица, контактные данные ответственного лица. Для переработчиков дополнительно требуется лицензия на обращение с отходами и экологический паспорт.",
-                "Регистрация"));
-
-        faq.add(faqItem(6, "Как получить возврат утилизационного сбора?",
-                "Возврат утилизационного сбора возможен в случаях: излишне уплаченных сумм, ошибок в расчётах, экспорта продукции. Заявление на возврат подаётся через личный кабинет с приложением подтверждающих документов.",
-                "Возвраты"));
-
-        faq.add(faqItem(7, "Каковы сроки оплаты утилизационного сбора?",
-                "Оплата утилизационного сбора производится в течение 30 календарных дней с момента утверждения расчёта. Реквизиты для оплаты указаны в утверждённом расчёте.",
-                "Оплата"));
-
-        faq.add(faqItem(8, "Куда направляются средства утилизационного сбора?",
-                "Средства направляются на финансирование программ переработки отходов, развитие инфраструктуры сбора и переработки, поддержку переработчиков, ликвидацию несанкционированных свалок и экологическое просвещение населения.",
-                "Общие вопросы"));
-
-        return faq;
+        return faqRepository.findByIsActiveTrueOrderBySortOrder().stream()
+                .map(faq -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id", faq.getId());
+                    item.put("question", faq.getQuestion());
+                    item.put("answer", faq.getAnswer());
+                    item.put("category", faq.getCategory());
+                    return item;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -285,12 +261,4 @@ public class PublicServiceImpl implements PublicService {
         return result;
     }
 
-    private Map<String, Object> faqItem(int id, String question, String answer, String category) {
-        Map<String, Object> item = new LinkedHashMap<>();
-        item.put("id", id);
-        item.put("question", question);
-        item.put("answer", answer);
-        item.put("category", category);
-        return item;
-    }
 }

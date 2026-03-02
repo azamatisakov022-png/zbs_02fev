@@ -2,6 +2,7 @@ package kg.eco.operator.service.impl;
 
 import kg.eco.operator.dto.response.*;
 import kg.eco.operator.entity.enums.CalculationStatus;
+import kg.eco.operator.entity.enums.DeclarationStatus;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,13 +35,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final CategoryRepository categoryRepository;
     private final RateRepository rateRepository;
     private final RecyclingNormRepository recyclingNormRepository;
+    private final CompanyRepository companyRepository;
+    private final DeclarationRepository declarationRepository;
 
     @Override
     public AnalyticsSummaryResponse getSummary(String periodFrom, String periodTo, String region) {
         long totalPayers = payerRepository.count();
         long activePayers = payerRepository.countActive();
 
-        BigDecimal totalCharged = accountRepository.sumTotalPaid(); // total charged across all accounts
+        BigDecimal totalCharged = accountRepository.sumTotalCharged();
         BigDecimal totalCollected = accountRepository.sumTotalPaid();
 
         BigDecimal collectionRate = BigDecimal.ZERO;
@@ -58,7 +62,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         long pendingCalculations = calculationRepository.countByStatus(CalculationStatus.SUBMITTED)
                 + calculationRepository.countByStatus(CalculationStatus.UNDER_REVIEW);
-        long pendingDeclarations = 0; // TODO: from DeclarationRepository when implemented
+        long pendingDeclarations = declarationRepository.countByStatus(DeclarationStatus.SUBMITTED);
 
         return AnalyticsSummaryResponse.builder()
                 .totalPayers(totalPayers)
@@ -75,12 +79,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public List<IncomeDataResponse> getIncome(String groupBy, String periodFrom, String periodTo) {
-        // Simplified — returns aggregated data
-        // In production, this would query transactions grouped by period
         List<IncomeDataResponse> result = new ArrayList<>();
         result.add(IncomeDataResponse.builder()
-                .period("2025")
-                .charged(accountRepository.sumTotalPaid())
+                .period(String.valueOf(LocalDate.now().getYear()))
+                .charged(accountRepository.sumTotalCharged())
                 .collected(accountRepository.sumTotalPaid())
                 .refunded(BigDecimal.ZERO)
                 .build());
@@ -99,8 +101,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                                     .divide(capacity, 2, RoundingMode.HALF_UP)
                             : BigDecimal.ZERO;
 
-                    // Get norm for current year
-                    var norm = recyclingNormRepository.findByCategory_IdAndYear(cat.getId(), 2025);
+                    var norm = recyclingNormRepository.findByCategory_IdAndYear(cat.getId(), LocalDate.now().getYear());
                     BigDecimal normPercent = norm.map(kg.eco.operator.entity.RecyclingNorm::getNormPercent)
                             .orElse(BigDecimal.ZERO);
 
@@ -118,18 +119,18 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public List<RegionDataResponse> getRegions() {
-        // Get distinct regions from payers (companies)
-        List<String> regions = List.of(
-                "г. Бишкек", "Чуйская обл.", "Ошская обл.", "Джалал-Абадская обл.",
-                "Иссык-Кульская обл.", "Нарынская обл.", "Таласская обл.", "Баткенская обл.");
+        List<String> regions = companyRepository.findDistinctRegions();
+        if (regions.isEmpty()) {
+            return List.of();
+        }
 
         return regions.stream()
                 .map(region -> RegionDataResponse.builder()
                         .region(region)
-                        .payersCount(0) // TODO: count by region
-                        .recyclersCount(0)
-                        .landfillsCount(0)
-                        .dumpsCount(0)
+                        .payersCount(companyRepository.countByRegion(region))
+                        .recyclersCount(recyclerRepository.countByRegion(region))
+                        .landfillsCount(landfillRepository.countByRegion(region))
+                        .dumpsCount(dumpRepository.countByRegion(region))
                         .totalWaste(BigDecimal.ZERO)
                         .totalRecycled(BigDecimal.ZERO)
                         .build())

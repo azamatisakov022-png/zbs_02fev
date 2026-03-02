@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 import { DeclStatus, type DeclStatusType } from '../constants/statuses'
 import i18n from '../i18n'
+import { authStore } from './auth'
 
 export type DeclarationStatus = DeclStatusType
 
@@ -111,12 +112,12 @@ function approveDeclaration(id: number, comment?: string) {
   decl.status = DeclStatus.APPROVED
   decl.reviewComment = comment || undefined
   decl.reviewDate = now.toLocaleDateString()
-  decl.reviewer = 'Асанов Б.Т.'
+  decl.reviewer = authStore.userName.value || authStore.state.user?.companyName || ''
   decl.history.push({
     id: nextHistoryId++,
     action: i18n.global.t('declarationAction.approved'),
     date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
-    user: 'Асанов Б.Т.',
+    user: authStore.userName.value || authStore.state.user?.companyName || '',
     comment: comment || undefined,
   })
   silentApi.post(`/declarations/${id}/approve`, { comment }).catch(() => {})
@@ -129,12 +130,12 @@ function rejectDeclaration(id: number, reason: string) {
   decl.status = DeclStatus.REJECTED
   decl.reviewComment = reason
   decl.reviewDate = now.toLocaleDateString()
-  decl.reviewer = 'Асанов Б.Т.'
+  decl.reviewer = authStore.userName.value || authStore.state.user?.companyName || ''
   decl.history.push({
     id: nextHistoryId++,
     action: i18n.global.t('declarationAction.rejected'),
     date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
-    user: 'Асанов Б.Т.',
+    user: authStore.userName.value || authStore.state.user?.companyName || '',
     comment: reason,
   })
   silentApi.post(`/declarations/${id}/reject`, { reason }).catch(() => {})
@@ -147,12 +148,12 @@ function returnForRevision(id: number, comment: string) {
   decl.status = DeclStatus.REVISION
   decl.reviewComment = comment
   decl.reviewDate = now.toLocaleDateString()
-  decl.reviewer = 'Асанов Б.Т.'
+  decl.reviewer = authStore.userName.value || authStore.state.user?.companyName || ''
   decl.history.push({
     id: nextHistoryId++,
     action: i18n.global.t('declarationAction.returnedForRevision'),
     date: `${now.toLocaleDateString()} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`,
-    user: 'Асанов Б.Т.',
+    user: authStore.userName.value || authStore.state.user?.companyName || '',
     comment,
   })
   silentApi.post(`/declarations/${id}/return`, { comment }).catch(() => {})

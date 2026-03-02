@@ -4,6 +4,7 @@ import kg.eco.operator.dto.request.ReviewRequest;
 import kg.eco.operator.dto.response.CountResponse;
 import kg.eco.operator.dto.response.DeclarationResponse;
 import kg.eco.operator.dto.response.PaginatedResponse;
+import kg.eco.operator.integration.customs.dto.CustomsVolumeVerificationResponse;
 import kg.eco.operator.service.DeclarationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -99,5 +100,11 @@ public class DeclarationController {
     @GetMapping("/by-company/{companyId}")
     public ResponseEntity<List<DeclarationResponse>> getByCompany(@PathVariable Long companyId) {
         return ResponseEntity.ok(declarationService.getByCompany(companyId));
+    }
+
+    @GetMapping("/{id}/customs-verification")
+    @PreAuthorize("hasAnyRole('ECO_OPERATOR', 'EMPLOYEE')")
+    public ResponseEntity<CustomsVolumeVerificationResponse> verifyCustomsVolumes(@PathVariable Long id) {
+        return ResponseEntity.ok(declarationService.verifyDeclarationVolumes(id));
     }
 }

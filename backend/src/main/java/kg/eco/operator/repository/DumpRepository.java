@@ -21,4 +21,6 @@ public interface DumpRepository extends JpaRepository<Dump, Long> {
     List<Dump> findByStatus(DumpStatus status);
 
     List<Dump> findByRegionAndStatus(String region, DumpStatus status);
+
+    long countByRegion(String region);
 }

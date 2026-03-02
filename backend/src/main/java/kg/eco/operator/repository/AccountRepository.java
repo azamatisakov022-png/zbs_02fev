@@ -39,4 +39,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     @Query("SELECT COALESCE(SUM(a.totalPaid), 0) FROM Account a")
     BigDecimal sumTotalPaid();
+
+    @Query("SELECT COALESCE(SUM(a.totalCharged), 0) FROM Account a")
+    BigDecimal sumTotalCharged();
 }

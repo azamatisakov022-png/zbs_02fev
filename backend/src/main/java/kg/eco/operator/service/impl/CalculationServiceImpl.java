@@ -9,9 +9,15 @@ import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.event.CalculationStatusEvent;
+import kg.eco.operator.integration.banking.BankingServicePort;
+import kg.eco.operator.integration.banking.dto.BankPaymentVerificationRequest;
+import kg.eco.operator.integration.banking.dto.BankPaymentVerificationResponse;
 import kg.eco.operator.service.CalculationService;
+import kg.eco.operator.service.FileStorageService;
 import kg.eco.operator.util.CalculationUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,11 +37,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CalculationServiceImpl implements CalculationService {
 
-    private static final BigDecimal DAILY_RATE = new BigDecimal("0.0009");
+    @Value("${calculation.penalty.daily-rate:0.0009}")
+    private BigDecimal dailyRate;
 
     private final CalculationRepository calculationRepository;
     private final UserRepository userRepository;
@@ -45,6 +53,8 @@ public class CalculationServiceImpl implements CalculationService {
     private final AuditLogRepository auditLogRepository;
     private final CalculationMapper calculationMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final FileStorageService fileStorageService;
+    private final BankingServicePort bankingServicePort;
 
     // ─── LIST ───
 
@@ -297,9 +307,9 @@ public class CalculationServiceImpl implements CalculationService {
         payment.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
         payment.setStatus(PaymentConfirmationStatus.PENDING);
 
-        // TODO: upload document to MinIO and set documentUrl
         if (document != null && !document.isEmpty()) {
-            payment.setDocumentUrl("/documents/payments/" + payment.getPaymentNumber());
+            String objectKey = fileStorageService.upload(document, "payments/" + payment.getPaymentNumber());
+            payment.setDocumentUrl(objectKey);
         }
 
         paymentRepository.save(payment);
@@ -311,6 +321,21 @@ public class CalculationServiceImpl implements CalculationService {
     public CalculationResponse approvePayment(Long id, String reviewerInn) {
         Calculation calc = findById(id);
         Payment payment = findPaymentByCalculation(calc);
+
+        // Verify payment against bank system
+        try {
+            BankPaymentVerificationResponse bankResult = bankingServicePort.verifyPayment(
+                    BankPaymentVerificationRequest.builder()
+                            .paymentOrderNumber(payment.getPaymentNumber())
+                            .expectedAmount(payment.getAmount())
+                            .paymentDate(payment.getPaymentDate())
+                            .payerInn(calc.getCompany().getInn())
+                            .build());
+            log.info("Банковская верификация платежа {}: статус={}",
+                    payment.getPaymentNumber(), bankResult.getStatus());
+        } catch (Exception e) {
+            log.warn("Не удалось верифицировать платёж через банк: {}", e.getMessage());
+        }
 
         payment.setStatus(PaymentConfirmationStatus.CONFIRMED);
         paymentRepository.save(payment);
@@ -432,7 +457,19 @@ public class CalculationServiceImpl implements CalculationService {
     public void updateDocuments(Long id, String inn, MultipartFile[] files) {
         Calculation calc = findById(id);
         assertOwner(calc, inn);
-        // TODO: implement MinIO upload
+        if (files != null) {
+            for (MultipartFile file : files) {
+                String objectKey = fileStorageService.upload(file, "calculations/" + id);
+                Document doc = new Document();
+                doc.setName(file.getOriginalFilename());
+                doc.setUrl(objectKey);
+                doc.setSize(file.getSize());
+                doc.setEntityType("calculation");
+                doc.setEntityId(id);
+                doc.setType(DocumentType.OTHER);
+                documentRepository.save(doc);
+            }
+        }
     }
 
     // ─── COUNTS ───
@@ -500,7 +537,7 @@ public class CalculationServiceImpl implements CalculationService {
                     .debtAmount(amount)
                     .dueDate(dueDate)
                     .daysOverdue(fixedDays)
-                    .dailyRate(DAILY_RATE)
+                    .dailyRate(dailyRate)
                     .dailyPenalty(dailyPen)
                     .totalPenalty(fixedAmount)
                     .maxPenalty(maxPenalty)
@@ -517,7 +554,7 @@ public class CalculationServiceImpl implements CalculationService {
             return PenaltyResponse.noPenalty(amount, dueDate);
         }
 
-        BigDecimal dailyPenalty = amount.multiply(DAILY_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal dailyPenalty = amount.multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalPenalty = dailyPenalty.multiply(BigDecimal.valueOf(days)).setScale(2, RoundingMode.HALF_UP);
         BigDecimal maxPenalty = amount; // 100% cap
         if (totalPenalty.compareTo(maxPenalty) > 0) {
@@ -533,7 +570,7 @@ public class CalculationServiceImpl implements CalculationService {
                 .debtAmount(amount)
                 .dueDate(dueDate)
                 .daysOverdue(days)
-                .dailyRate(DAILY_RATE)
+                .dailyRate(dailyRate)
                 .dailyPenalty(dailyPenalty)
                 .totalPenalty(totalPenalty)
                 .maxPenalty(maxPenalty)

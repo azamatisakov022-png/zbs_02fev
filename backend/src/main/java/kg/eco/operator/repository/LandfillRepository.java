@@ -44,4 +44,6 @@ public interface LandfillRepository extends JpaRepository<Landfill, Long> {
 
     @Query("SELECT COUNT(l) FROM Landfill l WHERE l.fillPercent > 100")
     long countOverfilled();
+
+    long countByRegion(String region);
 }

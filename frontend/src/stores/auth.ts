@@ -65,12 +65,14 @@ function saveToStorage() {
 }
 
 // Demo accounts for offline/dev mode (used when backend is unavailable)
-const demoAccounts: Record<string, AuthUser> = {
+const demoAccounts: Record<string, AuthUser> = import.meta.env.VITE_DEMO_MODE === 'true' ? {
   '00000000000001': { id: 1, inn: '00000000000001', companyName: 'ОсОО «ТехПром»', role: 'business', email: 'techprom@demo.kg', phone: '+996555000001' },
   '00000000000002': { id: 2, inn: '00000000000002', companyName: 'ГП Эко Оператор', role: 'eco-operator', email: 'eco@demo.kg', phone: '+996555000002' },
   '00000000000003': { id: 3, inn: '00000000000003', companyName: 'МПРЭТН КР', role: 'employee', email: 'employee@demo.kg', phone: '+996555000003' },
   '00000000000004': { id: 4, inn: '00000000000004', companyName: 'Администратор', role: 'admin', email: 'admin@demo.kg', phone: '+996555000004' },
-}
+} : {}
+
+export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 
 async function login(inn: string, password: string): Promise<AuthUser> {
   state.loading = true

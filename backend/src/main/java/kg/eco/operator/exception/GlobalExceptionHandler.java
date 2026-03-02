@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import kg.eco.operator.integration.common.IntegrationException;
+
 import java.util.List;
 
 @Slf4j
@@ -91,6 +93,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
         return ResponseEntity.badRequest()
                 .body(ErrorResponse.of("BAD_REQUEST", "Некорректный параметр: " + ex.getName()));
+    }
+
+    @ExceptionHandler(IntegrationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegration(IntegrationException ex) {
+        log.error("Integration error [{}]: {}", ex.getServiceName(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorResponse.of("INTEGRATION_ERROR",
+                        "Сервис " + ex.getServiceName() + " временно недоступен"));
     }
 
     @ExceptionHandler(Exception.class)

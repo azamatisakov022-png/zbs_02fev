@@ -1,10 +1,14 @@
 package kg.eco.operator.controller;
 
+import kg.eco.operator.integration.taxservice.TaxServicePort;
+import kg.eco.operator.integration.taxservice.dto.TaxCompanyRegistrationResponse;
+import kg.eco.operator.integration.taxservice.dto.TaxInnVerificationResponse;
 import kg.eco.operator.service.PublicService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +18,7 @@ import java.util.Map;
 public class PublicController {
 
     private final PublicService publicService;
+    private final TaxServicePort taxServicePort;
 
     /**
      * POST /public/calculator — Публичный калькулятор РОП
@@ -73,5 +78,31 @@ public class PublicController {
     @GetMapping("/payment-accounts")
     public ResponseEntity<Map<String, Object>> getPaymentAccounts() {
         return ResponseEntity.ok(publicService.getPaymentAccounts());
+    }
+
+    /**
+     * GET /public/verify-inn/{inn} — Проверка ИНН через ГНС КР
+     */
+    @GetMapping("/verify-inn/{inn}")
+    public ResponseEntity<Map<String, Object>> verifyInn(@PathVariable String inn) {
+        TaxInnVerificationResponse verification = taxServicePort.verifyInn(inn);
+        if (!verification.isValid()) {
+            return ResponseEntity.ok(Map.of(
+                    "valid", false,
+                    "error", verification.getErrorMessage() != null
+                            ? verification.getErrorMessage() : "ИНН не найден"));
+        }
+
+        TaxCompanyRegistrationResponse registration = taxServicePort.getCompanyRegistration(inn);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("valid", true);
+        result.put("inn", registration.getInn());
+        result.put("shortName", registration.getOfficialName());
+        result.put("legalForm", registration.getLegalForm());
+        result.put("directorFullName", registration.getDirector());
+        result.put("legalAddress", registration.getLegalAddress());
+        result.put("phone", registration.getPhone());
+        result.put("email", registration.getEmail());
+        return ResponseEntity.ok(result);
     }
 }

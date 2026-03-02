@@ -28,4 +28,6 @@ public interface RecyclerRepository extends JpaRepository<Recycler, Long>, JpaSp
 
     @Query("SELECT COUNT(r) FROM Recycler r WHERE r.status = 'SUSPENDED'")
     long countSuspended();
+
+    long countByRegion(String region);
 }

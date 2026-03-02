@@ -56,3 +56,27 @@ payment:
       bank: "Национальный банк КР"
       account: "4402013100100330"
       bik: "440001"
+
+calculation:
+  penalty:
+    daily-rate: 0.0009   # 0.09% в день — ставка пени за просрочку
+
+integration:
+  default-timeout: 10000
+  tax-service:
+    base-url: ${TAX_SERVICE_URL:http://localhost:8090/api/v1}
+    api-key: ${TAX_SERVICE_API_KEY:stub-key}
+    timeout: 15000
+    enabled: true
+  customs-service:
+    base-url: ${CUSTOMS_SERVICE_URL:http://localhost:8091/api/v1}
+    api-key: ${CUSTOMS_SERVICE_API_KEY:stub-key}
+    timeout: 15000
+    enabled: true
+  banking:
+    base-url: ${BANK_SERVICE_URL:http://localhost:8092/api/v1}
+    api-key: ${BANK_SERVICE_API_KEY:stub-key}
+    timeout: 20000
+    eco-operator-account: "1280021000000730"
+    eco-operator-bik: "128001"
+    enabled: true

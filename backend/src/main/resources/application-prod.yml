@@ -26,7 +26,21 @@ minio:
   secret-key: ${MINIO_SECRET_KEY}
   bucket: ${MINIO_BUCKET:eco-operator}
 
+integration:
+  tax-service:
+    base-url: ${TAX_SERVICE_URL}
+    api-key: ${TAX_SERVICE_API_KEY}
+  customs-service:
+    base-url: ${CUSTOMS_SERVICE_URL}
+    api-key: ${CUSTOMS_SERVICE_API_KEY}
+  banking:
+    base-url: ${BANK_SERVICE_URL}
+    api-key: ${BANK_SERVICE_API_KEY}
+    eco-operator-account: ${ECO_OPERATOR_ACCOUNT}
+    eco-operator-bik: ${ECO_OPERATOR_BIK}
+
 logging:
   level:
     kg.eco.operator: INFO
+    kg.eco.operator.integration: INFO
     org.springframework.security: WARN
