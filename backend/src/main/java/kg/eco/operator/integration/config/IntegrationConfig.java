@@ -6,10 +6,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
+import java.util.Arrays;
 
 @Slf4j
 @Configuration
@@ -17,6 +19,7 @@ import java.time.Duration;
 public class IntegrationConfig {
 
     private final IntegrationProperties properties;
+    private final Environment environment;
 
     @Bean
     @Profile("production")
@@ -43,8 +46,10 @@ public class IntegrationConfig {
      * In production, validate that all required integration URLs are configured.
      */
     @PostConstruct
-    @Profile("production")
     public void validateProductionConfig() {
+        if (!Arrays.asList(environment.getActiveProfiles()).contains("production")) {
+            return;
+        }
         validateUrl("tax-service", properties.getTaxService());
         validateUrl("customs-service", properties.getCustomsService());
         validateUrl("banking", properties.getBanking());
