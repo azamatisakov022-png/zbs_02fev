@@ -6,8 +6,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { accountStore } from '../../stores/account'
-import { calculationStore } from '../../stores/calculations'
+import { useAccountStore } from '../../stores/account'
+import { useCalculationStore } from '../../stores/calculations'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
@@ -22,15 +22,19 @@ import { formatNum } from '../../utils/formatNumber'
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const account = useAccountStore()
+const calcStore = useCalculationStore()
 
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(async () => {
+  await account.fetchAll()
+  isLoading.value = false
+})
 
-// ── BLOCK 1: Summary from calculationStore ──
-const companyName = 'ОсОО «ТехПром»'
+const companyName = computed(() => account.myAccount?.company || '')
 
 const approvedCalcs = computed(() =>
-  calculationStore.getBusinessCalculations(companyName).filter(c =>
+  calcStore.getBusinessCalculations(companyName.value).filter(c =>
     [CalcStatus.APPROVED, CalcStatus.PAYMENT_PENDING, CalcStatus.PAID, CalcStatus.PAYMENT_REJECTED, CalcStatus.FEE_PAID, CalcStatus.PENALTY_PAID, CalcStatus.COMPLETED].includes(c.status as any)
   )
 )
@@ -42,7 +46,7 @@ const totalPaid = computed(() =>
 const accountBalance = computed(() => totalPaid.value - totalCharged.value)
 
 const lastPaymentDate = computed(() => {
-  const paidCalcs = calculationStore.getBusinessCalculations(companyName)
+  const paidCalcs = calcStore.getBusinessCalculations(companyName.value)
     .filter(c => c.status === CalcStatus.PAID && c.paidAt)
   if (!paidCalcs.length) return '—'
   const sorted = [...paidCalcs].sort((a, b) => {
@@ -54,7 +58,7 @@ const lastPaymentDate = computed(() => {
 })
 
 const unpaidCalcs = computed(() =>
-  calculationStore.getBusinessCalculations(companyName).filter(c => c.status === CalcStatus.APPROVED)
+  calcStore.getBusinessCalculations(companyName.value).filter(c => c.status === CalcStatus.APPROVED)
 )
 const totalUnpaid = computed(() => unpaidCalcs.value.reduce((s, c) => s + c.totalAmount, 0))
 
@@ -95,7 +99,7 @@ const aggregatePenalty = computed(() => {
 const showPaymentMethods = ref(false)
 
 // ── BLOCK 4: Operations history from accountStore ──
-const transactions = computed(() => accountStore.getTransactions())
+const transactions = computed(() => account.transactions)
 
 const filterType = ref<'all' | 'charge' | 'payment'>('all')
 const filterPeriod = ref<'all' | 'month' | 'quarter' | 'year'>('all')
@@ -168,7 +172,7 @@ const paymentDetailData = ref<{
 
 const openPaymentDetail = (row: any) => {
   if (row.type !== 'payment') return
-  const calc = calculationStore.getCalculationById(row.calculationId)
+  const calc = calcStore.getCalculationById(row.calculationId)
   paymentDetailData.value = {
     calcNumber: row.calculationNumber,
     calcId: row.calculationId,
@@ -203,7 +207,7 @@ const handleRowAction = (row: any) => {
 // ── Payment modal (for making new payments from unpaid invoices) ──
 const showPaymentModal = ref(false)
 const payingCalcId = ref<number | null>(null)
-const payingCalc = computed(() => payingCalcId.value ? calculationStore.getCalculationById(payingCalcId.value) : null)
+const payingCalc = computed(() => payingCalcId.value ? calcStore.getCalculationById(payingCalcId.value) : null)
 
 const openPayment = (calcId: number) => {
   payingCalcId.value = calcId
@@ -257,7 +261,7 @@ const removePaymentFile = () => {
 const submitPaymentConfirmation = () => {
   if (!payingCalc.value || !paymentFile.value) return
   const c = payingCalc.value
-  const calc = calculationStore.getCalculationById(c.id)
+  const calc = calcStore.getCalculationById(c.id)
   if (calc) {
     ;(calc as any).status = CalcStatus.PAYMENT_PENDING
   }
@@ -288,7 +292,7 @@ const downloadPaymentPdf = async () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="companyName" :menuItems="menuItems">
     <!-- Header -->
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessAccount.title') }}</h1>

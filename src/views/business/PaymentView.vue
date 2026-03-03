@@ -4,7 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore, type PaymentData } from '../../stores/calculations'
+import { useAccountStore } from '../../stores/account'
+import { useCalculationStore } from '../../stores/calculations'
+import type { PaymentData } from '@/types/calculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -19,9 +21,11 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
+const calcStore = useCalculationStore()
 
 const calcId = computed(() => Number(route.params.id))
-const calc = computed(() => calculationStore.getCalculationById(calcId.value))
+const calc = computed(() => calcStore.getCalculationById(calcId.value))
 
 // Fee payment form
 const feeFile = ref<{ fileName: string; fileType: string; fileDataUrl: string } | null>(null)
@@ -111,7 +115,7 @@ async function generateQR() {
   }
 }
 
-onMounted(generateQR)
+onMounted(async () => { await accountStore.fetchAll(); await generateQR() })
 
 function submitFeeReceipt() {
   if (!calc.value || !feeFile.value) return
@@ -125,7 +129,7 @@ function submitFeeReceipt() {
     fileType: feeFile.value.fileType,
     fileDataUrl: feeFile.value.fileDataUrl,
   }
-  calculationStore.uploadFeeReceipt(calc.value.id, payment)
+  calcStore.uploadFeeReceipt(calc.value.id, payment)
   feeSubmitting.value = false
   toastStore.show({ type: 'success', title: t('workflow.receiptUploaded') })
 }
@@ -142,7 +146,7 @@ function submitPenaltyReceipt() {
     fileType: penaltyFile.value.fileType,
     fileDataUrl: penaltyFile.value.fileDataUrl,
   }
-  calculationStore.uploadPenaltyReceipt(calc.value.id, payment)
+  calcStore.uploadPenaltyReceipt(calc.value.id, payment)
   penaltySubmitting.value = false
   toastStore.show({ type: 'success', title: t('workflow.receiptUploaded') })
 }
@@ -160,7 +164,7 @@ function goBack() {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div v-if="!calc" class="text-center py-20">
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
       <button @click="$router.push('/business/calculator')" class="mt-4 px-4 py-2 bg-[#2563eb] text-white rounded-lg text-sm">{{ $t('common.back') }}</button>

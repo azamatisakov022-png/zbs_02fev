@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StubPage from '../../components/dashboard/StubPage.vue'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
+
+onMounted(() => { accountStore.fetchAll() })
 
 const pageTitles: Record<string, string> = {
   '/business/payments': 'Платежи',
@@ -23,7 +27,7 @@ const pageTitle = computed(() => pageTitles[route.path] || 'Страница')
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <StubPage :title="pageTitle" />

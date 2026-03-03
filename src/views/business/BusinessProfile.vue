@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { validators, scrollToFirstError } from '../../utils/validators'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import { toastStore } from '../../stores/toast'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
+
+onMounted(() => { accountStore.fetchAll() })
 
 // Company data
 const companyData = ref({
@@ -260,7 +264,7 @@ const toggleTwoFactor = () => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <div class="space-y-6">

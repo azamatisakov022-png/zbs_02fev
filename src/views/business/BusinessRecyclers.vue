@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
+import { useAccountStore } from '../../stores/account'
 import { recyclerStore, type Recycler } from '../../stores/recyclers'
 import { toastStore } from '../../stores/toast'
 import { productGroups } from '../../data/product-groups'
@@ -11,6 +12,9 @@ import type { SelectOption } from '@/types/select'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
+
+onMounted(() => { accountStore.fetchAll() })
 
 // View mode
 const viewMode = ref<'grid' | 'list'>('grid')
@@ -142,7 +146,7 @@ const getStars = (rating: number) => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <div class="space-y-6">

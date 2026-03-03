@@ -3,6 +3,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { useAccountStore } from '../../stores/account'
 import { reportStore } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
@@ -15,6 +16,7 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 
 const report = computed(() => {
   const id = Number(route.params.id)
@@ -120,7 +122,8 @@ const goBack = () => {
   router.push(routes[from] || '/business/reports')
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await accountStore.fetchAll()
   if (route.query.print === 'true') {
     nextTick(() => { setTimeout(() => window.print(), 500) })
   }
@@ -135,7 +138,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <!-- Not found -->

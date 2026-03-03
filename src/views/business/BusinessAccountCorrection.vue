@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore } from '../../stores/calculations'
-import { accountStore } from '../../stores/account'
+import { useCalculationStore } from '../../stores/calculations'
+import { useAccountStore } from '../../stores/account'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
 import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
@@ -17,6 +17,10 @@ import { CalcStatus } from '../../constants/statuses'
 const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
+const account = useAccountStore()
+const calcStore = useCalculationStore()
+
+onMounted(() => { account.fetchAll() })
 
 const showInstruction = ref(false)
 const formSubmitted = ref(false)
@@ -33,7 +37,7 @@ const selectedCalculationId = ref<number | null>(null)
 
 // Paid calculations
 const paidCalculations = computed(() =>
-  calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
+  calcStore.calculations.filter(c => c.status === CalcStatus.PAID)
 )
 
 const paidCalcOptions = computed<SelectOption[]>(() =>
@@ -46,7 +50,7 @@ const paidCalcOptions = computed<SelectOption[]>(() =>
 // Selected calculation object
 const selectedCalculation = computed(() => {
   if (!selectedCalculationId.value) return null
-  return calculationStore.state.calculations.find(c => c.id === selectedCalculationId.value) || null
+  return calcStore.calculations.find(c => c.id === selectedCalculationId.value) || null
 })
 
 // Correction items
@@ -202,7 +206,7 @@ function submitCorrection() {
 
   const documents: string[] = Object.values(docs.value).filter(Boolean)
 
-  accountStore.submitCorrection({
+  account.submitCorrection({
     calculationId: calc.id,
     calculationNumber: calc.number,
     company: calc.company,
@@ -287,7 +291,7 @@ const canSubmit = computed(() =>
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="account.myAccount?.company || ''" :menuItems="menuItems">
     <!-- FORM VIEW -->
     <template v-if="viewMode === 'form'">
       <!-- Header with back button -->

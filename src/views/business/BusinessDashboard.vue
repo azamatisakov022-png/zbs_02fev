@@ -8,8 +8,8 @@ import LineChart from '../../components/charts/LineChart.vue'
 import PieChart from '../../components/charts/PieChart.vue'
 import ProgressBar from '../../components/charts/ProgressBar.vue'
 import { statsIcons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
-import { accountStore } from '../../stores/account'
+import { useCalculationStore } from '../../stores/calculations'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { CalcStatus } from '../../constants/statuses'
 import { statusI18nKey } from '../../constants/statuses'
@@ -17,6 +17,8 @@ import { getStatusBadgeVariant } from '../../utils/statusVariant'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const account = useAccountStore()
+const calcStore = useCalculationStore()
 
 const actionCards = computed(() => [
   {
@@ -42,7 +44,7 @@ const actionCards = computed(() => [
   }
 ])
 
-const myCalcs = computed(() => calculationStore.getBusinessCalculations('ОсОО «ТехПром»'))
+const myCalcs = computed(() => calcStore.getBusinessCalculations(account.myAccount?.company || ''))
 
 const stats = computed(() => [
   { title: t('businessDashboard.totalCalcs'), value: String(myCalcs.value.length), icon: statsIcons.applications, color: 'blue' as const },
@@ -97,6 +99,7 @@ const getStatusClass = (status: string) => {
 const isLoading = ref(true)
 onMounted(() => {
   setTimeout(() => { isLoading.value = false }, 500)
+  account.fetchAll()
 })
 </script>
 
@@ -104,7 +107,7 @@ onMounted(() => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="account.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
@@ -141,39 +144,39 @@ onMounted(() => {
       <router-link to="/business/account" class="block mb-8 group">
         <div :class="[
           'rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md',
-          accountStore.getCurrentBalance() > 0 ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-200' :
-          accountStore.getCurrentBalance() < 0 ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-200' :
+          account.currentBalance > 0 ? 'bg-gradient-to-r from-green-50 to-green-100 border-green-200' :
+          account.currentBalance < 0 ? 'bg-gradient-to-r from-red-50 to-red-100 border-red-200' :
           'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
         ]">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div :class="[
                 'w-12 h-12 rounded-xl flex items-center justify-center',
-                accountStore.getCurrentBalance() > 0 ? 'bg-green-500' :
-                accountStore.getCurrentBalance() < 0 ? 'bg-red-500' : 'bg-slate-400'
+                account.currentBalance > 0 ? 'bg-green-500' :
+                account.currentBalance < 0 ? 'bg-red-500' : 'bg-slate-400'
               ]">
                 <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
                 <p :class="[
                   'text-sm font-medium',
-                  accountStore.getCurrentBalance() > 0 ? 'text-green-800' :
-                  accountStore.getCurrentBalance() < 0 ? 'text-red-800' : 'text-slate-600'
+                  account.currentBalance > 0 ? 'text-green-800' :
+                  account.currentBalance < 0 ? 'text-red-800' : 'text-slate-600'
                 ]">{{ $t('businessDashboard.personalAccount') }}</p>
                 <p :class="[
                   'text-2xl font-bold',
-                  accountStore.getCurrentBalance() > 0 ? 'text-green-900' :
-                  accountStore.getCurrentBalance() < 0 ? 'text-red-900' : 'text-slate-800'
+                  account.currentBalance > 0 ? 'text-green-900' :
+                  account.currentBalance < 0 ? 'text-red-900' : 'text-slate-800'
                 ]">
-                  {{ accountStore.getCurrentBalance() > 0 ? '+' : '' }}{{ accountStore.getCurrentBalance().toLocaleString() }} {{ $t('businessDashboard.som') }}
+                  {{ account.currentBalance > 0 ? '+' : '' }}{{ account.currentBalance.toLocaleString() }} {{ $t('businessDashboard.som') }}
                 </p>
                 <p :class="[
                   'text-xs mt-0.5',
-                  accountStore.getCurrentBalance() > 0 ? 'text-green-600' :
-                  accountStore.getCurrentBalance() < 0 ? 'text-red-600' : 'text-slate-500'
+                  account.currentBalance > 0 ? 'text-green-600' :
+                  account.currentBalance < 0 ? 'text-red-600' : 'text-slate-500'
                 ]">
-                  {{ accountStore.getCurrentBalance() > 0 ? $t('businessDashboard.overpayment') :
-                     accountStore.getCurrentBalance() < 0 ? $t('businessDashboard.debt') :
+                  {{ account.currentBalance > 0 ? $t('businessDashboard.overpayment') :
+                     account.currentBalance < 0 ? $t('businessDashboard.debt') :
                      $t('businessDashboard.noDebt') }}
                 </p>
               </div>

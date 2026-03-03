@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
@@ -9,12 +9,16 @@ import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 const { t } = useI18n()
+
+onMounted(() => { accountStore.fetchAll() })
 
 // View state
 const showUploadModal = ref(false)
@@ -246,7 +250,7 @@ const resetDocFilters = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDocs.title') }}</h1>
       <p class="text-[#64748b]">{{ $t('businessDocs.subtitle') }}</p>

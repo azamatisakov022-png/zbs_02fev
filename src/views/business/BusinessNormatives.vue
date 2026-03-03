@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { UTILIZATION_RATES_2025, getRateByGroup } from '../../data/rates'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
+
+onMounted(() => { accountStore.fetchAll() })
 
 const currentYear = 2026
 const years = [2025, 2026, 2027, 2028, 2029, 2030]
@@ -129,7 +133,7 @@ const getRateColorClass = (rate: number) => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <div class="space-y-6">

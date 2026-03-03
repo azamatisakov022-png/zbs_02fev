@@ -10,7 +10,7 @@ import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
-import { calculationStore } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
 import { reportStore } from '../../stores/reports'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
@@ -19,15 +19,21 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { notificationStore } from '../../stores/notifications'
 import { useRouter } from 'vue-router'
 import { CalcStatus, ReportStatus, DeclStatus, statusI18nKey } from '../../constants/statuses'
+import { useAccountStore } from '../../stores/account'
 
 const router = useRouter()
 const { t } = useI18n()
+const calcStore = useCalculationStore()
+const accountStore = useAccountStore()
 
 const { roleTitle, menuItems } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(async () => {
+  await accountStore.fetchAll()
+  isLoading.value = false
+})
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'success'
@@ -44,21 +50,21 @@ const steps = computed(() => [
 // Form data
 const reportingYear = ref('2026')
 
-const companyData = {
-  name: 'ОсОО «ТехПром»',
-  fullName: 'Общество с ограниченной ответственностью «ТехПром»',
-  inn: '01234567890123',
-  okpo: '29438765',
-  registrationNumber: 'ПУС-2025-0042',
-  registrationDate: '15.03.2025',
-  legalAddress: 'г. Бишкек, ул. Московская, 123',
-  actualAddress: 'г. Бишкек, ул. Московская, 123',
-}
+const companyData = computed(() => ({
+  name: accountStore.myAccount?.company || '',
+  fullName: accountStore.myAccount?.company || '',
+  inn: accountStore.myAccount?.inn || '',
+  okpo: '',
+  registrationNumber: '',
+  registrationDate: '',
+  legalAddress: '',
+  actualAddress: '',
+}))
 
 // Calculations for selected year (Принято / Оплачено)
 const yearCalculations = computed(() => {
-  return calculationStore.state.calculations.filter(c =>
-    c.company === companyData.name &&
+  return calcStore.calculations.filter(c =>
+    c.company === companyData.value.name &&
     c.year === reportingYear.value &&
     (c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID)
   )
@@ -124,7 +130,7 @@ const totalDebt = computed(() => totalAmount.value - totalPaid.value)
 // Accepted recycling reports for the same company and year
 const yearReports = computed(() => {
   return reportStore.state.reports.filter(r =>
-    r.company === companyData.name &&
+    r.company === companyData.value.name &&
     r.year === reportingYear.value &&
     r.status === ReportStatus.APPROVED
   )
@@ -189,10 +195,10 @@ const submittedDeclaration = ref({ number: '', date: '' })
 
 const submitDeclaration = () => {
   const decl = declarationStore.addDeclaration({
-    company: companyData.name,
+    company: companyData.value.name,
     opf: 'ОсОО',
-    inn: companyData.inn,
-    address: companyData.legalAddress,
+    inn: companyData.value.inn,
+    address: companyData.value.legalAddress,
     contactPerson: 'Абдыкеримов К.Б.',
     phone: '+996 555 12-34-56',
     email: 'info@techprom.kg',
@@ -216,7 +222,7 @@ const submitDeclaration = () => {
   notificationStore.add({
     type: 'info',
     title: t('businessDecl.notifNewDeclaration'),
-    message: t('businessDecl.notifNewDeclMessage', { company: companyData.name }),
+    message: t('businessDecl.notifNewDeclMessage', { company: companyData.value.name }),
     role: 'eco-operator',
     link: '/eco-operator/incoming-declarations'
   })
@@ -232,10 +238,10 @@ const submitDeclaration = () => {
 
 const saveDraft = () => {
   declarationStore.addDeclaration({
-    company: companyData.name,
+    company: companyData.value.name,
     opf: 'ОсОО',
-    inn: companyData.inn,
-    address: companyData.legalAddress,
+    inn: companyData.value.inn,
+    address: companyData.value.legalAddress,
     contactPerson: 'Абдыкеримов К.Б.',
     phone: '+996 555 12-34-56',
     email: 'info@techprom.kg',
@@ -285,7 +291,7 @@ const columns = computed(() => [
 ])
 
 // Declarations from shared store filtered by company
-const storeDeclarations = computed(() => declarationStore.getByCompany(companyData.name))
+const storeDeclarations = computed(() => declarationStore.getByCompany(companyData.value.name))
 
 const declarations = computed(() =>
   storeDeclarations.value.map(d => ({
@@ -398,7 +404,7 @@ const signDeclaration = (id: number) => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="companyData.name"
     :menuItems="menuItems"
   >
     <!-- LIST VIEW -->

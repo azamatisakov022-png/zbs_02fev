@@ -10,15 +10,16 @@ import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { refundStore } from '../../stores/refunds'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 
-// Loading state
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(async () => { await accountStore.fetchAll(); isLoading.value = false })
 
 // Table columns
 const columns = computed(() => [
@@ -31,7 +32,7 @@ const columns = computed(() => [
 
 // Filter refunds for the current company
 const companyRefunds = computed(() => {
-  return refundStore.state.refunds.filter(r => r.company === 'ОсОО «ТехПром»')
+  return refundStore.state.refunds.filter(r => r.company === (accountStore.myAccount?.company || ''))
 })
 
 const hasRefunds = computed(() => companyRefunds.value.length > 0)
@@ -45,7 +46,7 @@ const goToNewRefund = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessRefunds.pageTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('businessRefunds.pageSubtitle') }}</p>

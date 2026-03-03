@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import { AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 const { t } = useI18n()
+
+onMounted(() => { accountStore.fetchAll() })
 
 const columns = computed(() => [
   { key: 'number', label: t('businessApps.number'), width: '120px' },
@@ -32,7 +36,7 @@ const applications = ref([
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="Токтогулов Эрлан"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

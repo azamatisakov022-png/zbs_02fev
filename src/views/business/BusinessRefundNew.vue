@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { productGroups, productSubgroups } from '../../data/product-groups'
 import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
+import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { CalcStatus } from '../../constants/statuses'
 
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 const { t } = useI18n()
+
+onMounted(() => { accountStore.fetchAll() })
+const calcStore = useCalculationStore()
 
 // View mode
 type ViewMode = 'form' | 'success'
@@ -29,7 +34,7 @@ const formatAmount = (amount: number) => amount.toLocaleString() + ' ' + t('busi
 const selectedCalcId = ref<number | null>(null)
 
 const paidCalculations = computed(() =>
-  calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
+  calcStore.calculations.filter(c => c.status === CalcStatus.PAID)
 )
 
 const paidCalcOptions = computed<SelectOption[]>(() =>
@@ -174,7 +179,7 @@ const saveDraft = () => {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
 
     <!-- FORM VIEW -->
     <template v-if="viewMode === 'form'">

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useAccountStore } from '../../stores/account'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
@@ -16,6 +17,7 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 
 const goBack = () => {
   const from = route.query.from as string
@@ -30,7 +32,8 @@ const goBack = () => {
 const declaration = ref<Declaration | undefined>(undefined)
 const isLoading = ref(true)
 
-onMounted(() => {
+onMounted(async () => {
+  await accountStore.fetchAll()
   const id = Number(route.params.id)
   declaration.value = declarationStore.getById(id)
   setTimeout(() => { isLoading.value = false }, 300)
@@ -92,7 +95,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <!-- Loading -->

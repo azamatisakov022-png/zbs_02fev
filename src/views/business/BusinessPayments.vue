@@ -13,17 +13,19 @@ import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { useAccountStore } from '../../stores/account'
 
 const router = useRouter()
 const { t } = useI18n()
 
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 
 const handlePrint = () => { window.print() }
 
 // Loading state
 const isLoading = ref(true)
-onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
+onMounted(async () => { await accountStore.fetchAll(); isLoading.value = false })
 
 // View state
 type ViewMode = 'list' | 'wizard' | 'processing' | 'success'
@@ -82,15 +84,15 @@ const cardCvv = ref('')
 const cardHolder = ref('')
 
 // Company & bank data
-const companyData = { name: 'ОсОО «ТехПром»', inn: '01234567890123' }
-const bankRequisites = {
+const companyData = computed(() => ({ name: accountStore.myAccount?.company || '', inn: accountStore.myAccount?.inn || '' }))
+const bankRequisites = computed(() => ({
   recipient: 'Государственный экологический фонд КР',
   inn: '00000000000000',
   account: '1234567890123456',
   bank: 'Национальный банк КР',
   bik: '123456',
-  purpose: 'Утилизационный сбор за Q1 2026, ОсОО «ТехПром», ИНН 01234567890123'
-}
+  purpose: `Утилизационный сбор за Q1 2026, ${companyData.value.name}, ИНН ${companyData.value.inn}`
+}))
 
 // Navigation
 const nextStep = () => { if (currentStep.value < 3) currentStep.value++ }
@@ -203,7 +205,7 @@ const goToCalculation = (calcId: number) => {
 </script>
 
 <template>
-  <DashboardLayout role="business" :roleTitle="roleTitle" userName="ОсОО «ТехПром»" :menuItems="menuItems">
+  <DashboardLayout role="business" :roleTitle="roleTitle" :userName="companyData.name" :menuItems="menuItems">
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">

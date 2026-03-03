@@ -23,15 +23,16 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { notificationStore } from '../../stores/notifications'
 import { ReportStatus, statusI18nKey } from '../../constants/statuses'
+import { useAccountStore } from '../../stores/account'
 
 const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
+const accountStore = useAccountStore()
 
-// Loading state
 const isLoading = ref(true)
 onMounted(async () => {
-  await reportStore.fetchAll()
+  await Promise.all([reportStore.fetchAll(), accountStore.fetchAll()])
   isLoading.value = false
 })
 
@@ -63,15 +64,14 @@ const yearOptions = computed<SelectOption[]>(() => [
   { value: '2027', label: '2027' },
 ])
 
-// Company data (from profile - readonly)
-const companyData = {
-  name: 'ОсОО «ТехПром»',
-  inn: '01234567890123',
-  address: 'г. Бишкек, ул. Московская, 123',
-  director: 'Иванов Иван Иванович',
-  phone: '+996 555 123 456',
-  email: 'info@techprom.kg'
-}
+const companyData = computed(() => ({
+  name: accountStore.myAccount?.company || '',
+  inn: accountStore.myAccount?.inn || '',
+  address: '',
+  director: '',
+  phone: '',
+  email: '',
+}))
 
 // Form data - Step 2
 const processingItems = ref<ProcessingItem[]>([
@@ -265,8 +265,8 @@ const submitReport = () => {
     return
   }
   const report = reportStore.addReport({
-    company: companyData.name,
-    inn: companyData.inn,
+    company: companyData.value.name,
+    inn: companyData.value.inn,
     year: reportingYear.value,
     items: [...processingItems.value.filter(i => i.wasteType)],
     files: [...uploadedFiles.value],
@@ -277,7 +277,7 @@ const submitReport = () => {
   notificationStore.add({
     type: 'info',
     title: t('businessReports.notifNewReport'),
-    message: t('businessReports.notifNewReportMsg', { company: companyData.name }),
+    message: t('businessReports.notifNewReportMsg', { company: companyData.value.name }),
     role: 'eco-operator',
     link: '/eco-operator/incoming-reports'
   })
@@ -296,8 +296,8 @@ const submitReport = () => {
 
 const saveDraft = () => {
   reportStore.addReport({
-    company: companyData.name,
-    inn: companyData.inn,
+    company: companyData.value.name,
+    inn: companyData.value.inn,
     year: reportingYear.value,
     items: [...processingItems.value.filter(i => i.wasteType)],
     files: [...uploadedFiles.value],
@@ -506,7 +506,7 @@ const columns = computed(() => [
 ])
 
 const businessReports = computed(() => {
-  return reportStore.getBusinessReports(companyData.name)
+  return reportStore.getBusinessReports(companyData.value.name)
 })
 
 
@@ -563,7 +563,7 @@ const downloadReportExcel = (reportId: number) => {
   const report = reportStore.state.reports.find(r => r.id === reportId)
   if (!report) return
   generateRecyclingReportExcel(report, {
-    name: report.company || 'ОсОО «ТехПром»',
+    name: report.company || companyData.value.name,
     inn: report.inn || '01234567890123',
     address: 'г. Бишкек, ул. Московская, 123',
   })
@@ -574,7 +574,7 @@ const downloadReportExcel = (reportId: number) => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="companyData.name"
     :menuItems="menuItems"
   >
     <!-- LIST VIEW -->
