@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import category from '@/assets/images/icons/category.svg';
 import activity from '@/assets/images/icons/activity.svg';
 import star from '@/assets/images/icons/star.svg';
@@ -7,29 +9,32 @@ import chartDown from '@/assets/images/icons/chart-down.svg';
 import users from '@/assets/images/icons/users.svg';
 import ecology from '@/assets/images/icons/ecology.svg';
 
-const missionCards = [
-  { id: 1, title: 'Создание интегрированной системы управления отходами', icon:category },
-  { id: 2, title: 'Экономическая устойчивость переработки вторсырья', icon: activity},
-  { id: 3, title: 'Формирование экологичной культуры населения и бизнеса', icon: star},
-  { id: 4, title: 'Рост доли переработанных отходов', icon: chart },
-  { id: 5, title: 'Снижение объёмов захоронения', icon: chartDown, flipIcon: true },
-  { id: 6, title: 'Развитие партнёрств государство–бизнес–переработчики', icon: users },
-  { id: 7, title: 'Внедрение экологических инноваций', icon: ecology },
-]
+const { t } = useI18n()
+
+const icons = [category, activity, star, chart, chartDown, users, ecology]
+const flipIcons = [false, false, false, false, true, false, false]
+
+const missionCards = computed(() =>
+  Array.from({ length: 7 }, (_, i) => ({
+    id: i + 1,
+    title: t(`strategy.item${i + 1}`),
+    icon: icons[i],
+    flipIcon: flipIcons[i],
+  }))
+)
 </script>
 
 <template>
-  <section class="strategy-section">
+  <section class="mission-section">
     <div class="container-main">
-      <div class="strategy-header">
-        <h2 class="page-title">Стратегия и миссия</h2>
-        <p class="strategy-subtitle">
-          Миссия — создание современной системы обращения с отходами,
-          обеспечивающей чистоту окружающей среды и устойчивое развитие страны.
+      <div class="mission-header">
+        <h2 class="page-title">{{ $t('strategy.title') }}</h2>
+        <p class="mission-subtitle">
+          {{ $t('strategy.mission') }}
         </p>
       </div>
 
-      <div class="strategy-grid">
+      <div class="mission-grid">
         <div
           v-for="card in missionCards.slice(0, 3)"
           :key="card.id"
@@ -42,7 +47,7 @@ const missionCards = [
         </div>
       </div>
 
-      <div class="strategy-grid">
+      <div class="mission-grid">
         <div
           v-for="card in missionCards.slice(3, 6)"
           :key="card.id"
@@ -55,7 +60,7 @@ const missionCards = [
         </div>
       </div>
 
-      <div class="strategy-grid">
+      <div class="mission-grid">
         <div class="mission-card">
           <div class="mission-card-icon">
             <img :src="missionCards[6].icon" alt="" />
@@ -66,3 +71,43 @@ const missionCards = [
     </div>
   </section>
 </template>
+
+<style scoped>
+.mission-section {
+  @apply mt-37.5 mb-25;
+}
+
+.mission-header {
+  @apply text-center mb-12;
+}
+
+.mission-subtitle {
+  @apply text-h3 text-text-main max-w-[1075px] mx-auto leading-normal;
+}
+
+@media (max-width: 1024px) {
+  .mission-section {
+    @apply mt-25 mb-15;
+  }
+
+  .mission-subtitle {
+    @apply text-h5;
+  }
+}
+
+@media (max-width: 768px) {
+  .mission-section {
+    margin-top: 40px;
+    margin-bottom: 32px;
+  }
+
+  .mission-header {
+    @apply mb-6;
+  }
+
+  .mission-subtitle {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+</style>

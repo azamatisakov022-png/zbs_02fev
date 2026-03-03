@@ -455,6 +455,10 @@ const performCalculation = () => {
   currentStep.value = 3
 }
 
+
+
+
+
 const backToList = () => {
   router.push('/business/calculator')
 }

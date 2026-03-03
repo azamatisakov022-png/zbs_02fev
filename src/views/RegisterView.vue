@@ -5,6 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { productGroups } from '../data/product-groups'
 import { toastStore } from '../stores/toast'
 import api from '../api/client'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption, SelectGroup } from '@/types/select'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -270,7 +272,7 @@ const formData = reactive({
   confirmData: false,
 })
 
-const regions = computed(() => [
+const regionStrings = computed(() => [
   t('registerView.regionBishkek'),
   t('registerView.regionOsh'),
   t('registerView.regionChuy'),
@@ -281,6 +283,10 @@ const regions = computed(() => [
   t('registerView.regionTalas'),
   t('registerView.regionBatken'),
 ])
+
+const regionOptions = computed<SelectOption[]>(() =>
+  regionStrings.value.map(r => ({ value: r, label: r }))
+)
 
 const errors = reactive<Record<string, string>>({})
 
@@ -1013,23 +1019,13 @@ const goHome = () => {
               <div class="space-y-6">
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.orgLegalForm') }} *</label>
-                  <div class="relative">
-                    <select
-                      v-model="formData.orgType"
-                      :class="[
-                        'reg-select',
-                        errors.orgType ? 'reg-select--error' : '',
-                        !formData.orgType ? 'text-[#94a3b8]' : 'text-[#1e293b]'
-                      ]"
-                    >
-                      <option value="" disabled>{{ $t('register.selectOrgLegalForm') }}</option>
-                      <optgroup v-for="group in orgTypeGroups" :key="group.label" :label="group.label">
-                        <option v-for="opt in group.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </optgroup>
-                    </select>
-                    <svg class="reg-select__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                  </div>
-                  <p v-if="errors.orgType" class="mt-2 text-sm text-red-600">{{ errors.orgType }}</p>
+                  <Select
+                    v-model="formData.orgType"
+                    :groups="orgTypeGroups"
+                    :placeholder="$t('register.selectOrgLegalForm')"
+                    variant="form"
+                    :error="errors.orgType"
+                  />
                 </div>
 
                 <div>
@@ -1292,16 +1288,13 @@ const goHome = () => {
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div>
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.regionCity') }} *</label>
-                      <select
+                      <Select
                         v-model="formData.legalRegion"
-                        :class="[
-                          'w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0e888d]/20',
-                          errors.legalRegion ? 'border-red-300' : 'border-[#e2e8f0] focus:border-[#0e888d]'
-                        ]"
-                      >
-                        <option value="">{{ $t('register.select') }}</option>
-                        <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-                      </select>
+                        :options="regionOptions"
+                        :placeholder="$t('register.select')"
+                        variant="form"
+                        :error="errors.legalRegion"
+                      />
                     </div>
                     <div>
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.cityDistrict') }} *</label>
@@ -1349,14 +1342,13 @@ const goHome = () => {
                   <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div>
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.regionCity') }}</label>
-                      <select
+                      <Select
                         v-model="formData.actualRegion"
+                        :options="regionOptions"
+                        :placeholder="$t('register.select')"
+                        variant="form"
                         :disabled="formData.sameAddress"
-                        class="w-full px-3 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0e888d] disabled:bg-gray-100"
-                      >
-                        <option value="">{{ $t('register.select') }}</option>
-                        <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-                      </select>
+                      />
                     </div>
                     <div>
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('register.cityDistrict') }}</label>
@@ -1827,37 +1819,6 @@ const goHome = () => {
 </template>
 
 <style scoped>
-.reg-select {
-  width: 100%;
-  padding: 12px 40px 12px 16px;
-  border: 1.5px solid #E2E8F0;
-  border-radius: 10px;
-  font-size: 14px;
-  background: white;
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.reg-select:focus {
-  outline: none;
-  border-color: #22C55E;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-.reg-select--error {
-  border-color: #fca5a5;
-}
-.reg-select--error:focus {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-.reg-select__chevron {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 .pg-section-title {
   font-size: 11px;
   font-weight: 600;

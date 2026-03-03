@@ -6165,11 +6165,14 @@
   "legislation": {
     "title": "Законодательство",
     "subtitle": "Нормативные правовые акты в сфере обращения с отходами",
-    "documentName": "Наименование документа",
-    "date": "Дата",
-    "actions": "Действия",
-    "viewDoc": "Смотреть",
-    "downloadDoc": "Скачать"
+    "table": {
+      "number": "№",
+      "documentName": "Наименование документа",
+      "date": "Дата",
+      "actions": "Действия"
+    },
+    "viewBtn": "Смотреть",
+    "downloadBtn": "Скачать"
   },
   "employeeNotifications": {
     "guideTitle": "Центр уведомлений",

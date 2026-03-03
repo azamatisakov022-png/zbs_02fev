@@ -7,6 +7,8 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { AppBadge } from '../../components/ui'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
 import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
@@ -54,6 +56,13 @@ const steps = computed(() => [
 // Form data - Step 1
 const reportingYear = ref('2026')
 
+const yearOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('businessReports.selectYear') },
+  { value: '2025', label: '2025' },
+  { value: '2026', label: '2026' },
+  { value: '2027', label: '2027' },
+])
+
 // Company data (from profile - readonly)
 const companyData = {
   name: 'ОсОО «ТехПром»',
@@ -86,6 +95,15 @@ const getRecyclersForItem = (item: ProcessingItem) => {
       label: `${r.name} (${t('businessReports.inn')}: ${r.inn})` + capLabel,
     }
   })
+}
+
+const getRecyclerOptionsForItem = (item: ProcessingItem): SelectOption[] => {
+  const recyclers = getRecyclersForItem(item)
+  return [
+    { value: '', label: t('businessReports.selectRecycler') },
+    ...recyclers,
+    { value: '__manual__', label: t('businessReports.manualEntry') },
+  ]
 }
 
 // Tracking state per processing item
@@ -815,25 +833,12 @@ const downloadReportExcel = (reportId: number) => {
               <!-- Reporting Period -->
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessReports.reportingYear') }}</label>
-                <select
+                <Select
                   v-model="reportingYear"
-                  :class="[
-                    'w-full px-4 py-3 border rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20',
-                    formSubmitted && formErrors['reportingYear'] ? 'vld-input--error' : 'border-[#e2e8f0]'
-                  ]"
-                >
-                  <option value="">{{ $t('businessReports.selectYear') }}</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-                  <option value="2029">2029</option>
-                  <option value="2030">2030</option>
-                </select>
-                <div v-if="formSubmitted && formErrors['reportingYear']" class="vld-error">
-                  <svg class="vld-error__icon w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {{ formErrors['reportingYear'] }}
-                </div>
+                  :options="yearOptions"
+                  variant="form"
+                  :error="formSubmitted && formErrors['reportingYear'] ? formErrors['reportingYear'] : ''"
+                />
               </div>
 
               <!-- Company Data -->
@@ -1003,17 +1008,12 @@ const downloadReportExcel = (reportId: number) => {
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessReports.recyclerLabel') }}</label>
                     <template v-if="recyclerModes[item.id] !== 'manual'">
-                      <select
+                      <Select
                         v-model="item.recycler"
+                        :options="getRecyclerOptionsForItem(item)"
+                        variant="form"
                         @change="onRecyclerChange(item)"
-                        class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-sm"
-                      >
-                        <option value="">{{ $t('businessReports.selectRecycler') }}</option>
-                        <option v-for="r in getRecyclersForItem(item)" :key="r.value" :value="r.value">
-                          {{ r.label }}
-                        </option>
-                        <option value="__manual__">{{ $t('businessReports.manualEntry') }}</option>
-                      </select>
+                      />
                     </template>
                     <template v-else>
                       <div class="flex gap-1 min-w-0">

@@ -6,6 +6,8 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppButton, AppBadge } from '../../components/ui'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { calculationStore } from '../../stores/calculations'
@@ -306,6 +308,31 @@ const searchQuery = ref('')
 const filterYear = ref('')
 const filterStatus = ref('')
 
+const yearFilterOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('businessDecl.allYears') },
+  { value: '2025', label: '2025' },
+  { value: '2026', label: '2026' },
+  { value: '2027', label: '2027' },
+])
+
+const statusFilterOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('businessDecl.allStatuses') },
+  { value: 'draft', label: t('status.draft') },
+  { value: 'under_review', label: t('status.underReview') },
+  { value: 'approved', label: t('status.approvedFem') },
+  { value: 'rejected', label: t('status.rejectedFem') },
+  { value: 'revision', label: t('status.revision') },
+])
+
+const yearFormOptions = computed<SelectOption[]>(() => [
+  { value: '2025', label: '2025' },
+  { value: '2026', label: '2026' },
+  { value: '2027', label: '2027' },
+  { value: '2028', label: '2028' },
+  { value: '2029', label: '2029' },
+  { value: '2030', label: '2030' },
+])
+
 const filteredDeclarations = computed(() => {
   return declarations.value.filter(d => {
     if (searchQuery.value && !d.number.toLowerCase().includes(searchQuery.value.toLowerCase())) return false
@@ -463,20 +490,8 @@ const signDeclaration = (id: number) => {
             :placeholder="$t('businessDecl.searchPlaceholder')"
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
-          <select v-model="filterYear" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">{{ $t('businessDecl.allYears') }}</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-          </select>
-          <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
-            <option value="">{{ $t('businessDecl.allStatuses') }}</option>
-            <option value="draft">{{ $t('status.draft') }}</option>
-            <option value="under_review">{{ $t('status.underReview') }}</option>
-            <option value="approved">{{ $t('status.approvedFem') }}</option>
-            <option value="rejected">{{ $t('status.rejectedFem') }}</option>
-            <option value="revision">{{ $t('status.revision') }}</option>
-          </select>
+          <Select v-model="filterYear" :options="yearFilterOptions" size="sm" />
+          <Select v-model="filterStatus" :options="statusFilterOptions" size="sm" />
         </div>
       </div>
 
@@ -662,17 +677,11 @@ const signDeclaration = (id: number) => {
               <!-- Year -->
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessDecl.reportingYear') }}</label>
-                <select
+                <Select
                   v-model="reportingYear"
-                  class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20"
-                >
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-                  <option value="2029">2029</option>
-                  <option value="2030">2030</option>
-                </select>
+                  :options="yearFormOptions"
+                  variant="form"
+                />
               </div>
 
               <!-- Company Data -->

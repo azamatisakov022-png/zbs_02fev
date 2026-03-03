@@ -6,6 +6,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { validators, scrollToFirstError } from '../../utils/validators'
@@ -32,6 +34,13 @@ const selectedCalculationId = ref<number | null>(null)
 // Paid calculations
 const paidCalculations = computed(() =>
   calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
+)
+
+const paidCalcOptions = computed<SelectOption[]>(() =>
+  paidCalculations.value.map(calc => ({
+    value: calc.id,
+    label: `${calc.number} от ${calc.date} -- ${formatAmount(calc.totalAmount)}`,
+  }))
 )
 
 // Selected calculation object
@@ -309,19 +318,14 @@ const canSubmit = computed(() =>
           <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">1</span>
           {{ $t('businessCorrection.step1Title') }}
         </h2>
-        <select
+        <Select
           v-model="selectedCalculationId"
+          :options="paidCalcOptions"
+          :placeholder="$t('businessCorrection.selectCalculation')"
+          variant="form"
+          :error="formSubmitted && formErrors['calculation'] ? formErrors['calculation'] : ''"
           @change="onCalculationSelect"
-          :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] text-[#1e293b] bg-white', { 'vld-input--error': formSubmitted && formErrors['calculation'] }]"
-        >
-          <option :value="null" disabled>{{ $t('businessCorrection.selectCalculation') }}</option>
-          <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
-            {{ calc.number }} от {{ calc.date }} -- {{ formatAmount(calc.totalAmount) }}
-          </option>
-        </select>
-        <p v-if="formSubmitted && formErrors['calculation']" class="vld-error" data-validation-error>
-          <span class="vld-error__icon">&#9888;</span> {{ formErrors['calculation'] }}
-        </p>
+        />
         <p v-if="paidCalculations.length === 0" class="mt-3 text-sm text-[#f59e0b]">
           {{ $t('businessCorrection.noPaidCalculations') }}
         </p>

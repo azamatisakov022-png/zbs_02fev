@@ -6,6 +6,8 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { recyclerStore, type Recycler } from '../../stores/recyclers'
 import { toastStore } from '../../stores/toast'
 import { productGroups } from '../../data/product-groups'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
@@ -29,6 +31,15 @@ const regions = computed(() => [
   { id: 'naryn', name: t('businessRecyclers.regionNaryn') },
   { id: 'talas', name: t('businessRecyclers.regionTalas') },
   { id: 'batken', name: t('businessRecyclers.regionBatken') },
+])
+
+const regionOptions = computed<SelectOption[]>(() =>
+  regions.value.map(r => ({ value: r.id, label: r.name }))
+)
+
+const wasteTypeOptions = computed<SelectOption[]>(() => [
+  { value: 'all', label: t('businessRecyclers.allWasteTypes') },
+  ...productGroups.map(g => ({ value: g.value, label: g.label })),
 ])
 
 // Helper: get short label for a waste type group value
@@ -103,6 +114,14 @@ const requestForm = ref({
   volume: '',
   frequency: 'once',
   message: '',
+})
+
+const modalWasteOptions = computed<SelectOption[]>(() => {
+  const types = selectedRecycler.value?.wasteTypes || []
+  return [
+    { value: '', label: t('businessRecyclers.selectWasteType') },
+    ...types.map(wt => ({ value: wt, label: getGroupShortLabel(wt) })),
+  ]
 })
 
 const submitRequest = () => {
@@ -191,21 +210,18 @@ const getStars = (rating: number) => {
           </div>
 
           <!-- Region filter -->
-          <select
+          <Select
             v-model="selectedRegion"
-            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          >
-            <option v-for="region in regions" :key="region.id" :value="region.id">{{ region.name }}</option>
-          </select>
+            :options="regionOptions"
+            size="sm"
+          />
 
           <!-- Waste type filter -->
-          <select
+          <Select
             v-model="selectedWasteType"
-            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-          >
-            <option value="all">{{ $t('businessRecyclers.allWasteTypes') }}</option>
-            <option v-for="group in productGroups" :key="group.value" :value="group.value">{{ group.label }}</option>
-          </select>
+            :options="wasteTypeOptions"
+            size="sm"
+          />
         </div>
 
         <!-- View mode toggle -->
@@ -580,13 +596,11 @@ const getStars = (rating: number) => {
           <div class="p-6 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('businessRecyclers.wasteTypeLabel') }}</label>
-              <select
+              <Select
                 v-model="requestForm.wasteType"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              >
-                <option value="">{{ $t('businessRecyclers.selectWasteType') }}</option>
-                <option v-for="wt in selectedRecycler.wasteTypes" :key="wt" :value="wt">{{ getGroupShortLabel(wt) }}</option>
-              </select>
+                :options="modalWasteOptions"
+                variant="form"
+              />
             </div>
 
             <div>

@@ -6,6 +6,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { productGroups, productSubgroups } from '../../data/product-groups'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { CalcStatus } from '../../constants/statuses'
@@ -28,6 +30,13 @@ const selectedCalcId = ref<number | null>(null)
 
 const paidCalculations = computed(() =>
   calculationStore.state.calculations.filter(c => c.status === CalcStatus.PAID)
+)
+
+const paidCalcOptions = computed<SelectOption[]>(() =>
+  paidCalculations.value.map(calc => ({
+    value: calc.id,
+    label: `${calc.number} | ${calc.period} | ${formatAmount(calc.totalAmount)}`,
+  }))
 )
 
 const selectedCalculation = computed(() =>
@@ -190,16 +199,13 @@ const saveDraft = () => {
           <p class="text-sm text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.refundOnlyPaid') }}</p>
 
           <div class="ml-9">
-            <select
+            <Select
               v-model="selectedCalcId"
+              :options="paidCalcOptions"
+              :placeholder="'— ' + $t('businessRefundNew.selectCalcOption') + ' —'"
+              variant="form"
               @change="onSelectCalculation"
-              class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 bg-white"
-            >
-              <option :value="null" disabled>— {{ $t('businessRefundNew.selectCalcOption') }} —</option>
-              <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
-                {{ calc.number }} | {{ calc.period }} | {{ formatAmount(calc.totalAmount) }}
-              </option>
-            </select>
+            />
 
             <div v-if="paidCalculations.length === 0" class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
               <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">

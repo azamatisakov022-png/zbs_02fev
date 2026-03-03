@@ -4,8 +4,23 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore, type ProductItem, type AttachedDocument, type DocumentType, type PaymentData, getDocumentTypeLabel } from '../../stores/calculations'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 
 const documentTypes: DocumentType[] = ['gtd', 'act', 'invoice_goods', 'invoice', 'contract', 'other']
+
+const groupOptions = computed<SelectOption[]>(() =>
+  productGroups.map(g => ({ value: g.value, label: g.label }))
+)
+
+const getSubgroupOptions = (groupValue: string): SelectOption[] => {
+  const subs = productSubgroups[groupValue] || []
+  return subs.map(s => ({ value: s.value, label: s.label }))
+}
+
+const docTypeOptions = computed<SelectOption[]>(() =>
+  documentTypes.map(dt => ({ value: dt, label: getDocumentTypeLabel(dt) }))
+)
 import { accountStore } from '../../stores/account'
 import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
@@ -588,12 +603,8 @@ function submitPaymentConfirmation() {
                 <!-- Group/Subgroup -->
                 <td class="px-5 py-3 text-[#1e293b] font-medium">
                   <template v-if="isEditing">
-                    <select v-model="item.group" @change="onGroupChange(item)" class="edit-select mb-1">
-                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
-                    </select>
-                    <select v-model="item.subgroup" @change="onSubgroupChange(item)" class="edit-select text-xs">
-                      <option v-for="s in availableSubgroups(item.group)" :key="s.value" :value="s.value">{{ s.label }}</option>
-                    </select>
+                    <Select v-model="item.group" :options="groupOptions" variant="compact" class="mb-1" @change="onGroupChange(item)" />
+                    <Select v-model="item.subgroup" :options="getSubgroupOptions(item.group)" variant="compact" @change="onSubgroupChange(item)" />
                   </template>
                   <template v-else>
                     {{ getGroupLabel(item.group) }}
@@ -678,9 +689,7 @@ function submitPaymentConfirmation() {
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </div>
             <div class="doc-file-row__name">{{ doc.fileName }}</div>
-            <select :value="doc.docType" @change="changeDocType(doc, ($event.target as HTMLSelectElement).value as DocumentType)" class="doc-file-row__type">
-              <option v-for="dt in documentTypes" :key="dt" :value="dt">{{ getDocumentTypeLabel(dt) }}</option>
-            </select>
+            <Select :modelValue="doc.docType" :options="docTypeOptions" variant="compact" @change="(v: string | number | null) => changeDocType(doc, v as DocumentType)" />
             <span class="doc-file-row__size">{{ formatFileSize(doc.fileSize) }}</span>
             <button @click="removeDocument(doc.id)" class="doc-file-row__delete" :title="$t('common.delete')">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -1346,22 +1355,6 @@ function submitPaymentConfirmation() {
   border-color: #3B82F6;
   box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
 }
-.edit-select {
-  width: 100%;
-  min-width: 160px;
-  padding: 5px 8px;
-  border: 1px solid #CBD5E1;
-  border-radius: 6px;
-  font-size: 12px;
-  background: #fff;
-  color: #1e293b;
-  transition: border-color 0.15s;
-}
-.edit-select:focus {
-  outline: none;
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
-}
 /* Hide number input spinners */
 .edit-input[type="number"]::-webkit-inner-spin-button,
 .edit-input[type="number"]::-webkit-outer-spin-button {
@@ -1433,15 +1426,6 @@ function submitPaymentConfirmation() {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-}
-.doc-file-row__type {
-  flex-shrink: 0;
-  padding: 4px 8px;
-  border: 1px solid #CBD5E1;
-  border-radius: 6px;
-  font-size: 12px;
-  background: #fff;
-  color: #475569;
 }
 .doc-file-row__type-badge {
   flex-shrink: 0;

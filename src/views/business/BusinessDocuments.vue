@@ -5,6 +5,8 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
+import Select from '@/components/ui/general/Select.vue'
+import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
@@ -18,6 +20,25 @@ const { t } = useI18n()
 const showUploadModal = ref(false)
 const activeCategory = ref('all')
 const searchQuery = ref('')
+const filterType = ref('')
+const filterYear = ref('')
+
+const typeFilterOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('businessDocs.allTypes') },
+  { value: 'pdf', label: 'PDF' },
+  { value: 'doc', label: 'DOC/DOCX' },
+  { value: 'xls', label: 'XLS/XLSX' },
+])
+
+const yearFilterOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('businessDocs.allTime') },
+  { value: '2025', label: '2025' },
+  { value: '2026', label: '2026' },
+  { value: '2027', label: '2027' },
+  { value: '2028', label: '2028' },
+  { value: '2029', label: '2029' },
+  { value: '2030', label: '2030' },
+])
 
 // Document categories
 const categories = computed(() => [
@@ -320,21 +341,8 @@ const resetDocFilters = () => {
             class="w-full pl-10 pr-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]"
           />
         </div>
-        <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]">
-          <option value="">{{ $t('businessDocs.allTypes') }}</option>
-          <option value="pdf">PDF</option>
-          <option value="doc">DOC/DOCX</option>
-          <option value="xls">XLS/XLSX</option>
-        </select>
-        <select class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]">
-          <option value="">{{ $t('businessDocs.allTime') }}</option>
-          <option value="2025">2025</option>
-          <option value="2026">2026</option>
-          <option value="2027">2027</option>
-          <option value="2028">2028</option>
-          <option value="2029">2029</option>
-          <option value="2030">2030</option>
-        </select>
+        <Select v-model="filterType" :options="typeFilterOptions" size="sm" />
+        <Select v-model="filterYear" :options="yearFilterOptions" size="sm" />
       </div>
     </div>
 
