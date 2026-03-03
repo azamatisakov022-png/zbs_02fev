@@ -3,9 +3,13 @@ import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore, type ProductItem, type AttachedDocument, type DocumentType, type PaymentData, getDocumentTypeLabel } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
+import type { ProductItem, AttachedDocument, DocumentType, PaymentData } from '@/types/calculation'
+import { getDocumentTypeLabel } from '@/types/calculation'
 import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
+import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
+import type { ProductSubgroup } from '../../data/product-groups'
 
 const documentTypes: DocumentType[] = ['gtd', 'act', 'invoice_goods', 'invoice', 'contract', 'other']
 
@@ -21,7 +25,7 @@ const getSubgroupOptions = (groupValue: string): SelectOption[] => {
 const docTypeOptions = computed<SelectOption[]>(() =>
   documentTypes.map(dt => ({ value: dt, label: getDocumentTypeLabel(dt) }))
 )
-import { accountStore } from '../../stores/account'
+import { useAccountStore } from '../../stores/account'
 import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { calculatePaymentDeadline, getRemainingDays, formatDateShort } from '../../utils/dateUtils'
@@ -41,9 +45,11 @@ const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+const account = useAccountStore()
+const calcStore = useCalculationStore()
 
 const calcId = computed(() => Number(route.params.id))
-const calc = computed(() => calculationStore.getCalculationById(calcId.value))
+const calc = computed(() => calcStore.currentCalculation)
 
 // ---- Inline editing state ----
 const isEditing = ref(false)
@@ -107,27 +113,29 @@ function removeRow(index: number) {
   editItems.value.splice(index, 1)
 }
 
-function onGroupChange(item: ProductItem) {
-  const group = productGroups.find(g => g.value === item.group)
+function onEditGroupChange(item: ProductItem, value: string) {
+  item.group = value
+  item.subgroup = ''
+  item.tnvedCode = ''
+  item.gskpCode = ''
+  const group = productGroups.find(g => g.value === value)
   if (!group) return
   item.recyclingStandard = group.recyclingStandard
-  const subs = productSubgroups[item.group] || []
-  const sub = subs[0]
-  item.subgroup = sub?.value || ''
-  item.gskpCode = sub?.gskpCode || ''
-  item.tnvedCode = sub?.tnvedCode || ''
-  item.rate = sub ? Math.round(group.baseRate * sub.rateMultiplier) : group.baseRate
+  item.rate = group.baseRate
   recalcItem(item)
 }
 
-function onSubgroupChange(item: ProductItem) {
+function onEditSubgroupChange(item: ProductItem, value: string) {
+  item.subgroup = value
+}
+
+function onEditSubgroupSelected(item: ProductItem, data: ProductSubgroup | null) {
+  if (!data) return
+  item.tnvedCode = data.tnvedCode || data.code || ''
+  item.gskpCode = data.gskpCode || ''
   const group = productGroups.find(g => g.value === item.group)
-  if (!group) return
-  const sub = getSubgroupData(item.group, item.subgroup)
-  if (sub) {
-    item.gskpCode = sub.gskpCode || ''
-    item.tnvedCode = sub.tnvedCode || ''
-    item.rate = Math.round(group.baseRate * sub.rateMultiplier)
+  if (group) {
+    item.rate = Math.round(group.baseRate * data.rateMultiplier)
   }
   recalcItem(item)
 }
@@ -136,8 +144,8 @@ const editTotalAmount = computed(() => editItems.value.reduce((s, i) => s + i.am
 
 function saveAsDraft() {
   if (!calc.value) return
-  calculationStore.updateCalculationItems(calc.value.id, editItems.value.map(i => ({ ...i })), editTotalAmount.value)
-  calculationStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
+  calcStore.updateCalculationItems(calc.value.id, editItems.value.map(i => ({ ...i })), editTotalAmount.value)
+  calcStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
   isEditing.value = false
   if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
   toastStore.show({ type: 'success', title: t('calcDetail.draftSaved') })
@@ -145,9 +153,9 @@ function saveAsDraft() {
 
 function saveAndSubmit() {
   if (!calc.value) return
-  calculationStore.updateCalculationItems(calc.value.id, editItems.value.map(i => ({ ...i })), editTotalAmount.value)
-  calculationStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
-  calculationStore.submitForReview(calc.value.id)
+  calcStore.updateCalculationItems(calc.value.id, editItems.value.map(i => ({ ...i })), editTotalAmount.value)
+  calcStore.updateCalculationDocuments(calc.value.id, editDocuments.value.map(d => ({ ...d })))
+  calcStore.submitForReview(calc.value.id)
   isEditing.value = false
   if (route.query.edit) router.replace({ path: route.path, query: { from: route.query.from } })
   toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })
@@ -219,8 +227,9 @@ function changeDocType(doc: AttachedDocument, type: DocumentType) {
   doc.docType = type
 }
 
-// Auto-enter edit mode if ?edit=true
-onMounted(() => {
+onMounted(async () => {
+  await account.fetchAll()
+  await calcStore.fetchById(calcId.value)
   if (route.query.edit === 'true' && calc.value && (calc.value.status === CalcStatus.DRAFT || calc.value.status === CalcStatus.REJECTED || calc.value.status === CalcStatus.REVISION)) {
     startEditing()
   }
@@ -308,7 +317,7 @@ const deadlineStatus = computed(() => {
 
 const reconciliation = computed(() => {
   if (!calc.value) return { charged: 0, paid: 0, difference: 0 }
-  return accountStore.getReconciliationForCalculation(calc.value.id)
+  return account.getReconciliationForCalculation(calc.value.id)
 })
 
 const isOverdue = computed(() => {
@@ -354,7 +363,7 @@ const mockAction = (action: string) => {
 
 const parentCalc = computed(() => {
   if (!calc.value?.parentId) return null
-  return calculationStore.getCalculationById(calc.value.parentId)
+  return calcStore.getCalculationById(calc.value.parentId)
 })
 
 const downloadExcel = () => {
@@ -465,7 +474,7 @@ function submitPaymentConfirmation() {
     fileDataUrl: paymentFile.value.dataUrl,
     comment: paymentForm.value.comment.trim() || undefined,
   }
-  calculationStore.submitPayment(calc.value.id, payment)
+  calcStore.submitPayment(calc.value.id, payment)
   closePayment()
   toastStore.show({ type: 'success', title: t('calcDetail.paymentDocSent'), description: t('calcDetail.paymentDocSentDesc') })
 }
@@ -475,7 +484,7 @@ function submitPaymentConfirmation() {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="account.myAccount?.company || ''"
     :menuItems="menuItems"
   >
     <!-- Not found -->
@@ -567,10 +576,10 @@ function submitPaymentConfirmation() {
       </div>
 
       <!-- Timeline -->
-      <CalculationTimeline v-if="!isEditing" :status="calc.status" :dates="timelineDates" />
+      <CalculationTimeline :status="calc.status" :dates="timelineDates" />
 
       <!-- Audit Log (payer view) -->
-      <AuditLog v-if="!isEditing && calc.history && calc.history.length > 0" :entries="calc.history" viewerRole="payer" :compact="true" class="mb-6" />
+      <AuditLog v-if="calc.history && calc.history.length > 0" :entries="calc.history" viewerRole="payer" :compact="true" class="mb-6" />
 
       <!-- Products Table -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-6" :class="{ 'ring-2 ring-blue-300': isEditing }">
@@ -601,10 +610,18 @@ function submitPaymentConfirmation() {
                 :class="index % 2 === 1 ? 'bg-[#FAFBFC]' : ''"
               >
                 <!-- Group/Subgroup -->
-                <td class="px-5 py-3 text-[#1e293b] font-medium">
+                <td class="px-5 py-3 text-[#1e293b] font-medium" :style="isEditing ? 'min-width: 340px' : ''">
                   <template v-if="isEditing">
-                    <Select v-model="item.group" :options="groupOptions" variant="compact" class="mb-1" @change="onGroupChange(item)" />
-                    <Select v-model="item.subgroup" :options="getSubgroupOptions(item.group)" variant="compact" @change="onSubgroupChange(item)" />
+                    <ProductGroupSelector
+                      :group="item.group"
+                      :subgroup="item.subgroup"
+                      :showLabels="false"
+                      :compact="true"
+                      @update:group="(v: string) => onEditGroupChange(item, v)"
+                      @update:subgroup="(v: string) => onEditSubgroupChange(item, v)"
+                      @subgroup-selected="(data: ProductSubgroup | null) => onEditSubgroupSelected(item, data)"
+                      accent-color="#3b82f6"
+                    />
                   </template>
                   <template v-else>
                     {{ getGroupLabel(item.group) }}
@@ -964,7 +981,7 @@ function submitPaymentConfirmation() {
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 {{ $t('common.delete') }}
               </button>
-              <button @click="calculationStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
+              <button @click="calcStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })" class="btn-action btn-action-primary text-sm" style="background: #10b981; border-color: #10b981;">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 {{ $t('calcDetail.submitForReview') }}
               </button>

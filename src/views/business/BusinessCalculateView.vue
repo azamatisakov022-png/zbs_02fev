@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { validators, scrollToFirstError } from '../../utils/validators'
@@ -9,7 +9,8 @@ import { getNormativeForGroup } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { tnvedNotes, tnvedNotesSource } from '../../data/tnved-notes'
-import { calculationStore, type PaymentData } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
+import type { PaymentData } from '@/types/calculation'
 import { CalcStatus } from '../../constants/statuses'
 import { calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
 import { calculatePenalty, getOverdueDays, PENALTY_DAILY_RATE } from '../../utils/penalty'
@@ -19,6 +20,7 @@ import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { useAccountStore } from '../../stores/account'
 import { notificationStore } from '../../stores/notifications'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import PenaltyInfo from '../../components/PenaltyInfo.vue'
@@ -28,6 +30,12 @@ import type { SelectOption } from '../../components/ui/CustomSelect.vue'
 const { roleTitle, menuItems } = useBusinessMenu()
 const { t } = useI18n()
 const router = useRouter()
+const calcStore = useCalculationStore()
+const accountStore = useAccountStore()
+
+onMounted(() => {
+  accountStore.fetchAll()
+})
 
 const showInstruction = ref(false)
 
@@ -51,6 +59,7 @@ const confirmDialog = ref({
   confirmColor: 'green' as 'green' | 'red' | 'orange',
   onConfirm: () => {},
 })
+
 const openConfirm = (opts: Partial<typeof confirmDialog.value> & { onConfirm: () => void }) => {
   Object.assign(confirmDialog.value, {
     visible: true,
@@ -62,13 +71,16 @@ const openConfirm = (opts: Partial<typeof confirmDialog.value> & { onConfirm: ()
     onConfirm: opts.onConfirm,
   })
 }
+
 const handleConfirm = () => {
   confirmDialog.value.visible = false
   confirmDialog.value.onConfirm()
 }
+
 const handleCancel = () => {
   confirmDialog.value.visible = false
 }
+
 const showRates = ref(false)
 
 type PayerType = 'producer' | 'importer'
@@ -190,14 +202,14 @@ const copyRequisites = async (type: 'utilization_fee' | 'penalty') => {
   }
 }
 
-const companyData = {
-  name: 'ОсОО «ТехПром»',
-  inn: '01234567890123',
-  address: 'г. Бишкек, ул. Московская, 123',
-  director: 'Иванов Иван Иванович',
-  phone: '+996 555 123 456',
-  email: 'info@techprom.kg'
-}
+const companyData = computed(() => ({
+  name: accountStore.myAccount?.company || '',
+  inn: accountStore.myAccount?.inn || '',
+  address: '',
+  director: '',
+  phone: '',
+  email: '',
+}))
 
 interface ProductItem {
   id: number
@@ -457,8 +469,6 @@ const performCalculation = () => {
 
 
 
-
-
 const backToList = () => {
   router.push('/business/calculator')
 }
@@ -635,9 +645,9 @@ const saveDraft = () => {
   const calcData = {
     number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
     date: calculationResult.value.date || now.toLocaleDateString(),
-    company: companyData.name,
-    inn: companyData.inn,
-    address: companyData.address,
+    company: companyData.value.name,
+    inn: companyData.value.inn,
+    address: companyData.value.address,
     quarter: calculationQuarter.value,
     year: calculationYear.value,
     payerType: payerType.value,
@@ -645,7 +655,7 @@ const saveDraft = () => {
     items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
     totalAmount: totalAmount.value,
   }
-  calculationStore.addCalculation(calcData, CalcStatus.DRAFT)
+  calcStore.addCalculation(calcData, CalcStatus.DRAFT)
   router.push('/business/calculator')
 }
 
@@ -667,9 +677,9 @@ const submitForReview = () => {
       const calcData = {
         number: calculationResult.value.number || `РС-${now.getFullYear()}-${num}`,
         date: calculationResult.value.date || now.toLocaleDateString(),
-        company: companyData.name,
-        inn: companyData.inn,
-        address: companyData.address,
+        company: companyData.value.name,
+        inn: companyData.value.inn,
+        address: companyData.value.address,
         quarter: calculationQuarter.value,
         year: calculationYear.value,
         payerType: payerType.value,
@@ -677,11 +687,11 @@ const submitForReview = () => {
         items: productItems.value.filter(i => i.group && i.volume).map(i => ({ ...i })),
         totalAmount: totalAmount.value,
       }
-      const newCalc = calculationStore.addCalculation(calcData, CalcStatus.UNDER_REVIEW)
+      const newCalc = calcStore.addCalculation(calcData, CalcStatus.UNDER_REVIEW)
       notificationStore.add({
         type: 'info',
         title: t('businessCalc.notifNewCalc'),
-        message: t('businessCalc.notifNewCalcMessage', { company: companyData.name }),
+        message: t('businessCalc.notifNewCalcMessage', { company: companyData.value.name }),
         role: 'eco-operator',
         link: `/eco-operator/calculations/${newCalc.id}`
       })
@@ -714,8 +724,8 @@ const downloadReceipt = () => {
 БИК: 044583001
 Назначение платежа: Утилизационный сбор по расчёту ${calculationResult.value.number}
 
-Плательщик: ${companyData.name}
-ИНН плательщика: ${companyData.inn}
+Плательщик: ${companyData.value.name}
+ИНН плательщика: ${companyData.value.inn}
 `
   const blob = new Blob([receiptText], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -731,7 +741,7 @@ const downloadReceipt = () => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    userName="ОсОО «ТехПром»"
+    :userName="companyData.name"
     :menuItems="menuItems"
   >
     <Teleport to="body">
