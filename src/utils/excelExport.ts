@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
-import type { Calculation, ProductItem } from '../stores/calculations'
+import type { Calculation, ProductItem } from '@/types/calculation'
 import type { Report, ProcessingItem } from '../stores/reports'
 import { productGroups, getSubgroupLabel } from '../data/product-groups'
 import i18n from '../i18n'

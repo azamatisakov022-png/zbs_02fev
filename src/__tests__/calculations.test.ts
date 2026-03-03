@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 
-// Mock all external dependencies
 vi.mock('../api/client', () => ({
   default: {
     post: vi.fn(),
@@ -65,17 +65,18 @@ vi.mock('../constants/statuses', () => ({
 }))
 
 describe('calculationStore', () => {
-  let calculationStore: any
+  let calcStore: any
 
   beforeEach(async () => {
     vi.resetModules()
+    setActivePinia(createPinia())
     const mod = await import('../stores/calculations')
-    calculationStore = mod.calculationStore
+    calcStore = mod.useCalculationStore()
   })
 
   describe('addCalculation', () => {
     it('adds a new calculation to state', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-2026-001',
         date: '01.01.2026',
         company: 'ООО Тест',
@@ -89,11 +90,11 @@ describe('calculationStore', () => {
       expect(calc).toBeDefined()
       expect(calc.number).toBe('РСЧ-2026-001')
       expect(calc.status).toBe('draft')
-      expect(calculationStore.state.calculations).toHaveLength(1)
+      expect(calcStore.calculations).toHaveLength(1)
     })
 
     it('adds calculation as under_review when status specified', () => {
-      const calc = calculationStore.addCalculation(
+      const calc = calcStore.addCalculation(
         {
           number: 'РСЧ-2026-002',
           date: '01.01.2026',
@@ -113,7 +114,7 @@ describe('calculationStore', () => {
 
   describe('submitForReview', () => {
     it('changes DRAFT to UNDER_REVIEW', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-001',
         date: '01.01.2026',
         company: 'ООО Тест',
@@ -124,14 +125,14 @@ describe('calculationStore', () => {
         totalAmount: 1000,
       })
 
-      calculationStore.submitForReview(calc.id)
+      calcStore.submitForReview(calc.id)
 
-      const updated = calculationStore.getCalculationById(calc.id)
+      const updated = calcStore.getCalculationById(calc.id)
       expect(updated.status).toBe('under_review')
     })
 
     it('ignores calculation in APPROVED status', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-002',
         date: '01.01.2026',
         company: 'ООО',
@@ -141,18 +142,17 @@ describe('calculationStore', () => {
         items: [],
         totalAmount: 2000,
       })
-      // Manually set to approved
       calc.status = 'approved'
 
-      calculationStore.submitForReview(calc.id)
+      calcStore.submitForReview(calc.id)
 
-      expect(calc.status).toBe('approved') // unchanged
+      expect(calc.status).toBe('approved')
     })
   })
 
   describe('approveCalculation', () => {
     it('changes UNDER_REVIEW to APPROVED', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-003',
         date: '01.01.2026',
         company: 'ООО',
@@ -164,7 +164,7 @@ describe('calculationStore', () => {
       })
       calc.status = 'under_review'
 
-      calculationStore.approveCalculation(calc.id)
+      calcStore.approveCalculation(calc.id)
 
       expect(calc.status).toBe('approved')
       expect(calc.approvedAt).toBeDefined()
@@ -173,7 +173,7 @@ describe('calculationStore', () => {
 
   describe('rejectCalculation', () => {
     it('changes UNDER_REVIEW to REJECTED with reason', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-004',
         date: '01.01.2026',
         company: 'ООО',
@@ -185,7 +185,7 @@ describe('calculationStore', () => {
       })
       calc.status = 'under_review'
 
-      calculationStore.rejectCalculation(calc.id, 'Неверные данные', 'Оператор')
+      calcStore.rejectCalculation(calc.id, 'Неверные данные', 'Оператор')
 
       expect(calc.status).toBe('rejected')
       expect(calc.rejectionReason).toBe('Неверные данные')
@@ -195,7 +195,7 @@ describe('calculationStore', () => {
 
   describe('copyCalculation', () => {
     it('creates a draft copy of existing calculation', () => {
-      const original = calculationStore.addCalculation({
+      const original = calcStore.addCalculation({
         number: 'РСЧ-005',
         date: '01.01.2026',
         company: 'ООО Копия',
@@ -222,7 +222,7 @@ describe('calculationStore', () => {
         totalAmount: 50000,
       })
 
-      const copy = calculationStore.copyCalculation(original.id)
+      const copy = calcStore.copyCalculation(original.id)
 
       expect(copy).toBeDefined()
       expect(copy!.status).toBe('draft')
@@ -233,14 +233,14 @@ describe('calculationStore', () => {
     })
 
     it('returns undefined for non-existent id', () => {
-      const result = calculationStore.copyCalculation(999999)
+      const result = calcStore.copyCalculation(999999)
       expect(result).toBeUndefined()
     })
   })
 
   describe('submitPayment', () => {
     it('changes APPROVED to PAYMENT_PENDING', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-006',
         date: '01.01.2026',
         company: 'ООО',
@@ -262,7 +262,7 @@ describe('calculationStore', () => {
         fileDataUrl: '',
       }
 
-      calculationStore.submitPayment(calc.id, payment)
+      calcStore.submitPayment(calc.id, payment)
 
       expect(calc.status).toBe('payment_pending')
       expect(calc.payment).toBeDefined()
@@ -272,7 +272,7 @@ describe('calculationStore', () => {
 
   describe('approvePayment', () => {
     it('changes PAYMENT_PENDING to PAID', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'РСЧ-007',
         date: '01.01.2026',
         company: 'ООО',
@@ -284,7 +284,7 @@ describe('calculationStore', () => {
       })
       calc.status = 'payment_pending'
 
-      calculationStore.approvePayment(calc.id)
+      calcStore.approvePayment(calc.id)
 
       expect(calc.status).toBe('paid')
       expect(calc.paidAt).toBeDefined()
@@ -292,29 +292,29 @@ describe('calculationStore', () => {
   })
 
   describe('counters', () => {
-    it('getPendingCount returns correct count', () => {
-      const c1 = calculationStore.addCalculation({
+    it('pendingCount returns correct count', () => {
+      const c1 = calcStore.addCalculation({
         number: 'A', date: '', company: '', inn: '', quarter: 'Q1', year: '2026', items: [], totalAmount: 0,
       })
-      const c2 = calculationStore.addCalculation({
+      const c2 = calcStore.addCalculation({
         number: 'B', date: '', company: '', inn: '', quarter: 'Q1', year: '2026', items: [], totalAmount: 0,
       })
-      const c3 = calculationStore.addCalculation({
+      const c3 = calcStore.addCalculation({
         number: 'C', date: '', company: '', inn: '', quarter: 'Q1', year: '2026', items: [], totalAmount: 0,
       })
       c1.status = 'under_review'
       c2.status = 'payment_pending'
       c3.status = 'approved'
 
-      expect(calculationStore.getPendingCount()).toBe(2) // under_review + payment_pending
+      expect(calcStore.pendingCount).toBe(2)
     })
 
     it('getCalculationById returns correct calculation', () => {
-      const calc = calculationStore.addCalculation({
+      const calc = calcStore.addCalculation({
         number: 'FIND-ME', date: '', company: '', inn: '', quarter: 'Q1', year: '2026', items: [], totalAmount: 0,
       })
 
-      const found = calculationStore.getCalculationById(calc.id)
+      const found = calcStore.getCalculationById(calc.id)
       expect(found).toBeDefined()
       expect(found!.number).toBe('FIND-ME')
     })
@@ -338,11 +338,11 @@ describe('calculationStore', () => {
         },
       })
 
-      await calculationStore.fetchAll()
+      await calcStore.fetchAll()
 
-      expect(calculationStore.state.calculations).toHaveLength(1)
-      expect(calculationStore.state.calculations[0].number).toBe('РС-2026-000100')
-      expect(calculationStore.state.loading).toBe(false)
+      expect(calcStore.calculations).toHaveLength(1)
+      expect(calcStore.calculations[0].number).toBe('РС-2026-000100')
+      expect(calcStore.loading).toBe(false)
     })
   })
 })

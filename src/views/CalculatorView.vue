@@ -9,6 +9,8 @@ import {
   type ProductSubgroup,
 } from '@/data/product-groups'
 import { getNormativeForGroup, normativeTiers, getNormativeTier } from '@/data/recycling-norms'
+import Select from '@/components/ui/general/Select.vue'
+import DatePicker from '@/components/ui/general/DatePicker.vue'
 import { toastStore } from '@/stores/toast'
 import ProductGroupSelector from '@/components/ProductGroupSelector.vue'
 import PenaltyCalculator from '@/components/penalty/PenaltyCalculator.vue'
@@ -68,6 +70,15 @@ const inlinePenaltyResult = computed(() => {
 let nextRowId = 1
 const operationType = ref<'import' | 'production'>('import')
 const year = ref(2026)
+
+const yearOptions = [
+  { value: 2025, label: '2025' },
+  { value: 2026, label: '2026' },
+  { value: 2027, label: '2027' },
+  { value: 2028, label: '2028' },
+  { value: 2029, label: '2029' },
+  { value: 2030, label: '2030' },
+]
 const rows = ref<CalcRow[]>([createRow()])
 const showResult = ref(false)
 const resultRows = ref<CalcRow[]>([])
@@ -278,13 +289,12 @@ async function downloadPdf() {
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('penalty.dueDate') }}</label>
-                <input
-                  type="date"
+                <DatePicker
                   v-model="penaltyDueDate"
+                  variant="form"
+                  :label="$t('penalty.dueDate')"
                   min="2020-01-01"
                   :max="`${new Date().getFullYear() + 1}-12-31`"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm"
                 />
               </div>
             </div>
@@ -378,16 +388,12 @@ async function downloadPdf() {
                 </div>
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('calculatorPage.yearCalc') }}</label>
-                <select v-model="year"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm">
-                  <option :value="2025">2025</option>
-                  <option :value="2026">2026</option>
-                  <option :value="2027">2027</option>
-                  <option :value="2028">2028</option>
-                  <option :value="2029">2029</option>
-                  <option :value="2030">2030</option>
-                </select>
+                <Select
+                  v-model="year"
+                  :options="yearOptions"
+                  variant="form"
+                  :label="$t('calculatorPage.yearCalc')"
+                />
               </div>
             </div>
           </div>
@@ -594,8 +600,14 @@ async function downloadPdf() {
                 <div v-if="showInlinePenalty" class="p-5 border-t border-[#e2e8f0] bg-white">
                   <div class="flex flex-col sm:flex-row gap-3 mb-4">
                     <div class="flex-1">
-                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.dueDate') }}</label>
-                      <input type="date" v-model="inlinePenaltyDate" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#10b981]" />
+                      <DatePicker
+                        v-model="inlinePenaltyDate"
+                        variant="form"
+                        size="sm"
+                        :label="$t('penalty.dueDate')"
+                        min="2020-01-01"
+                        :max="`${new Date().getFullYear() + 1}-12-31`"
+                      />
                     </div>
                     <div class="flex-1">
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.debtAmount') }}</label>

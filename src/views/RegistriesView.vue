@@ -1,19 +1,45 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import Select from '@/components/ui/general/Select.vue'
+
+const { t } = useI18n()
 
 type RegistryStatus = 'active' | 'review' | 'suspended'
 
-const statusConfig: Record<RegistryStatus, { label: string; bg: string; text: string }> = {
-  active: { label: 'Активен', bg: 'rgba(14,136,141,0.2)', text: '#0e888d' },
-  review: { label: 'На проверке', bg: 'rgba(255,183,27,0.2)', text: '#fea629' },
-  suspended: { label: 'Приостановлен', bg: 'rgba(255,86,82,0.2)', text: '#ff5652' },
-}
+const statusConfig = computed<Record<RegistryStatus, { label: string; bg: string; text: string }>>(() => ({
+  active: { label: t('registries.status.active'), bg: 'rgba(14,136,141,0.2)', text: '#0e888d' },
+  review: { label: t('registries.status.review'), bg: 'rgba(255,183,27,0.2)', text: '#fea629' },
+  suspended: { label: t('registries.status.suspended'), bg: 'rgba(255,86,82,0.2)', text: '#ff5652' },
+}))
 
-const tabs = [
-  { id: 'payers', label: 'Плательщики', count: 1247 },
-  { id: 'processors', label: 'Переработчики', count: 89 },
-  { id: 'polygons', label: 'Полигоны', count: 47 },
-]
+const tabs = computed(() => [
+  { id: 'payers', label: t('registries.tabs.payers'), count: 1247 },
+  { id: 'processors', label: t('registries.tabs.processors'), count: 89 },
+  { id: 'polygons', label: t('registries.tabs.polygons'), count: 47 },
+])
+
+const typeFilter = ref<string | null>(null)
+const regionFilter = ref<string | null>(null)
+
+const typeOptions = computed(() => [
+  { value: null, label: t('registries.allTypes') },
+  { value: 'payers', label: t('registries.tabs.payers') },
+  { value: 'processors', label: t('registries.tabs.processors') },
+  { value: 'polygons', label: t('registries.tabs.polygons') },
+])
+
+const regionOptions = computed(() => [
+  { value: null, label: t('registries.allRegions') },
+  { value: 'bishkek', label: 'г. Бишкек' },
+  { value: 'chuy', label: t('registries.regions.chuy') },
+  { value: 'issyk-kul', label: t('registries.regions.issykKul') },
+  { value: 'naryn', label: t('registries.regions.naryn') },
+  { value: 'talas', label: t('registries.regions.talas') },
+  { value: 'jalal-abad', label: t('registries.regions.jalalAbad') },
+  { value: 'osh', label: t('registries.regions.osh') },
+  { value: 'batken', label: t('registries.regions.batken') },
+])
 
 const regions = [
   { name: 'Талас', count: 4, top: '11%', left: 'calc(50% - 198px)' },
@@ -43,38 +69,39 @@ const activeTab = ref('payers')
     <div class="pt-[40px] pb-[40px]">
       <div class="flex flex-col max-w-[601px]">
         <h1 class="section-title">
-          Реестры
+          {{ $t('registries.title') }}
         </h1>
         <p class="section-subtitle">
-          Публичные реестры участников системы (только чтение)
+          {{ $t('registries.subtitle') }}
         </p>
       </div>
     </div>
 
-    <!-- Search/Filter Bar -->
     <div class="pb-[27px]">
       <div class="flex items-center justify-between">
         <span class="text-[22px] font-semibold text-text-main">
-          ГИС-карта организаций
+          {{ $t('registries.mapTitle') }}
         </span>
         <div class="flex items-center gap-[40px]">
           <div class="flex items-center gap-[12px]">
             <input
               type="text"
-              placeholder="Поиск по названию"
+              :placeholder="$t('registries.searchPlaceholder')"
               class="w-[224px] h-[40px] border border-[#ebebeb] rounded-2xl pt-[10px] pb-[10px] text-[14px] text-text-main placeholder:text-text-main outline-none text-center"
             />
-            <button class="bg-bg-light rounded-2xl px-[30px] py-[12px] flex items-center gap-[8px] text-[14px] font-medium text-text-main">
-              Все типы
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#415861" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <button class="bg-bg-light rounded-2xl px-[30px] py-[12px] flex items-center gap-[8px] text-[14px] font-medium text-text-main">
-              Все области
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#415861" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+            <Select
+              v-model="typeFilter"
+              :options="typeOptions"
+              :placeholder="$t('registries.allTypes')"
+            />
+            <Select
+              v-model="regionFilter"
+              :options="regionOptions"
+              :placeholder="$t('registries.allRegions')"
+            />
           </div>
           <button class="bg-primary rounded-2xl px-[30px] py-[12px] text-[14px] font-medium text-white hover:opacity-90 transition-opacity">
-            Найти
+            {{ $t('registries.findBtn') }}
           </button>
         </div>
       </div>
@@ -127,25 +154,24 @@ const activeTab = ref('payers')
 
     <div>
       <div class="w-full border border-bg-light">
-        <!-- Table Header -->
         <div class="flex bg-bg-light">
           <div class="w-[78px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
             <span class="text-[18px] font-medium text-black">№</span>
           </div>
           <div class="w-[465px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
-            <span class="text-[18px] font-medium text-black">Наименование</span>
+            <span class="text-[18px] font-medium text-black">{{ $t('registries.table.name') }}</span>
           </div>
           <div class="w-[190px] shrink-0 px-[20px] py-[16px] flex items-center border-r border-bg-light">
-            <span class="text-[18px] font-medium text-black">Регион</span>
+            <span class="text-[18px] font-medium text-black">{{ $t('registries.table.region') }}</span>
           </div>
           <div class="flex-1 px-[10px] py-[16px] flex items-center border-r border-bg-light">
-            <span class="text-[18px] font-medium text-black">Вид деятельности</span>
+            <span class="text-[18px] font-medium text-black">{{ $t('registries.table.activity') }}</span>
           </div>
           <div class="w-[150px] shrink-0 px-[20px] py-[16px] flex items-center justify-center border-r border-bg-light">
-            <span class="text-[18px] font-medium text-black">Статус</span>
+            <span class="text-[18px] font-medium text-black">{{ $t('registries.table.status') }}</span>
           </div>
           <div class="w-[150px] shrink-0 px-[10px] py-[16px] flex items-center justify-center">
-            <span class="text-[18px] font-medium text-black">Действия</span>
+            <span class="text-[18px] font-medium text-black">{{ $t('registries.table.actions') }}</span>
           </div>
         </div>
 
@@ -177,7 +203,7 @@ const activeTab = ref('payers')
           </div>
           <div class="w-[150px] shrink-0 px-[10px] py-[16px] flex items-center justify-center">
             <button class="bg-primary text-white text-[12px] font-medium px-[10px] py-[8px] rounded-xl hover:opacity-90 transition-opacity">
-              Просмотр
+              {{ $t('registries.viewBtn') }}
             </button>
           </div>
         </div>
