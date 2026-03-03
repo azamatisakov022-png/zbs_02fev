@@ -1,321 +1,271 @@
-import { reactive } from 'vue'
+import { defineStore } from 'pinia'
 import api, { silentApi } from '../api/client'
 import { authStore } from './auth'
-import { CorrectionStatus, AccountStatus, type CorrectionStatusType, type AccountStatusType } from '../constants/statuses'
+import { CorrectionStatus, AccountStatus } from '../constants/statuses'
 import i18n from '../i18n'
-
-export type TransactionType = 'charge' | 'payment' | 'correction' | 'offset' | 'refund' | 'penalty' | 'penalty_payment'
-
-export interface AccountTransaction {
-  id: number
-  date: string
-  type: TransactionType
-  calculationId: number
-  calculationNumber: string
-  description: string
-  chargeAmount: number   // начислено (отрицательное для начислений)
-  paymentAmount: number  // оплачено (положительное для оплат)
-  offsetAmount: number   // зачтено
-  balance: number        // нарастающий итог
-}
-
-export interface CorrectionRequest {
-  id: number
-  date: string
-  calculationId: number
-  calculationNumber: string
-  company: string
-  comment?: string
-  items: CorrectionItem[]
-  totalCorrectionAmount: number
-  action: 'balance' | 'refund'
-  status: CorrectionStatusType
-  documents: string[]
-}
-
-export interface CorrectionItem {
-  group: string
-  subgroup: string
-  volume: number
-  recyclingStandard: number
-  volumeToRecycle: number
-  previousTransferred: number
-  previousExported: number
-  additionalTransferred: number
-  additionalExported: number
-  oldTaxableVolume: number
-  newTaxableVolume: number
-  rate: number
-  difference: number
-}
-
-export interface CompanyAccount {
-  id: number
-  company: string
-  inn: string
-  balance: number
-  status: AccountStatusType
-  transactions: AccountTransaction[]
-}
+import type {
+  CompanyAccount,
+  AccountTransaction,
+  CorrectionRequest,
+  SubmitCorrectionPayload,
+} from '@/types/account'
 
 let nextTxId = 1
 let nextCorrId = 1
 
-const state = reactive<{
-  loading: boolean
-  // Current business user's company key (ОсОО «ТехПром»)
-  currentCompany: string
-  // All company accounts (for eco-operator view)
-  accounts: CompanyAccount[]
-  corrections: CorrectionRequest[]
-}>({
-  loading: false,
-  currentCompany: '',
-  accounts: [],
-  corrections: [],
-})
+export const useAccountStore = defineStore('account', {
+  state: () => ({
+    loading: false,
+    currentCompany: '',
+    accounts: [] as CompanyAccount[],
+    corrections: [] as CorrectionRequest[],
+  }),
 
-async function fetchAll() {
-  state.loading = true
-  try {
-    const role = authStore.state.user?.role
-    if (role === 'business') {
-      const { data } = await api.get('/accounts/my')
-      if (data && data.id) {
-        // Map backend response to local CompanyAccount format
-        const acc: CompanyAccount = {
-          id: data.id,
-          company: data.companyName || '',
-          inn: data.companyInn || '',
-          balance: data.balance || 0,
-          status: AccountStatus.ACTIVE,
-          transactions: [],
+  getters: {
+    myAccount(): CompanyAccount | undefined {
+      return this.accounts.find(a => a.company === this.currentCompany)
+    },
+
+    currentBalance(): number {
+      return this.myAccount?.balance ?? 0
+    },
+
+    transactions(): AccountTransaction[] {
+      return this.myAccount?.transactions ?? []
+    },
+
+    hasPositiveBalance(): boolean {
+      return this.currentBalance > 0
+    },
+
+    pendingCorrectionsCount(): number {
+      return this.corrections.filter(c => c.status === CorrectionStatus.UNDER_REVIEW).length
+    },
+
+    allAccounts(): CompanyAccount[] {
+      return this.accounts
+    },
+
+    accountsWithDebt(): CompanyAccount[] {
+      return this.accounts.filter(a => a.balance < 0)
+    },
+
+    accountsWithPositiveBalance(): CompanyAccount[] {
+      return this.accounts.filter(a => a.balance > 0)
+    },
+
+    totalMonthlyIncome(): number {
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+      let total = 0
+      for (const acc of this.accounts) {
+        for (const tx of acc.transactions) {
+          const [d, m, y] = tx.date.split('.')
+          const txDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+          if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear && tx.paymentAmount > 0) {
+            total += tx.paymentAmount
+          }
         }
-        const existing = state.accounts.find(a => a.inn === acc.inn)
-        if (existing) {
-          existing.balance = acc.balance
+      }
+      return total
+    },
+  },
+
+  actions: {
+    async fetchAll() {
+      this.loading = true
+      try {
+        const role = authStore.state.user?.role
+        if (role === 'business') {
+          const { data } = await api.get('/accounts/my')
+          if (data && data.id) {
+            const acc: CompanyAccount = {
+              id: data.id,
+              company: data.companyName || '',
+              inn: data.companyInn || '',
+              balance: data.balance || 0,
+              status: AccountStatus.ACTIVE,
+              transactions: [],
+            }
+            const existing = this.accounts.find(a => a.inn === acc.inn)
+            if (existing) {
+              existing.balance = acc.balance
+            } else {
+              this.accounts.unshift(acc)
+            }
+            this.currentCompany = acc.company
+          }
         } else {
-          state.accounts.unshift(acc)
+          const { data } = await api.get('/accounts')
+          if (Array.isArray(data)) {
+            this.accounts = data
+          }
         }
-        state.currentCompany = acc.company
+      } catch {
+      } finally {
+        this.loading = false
       }
-    } else {
-      const { data } = await api.get('/accounts')
-      if (Array.isArray(data)) {
-        state.accounts = data
+    },
+
+    async fetchCorrections() {
+      try {
+        const { data } = await api.get('/accounts/corrections')
+        if (Array.isArray(data)) {
+          this.corrections = data
+        }
+      } catch {
       }
-    }
-  } catch { /* keep local data */ } finally {
-    state.loading = false
-  }
-}
+    },
 
-async function fetchCorrections() {
-  try {
-    const { data } = await api.get('/accounts/corrections')
-    if (Array.isArray(data)) {
-      state.corrections = data
-    }
-  } catch { /* keep local */ }
-}
+    getTransactionsByCalculation(calcId: number): AccountTransaction[] {
+      return this.transactions.filter(t => t.calculationId === calcId)
+    },
 
-// Helper: get current business user's account
-function _getMyAccount(): CompanyAccount | undefined {
-  return state.accounts.find(a => a.company === state.currentCompany)
-}
+    getAccountById(id: number): CompanyAccount | undefined {
+      return this.accounts.find(a => a.id === id)
+    },
 
-// === Business-facing (single company) ===
-
-function getCurrentBalance(): number {
-  return _getMyAccount()?.balance ?? 0
-}
-
-function getTransactions(): AccountTransaction[] {
-  return _getMyAccount()?.transactions ?? []
-}
-
-function getTransactionsByCalculation(calcId: number): AccountTransaction[] {
-  return getTransactions().filter(t => t.calculationId === calcId)
-}
-
-function hasPositiveBalance(): boolean {
-  return getCurrentBalance() > 0
-}
-
-function addCharge(calcId: number, calcNumber: string, amount: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'charge', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.chargeDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/charge`, { calculationId: calcId, amount }).catch(() => {})
-}
-
-function addPayment(calcId: number, calcNumber: string, amount: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance += amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.paymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/payment`, { calculationId: calcId, amount }).catch(() => {})
-}
-
-function addCorrection(calcId: number, calcNumber: string, correctionAmount: number, description: string): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance += correctionAmount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'correction', calculationId: calcId, calculationNumber: calcNumber, description, chargeAmount: 0, paymentAmount: 0, offsetAmount: correctionAmount, balance: acc.balance })
-}
-
-function addOffset(calcId: number, calcNumber: string, amount: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'offset', calculationId: calcId, calculationNumber: calcNumber, description: 'Зачёт из баланса лицевого счёта', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
-}
-
-function addPenalty(calcId: number, calcNumber: string, amount: number, overdueDays: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyDescription'), chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/penalty`, { calculationId: calcId, amount, overdueDays }).catch(() => {})
-}
-
-function addPenaltyPayment(calcId: number, calcNumber: string, amount: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance += amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty_payment', calculationId: calcId, calculationNumber: calcNumber, description: i18n.global.t('accountStore.penaltyPaymentDescription'), chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance })
-  silentApi.post(`/accounts/${acc.id}/penalty-payment`, { calculationId: calcId, amount }).catch(() => {})
-}
-
-function requestRefund(calcId: number, calcNumber: string, amount: number): void {
-  const acc = _getMyAccount()
-  if (!acc) return
-  acc.balance -= amount
-  acc.transactions.push({ id: nextTxId++, date: new Date().toLocaleDateString(), type: 'refund', calculationId: calcId, calculationNumber: calcNumber, description: 'Возврат денежных средств', chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance })
-}
-
-function submitCorrection(data: {
-  calculationId: number
-  calculationNumber: string
-  company: string
-  comment?: string
-  items: CorrectionItem[]
-  totalCorrectionAmount: number
-  action: 'balance' | 'refund'
-  documents: string[]
-}): CorrectionRequest {
-  const correction: CorrectionRequest = { id: nextCorrId++, date: new Date().toLocaleDateString(), ...data, status: CorrectionStatus.UNDER_REVIEW }
-  state.corrections.unshift(correction)
-  silentApi.post(`/accounts/${_getMyAccount()?.id}/corrections`, data).catch(() => {})
-  return correction
-}
-
-function approveCorrection(id: number): void {
-  const corr = state.corrections.find(c => c.id === id)
-  if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
-    corr.status = CorrectionStatus.APPROVED
-    addCorrection(corr.calculationId, corr.calculationNumber, corr.totalCorrectionAmount, `Корректировка по расчёту ${corr.calculationNumber}`)
-  }
-  silentApi.post(`/accounts/corrections/${id}/approve`).catch(() => {})
-}
-
-function rejectCorrection(id: number): void {
-  const corr = state.corrections.find(c => c.id === id)
-  if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
-    corr.status = CorrectionStatus.REJECTED
-  }
-  silentApi.post(`/accounts/corrections/${id}/reject`).catch(() => {})
-}
-
-function getPendingCorrectionsCount(): number {
-  return state.corrections.filter(c => c.status === CorrectionStatus.UNDER_REVIEW).length
-}
-
-// === Eco-operator-facing (all companies) ===
-
-function getAllAccounts(): CompanyAccount[] {
-  return state.accounts
-}
-
-function getAccountById(id: number): CompanyAccount | undefined {
-  return state.accounts.find(a => a.id === id)
-}
-
-function getAccountsWithDebt(): CompanyAccount[] {
-  return state.accounts.filter(a => a.balance < 0)
-}
-
-function getAccountsWithPositiveBalance(): CompanyAccount[] {
-  return state.accounts.filter(a => a.balance > 0)
-}
-
-function getReconciliationForCalculation(calcId: number, company?: string): { charged: number; paid: number; difference: number } {
-  let transactions: AccountTransaction[] = []
-  if (company) {
-    const acc = state.accounts.find(a => a.company === company)
-    transactions = acc?.transactions.filter(t => t.calculationId === calcId) ?? []
-  } else {
-    transactions = getTransactions().filter(t => t.calculationId === calcId)
-  }
-  const charged = transactions.reduce((s, t) => s + t.chargeAmount, 0)
-  const paid = transactions.reduce((s, t) => s + t.paymentAmount, 0)
-  return { charged, paid, difference: charged - paid }
-}
-
-function getReconciliationForCalculationGlobal(calcId: number): { charged: number; paid: number; difference: number } {
-  for (const acc of state.accounts) {
-    const txs = acc.transactions.filter(t => t.calculationId === calcId)
-    if (txs.length > 0) {
+    getReconciliationForCalculation(calcId: number, company?: string): { charged: number; paid: number; difference: number } {
+      let txs: AccountTransaction[] = []
+      if (company) {
+        const acc = this.accounts.find(a => a.company === company)
+        txs = acc?.transactions.filter(t => t.calculationId === calcId) ?? []
+      } else {
+        txs = this.transactions.filter(t => t.calculationId === calcId)
+      }
       const charged = txs.reduce((s, t) => s + t.chargeAmount, 0)
       const paid = txs.reduce((s, t) => s + t.paymentAmount, 0)
       return { charged, paid, difference: charged - paid }
-    }
-  }
-  return { charged: 0, paid: 0, difference: 0 }
-}
+    },
 
-function getTotalMonthlyIncome(): number {
-  const now = new Date()
-  const currentMonth = now.getMonth()
-  const currentYear = now.getFullYear()
-  let total = 0
-  for (const acc of state.accounts) {
-    for (const tx of acc.transactions) {
-      const [d, m, y] = tx.date.split('.')
-      const txDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
-      if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear && tx.paymentAmount > 0) {
-        total += tx.paymentAmount
+    getReconciliationForCalculationGlobal(calcId: number): { charged: number; paid: number; difference: number } {
+      for (const acc of this.accounts) {
+        const txs = acc.transactions.filter(t => t.calculationId === calcId)
+        if (txs.length > 0) {
+          const charged = txs.reduce((s, t) => s + t.chargeAmount, 0)
+          const paid = txs.reduce((s, t) => s + t.paymentAmount, 0)
+          return { charged, paid, difference: charged - paid }
+        }
       }
-    }
-  }
-  return total
-}
+      return { charged: 0, paid: 0, difference: 0 }
+    },
 
-export const accountStore = {
-  state,
-  fetchAll,
-  fetchCorrections,
-  getCurrentBalance,
-  getTransactions,
-  getTransactionsByCalculation,
-  hasPositiveBalance,
-  addCharge,
-  addPayment,
-  addCorrection,
-  addOffset,
-  addPenalty,
-  addPenaltyPayment,
-  requestRefund,
-  submitCorrection,
-  approveCorrection,
-  rejectCorrection,
-  getPendingCorrectionsCount,
-  getAllAccounts,
-  getAccountById,
-  getAccountsWithDebt,
-  getAccountsWithPositiveBalance,
-  getReconciliationForCalculation,
-  getReconciliationForCalculationGlobal,
-  getTotalMonthlyIncome,
-}
+    addCharge(calcId: number, calcNumber: string, amount: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance -= amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'charge',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.chargeDescription'),
+        chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance,
+      })
+      silentApi.post(`/accounts/${acc.id}/charge`, { calculationId: calcId, amount }).catch(() => {})
+    },
+
+    addPayment(calcId: number, calcNumber: string, amount: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance += amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'payment',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.paymentDescription'),
+        chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance,
+      })
+      silentApi.post(`/accounts/${acc.id}/payment`, { calculationId: calcId, amount }).catch(() => {})
+    },
+
+    addCorrection(calcId: number, calcNumber: string, correctionAmount: number, description: string) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance += correctionAmount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'correction',
+        calculationId: calcId, calculationNumber: calcNumber, description,
+        chargeAmount: 0, paymentAmount: 0, offsetAmount: correctionAmount, balance: acc.balance,
+      })
+    },
+
+    addOffset(calcId: number, calcNumber: string, amount: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance -= amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'offset',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.offsetDescription'),
+        chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance,
+      })
+    },
+
+    addPenalty(calcId: number, calcNumber: string, amount: number, overdueDays: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance -= amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.penaltyDescription'),
+        chargeAmount: amount, paymentAmount: 0, offsetAmount: 0, balance: acc.balance,
+      })
+      silentApi.post(`/accounts/${acc.id}/penalty`, { calculationId: calcId, amount, overdueDays }).catch(() => {})
+    },
+
+    addPenaltyPayment(calcId: number, calcNumber: string, amount: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance += amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'penalty_payment',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.penaltyPaymentDescription'),
+        chargeAmount: 0, paymentAmount: amount, offsetAmount: 0, balance: acc.balance,
+      })
+      silentApi.post(`/accounts/${acc.id}/penalty-payment`, { calculationId: calcId, amount }).catch(() => {})
+    },
+
+    requestRefund(calcId: number, calcNumber: string, amount: number) {
+      const acc = this.myAccount
+      if (!acc) return
+      acc.balance -= amount
+      acc.transactions.push({
+        id: nextTxId++, date: new Date().toLocaleDateString(), type: 'refund',
+        calculationId: calcId, calculationNumber: calcNumber,
+        description: i18n.global.t('accountStore.refundDescription'),
+        chargeAmount: 0, paymentAmount: 0, offsetAmount: amount, balance: acc.balance,
+      })
+    },
+
+    submitCorrection(payload: SubmitCorrectionPayload): CorrectionRequest {
+      const correction: CorrectionRequest = {
+        id: nextCorrId++,
+        date: new Date().toLocaleDateString(),
+        ...payload,
+        status: CorrectionStatus.UNDER_REVIEW,
+      }
+      this.corrections.unshift(correction)
+      silentApi.post(`/accounts/${this.myAccount?.id}/corrections`, payload).catch(() => {})
+      return correction
+    },
+
+    approveCorrection(id: number) {
+      const corr = this.corrections.find(c => c.id === id)
+      if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
+        corr.status = CorrectionStatus.APPROVED
+        this.addCorrection(corr.calculationId, corr.calculationNumber, corr.totalCorrectionAmount, `Корректировка по расчёту ${corr.calculationNumber}`)
+      }
+      silentApi.post(`/accounts/corrections/${id}/approve`).catch(() => {})
+    },
+
+    rejectCorrection(id: number) {
+      const corr = this.corrections.find(c => c.id === id)
+      if (corr && corr.status === CorrectionStatus.UNDER_REVIEW) {
+        corr.status = CorrectionStatus.REJECTED
+      }
+      silentApi.post(`/accounts/corrections/${id}/reject`).catch(() => {})
+    },
+  },
+})
+
