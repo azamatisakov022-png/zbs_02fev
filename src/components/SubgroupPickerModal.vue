@@ -94,15 +94,10 @@ watch(isOpen, (val) => {
     document.body.style.overflow = ''
   }
 })
-
-watch(() => props.groupId, () => {
-  // Group changed — reset selection handled by parent
-})
 </script>
 
 <template>
   <div class="spm-field-wrapper">
-    <!-- Trigger field -->
     <button
       type="button"
       class="spm-trigger"
@@ -117,16 +112,13 @@ watch(() => props.groupId, () => {
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
       </svg>
     </button>
-    <!-- Full name hint under field -->
     <div v-if="selectedSubgroupData" class="spm-hint">
       {{ selectedSubgroupData.label }}
     </div>
 
-    <!-- Modal -->
     <Teleport to="body">
       <div v-if="isOpen" class="spm-overlay" @click="onOverlayClick">
         <div class="spm-modal">
-          <!-- Header -->
           <div class="spm-header">
             <div>
               <h2 class="spm-title">{{ $t('subgroupPicker.title') }}</h2>
@@ -139,7 +131,6 @@ watch(() => props.groupId, () => {
             </button>
           </div>
 
-          <!-- Search -->
           <div class="spm-search-wrap">
             <svg class="spm-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
@@ -158,64 +149,43 @@ watch(() => props.groupId, () => {
             </button>
           </div>
 
-          <!-- Table -->
-          <div class="spm-table-wrap">
-            <table class="spm-table">
-              <thead>
-                <tr v-if="!isPackaging">
-                  <th class="spm-th spm-th-num">#</th>
-                  <th class="spm-th spm-th-name">{{ $t('subgroupPicker.subgroupName') }}</th>
-                  <th class="spm-th spm-th-code">{{ $t('productGroup.gskpCode') }}</th>
-                  <th class="spm-th spm-th-code">{{ $t('productGroup.tnvedCode') }}</th>
-                  <th class="spm-th spm-th-tnved">{{ $t('productGroup.tnvedName') }}</th>
-                  <th class="spm-th spm-th-rate">{{ $t('subgroupPicker.rate') }}</th>
-                </tr>
-                <tr v-else>
-                  <th class="spm-th spm-th-num">#</th>
-                  <th class="spm-th spm-th-name">{{ $t('subgroupPicker.subgroupName') }}</th>
-                  <th class="spm-th spm-th-material">{{ $t('productGroup.packagingMaterial') }}</th>
-                  <th class="spm-th spm-th-code">{{ $t('productGroup.trtsCode') }}</th>
-                  <th class="spm-th spm-th-code">{{ $t('productGroup.trtsDesignation') }}</th>
-                  <th class="spm-th spm-th-rate">{{ $t('subgroupPicker.rate') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <template v-if="filteredSubgroups.length > 0">
-                  <tr
-                    v-for="(sub, idx) in filteredSubgroups"
-                    :key="sub.value"
-                    class="spm-row"
-                    :class="{ 'spm-row--selected': sub.value === modelValue }"
-                    @click="selectSubgroup(sub)"
-                  >
-                    <template v-if="!isPackaging">
-                      <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
-                      <td class="spm-td spm-td-name">{{ sub.label }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.gskpCode || '—' }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.tnvedCode || '—' }}</td>
-                      <td class="spm-td spm-td-tnved">{{ sub.tnvedName || '—' }}</td>
-                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>
-                    </template>
-                    <template v-else>
-                      <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
-                      <td class="spm-td spm-td-name">{{ sub.label }}</td>
-                      <td class="spm-td spm-td-material">{{ sub.packagingMaterial || '—' }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.packagingDigitalCode || '—' }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.packagingLetterCode || '—' }}</td>
-                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>
-                    </template>
-                  </tr>
-                </template>
-                <tr v-else>
-                  <td :colspan="6" class="spm-td text-center py-8 text-[#94a3b8]">
-                    {{ $t('ui.nothingFound') }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="spm-list-wrap">
+            <template v-if="filteredSubgroups.length > 0">
+              <div
+                v-for="sub in filteredSubgroups"
+                :key="sub.value"
+                class="spm-item"
+                :class="{ 'spm-item--selected': sub.value === modelValue }"
+                @click="selectSubgroup(sub)"
+              >
+                <div class="spm-item-main">
+                  <span class="spm-item-label">{{ sub.label }}</span>
+                </div>
+                <div class="spm-item-meta">
+                  <template v-if="!isPackaging">
+                    <span v-if="sub.gskpCode" class="spm-item-code">ГСКП: {{ sub.gskpCode }}</span>
+                    <span v-if="sub.tnvedCode" class="spm-item-code">ТН ВЭД: {{ sub.tnvedCode }}</span>
+                  </template>
+                  <template v-else>
+                    <span v-if="sub.packagingMaterial" class="spm-item-material">{{ sub.packagingMaterial }}</span>
+                    <span v-if="sub.packagingLetterCode" class="spm-item-code">{{ sub.packagingLetterCode }}</span>
+                    <span v-if="sub.packagingDigitalCode" class="spm-item-code">{{ sub.packagingDigitalCode }}</span>
+                  </template>
+                  <span class="spm-item-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }} {{ $t('groupPicker.somPerTon') }}</span>
+                </div>
+                <div v-if="!isPackaging && sub.tnvedName" class="spm-item-tnved">
+                  {{ sub.tnvedName }}
+                </div>
+                <svg v-if="sub.value === modelValue" class="spm-item-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </template>
+            <div v-else class="spm-empty">
+              {{ $t('ui.nothingFound') }}
+            </div>
           </div>
 
-          <!-- Footer -->
           <div class="spm-footer">
             <span class="spm-footer-count">{{ $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: availableSubgroups.length }) }}</span>
             <button class="spm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
@@ -227,7 +197,6 @@ watch(() => props.groupId, () => {
 </template>
 
 <style scoped>
-/* === Trigger field === */
 .spm-field-wrapper {
   width: 100%;
 }
@@ -286,7 +255,6 @@ watch(() => props.groupId, () => {
   hyphens: auto;
 }
 
-/* === Overlay === */
 .spm-overlay {
   position: fixed;
   inset: 0;
@@ -298,11 +266,11 @@ watch(() => props.groupId, () => {
   padding: 16px;
 }
 
-/* === Modal === */
 .spm-modal {
   width: 90vw;
-  max-width: 1100px;
+  max-width: 1000px;
   height: 80vh;
+  max-height: 700px;
   background: #fff;
   border-radius: 16px;
   display: flex;
@@ -311,7 +279,6 @@ watch(() => props.groupId, () => {
   overflow: hidden;
 }
 
-/* === Header === */
 .spm-header {
   display: flex;
   align-items: flex-start;
@@ -349,7 +316,6 @@ watch(() => props.groupId, () => {
   color: #475569;
 }
 
-/* === Search === */
 .spm-search-wrap {
   position: relative;
   padding: 12px 24px;
@@ -378,8 +344,8 @@ watch(() => props.groupId, () => {
 }
 
 .spm-search:focus {
-  border-color: #0e888d;
-  box-shadow: 0 0 0 3px rgba(14, 136, 141, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .spm-search::placeholder {
@@ -403,132 +369,97 @@ watch(() => props.groupId, () => {
   color: #64748b;
 }
 
-/* === Table === */
-.spm-table-wrap {
+.spm-list-wrap {
   flex: 1;
   overflow-y: auto;
-  overflow-x: auto;
-  padding: 0 24px;
+  padding: 8px 24px;
 }
 
-.spm-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+.spm-item {
+  position: relative;
+  padding: 14px 40px 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
 }
 
-.spm-th {
-  position: sticky;
-  top: 0;
-  background: #f8fafc;
-  padding: 10px 12px;
-  text-align: left;
-  font-weight: 600;
+.spm-item:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.spm-item--selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.spm-item--selected:hover {
+  background: #dbeafe;
+}
+
+.spm-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.spm-item-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.spm-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
   color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  border-bottom: 2px solid #e2e8f0;
-  white-space: nowrap;
-  z-index: 1;
 }
 
-.spm-th-num {
-  width: 40px;
-  text-align: center;
-}
-
-.spm-th-name {
-  min-width: 250px;
-  width: 40%;
-}
-
-.spm-th-code {
-  min-width: 100px;
-}
-
-.spm-th-tnved {
-  min-width: 200px;
-  width: 30%;
-}
-
-.spm-th-material {
-  min-width: 150px;
-  width: 25%;
-}
-
-.spm-th-rate {
-  min-width: 90px;
-  text-align: right;
-}
-
-.spm-row {
-  cursor: pointer;
-  transition: background-color 0.1s;
-}
-
-.spm-row:hover {
-  background: #f0fdf4;
-}
-
-.spm-row--selected {
-  background: #ecfdf5;
-}
-
-.spm-row--selected:hover {
-  background: #d1fae5;
-}
-
-.spm-td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #1e293b;
-  vertical-align: top;
-}
-
-.spm-td-num {
-  text-align: center;
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-.spm-td-name {
-  white-space: normal;
-  word-wrap: break-word;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.spm-td-code {
+.spm-item-code {
   font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
   font-size: 12px;
-  white-space: nowrap;
   color: #475569;
 }
 
-.spm-td-tnved {
-  white-space: normal;
-  word-wrap: break-word;
-  line-height: 1.4;
-  color: #475569;
+.spm-item-material {
   font-size: 12px;
-}
-
-.spm-td-material {
-  white-space: normal;
-  word-wrap: break-word;
-  line-height: 1.4;
   color: #475569;
 }
 
-.spm-td-rate {
-  text-align: right;
-  white-space: nowrap;
+.spm-item-rate {
   font-weight: 500;
-  color: #0e888d;
+  color: #059669;
 }
 
-/* === Footer === */
+.spm-item-tnved {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.spm-item-check {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3b82f6;
+}
+
+.spm-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
 .spm-footer {
   display: flex;
   align-items: center;
@@ -561,7 +492,6 @@ watch(() => props.groupId, () => {
   border-color: #cbd5e1;
 }
 
-/* === Mobile === */
 @media (max-width: 768px) {
   .spm-modal {
     width: 95vw;
@@ -584,16 +514,12 @@ watch(() => props.groupId, () => {
     right: 30px;
   }
 
-  .spm-table-wrap {
-    padding: 0 16px;
+  .spm-list-wrap {
+    padding: 8px 16px;
   }
 
   .spm-footer {
     padding: 12px 16px;
-  }
-
-  .spm-th, .spm-td {
-    padding: 8px;
   }
 }
 </style>
