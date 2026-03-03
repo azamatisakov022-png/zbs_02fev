@@ -19,6 +19,7 @@ dist
 
 # Claude
 .claude
+.mcp.json
 
 # MD files (except README.md)
 *.md
