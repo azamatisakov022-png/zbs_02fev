@@ -24,7 +24,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
   <div class="dash-card overflow-hidden">
     <!-- Desktop: standard table -->
     <div class="hidden md:block">
-      <table class="w-full" style="table-layout: fixed" role="table">
+      <table class="w-full" role="table">
         <thead>
           <tr class="bg-[#F8FAFC]" style="border-bottom: 1px solid rgba(0,0,0,0.06)">
             <th
@@ -36,7 +36,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
             >
               {{ col.label }}
             </th>
-            <th v-if="actions" style="width: 100px" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
+            <th v-if="actions" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
               {{ t('common.actions') }}
             </th>
           </tr>

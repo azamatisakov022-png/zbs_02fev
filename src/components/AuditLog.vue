@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { notificationStore } from '../stores/notifications'
-import type { AuditEntry } from '../stores/calculations'
+import type { AuditEntry } from '@/types/calculation'
 
 const props = withDefaults(defineProps<{
   entries: AuditEntry[]

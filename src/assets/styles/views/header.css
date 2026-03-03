@@ -1,6 +1,6 @@
 
   .header-wrapper {
-    @apply w-full bg-white;
+    @apply w-full;
   }
 
   .header-top-row {

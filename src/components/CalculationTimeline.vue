@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CalcStatus } from '../constants/statuses'
 import { getStatusBadgeVariant } from '../utils/statusVariant'
-import type { CalculationStatus } from '../stores/calculations'
+import type { CalculationStatus } from '@/types/calculation'
 
 const { t } = useI18n()
 

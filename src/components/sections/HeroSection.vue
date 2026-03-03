@@ -1,36 +1,39 @@
 <script setup lang="ts">
-
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import slider1 from '@/assets/images/slider_1.png'
 
-const slides = [
+const { t } = useI18n()
+
+const slides = computed(() => [
   {
-    tag: '🌱 Устойчивое развитие',
-    image:slider1,
-    title: 'О нас',
+    tag: t('hero.slides.0.tag'),
+    image: slider1,
+    title: t('hero.slides.0.title'),
     description: [
-      'Эко Оператор Кыргызстан — национальный оператор в сфере управления отходами, созданный для развития экологически устойчивой системы переработки и утилизации отходов на территории страны.',
-      'Мы объединяем государственные органы, бизнес-сообщество, перерабатывающие предприятия и общественность с целью создания эффективной и прозрачной экосистемы обращения с отходами.',
-      'Наша деятельность направлена на внедрение современных стандартов переработки, поддержку экологической инфраструктуры и реализацию механизмов расширенной ответственности производителей.',
+      t('hero.slides.0.desc1'),
+      t('hero.slides.0.desc2'),
+      t('hero.slides.0.desc3'),
     ],
   },
   {
-    tag: '♻ Экология',
-        image:slider1,
-    title: 'Наша миссия',
+    tag: t('hero.slides.1.tag'),
+    image: slider1,
+    title: t('hero.slides.1.title'),
     description: [
-      'Создание современной системы обращения с отходами.',
-      'Поддержка переработки и устойчивого развития.',
+      t('hero.slides.1.desc1'),
+      t('hero.slides.1.desc2'),
     ],
   },
   {
-    tag: '🏭 Производители',
-        image:slider1,
-    title: 'РОП',
+    tag: t('hero.slides.2.tag'),
+    image: slider1,
+    title: t('hero.slides.2.title'),
     description: [
-      'Реализация механизмов расширенной ответственности производителей.',
+      t('hero.slides.2.desc1'),
     ],
   },
-]
+])
 </script>
 
 <template>
@@ -65,11 +68,9 @@ const slides = [
           <div class="hero-card">
             <div class="hero-card-accent-top" />
             <div class="hero-card-content">
-              <h3 class="hero-card-title">
-                ЗАКЛЮЧИТЬ<br />ДОГОВОР/ПОДАТЬ<br />ОТЧЕТ
-              </h3>
+              <h3 class="hero-card-title" v-html="t('hero.cardTitle')" />
               <router-link to="/contract" class="hero-card-link">
-                <span class="hero-card-link-text">Подробнее</span>
+                <span class="hero-card-link-text">{{ t('hero.cardLink') }}</span>
                 <img src="@/assets/images/icons/hero-arrow.svg" alt="" class="hero-card-arrow" />
               </router-link>
             </div>

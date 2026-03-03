@@ -3,7 +3,8 @@ import { computed, ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import QRCode from 'qrcode'
-import { calculationStore, type PaymentData } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
+import type { PaymentData } from '@/types/calculation'
 import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
 import FileUploadZone from '../ui/FileUploadZone.vue'
 import { formatNum } from '../../utils/formatNumber'
@@ -22,8 +23,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const router = useRouter()
+const calcStore = useCalculationStore()
 
-const calc = computed(() => calculationStore.getCalculationById(props.calculationId))
+const calc = computed(() => calcStore.getCalculationById(props.calculationId))
 
 // File uploads
 const feeFile = ref<{ fileName: string; fileType: string; fileDataUrl: string } | null>(null)
@@ -127,7 +129,7 @@ function submitFeeReceipt() {
     fileType: feeFile.value.fileType,
     fileDataUrl: feeFile.value.fileDataUrl,
   }
-  calculationStore.uploadFeeReceipt(calc.value.id, payment)
+  calcStore.uploadFeeReceipt(calc.value.id, payment)
   feeSubmitting.value = false
   toastStore.show({ type: 'success', title: t('workflow.receiptUploaded') })
 }
@@ -144,7 +146,7 @@ function submitPenaltyReceipt() {
     fileType: penaltyFile.value.fileType,
     fileDataUrl: penaltyFile.value.fileDataUrl,
   }
-  calculationStore.uploadPenaltyReceipt(calc.value.id, payment)
+  calcStore.uploadPenaltyReceipt(calc.value.id, payment)
   penaltySubmitting.value = false
   toastStore.show({ type: 'success', title: t('workflow.receiptUploaded') })
 }

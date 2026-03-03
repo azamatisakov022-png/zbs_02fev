@@ -335,26 +335,26 @@ onUnmounted(() => {
 
 .select-trigger {
   width: 100%;
-  min-height: 70px;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 18px 55px 18px 24px;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  background: var(--bg-field);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  font-size: var(--text-body);
+  font-weight: var(--font-regular);
+  color: var(--text-main);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
 }
 
 .select-trigger:hover {
-  border-color: #0e888d;
+  border-color: var(--border-input, #cbd5e1);
 }
 
 .select-trigger.is-open {
-  border-color: #0e888d;
-  box-shadow: 0 0 0 3px rgba(14, 136, 141, 0.1);
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  border-color: var(--primary);
 }
 
 .select-value {
@@ -364,27 +364,27 @@ onUnmounted(() => {
 }
 
 .value-main {
-  font-size: 19px;
-  font-weight: 500;
-  color: #415861;
-  line-height: 1.5;
-  word-break: break-word;
+  font-size: var(--text-caption);
+  font-weight: var(--font-medium);
+  color: var(--text-main);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .value-main .label-prefix {
   font-weight: 600;
-  color: #1f2937;
 }
 
 .value-sub {
-  font-size: 16px;
+  font-size: var(--text-caption-sm);
   color: #6b7280;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .placeholder {
-  font-size: 19px;
-  color: #9ca3af;
+  font-size: var(--text-caption);
+  color: #70868f;
 }
 
 .select-arrow {
@@ -392,8 +392,14 @@ onUnmounted(() => {
   right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #6b7280;
+  color: currentColor;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.select-arrow svg {
+  width: 10px;
+  height: 6px;
 }
 
 .select-arrow.is-open {
@@ -402,37 +408,40 @@ onUnmounted(() => {
 
 .select-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: white;
-  border: 2px solid #0e888d;
-  border-top: none;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  min-width: 100%;
+  background: var(--white, #fff);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-dropdown);
+  z-index: 50;
   overflow: hidden;
 }
 
-/* Search input */
 .search-container {
   position: sticky;
   top: 0;
   z-index: 2;
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  background: var(--bg-field);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .search-icon {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: #94a3b8;
   margin-right: 8px;
   display: flex;
   align-items: center;
+}
+
+.search-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .search-input {
@@ -440,13 +449,13 @@ onUnmounted(() => {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
-  color: #374151;
+  font-size: var(--text-caption);
+  color: var(--text-main);
   padding: 4px 0;
 }
 
 .search-input::placeholder {
-  color: #9ca3af;
+  color: #94a3b8;
 }
 
 .search-clear {
@@ -454,8 +463,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: none;
   background: #e5e7eb;
@@ -471,29 +480,29 @@ onUnmounted(() => {
 }
 
 .no-results {
-  padding: 24px;
+  padding: 16px 20px;
   text-align: center;
-  color: #9ca3af;
-  font-size: 15px;
+  color: #94a3b8;
+  font-size: var(--text-caption);
 }
 
 .dropdown-scroll {
-  max-height: 400px;
+  max-height: 280px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .dropdown-scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .dropdown-scroll::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 
 .dropdown-scroll::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .dropdown-scroll::-webkit-scrollbar-thumb:hover {
@@ -501,166 +510,162 @@ onUnmounted(() => {
 }
 
 .option-group-header {
-  padding: 18px 24px 14px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #0e888d;
+  padding: 8px 20px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: #f8fafc;
-  border-top: 1px solid #e5e7eb;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.option-group-header:first-child {
-  border-top: none;
+  cursor: default;
 }
 
 .select-option {
-  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 10px 20px;
   cursor: pointer;
-  transition: background 0.15s ease;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.select-option:last-child {
-  border-bottom: none;
+  transition: background-color 0.1s;
+  text-align: left;
+  white-space: normal;
 }
 
 .select-option:hover {
-  background: #e8f5f5;
+  background: var(--bg-field);
 }
 
 .select-option.is-selected {
-  background: #d1fae5;
-}
-
-.select-option.is-selected:hover {
-  background: #a7f3d0;
+  color: var(--primary);
+  background: var(--primary-subtle);
 }
 
 .option-main {
-  font-size: 19px;
-  font-weight: 500;
-  color: #374151;
-  line-height: 1.5;
+  font-size: var(--text-caption);
+  font-weight: var(--font-medium);
+  color: var(--text-main);
+  line-height: 1.4;
   word-break: break-word;
+}
+
+.select-option.is-selected .option-main {
+  color: var(--primary);
 }
 
 .label-prefix {
   font-weight: 600;
-  color: #1f2937;
   margin-right: 4px;
 }
 
 .option-sub {
-  font-size: 16px;
-  color: #5a6d76;
-  margin-top: 8px;
+  font-size: var(--text-caption-sm);
+  color: #64748b;
+  margin-top: 2px;
 }
 
 /* Compact mode */
 .is-compact .select-trigger {
-  min-height: 40px;
-  padding: 8px 40px 8px 12px;
+  padding: 8px 14px;
   border-radius: 8px;
 }
 
-.is-compact .select-trigger.is-open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
 .is-compact .value-main {
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 13px;
 }
 
 .is-compact .value-sub {
-  font-size: 12px;
-  margin-top: 2px;
+  font-size: 11px;
 }
 
 .is-compact .placeholder {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .is-compact .select-arrow {
   right: 10px;
 }
 
-.is-compact .select-arrow svg {
-  width: 16px;
-  height: 16px;
-}
-
-.is-compact .select-dropdown {
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
-
-.is-compact .search-container {
-  padding: 8px 12px;
-}
-
-.is-compact .search-input {
-  font-size: 13px;
-}
-
 .is-compact .select-option {
-  padding: 10px 12px;
+  padding: 8px 14px;
 }
 
 .is-compact .option-main {
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: 13px;
 }
 
 .is-compact .option-sub {
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 11px;
 }
 
 .is-compact .option-group-header {
-  padding: 10px 12px 8px;
-  font-size: 12px;
+  padding: 6px 14px 2px;
+  font-size: 10px;
 }
 
 .is-compact .no-results {
-  padding: 16px;
+  padding: 12px;
   font-size: 13px;
 }
 
 /* Dropdown animation */
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.2s ease;
+  transition: opacity 0.15s, transform 0.15s;
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 
+/* Tablet */
+@media (max-width: 1024px) {
+  .select-trigger {
+    padding: 12px 16px;
+    font-size: var(--text-body-sm);
+  }
+
+  .value-main {
+    font-size: 13px;
+  }
+
+  .select-option {
+    padding: 9px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .select-trigger {
+    padding: 10px 14px;
+    font-size: var(--text-caption);
+    border-radius: var(--radius-sm);
+  }
+
+  .option-main {
+    font-size: 13px;
+  }
+
+  .select-option {
+    padding: 10px 16px;
+  }
+}
 </style>
 
-<!-- Global styles for teleported tooltip -->
 <style>
 .select-tooltip {
   position: fixed;
   transform: translateY(-100%);
-  background: #1f2937;
+  background: #1e293b;
   color: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 15px;
-  line-height: 1.5;
-  max-width: 450px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 400px;
   word-break: break-word;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   pointer-events: none;
 }
@@ -668,13 +673,13 @@ onUnmounted(() => {
 .select-tooltip::after {
   content: '';
   position: absolute;
-  bottom: -6px;
-  left: 20px;
+  bottom: -5px;
+  left: 16px;
   width: 0;
   height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid #1f2937;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #1e293b;
 }
 
 .tooltip-enter-active,

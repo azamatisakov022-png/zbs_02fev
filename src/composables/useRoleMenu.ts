@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { icons } from '../utils/menuIcons'
-import { calculationStore } from '../stores/calculations'
+import { useCalculationStore } from '../stores/calculations'
 import { refundStore } from '../stores/refunds'
 import { reportStore } from '../stores/reports'
 import { notificationStore } from '../stores/notifications'
@@ -25,11 +25,12 @@ export function useBusinessMenu() {
 
 export function useEcoOperatorMenu() {
   const { t } = useI18n()
+  const calcStore = useCalculationStore()
   const roleTitle = computed(() => t('roles.ecoOperator'))
   const menuItems = computed(() => [
     { id: 'dashboard', label: t('nav.ecoOperator.dashboard'), icon: icons.dashboard, route: '/eco-operator' },
     { id: 'notifications', label: t('notifications.title'), icon: icons.notification, route: '/eco-operator/notifications', badge: notificationStore.getUnreadCount('eco-operator') },
-    { id: 'incoming-calculations', label: t('nav.ecoOperator.calculations'), icon: icons.calculator, route: '/eco-operator/calculations', badge: calculationStore.getCalcReviewCount() },
+    { id: 'incoming-calculations', label: t('nav.ecoOperator.calculations'), icon: icons.calculator, route: '/eco-operator/calculations', badge: calcStore.calcReviewCount },
     { id: 'incoming-declarations', label: t('nav.ecoOperator.incomingDeclarations'), icon: icons.document, route: '/eco-operator/incoming-declarations' },
     { id: 'incoming-reports', label: t('nav.ecoOperator.incomingReports'), icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
     { id: 'refunds', label: t('nav.ecoOperator.refunds'), icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
