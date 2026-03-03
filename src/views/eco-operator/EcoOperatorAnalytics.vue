@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { CalcStatus } from '../../constants/statuses'
 import { RefundStatus } from '../../constants/statuses'
-import { calculationStore } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { recyclerStore } from '../../stores/recyclers'
 import { productGroups, productSubgroups, getSubgroupLabel } from '../../data/product-groups'
@@ -15,6 +15,7 @@ import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 const { t } = useI18n()
+const calcStore = useCalculationStore()
 
 // ─── Tabs ───
 type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
@@ -92,7 +93,7 @@ const showPayerSuggestions = ref(false)
 
 const allPayers = computed(() => {
   const map = new Map<string, string>()
-  calculationStore.state.calculations.forEach(c => {
+  calcStore.calculations.forEach(c => {
     if (!map.has(c.company)) map.set(c.company, c.inn)
   })
   return Array.from(map.entries()).map(([company, inn]) => ({ company, inn }))
@@ -161,7 +162,7 @@ const hasGroupFilter = computed(() => !!selectedGroup.value)
 
 // ─── Filtered data from stores ───
 const paidCalcs = computed(() => {
-  const base = calculationStore.state.calculations.filter(c =>
+  const base = calcStore.calculations.filter(c =>
     (c.status === CalcStatus.PAID || c.status === CalcStatus.APPROVED) && isInRange(c.date) &&
     (!selectedPayer.value || c.company === selectedPayer.value)
   )

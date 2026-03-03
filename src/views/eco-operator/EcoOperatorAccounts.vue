@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { accountStore } from '../../stores/account'
+import { useAccountStore } from '../../stores/account'
 import { AppButton } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -16,11 +16,12 @@ const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 // Loading state
+const account = useAccountStore()
+
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })
 
-// All accounts from store
-const allAccounts = computed(() => accountStore.getAllAccounts())
+const allAccounts = computed(() => account.allAccounts)
 
 // Search filter
 const searchQuery = ref('')

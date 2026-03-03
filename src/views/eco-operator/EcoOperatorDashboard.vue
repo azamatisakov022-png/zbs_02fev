@@ -7,7 +7,7 @@ import StatsCard from '../../components/dashboard/StatsCard.vue'
 import LineChart from '../../components/charts/LineChart.vue'
 import BarChart from '../../components/charts/BarChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
-import { calculationStore } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import { CalcStatus, DeclStatus } from '../../constants/statuses'
@@ -15,7 +15,9 @@ import { CalcStatus, DeclStatus } from '../../constants/statuses'
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
-const allCalcs = computed(() => calculationStore.state.calculations)
+const calcStore = useCalculationStore()
+
+const allCalcs = computed(() => calcStore.calculations)
 
 const stats = computed(() => [
   {

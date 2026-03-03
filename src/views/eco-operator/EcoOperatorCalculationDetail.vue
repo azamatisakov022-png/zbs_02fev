@@ -3,11 +3,12 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { calculationStore, type Calculation } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
+import type { Calculation } from '@/types/calculation'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { generateCalculationExcel } from '../../utils/excelExport'
-import { accountStore } from '../../stores/account'
+import { useAccountStore } from '../../stores/account'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { toastStore } from '../../stores/toast'
@@ -23,9 +24,11 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const account = useAccountStore()
+const calcStore = useCalculationStore()
 
 const calcId = computed(() => Number(route.params.id))
-const calc = computed<Calculation | undefined>(() => calculationStore.getCalculationById(calcId.value))
+const calc = computed<Calculation | undefined>(() => calcStore.getCalculationById(calcId.value))
 
 const getStatusClass = (status: string) => {
   switch (status) {
@@ -91,7 +94,7 @@ const totalTaxableVolume = computed(() => {
 
 const reconciliation = computed(() => {
   if (!calc.value) return { charged: 0, paid: 0, difference: 0 }
-  return accountStore.getReconciliationForCalculationGlobal(calc.value.id)
+  return account.getReconciliationForCalculationGlobal(calc.value.id)
 })
 
 const penaltyData = computed(() => {
@@ -111,7 +114,7 @@ const toastMessage = ref('')
 // Assignment
 const assignToMe = () => {
   if (!calc.value) return
-  calculationStore.assignToMe(calc.value.id, 'operator-1', 'Оператор')
+  calcStore.assignToMe(calc.value.id, 'operator-1', 'Оператор')
   notificationStore.add({
     type: 'info',
     title: t('workflow.assignToMe'),
@@ -125,7 +128,7 @@ const assignToMe = () => {
 
 const unassignCalc = () => {
   if (!calc.value) return
-  calculationStore.unassign(calc.value.id)
+  calcStore.unassign(calc.value.id)
   toastMessage.value = t('workflow.returnToQueue')
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
@@ -142,7 +145,7 @@ const openRevisionModal = () => {
 
 const sendToRevision = () => {
   if (!calc.value || revisionComment.value.trim().length < 10) return
-  calculationStore.sendToRevision(calc.value.id, revisionComment.value.trim())
+  calcStore.sendToRevision(calc.value.id, revisionComment.value.trim())
   showRevisionModal.value = false
   toastMessage.value = t('workflow.sendToRevision')
   showToast.value = true
@@ -152,8 +155,8 @@ const sendToRevision = () => {
 // Fee/Penalty confirmation
 const confirmFee = () => {
   if (!calc.value) return
-  calculationStore.confirmFeePayment(calc.value.id)
-  accountStore.addPayment(calc.value.id, calc.value.number, calc.value.totalAmount)
+  calcStore.confirmFeePayment(calc.value.id)
+  account.addPayment(calc.value.id, calc.value.number, calc.value.totalAmount)
   toastMessage.value = t('workflow.feeConfirmed')
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
@@ -161,8 +164,8 @@ const confirmFee = () => {
 
 const confirmPenalty = () => {
   if (!calc.value) return
-  calculationStore.confirmPenaltyPayment(calc.value.id)
-  accountStore.addPenaltyPayment(calc.value.id, calc.value.number, calc.value.penaltyFixedAmount || 0)
+  calcStore.confirmPenaltyPayment(calc.value.id)
+  account.addPenaltyPayment(calc.value.id, calc.value.number, calc.value.penaltyFixedAmount || 0)
   toastMessage.value = t('workflow.penaltyConfirmed')
   showToast.value = true
   setTimeout(() => { showToast.value = false }, 3000)
@@ -174,8 +177,8 @@ const openApproveModal = () => {
 
 const approveCalc = () => {
   if (!calc.value) return
-  calculationStore.approveCalculation(calc.value.id)
-  accountStore.addCharge(calc.value.id, calc.value.number, calc.value.totalAmount)
+  calcStore.approveCalculation(calc.value.id)
+  account.addCharge(calc.value.id, calc.value.number, calc.value.totalAmount)
   showApproveModal.value = false
   toastMessage.value = t('ecoCalcDetail.toastAccepted', { number: calc.value.number })
   showToast.value = true
@@ -189,7 +192,7 @@ const openRejectModal = () => {
 
 const rejectCalc = () => {
   if (!calc.value || rejectionReason.value.trim().length < 10) return
-  calculationStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
+  calcStore.rejectCalculation(calc.value.id, rejectionReason.value.trim())
   showRejectModal.value = false
   toastMessage.value = t('ecoCalcDetail.toastRejected', { number: calc.value.number })
   showToast.value = true

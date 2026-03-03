@@ -5,7 +5,8 @@ import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { accountStore, type CompanyAccount, type AccountTransaction } from '../../stores/account'
+import { useAccountStore } from '../../stores/account'
+import type { CompanyAccount, AccountTransaction } from '@/types/account'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
@@ -15,17 +16,16 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const accountStoreInstance = useAccountStore()
 
-// Loading state
 const isLoading = ref(true)
 const accountNotFound = ref(false)
 
-// Account data
 const account = ref<CompanyAccount | undefined>(undefined)
 
 onMounted(() => {
   const id = Number(route.params.id)
-  account.value = accountStore.getAccountById(id)
+  account.value = accountStoreInstance.getAccountById(id)
   if (!account.value) {
     accountNotFound.value = true
   }

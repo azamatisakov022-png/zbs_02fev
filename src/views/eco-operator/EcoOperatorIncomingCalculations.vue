@@ -5,7 +5,8 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { calculationStore, type Calculation } from '../../stores/calculations'
+import { useCalculationStore } from '../../stores/calculations'
+import type { Calculation } from '@/types/calculation'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -18,6 +19,7 @@ import { formatNum } from '../../utils/formatNumber'
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const calcStore = useCalculationStore()
 
 // Tabs
 const activeTab = ref<'calculations' | 'payments'>('calculations')
@@ -44,7 +46,7 @@ const periodFilter = ref('')
 const assigneeFilter = ref<'all' | 'unassigned' | 'mine'>('all')
 
 const filteredCalculations = computed(() => {
-  let list = calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT)
+  let list = calcStore.calculations.filter(c => c.status !== CalcStatus.DRAFT)
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(c => c.number.toLowerCase().includes(q) || c.company.toLowerCase().includes(q) || c.inn.includes(q))
@@ -88,11 +90,11 @@ const filteredCalculations = computed(() => {
 })
 
 // Stats
-const totalCount = computed(() => calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT).length)
-const pendingCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.SUBMITTED).length)
-const inReviewCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.IN_REVIEW).length)
-const approvedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED).length)
-const rejectedCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.REJECTED).length)
+const totalCount = computed(() => calcStore.calculations.filter(c => c.status !== CalcStatus.DRAFT).length)
+const pendingCount = computed(() => calcStore.calculations.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.SUBMITTED).length)
+const inReviewCount = computed(() => calcStore.calculations.filter(c => c.status === CalcStatus.IN_REVIEW).length)
+const approvedCount = computed(() => calcStore.calculations.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED).length)
+const rejectedCount = computed(() => calcStore.calculations.filter(c => c.status === CalcStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
@@ -124,7 +126,7 @@ const openDetail = (row: any) => {
 }
 
 const openDetailModal = (row: any) => {
-  const calc = calculationStore.state.calculations.find(c => c.id === row.id)
+  const calc = calcStore.calculations.find(c => c.id === row.id)
   if (calc) {
     selectedCalculation.value = calc
     showDetail.value = true
@@ -146,14 +148,14 @@ const closeDetail = () => {
 
 const approveCalc = () => {
   if (selectedCalculation.value) {
-    calculationStore.approveCalculation(selectedCalculation.value.id)
+    calcStore.approveCalculation(selectedCalculation.value.id)
     closeDetail()
   }
 }
 
 const rejectCalc = () => {
   if (selectedCalculation.value && rejectionReason.value.trim()) {
-    calculationStore.rejectCalculation(selectedCalculation.value.id, rejectionReason.value.trim())
+    calcStore.rejectCalculation(selectedCalculation.value.id, rejectionReason.value.trim())
     closeDetail()
   }
 }
@@ -176,14 +178,14 @@ const paymentColumns = computed(() => [
 
 const paymentSearchQuery = ref('')
 
-const paymentPendingCount = computed(() => calculationStore.getPaymentPendingCount())
+const paymentPendingCount = computed(() => calcStore.paymentPendingCount)
 
-const awaitingFeePaymentCount = computed(() => calculationStore.state.calculations.filter(c => c.status === CalcStatus.APPROVED).length)
-const feeReceiptsToReviewCount = computed(() => calculationStore.state.calculations.filter(c => (c as any).feePayment && !c.feeConfirmedAt && c.status !== CalcStatus.COMPLETED).length)
-const penaltyReceiptsToReviewCount = computed(() => calculationStore.state.calculations.filter(c => (c as any).penaltyPayment && !c.penaltyConfirmedAt && c.status === CalcStatus.FEE_PAID).length)
+const awaitingFeePaymentCount = computed(() => calcStore.calculations.filter(c => c.status === CalcStatus.APPROVED).length)
+const feeReceiptsToReviewCount = computed(() => calcStore.calculations.filter(c => (c as any).feePayment && !c.feeConfirmedAt && c.status !== CalcStatus.COMPLETED).length)
+const penaltyReceiptsToReviewCount = computed(() => calcStore.calculations.filter(c => (c as any).penaltyPayment && !c.penaltyConfirmedAt && c.status === CalcStatus.FEE_PAID).length)
 
 const filteredPayments = computed(() => {
-  let list = calculationStore.state.calculations.filter(c =>
+  let list = calcStore.calculations.filter(c =>
     c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED
   )
   if (paymentSearchQuery.value) {
@@ -206,23 +208,23 @@ const paymentRejectionReason = ref('')
 
 const approvePayment = () => {
   if (selectedCalculation.value) {
-    calculationStore.approvePayment(selectedCalculation.value.id)
+    calcStore.approvePayment(selectedCalculation.value.id)
     closeDetail()
   }
 }
 
 const rejectPayment = () => {
   if (selectedCalculation.value && paymentRejectionReason.value.trim()) {
-    calculationStore.rejectPayment(selectedCalculation.value.id, paymentRejectionReason.value.trim())
+    calcStore.rejectPayment(selectedCalculation.value.id, paymentRejectionReason.value.trim())
     closeDetail()
   }
 }
 
 // Empty state helpers
-const allCalculations = computed(() => calculationStore.state.calculations.filter(c => c.status !== CalcStatus.DRAFT))
+const allCalculations = computed(() => calcStore.calculations.filter(c => c.status !== CalcStatus.DRAFT))
 const isCalcFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
 
-const allPayments = computed(() => calculationStore.state.calculations.filter(c =>
+const allPayments = computed(() => calcStore.calculations.filter(c =>
   c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAYMENT_PENDING || c.status === CalcStatus.PAID || c.status === CalcStatus.PAYMENT_REJECTED || c.status === CalcStatus.FEE_PAID || c.status === CalcStatus.PENALTY_PAID || c.status === CalcStatus.COMPLETED
 ))
 const isPaymentFiltersActive = computed(() => !!paymentSearchQuery.value)
