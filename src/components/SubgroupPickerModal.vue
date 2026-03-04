@@ -291,14 +291,14 @@ watch(isOpen, (val) => {
 }
 
 .spm-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
 .spm-subtitle {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: #475569;
   margin: 4px 0 0;
@@ -339,7 +339,7 @@ watch(isOpen, (val) => {
   padding: 14px 44px 14px 46px;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: #1e293b;
   background: #f8fafc;
@@ -412,7 +412,7 @@ watch(isOpen, (val) => {
 }
 
 .spm-item-label {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: #1e293b;
   line-height: 1.4;
@@ -422,20 +422,20 @@ watch(isOpen, (val) => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #1e293b;
 }
 
 .spm-item-code {
   font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #1e293b;
 }
 
 .spm-item-material {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -447,7 +447,7 @@ watch(isOpen, (val) => {
 
 .spm-item-tnved {
   margin-top: 4px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #475569;
   line-height: 1.4;
@@ -465,7 +465,7 @@ watch(isOpen, (val) => {
   text-align: center;
   padding: 40px 0;
   color: #64748b;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
 }
 
@@ -480,7 +480,7 @@ watch(isOpen, (val) => {
 }
 
 .spm-footer-count {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #1e293b;
 }
@@ -491,7 +491,7 @@ watch(isOpen, (val) => {
   border-radius: 10px;
   background: #fff;
   color: #1e293b;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;

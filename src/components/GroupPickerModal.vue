@@ -242,14 +242,14 @@ const getGroupType = (group: typeof productGroups[0]) => {
 }
 
 .gpm-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
 .gpm-subtitle {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: #475569;
   margin: 4px 0 0;
@@ -290,7 +290,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
   padding: 14px 44px 14px 46px;
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 500;
   color: #1e293b;
   background: #f8fafc;
@@ -363,7 +363,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
 }
 
 .gpm-item-label {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: #1e293b;
   line-height: 1.4;
@@ -371,7 +371,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
 
 .gpm-item-type {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 6px;
@@ -390,7 +390,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
 .gpm-item-meta {
   display: flex;
   gap: 16px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
   color: #1e293b;
 }
@@ -412,7 +412,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
   text-align: center;
   padding: 40px 0;
   color: #64748b;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
 }
 
@@ -427,7 +427,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
 }
 
 .gpm-footer-count {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #1e293b;
 }
@@ -438,7 +438,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
   border-radius: 10px;
   background: #fff;
   color: #1e293b;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
