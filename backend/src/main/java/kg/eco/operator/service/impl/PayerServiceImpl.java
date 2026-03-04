@@ -101,6 +101,13 @@ public class PayerServiceImpl implements PayerService {
     }
 
     @Override
+    public PayerResponse getByInn(String inn) {
+        Payer payer = payerRepository.findByCompany_Inn(inn)
+                .orElseThrow(() -> new ResourceNotFoundException("Плательщик не найден по ИНН: " + inn));
+        return payerMapper.toResponse(payer);
+    }
+
+    @Override
     public PayerStatsResponse getStats() {
         long total = payerRepository.count();
         long active = payerRepository.countActive();
