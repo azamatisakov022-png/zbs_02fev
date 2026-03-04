@@ -138,7 +138,7 @@ const signDeclaration = (id: number) => {
     :menuItems="menuItems"
   >
     <div class="content__header mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDecl.title') }}</h1>
+      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDecl.title') }}</h1>
       <p class="text-[#1e293b]">{{ $t('businessDecl.subtitle') }}</p>
     </div>
 
@@ -152,8 +152,8 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
-          <p class="text-white/80 text-sm lg:text-base">{{ $t('businessDecl.ctaDescription') }}</p>
+          <h2 class="text-[24px] lg:text-[27px] font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
+          <p class="text-white/80 text-[16px] lg:text-[18px]">{{ $t('businessDecl.ctaDescription') }}</p>
         </div>
         <button
           @click="startWizard"
@@ -174,8 +174,8 @@ const signDeclaration = (id: number) => {
         </svg>
       </div>
       <div>
-        <p class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.autoFormTitle') }}</p>
-        <p class="text-[17px] font-medium text-[#1e293b]">{{ $t('businessDecl.autoFormDescription') }}</p>
+        <p class="text-[20px] font-semibold text-[#1e293b]">{{ $t('businessDecl.autoFormTitle') }}</p>
+        <p class="text-[20px] font-medium text-[#1e293b]">{{ $t('businessDecl.autoFormDescription') }}</p>
       </div>
     </div>
 
@@ -195,11 +195,11 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
         <div class="flex-1">
-          <p :class="['text-sm font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
+          <p :class="['text-[16px] font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
             {{ decl.number }} — {{ decl.status === 'rejected' ? $t('status.rejectedFem') : $t('businessDecl.returnedForRevision') }}
             <span v-if="decl.reviewDate" class="font-normal">{{ $t('businessDecl.fromDate') }} {{ decl.reviewDate }}</span>
           </p>
-          <p v-if="decl.reviewComment" :class="['text-xs mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
+          <p v-if="decl.reviewComment" :class="['text-[14px] mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
             {{ decl.reviewComment }}
           </p>
         </div>
@@ -226,7 +226,7 @@ const signDeclaration = (id: number) => {
       </div>
 
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('businessDecl.historyTitle') }}</h2>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4">{{ $t('businessDecl.historyTitle') }}</h2>
       </div>
 
       <div v-if="isFilteredEmpty" class="mb-6">
@@ -363,7 +363,7 @@ const signDeclaration = (id: number) => {
 }
 .act-btn {
   display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px;
-  font-size: 12px; font-weight: 500; border-radius: 8px; cursor: pointer;
+  font-size: 14px; font-weight: 500; border-radius: 8px; cursor: pointer;
   white-space: nowrap; text-decoration: none; transition: all 0.15s ease;
 }
 .act-btn--filled { color: white; border: none; }
@@ -394,7 +394,7 @@ const signDeclaration = (id: number) => {
 }
 .act-dropdown__item {
   display: flex; align-items: center; gap: 8px; width: 100%;
-  padding: 8px 12px; font-size: 13px; font-weight: 400; color: #374151;
+  padding: 8px 12px; font-size: 15px; font-weight: 400; color: #374151;
   background: transparent; border: none; border-radius: 6px; cursor: pointer;
   transition: background 0.1s; white-space: nowrap;
 }

@@ -110,7 +110,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('businessDeclDetail.notFound') }}</h2>
+      <h2 class="text-[24px] font-bold text-[#1e293b] mb-2">{{ $t('businessDeclDetail.notFound') }}</h2>
       <p class="text-[#64748b] mb-6">{{ $t('businessDeclDetail.notFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
@@ -128,7 +128,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           {{ $t('common.back') }}
         </button>
         <div class="flex flex-wrap items-center gap-3 mb-1">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessDeclDetail.declaration') }} {{ declaration.number }}</h1>
+          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessDeclDetail.declaration') }} {{ declaration.number }}</h1>
           <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ $t(statusI18nKey[declaration.status] || declaration.status) }}</AppBadge>
         </div>
         <p class="text-[#64748b]">{{ $t('businessDeclDetail.submittedAt') }} {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
@@ -145,8 +145,8 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div>
-          <p class="text-sm font-semibold text-green-900">{{ $t('businessDeclDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer }) }}</p>
-          <p v-if="declaration.reviewComment" class="text-xs text-green-700 mt-1">{{ declaration.reviewComment }}</p>
+          <p class="text-[16px] font-semibold text-green-900">{{ $t('businessDeclDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer }) }}</p>
+          <p v-if="declaration.reviewComment" class="text-[14px] text-green-700 mt-1">{{ declaration.reviewComment }}</p>
         </div>
       </div>
 
@@ -160,7 +160,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm font-semibold text-red-900">{{ $t('businessDeclDetail.rejectedBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
+          <p class="text-[16px] font-semibold text-red-900">{{ $t('businessDeclDetail.rejectedBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
           <div class="mt-3">
             <AppButton variant="danger" size="sm" @click="handleResubmit">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -182,7 +182,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div class="flex-1">
-          <p class="text-sm font-semibold text-orange-900">{{ $t('businessDeclDetail.revisionBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
+          <p class="text-[16px] font-semibold text-orange-900">{{ $t('businessDeclDetail.revisionBanner', { date: declaration.reviewDate }) }}: {{ declaration.reviewComment }}</p>
           <div class="mt-3">
             <AppButton variant="primary" size="sm" @click="handleResubmit">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,15 +204,15 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </svg>
         </div>
         <div>
-          <p class="text-sm font-semibold text-blue-900">{{ $t('businessDeclDetail.underReviewBanner') }}</p>
-          <p class="text-xs text-blue-700 mt-1">{{ $t('businessDeclDetail.underReviewBannerDesc') }}</p>
+          <p class="text-[16px] font-semibold text-blue-900">{{ $t('businessDeclDetail.underReviewBanner') }}</p>
+          <p class="text-[14px] text-blue-700 mt-1">{{ $t('businessDeclDetail.underReviewBannerDesc') }}</p>
         </div>
       </div>
 
       <!-- BLOCK 1 - Данные плательщика -->
       <div class="bg-[#f8fafc] rounded-xl p-5 mb-6 border border-[#e2e8f0]">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.payerData') }}</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <h2 class="text-[22px] font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.payerData') }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[16px]">
           <div>
             <span class="text-[#64748b]">{{ $t('businessDeclDetail.companyName') }}:</span>
             <span class="ml-2 font-medium text-[#1e293b]">{{ declaration.company }}</span>
@@ -246,7 +246,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
       <!-- BLOCK 2 - Сводные данные декларации -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.summaryData') }}</h2>
+        <h2 class="text-[22px] font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.summaryData') }}</h2>
 
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -257,10 +257,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-blue-800">{{ $t('businessDeclDetail.calcPerYear') }}</p>
+              <p class="text-[16px] font-medium text-blue-800">{{ $t('businessDeclDetail.calcPerYear') }}</p>
             </div>
-            <p class="text-3xl font-bold text-blue-900">{{ declaration.calculationCount }}</p>
-            <p class="text-xs text-blue-600 mt-1">{{ $t('businessDeclDetail.forYear', { year: declaration.reportingYear }) }}</p>
+            <p class="text-[24px] font-bold text-blue-900">{{ declaration.calculationCount }}</p>
+            <p class="text-[14px] text-blue-600 mt-1">{{ $t('businessDeclDetail.forYear', { year: declaration.reportingYear }) }}</p>
           </div>
 
           <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-5 border border-orange-200 shadow-sm">
@@ -270,10 +270,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-orange-800">{{ $t('businessDeclDetail.totalCharged') }}</p>
+              <p class="text-[16px] font-medium text-orange-800">{{ $t('businessDeclDetail.totalCharged') }}</p>
             </div>
-            <p class="text-3xl font-bold text-orange-900">{{ formatCurrency(declaration.totalCharged) }}</p>
-            <p class="text-xs text-orange-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
+            <p class="text-[24px] font-bold text-orange-900">{{ formatCurrency(declaration.totalCharged) }}</p>
+            <p class="text-[14px] text-orange-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
           </div>
 
           <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-5 border border-green-200 shadow-sm">
@@ -283,10 +283,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p class="text-sm font-medium text-green-800">{{ $t('businessDeclDetail.totalPaid') }}</p>
+              <p class="text-[16px] font-medium text-green-800">{{ $t('businessDeclDetail.totalPaid') }}</p>
             </div>
-            <p class="text-3xl font-bold text-green-900">{{ formatCurrency(declaration.totalPaid) }}</p>
-            <p class="text-xs text-green-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
+            <p class="text-[24px] font-bold text-green-900">{{ formatCurrency(declaration.totalPaid) }}</p>
+            <p class="text-[14px] text-green-600 mt-1">{{ $t('businessDeclDetail.som') }}</p>
           </div>
 
           <div :class="[
@@ -304,10 +304,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                 </svg>
               </div>
-              <p :class="['text-sm font-medium', declaration.balance >= 0 ? 'text-green-800' : 'text-red-800']">{{ $t('businessDeclDetail.balance') }}</p>
+              <p :class="['text-[16px] font-medium', declaration.balance >= 0 ? 'text-green-800' : 'text-red-800']">{{ $t('businessDeclDetail.balance') }}</p>
             </div>
             <p :class="['text-3xl font-bold', declaration.balance >= 0 ? 'text-green-900' : 'text-red-900']">{{ formatWithSign(declaration.balance) }}</p>
-            <p :class="['text-xs mt-1', declaration.balance >= 0 ? 'text-green-600' : 'text-red-600']">{{ $t('businessDeclDetail.som') }}</p>
+            <p :class="['text-[14px] mt-1', declaration.balance >= 0 ? 'text-green-600' : 'text-red-600']">{{ $t('businessDeclDetail.som') }}</p>
           </div>
         </div>
 
@@ -315,7 +315,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
         <div class="mb-6">
           <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.calculationsInDecl') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
-            <table class="w-full text-sm border-collapse">
+            <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
                   <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thCalcNumber') }}</th>
@@ -348,7 +348,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
         <div v-if="declaration.reports.length > 0" class="mb-6">
           <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.recyclingReports') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
-            <table class="w-full text-sm border-collapse">
+            <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
                   <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thReportNumber') }}</th>
@@ -381,7 +381,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
         <div v-if="declaration.payments.length > 0">
           <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.paymentsForYear') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
-            <table class="w-full text-sm border-collapse">
+            <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[#64748b]">
                   <th class="px-4 py-3 font-medium">{{ $t('businessDeclDetail.thDate') }}</th>
@@ -409,7 +409,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
       <!-- BLOCK 3 - Документы -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.documents') }}</h2>
+        <h2 class="text-[22px] font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.documents') }}</h2>
         <template v-if="declaration.documents.length > 0">
           <div class="space-y-3">
             <div
@@ -423,8 +423,8 @@ const previewDoc = ref<PreviewDocument | null>(null)
                 </svg>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-[#1e293b] truncate">{{ doc.name }}</p>
-                <p class="text-xs text-[#64748b]">{{ doc.size }} &middot; {{ doc.source }}</p>
+                <p class="text-[16px] font-medium text-[#1e293b] truncate">{{ doc.name }}</p>
+                <p class="text-[14px] text-[#64748b]">{{ doc.size }} &middot; {{ doc.source }}</p>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0">
                 <button
@@ -440,13 +440,13 @@ const previewDoc = ref<PreviewDocument | null>(null)
           </div>
         </template>
         <template v-else>
-          <p class="text-sm text-[#64748b]">{{ $t('businessDeclDetail.noDocuments') }}</p>
+          <p class="text-[16px] text-[#64748b]">{{ $t('businessDeclDetail.noDocuments') }}</p>
         </template>
       </div>
 
       <!-- BLOCK 4 - История -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
-        <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.reviewHistory') }}</h2>
+        <h2 class="text-[22px] font-bold text-[#1e293b] mb-4">{{ $t('businessDeclDetail.reviewHistory') }}</h2>
         <div class="space-y-0">
           <div
             v-for="(entry, idx) in declaration.history"
@@ -461,9 +461,9 @@ const previewDoc = ref<PreviewDocument | null>(null)
               ></div>
             </div>
             <div class="pb-5">
-              <p class="text-sm font-medium text-[#1e293b]">{{ entry.action }}</p>
-              <p class="text-xs text-[#64748b] mt-0.5">{{ entry.date }} &middot; {{ entry.user }}</p>
-              <p v-if="entry.comment" class="text-xs text-[#64748b] mt-1 bg-[#f8fafc] rounded-lg px-3 py-2 border border-[#e2e8f0]">
+              <p class="text-[16px] font-medium text-[#1e293b]">{{ entry.action }}</p>
+              <p class="text-[14px] text-[#64748b] mt-0.5">{{ entry.date }} &middot; {{ entry.user }}</p>
+              <p v-if="entry.comment" class="text-[14px] text-[#64748b] mt-1 bg-[#f8fafc] rounded-lg px-3 py-2 border border-[#e2e8f0]">
                 {{ entry.comment }}
               </p>
             </div>
@@ -505,7 +505,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
   align-items: center;
   gap: 6px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   padding: 8px 16px;

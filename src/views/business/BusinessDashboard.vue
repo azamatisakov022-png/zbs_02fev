@@ -111,7 +111,7 @@ onMounted(() => {
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDashboard.pageTitle') }}</h1>
+      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDashboard.pageTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('businessDashboard.pageSubtitle') }}</p>
     </div>
 
@@ -159,19 +159,19 @@ onMounted(() => {
               </div>
               <div>
                 <p :class="[
-                  'text-sm font-medium',
+                  'text-[16px] font-medium',
                   account.currentBalance > 0 ? 'text-green-800' :
                   account.currentBalance < 0 ? 'text-red-800' : 'text-slate-600'
                 ]">{{ $t('businessDashboard.personalAccount') }}</p>
                 <p :class="[
-                  'text-2xl font-bold',
+                  'text-[24px] font-bold',
                   account.currentBalance > 0 ? 'text-green-900' :
                   account.currentBalance < 0 ? 'text-red-900' : 'text-slate-800'
                 ]">
                   {{ account.currentBalance > 0 ? '+' : '' }}{{ account.currentBalance.toLocaleString() }} {{ $t('businessDashboard.som') }}
                 </p>
                 <p :class="[
-                  'text-xs mt-0.5',
+                  'text-[14px] mt-0.5',
                   account.currentBalance > 0 ? 'text-green-600' :
                   account.currentBalance < 0 ? 'text-red-600' : 'text-slate-500'
                 ]">
@@ -200,8 +200,8 @@ onMounted(() => {
           <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center text-2xl mb-4">
             {{ card.icon }}
           </div>
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">{{ card.title }}</h3>
-          <p class="text-sm text-[#64748b] leading-relaxed">{{ card.description }}</p>
+          <h3 class="text-[22px] font-semibold text-[#1e293b] mb-2">{{ card.title }}</h3>
+          <p class="text-[16px] text-[#64748b] leading-relaxed">{{ card.description }}</p>
         </router-link>
       </div>
 
@@ -231,8 +231,8 @@ onMounted(() => {
       <!-- Recent Documents -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('businessDashboard.recentDocuments') }}</h2>
-          <router-link to="/business/documents" class="text-[#2563eb] text-sm font-medium hover:underline">
+          <h2 class="text-[22px] font-semibold text-[#1e293b]">{{ $t('businessDashboard.recentDocuments') }}</h2>
+          <router-link to="/business/documents" class="text-[#2563eb] text-[16px] font-medium hover:underline">
             {{ $t('businessDashboard.allDocuments') }}
           </router-link>
         </div>
@@ -250,7 +250,7 @@ onMounted(() => {
               </div>
               <div>
                 <p class="font-medium text-[#1e293b]">{{ doc.name }}</p>
-                <p class="text-sm text-[#64748b]">{{ doc.date }}</p>
+                <p class="text-[16px] text-[#64748b]">{{ doc.date }}</p>
               </div>
             </div>
             <span :class="getStatusClass(doc.status)">
@@ -267,7 +267,7 @@ onMounted(() => {
             ℹ️
           </div>
           <div>
-            <h4 class="font-semibold text-lg mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
+            <h4 class="font-semibold text-[22px] mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
             <ul class="opacity-90 list-none pl-1" style="margin: 0;">
               <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
               <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
