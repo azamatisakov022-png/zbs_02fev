@@ -46,6 +46,7 @@ export default {
         'h4':         ['26px', { lineHeight: '1.35', fontWeight: '500' }],
         'h5':         ['24px', { lineHeight: '1.35', fontWeight: '500' }],
         'h6':         ['22px', { lineHeight: '1.4', fontWeight: '500' }],
+        'xl':         ['1.50rem', { lineHeight: '1.35' }],
         'body-lg':    ['20px', { lineHeight: '1.5', fontWeight: '500' }],
         'body':       ['18px', { lineHeight: '1.5', fontWeight: '500' }],
         'body-sm':    ['16px', { lineHeight: '1.5', fontWeight: '500' }],

@@ -82,9 +82,9 @@ const onInput = (event: Event) => {
 
 .app-input__label {
   display: block;
-  font-size: 13px;
-  color: #475569;
-  font-weight: 500;
+  font-size: 20px;
+  color: #1e293b;
+  font-weight: 600;
   margin-bottom: 6px;
 }
 
@@ -101,7 +101,7 @@ const onInput = (event: Event) => {
   padding: 10px 14px;
   border: 1.5px solid #E2E8F0;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 500;
   color: #1e293b;
   background: #fff;
@@ -116,7 +116,7 @@ const onInput = (event: Event) => {
   font-family: inherit;
 }
 
-.app-input__field::placeholder { color: #94A3B8; font-weight: 400; }
+.app-input__field::placeholder { color: #475569; font-weight: 500; font-size: 20px; }
 
 .app-input__field:focus {
   border-color: var(--color-primary);
@@ -139,20 +139,22 @@ const onInput = (event: Event) => {
 .app-input__suffix {
   position: absolute;
   right: 14px;
-  font-size: 13px;
+  font-size: 16px;
   color: #64748B;
   font-weight: 500;
   pointer-events: none;
 }
 
 .app-input__hint {
-  font-size: 11px;
-  color: #64748B;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
   margin-top: 4px;
 }
 
 .app-input__error {
-  font-size: 11px;
+  font-size: 20px;
+  font-weight: 600;
   color: #EF4444;
   margin-top: 4px;
 }

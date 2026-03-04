@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
   background: var(--bg-field);
   border-radius: var(--radius-lg);
   padding: 12px 30px;
-  font-size: var(--text-caption);
+  font-size: 18px;
   font-weight: var(--font-medium);
   color: var(--text-main);
   cursor: pointer;
@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
   background: var(--bg-field);
   border-radius: var(--radius-md);
   padding: 16px 20px;
-  font-size: var(--text-body);
+  font-size: 20px;
   font-weight: var(--font-regular);
   color: var(--text-main);
   cursor: pointer;
@@ -320,9 +320,9 @@ onBeforeUnmount(() => {
 }
 
 .app-datepicker-label {
-  font-size: var(--text-body);
-  font-weight: var(--font-regular);
-  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .app-datepicker--compact {
@@ -387,7 +387,8 @@ onBeforeUnmount(() => {
 
 .app-datepicker-error {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 20px;
+  font-weight: 600;
   color: #ef4444;
   display: flex;
   align-items: center;
@@ -412,7 +413,8 @@ onBeforeUnmount(() => {
 }
 
 .app-datepicker-value--placeholder {
-  color: #70868f;
+  color: #475569;
+  font-weight: 500;
 }
 
 .app-datepicker-arrow {
@@ -445,7 +447,7 @@ onBeforeUnmount(() => {
 }
 
 .datepicker-month-year {
-  font-size: var(--text-caption);
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-main);
 }
@@ -547,16 +549,16 @@ onBeforeUnmount(() => {
 @media (max-width: 1024px) {
   .app-datepicker--default .app-datepicker-trigger {
     padding: 10px 20px;
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .app-datepicker--form .app-datepicker-trigger {
     padding: 12px 16px;
-    font-size: var(--text-body-sm);
+    font-size: 18px;
   }
 
   .app-datepicker-label {
-    font-size: var(--text-body-sm);
+    font-size: 18px;
   }
 }
 
@@ -569,13 +571,13 @@ onBeforeUnmount(() => {
     width: 100%;
     justify-content: space-between;
     padding: 10px 16px;
-    font-size: 13px;
+    font-size: 16px;
     border-radius: var(--radius-md);
   }
 
   .app-datepicker--form .app-datepicker-trigger {
     padding: 10px 14px;
-    font-size: var(--text-caption);
+    font-size: 18px;
     border-radius: var(--radius-sm);
   }
 
@@ -584,7 +586,7 @@ onBeforeUnmount(() => {
   }
 
   .app-datepicker-label {
-    font-size: var(--text-caption);
+    font-size: 18px;
   }
 
   .app-datepicker-dropdown {

@@ -183,7 +183,7 @@ onBeforeUnmount(() => {
   background: var(--bg-field);
   border-radius: var(--radius-lg);
   padding: 12px 30px;
-  font-size: var(--text-caption);
+  font-size: 18px;
   font-weight: var(--font-medium);
   color: var(--text-main);
   cursor: pointer;
@@ -236,7 +236,7 @@ onBeforeUnmount(() => {
   background: var(--bg-field);
   border-radius: var(--radius-md);
   padding: 16px 20px;
-  font-size: var(--text-body);
+  font-size: 20px;
   font-weight: var(--font-regular);
   color: var(--text-main);
   cursor: pointer;
@@ -253,9 +253,9 @@ onBeforeUnmount(() => {
 }
 
 .app-select-field-label {
-  font-size: var(--text-body);
-  font-weight: var(--font-regular);
-  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 /* ──────────────────────────────────
@@ -338,7 +338,8 @@ onBeforeUnmount(() => {
 
 .app-select-error {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 20px;
+  font-weight: 600;
   color: #ef4444;
   display: flex;
   align-items: center;
@@ -363,7 +364,8 @@ onBeforeUnmount(() => {
 }
 
 .app-select-label--placeholder {
-  color: #70868f;
+  color: #475569;
+  font-weight: 500;
 }
 
 .app-select-dropdown {
@@ -386,7 +388,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   width: 100%;
   padding: 10px 20px;
-  font-size: var(--text-caption);
+  font-size: 18px;
   font-weight: var(--font-medium);
   color: var(--text-main);
   text-align: left;
@@ -440,21 +442,21 @@ onBeforeUnmount(() => {
 @media (max-width: 1024px) {
   .app-select--default .app-select-trigger {
     padding: 10px 20px;
-    font-size: 13px;
+    font-size: 16px;
   }
 
   .app-select--form .app-select-trigger {
     padding: 12px 16px;
-    font-size: var(--text-body-sm);
+    font-size: 18px;
   }
 
   .app-select-field-label {
-    font-size: var(--text-body-sm);
+    font-size: 18px;
   }
 
   .app-select-option {
     padding: 9px 16px;
-    font-size: 13px;
+    font-size: 16px;
   }
 }
 
@@ -468,13 +470,13 @@ onBeforeUnmount(() => {
     width: 100%;
     justify-content: space-between;
     padding: 10px 16px;
-    font-size: 13px;
+    font-size: 16px;
     border-radius: var(--radius-md);
   }
 
   .app-select--form .app-select-trigger {
     padding: 10px 14px;
-    font-size: var(--text-caption);
+    font-size: 18px;
     border-radius: var(--radius-sm);
   }
 
@@ -483,7 +485,7 @@ onBeforeUnmount(() => {
   }
 
   .app-select-field-label {
-    font-size: var(--text-caption);
+    font-size: 18px;
   }
 
   .app-select-dropdown {
@@ -492,7 +494,7 @@ onBeforeUnmount(() => {
 
   .app-select-option {
     padding: 10px 16px;
-    font-size: 13px;
+    font-size: 16px;
   }
 }
 </style>
