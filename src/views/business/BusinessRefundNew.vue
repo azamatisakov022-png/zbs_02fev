@@ -186,7 +186,7 @@ const saveDraft = () => {
       <div class="max-w-6xl mx-auto">
         <!-- Back button -->
         <div class="mb-6">
-          <button @click="router.push('/business/refunds')" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
+          <button @click="router.push('/business/refunds')" class="flex items-center gap-2 text-[16px] text-[#64748b] hover:text-[#1e293b] mb-4">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -219,7 +219,7 @@ const saveDraft = () => {
                 </svg>
               </div>
               <div>
-                <p class="font-medium text-amber-800">{{ $t('businessRefundNew.noPaidCalcs') }}</p>
+                <p class="text-[18px] font-medium text-amber-800">{{ $t('businessRefundNew.noPaidCalcs') }}</p>
                 <p class="text-[16px] text-amber-700">{{ $t('businessRefundNew.noPaidCalcsDesc') }}</p>
               </div>
             </div>
@@ -261,8 +261,8 @@ const saveDraft = () => {
                   <td class="px-4 py-3 text-[14px] max-w-[180px]">
                     <span class="block truncate" :title="getSubgroupLabel(item.group, item.subgroup)">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                   </td>
-                  <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
-                  <td class="px-4 py-3 text-right font-medium text-green-600">{{ item.paidAmount.toLocaleString() }}</td>
+                  <td class="px-4 py-3 text-[16px] text-right font-medium">{{ item.volume }}</td>
+                  <td class="px-4 py-3 text-[16px] text-right font-medium text-green-600">{{ item.paidAmount.toLocaleString() }}</td>
                   <td class="px-4 py-3">
                     <div class="flex flex-col items-center">
                       <input
@@ -289,7 +289,7 @@ const saveDraft = () => {
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-[#1e293b] bg-[#f8fafc]">
-                  <td colspan="5" class="px-4 py-3 font-semibold text-[#1e293b]">{{ $t('businessRefundNew.totalRefund') }}</td>
+                  <td colspan="5" class="px-4 py-3 text-[18px] font-semibold text-[#1e293b]">{{ $t('businessRefundNew.totalRefund') }}</td>
                   <td class="px-4 py-3 text-right font-bold text-[22px] text-[#10b981]">
                     {{ totalRefundAmount > 0 ? formatAmount(totalRefundAmount) : '—' }}
                   </td>

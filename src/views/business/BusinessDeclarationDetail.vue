@@ -131,7 +131,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
           <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessDeclDetail.declaration') }} {{ declaration.number }}</h1>
           <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ $t(statusI18nKey[declaration.status] || declaration.status) }}</AppBadge>
         </div>
-        <p class="text-[#64748b]">{{ $t('businessDeclDetail.submittedAt') }} {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
+        <p class="text-[18px] text-[#64748b]">{{ $t('businessDeclDetail.submittedAt') }} {{ declaration.submittedAt }}, {{ declaration.submittedBy }}</p>
       </div>
 
       <!-- Status banners -->
@@ -313,7 +313,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
         <!-- Table: Расчёты -->
         <div class="mb-6">
-          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.calculationsInDecl') }}</h3>
+          <h3 class="text-[18px] font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.calculationsInDecl') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
@@ -346,7 +346,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
         <!-- Table: Отчёты о переработке -->
         <div v-if="declaration.reports.length > 0" class="mb-6">
-          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.recyclingReports') }}</h3>
+          <h3 class="text-[18px] font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.recyclingReports') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
@@ -379,7 +379,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
         <!-- Table: Платежи за год -->
         <div v-if="declaration.payments.length > 0">
-          <h3 class="font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.paymentsForYear') }}</h3>
+          <h3 class="text-[18px] font-semibold text-[#1e293b] mb-3">{{ $t('businessDeclDetail.paymentsForYear') }}</h3>
           <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
             <table class="w-full text-[16px] border-collapse">
               <thead class="bg-[#f8fafc]">
@@ -428,11 +428,11 @@ const previewDoc = ref<PreviewDocument | null>(null)
               </div>
               <div class="flex items-center gap-2 flex-shrink-0">
                 <button
-                  class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
+                  class="text-[16px] text-[#2563eb] hover:text-[#1d4ed8] font-medium"
                   @click="previewDoc = { name: doc.name, size: doc.size, source: doc.source }"
                 >{{ $t('businessDeclDetail.preview') }}</button>
                 <button
-                  class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
+                  class="text-[16px] text-[#2563eb] hover:text-[#1d4ed8] font-medium"
                   @click="toastStore.show({ type: 'info', title: $t('businessDeclDetail.toastDownloadTitle'), message: $t('businessDeclDetail.toastDownloadMessage') })"
                 >{{ $t('businessDeclDetail.download') }}</button>
               </div>

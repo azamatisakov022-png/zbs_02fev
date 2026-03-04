@@ -139,7 +139,7 @@ const signDeclaration = (id: number) => {
   >
     <div class="content__header mb-6">
       <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDecl.title') }}</h1>
-      <p class="text-[#1e293b]">{{ $t('businessDecl.subtitle') }}</p>
+      <p class="text-[18px] text-[#1e293b]">{{ $t('businessDecl.subtitle') }}</p>
     </div>
 
     <div class="mb-6 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
@@ -256,7 +256,7 @@ const signDeclaration = (id: number) => {
           <span>{{ value }} {{ $t('businessDecl.yearSuffix') }}</span>
         </template>
         <template #cell-totalAmount="{ value }">
-          <span class="font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
+          <span class="text-[18px] font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
         </template>
         <template #cell-status="{ value }">
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>

@@ -495,7 +495,7 @@ function submitPaymentConfirmation() {
         </svg>
       </div>
       <h2 class="text-[22px] font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
-      <p class="text-[#64748b] mb-6">{{ $t('calcDetail.notFoundDesc') }}</p>
+      <p class="text-[18px] text-[#64748b] mb-6">{{ $t('calcDetail.notFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         {{ $t('common.back') }}
@@ -544,27 +544,27 @@ function submitPaymentConfirmation() {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ $t('calcDetail.payerType') }}</p>
-            <p class="font-medium text-[#1e293b]">{{ payerTypeLabel }}</p>
+            <p class="text-[18px] font-medium text-[#1e293b]">{{ payerTypeLabel }}</p>
           </div>
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ $t('common.name') }}</p>
-            <p class="font-medium text-[#1e293b]">{{ calc.company }}</p>
+            <p class="text-[18px] font-medium text-[#1e293b]">{{ calc.company }}</p>
           </div>
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ $t('calcDetail.inn') }}</p>
-            <p class="font-medium text-[#1e293b] font-mono">{{ calc.inn }}</p>
+            <p class="text-[18px] font-medium text-[#1e293b] font-mono">{{ calc.inn }}</p>
           </div>
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ $t('calcDetail.address') }}</p>
-            <p class="font-medium text-[#1e293b]">{{ calc.address || '—' }}</p>
+            <p class="text-[18px] font-medium text-[#1e293b]">{{ calc.address || '—' }}</p>
           </div>
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ calc.payerType === 'importer' ? $t('calcDetail.importDate') : $t('calcDetail.calcPeriod') }}</p>
-            <p class="font-medium text-[#1e293b]">{{ periodLabel }}</p>
+            <p class="text-[18px] font-medium text-[#1e293b]">{{ periodLabel }}</p>
           </div>
           <div>
             <p class="text-[14px] text-[#64748b] mb-1">{{ $t('calcDetail.paymentDeadline') }}</p>
-            <p class="font-medium" :style="{ color: deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? '#DC2626' : '#f59e0b' }">
+            <p class="text-[18px] font-medium" :style="{ color: deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? '#DC2626' : '#f59e0b' }">
               {{ dueDateFormatted }}
             </p>
             <p v-if="deadlineStatus" class="text-[14px] mt-0.5" :style="{ color: deadlineStatus.overdue ? '#DC2626' : '#94a3b8' }">
@@ -588,7 +588,7 @@ function submitPaymentConfirmation() {
           <span v-if="isEditing" class="text-[14px] font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{{ $t('calcDetail.editMode') }}</span>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+          <table class="w-full text-[16px]">
             <thead class="bg-[#f8fafc]">
               <tr class="text-left text-[13px] tracking-[0.05em] uppercase text-[#64748b]">
                 <th class="px-5 py-3 font-semibold">{{ $t('calcDetail.colGroupSubgroup') }}</th>
@@ -803,7 +803,7 @@ function submitPaymentConfirmation() {
             &#x26A0;&#xFE0F;
           </div>
           <div>
-            <h3 class="font-semibold text-amber-800 mb-1">{{ $t('calcDetail.repeatCalc', { number: parentCalc.number }) }}</h3>
+            <h3 class="text-[18px] font-semibold text-amber-800 mb-1">{{ $t('calcDetail.repeatCalc', { number: parentCalc.number }) }}</h3>
             <p v-if="parentCalc.rejectionReason" class="text-amber-700 text-[16px]">{{ $t('calcDetail.rejectionReason') }}: {{ parentCalc.rejectionReason }}</p>
           </div>
         </div>
@@ -816,12 +816,12 @@ function submitPaymentConfirmation() {
             &#x274C;
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-red-800 mb-1">{{ $t('calcDetail.calcRejected') }}</h3>
+            <h3 class="text-[18px] font-semibold text-red-800 mb-1">{{ $t('calcDetail.calcRejected') }}</h3>
             <p v-if="calc.rejectedBy || calc.rejectedAt" class="text-[16px] text-red-600 mb-2">
               <span v-if="calc.rejectedBy">{{ calc.rejectedBy }}</span>
               <span v-if="calc.rejectedAt"> &middot; {{ calc.rejectedAt }}</span>
             </p>
-            <p class="text-red-700 mb-4">{{ calc.rejectionReason }}</p>
+            <p class="text-[18px] text-red-700 mb-4">{{ calc.rejectionReason }}</p>
             <button v-if="!isEditing" @click="startEditing" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-[16px] font-medium hover:bg-amber-600 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               {{ $t('calcDetail.fix') }}
@@ -837,8 +837,8 @@ function submitPaymentConfirmation() {
             &#x274C;
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-red-800 mb-1">{{ $t('calcDetail.paymentRejected') }}</h3>
-            <p class="text-red-700">{{ calc.paymentRejectionReason }}</p>
+            <h3 class="text-[18px] font-semibold text-red-800 mb-1">{{ $t('calcDetail.paymentRejected') }}</h3>
+            <p class="text-[18px] text-red-700">{{ calc.paymentRejectionReason }}</p>
             <button @click="openPayment" class="mt-3 inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white rounded-lg text-[16px] font-medium hover:bg-amber-600 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
               {{ $t('calcDetail.confirmPaymentAgain') }}
@@ -854,7 +854,7 @@ function submitPaymentConfirmation() {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div>
-            <h3 class="font-semibold text-amber-800">{{ $t('calcDetail.underReviewTitle') }}</h3>
+            <h3 class="text-[18px] font-semibold text-amber-800">{{ $t('calcDetail.underReviewTitle') }}</h3>
             <p class="text-amber-700 text-[16px] mt-1">{{ $t('calcDetail.underReviewDesc') }}</p>
           </div>
         </div>
@@ -867,7 +867,7 @@ function submitPaymentConfirmation() {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-green-800">{{ $t('calcDetail.calcApproved') }}</h3>
+            <h3 class="text-[18px] font-semibold text-green-800">{{ $t('calcDetail.calcApproved') }}</h3>
             <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
               <div>
                 <p class="text-[16px] text-green-700">{{ $t('calcDetail.amountToPay') }}</p>
@@ -875,7 +875,7 @@ function submitPaymentConfirmation() {
               </div>
               <div v-if="computedDueDate">
                 <p class="text-[16px] text-green-700">{{ $t('calcDetail.paymentDeadline') }}</p>
-                <p class="font-semibold" :class="deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? 'text-red-600' : 'text-green-900'">
+                <p class="text-[18px] font-semibold" :class="deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? 'text-red-600' : 'text-green-900'">
                   {{ dueDateFormatted }}
                   <span v-if="deadlineStatus" class="text-[14px] font-normal ml-1">
                     <template v-if="deadlineStatus.overdue">({{ $t('calcDetail.overdueDays', { days: deadlineStatus.days }) }})</template>
@@ -905,7 +905,7 @@ function submitPaymentConfirmation() {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
           </div>
           <div class="flex-1">
-            <h3 class="font-semibold text-orange-800">{{ $t('calcDetail.paymentConfSent') }}</h3>
+            <h3 class="text-[18px] font-semibold text-orange-800">{{ $t('calcDetail.paymentConfSent') }}</h3>
             <p class="text-orange-700 text-[16px] mt-1">{{ $t('calcDetail.paymentConfSentDesc') }}</p>
             <div v-if="calc.payment" class="mt-3 bg-white/60 rounded-lg p-3 border border-orange-200">
               <p class="text-[16px] text-orange-800">
@@ -929,7 +929,7 @@ function submitPaymentConfirmation() {
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </div>
           <div>
-            <h3 class="font-semibold text-green-800">{{ $t('calcDetail.paid') }}</h3>
+            <h3 class="text-[18px] font-semibold text-green-800">{{ $t('calcDetail.paid') }}</h3>
             <p v-if="calc.paidAt" class="text-green-700 text-[16px] mt-1">{{ $t('calcDetail.paymentDateLabel') }}: {{ calc.paidAt }}</p>
           </div>
         </div>

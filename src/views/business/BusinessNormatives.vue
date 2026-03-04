@@ -140,7 +140,7 @@ const getRateColorClass = (rate: number) => {
       <!-- Header -->
       <div>
         <h1 class="text-[24px] font-bold text-gray-900">{{ $t('businessNorms.pageTitle') }}</h1>
-        <p class="text-gray-600 mt-1">{{ $t('businessNorms.pageSubtitle') }}</p>
+        <p class="text-[18px] text-gray-600 mt-1">{{ $t('businessNorms.pageSubtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
@@ -153,7 +153,7 @@ const getRateColorClass = (rate: number) => {
           </div>
           <div>
             <h2 class="text-[22px] font-bold">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
-            <p class="text-white/80 mt-1 max-w-2xl">
+            <p class="text-[18px] text-white/80 mt-1 max-w-2xl">
               {{ $t('businessNorms.bannerDesc') }}
             </p>
             <div class="flex items-center gap-4 mt-4">
@@ -238,7 +238,7 @@ const getRateColorClass = (rate: number) => {
                   class="px-4 py-3 text-center"
                   :class="year === currentYear ? 'bg-[#0e888d]/10 font-bold' : ''"
                 >
-                  <span :class="getRateColorClass(item.rates[year])" class="font-semibold">
+                  <span :class="getRateColorClass(item.rates[year])" class="text-[16px] font-semibold">
                     {{ item.rates[year] }}%
                   </span>
                 </td>
@@ -261,7 +261,7 @@ const getRateColorClass = (rate: number) => {
           <!-- Group header -->
           <div class="px-6 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8] flex items-center gap-3">
             <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#0e888d] text-white text-[16px] font-bold">{{ group.groupLetter }}</span>
-            <span class="font-semibold text-[#0e888d]">{{ $t('businessNorms.groupLabel') }} {{ group.groupLetter }} — {{ group.groupTitle }}</span>
+            <span class="text-[18px] font-semibold text-[#0e888d]">{{ $t('businessNorms.groupLabel') }} {{ group.groupLetter }} — {{ group.groupTitle }}</span>
           </div>
           <!-- Group table -->
           <div class="overflow-x-auto">
@@ -301,7 +301,7 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-900">{{ $t('businessNorms.calcProcedure') }}</p>
+            <p class="text-[18px] font-medium text-gray-900">{{ $t('businessNorms.calcProcedure') }}</p>
             <p class="text-[16px] text-gray-600 mt-1">
               {{ $t('businessNorms.calcFormula') }}
               {{ $t('businessNorms.useCalc1') }} <router-link to="/business/calculator" class="text-[#0e888d] font-medium hover:underline">{{ $t('businessNorms.feeCalculator') }}</router-link> {{ $t('businessNorms.useCalc2') }}
@@ -329,46 +329,46 @@ const getRateColorClass = (rate: number) => {
           <div class="p-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="space-y-3">
-                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('businessNorms.initialData') }}:</h4>
+                <h4 class="text-[18px] font-semibold text-gray-900 mb-4">{{ $t('businessNorms.initialData') }}:</h4>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.category') }}:</span>
-                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exCategory') }}</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.category') }}:</span>
+                  <span class="text-[16px] font-medium text-gray-900">{{ $t('businessNorms.exCategory') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.batchMass') }}:</span>
-                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exMass') }}</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.batchMass') }}:</span>
+                  <span class="text-[16px] font-medium text-gray-900">{{ $t('businessNorms.exMass') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.calcYear') }}:</span>
-                  <span class="font-medium text-gray-900">2026</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.calcYear') }}:</span>
+                  <span class="text-[16px] font-medium text-gray-900">2026</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.operation') }}:</span>
-                  <span class="font-medium text-gray-900">{{ $t('businessNorms.importOp') }}</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.operation') }}:</span>
+                  <span class="text-[16px] font-medium text-gray-900">{{ $t('businessNorms.importOp') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.rateLabel') }} (С<sub>ус</sub>):</span>
-                  <span class="font-medium text-gray-900">{{ $t('businessNorms.exRate') }}</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.rateLabel') }} (С<sub>ус</sub>):</span>
+                  <span class="text-[16px] font-medium text-gray-900">{{ $t('businessNorms.exRate') }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="text-gray-600">{{ $t('businessNorms.recyclingNorm') }} (2026):</span>
-                  <span class="font-medium text-[#0e888d]">30%</span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.recyclingNorm') }} (2026):</span>
+                  <span class="text-[16px] font-medium text-[#0e888d]">30%</span>
                 </div>
                 <div class="flex justify-between py-2">
-                  <span class="text-gray-600">{{ $t('businessNorms.coefficient') }} (Н<sub>пер</sub>):</span>
-                  <span class="font-medium text-gray-900">1 − 0,30 = <strong>0,70</strong></span>
+                  <span class="text-[16px] text-gray-600">{{ $t('businessNorms.coefficient') }} (Н<sub>пер</sub>):</span>
+                  <span class="text-[16px] font-medium text-gray-900">1 − 0,30 = <strong>0,70</strong></span>
                 </div>
               </div>
               <div class="bg-white rounded-xl p-5 border border-amber-200">
-                <h4 class="font-semibold text-gray-900 mb-4">{{ $t('businessNorms.calculation') }}:</h4>
+                <h4 class="text-[18px] font-semibold text-gray-900 mb-4">{{ $t('businessNorms.calculation') }}:</h4>
                 <div class="space-y-4">
                   <div class="p-4 bg-gray-50 rounded-lg font-mono text-[16px]">
-                    <p class="text-gray-600 mb-2">{{ $t('businessNorms.formula') }}:</p>
-                    <p class="text-gray-900 font-semibold">У<sub>сб</sub> = С<sub>ус</sub> × М × Н<sub>пер</sub></p>
+                    <p class="text-[16px] text-gray-600 mb-2">{{ $t('businessNorms.formula') }}:</p>
+                    <p class="text-[16px] text-gray-900 font-semibold">У<sub>сб</sub> = С<sub>ус</sub> × М × Н<sub>пер</sub></p>
                   </div>
                   <div class="p-4 bg-[#0e888d]/10 rounded-lg font-mono text-[16px]">
-                    <p class="text-gray-600 mb-2">{{ $t('businessNorms.substituteValues') }}:</p>
-                    <p class="text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
+                    <p class="text-[16px] text-gray-600 mb-2">{{ $t('businessNorms.substituteValues') }}:</p>
+                    <p class="text-[16px] text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
                   </div>
                   <div class="p-4 bg-[#0e888d] text-white rounded-lg text-center">
                     <p class="text-[16px] opacity-80 mb-1">{{ $t('businessNorms.totalToPay') }}:</p>
@@ -388,11 +388,11 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <p class="font-medium text-gray-900">{{ $t('businessNorms.nperFormulaTitle') }}</p>
+            <p class="text-[18px] font-medium text-gray-900">{{ $t('businessNorms.nperFormulaTitle') }}</p>
             <p class="text-[16px] text-gray-600 mt-1">
               {{ $t('businessNorms.nperFormulaDesc') }}
               <br/>
-              <span class="text-gray-500">{{ $t('businessNorms.nperExample') }}</span>
+              <span class="text-[16px] text-gray-500">{{ $t('businessNorms.nperExample') }}</span>
             </p>
           </div>
         </div>
@@ -406,7 +406,7 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard1Title') }}</h4>
+          <h4 class="text-[18px] font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard1Title') }}</h4>
           <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard1Desc') }}
           </p>
@@ -418,7 +418,7 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard2Title') }}</h4>
+          <h4 class="text-[18px] font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard2Title') }}</h4>
           <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard2Desc') }}
           </p>
@@ -430,7 +430,7 @@ const getRateColorClass = (rate: number) => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard3Title') }}</h4>
+          <h4 class="text-[18px] font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard3Title') }}</h4>
           <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard3Desc') }}
           </p>

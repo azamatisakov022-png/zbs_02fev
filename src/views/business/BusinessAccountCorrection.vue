@@ -700,14 +700,14 @@ const canSubmit = computed(() =>
           <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'balance' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
             <input type="radio" v-model="correctionAction" value="balance" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
-              <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionBalance') }}</p>
+              <p class="text-[16px] font-medium text-[#1e293b]">{{ $t('businessCorrection.actionBalance') }}</p>
               <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
             </div>
           </label>
           <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'refund' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
             <input type="radio" v-model="correctionAction" value="refund" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
-              <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionRefund') }}</p>
+              <p class="text-[16px] font-medium text-[#1e293b]">{{ $t('businessCorrection.actionRefund') }}</p>
               <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionRefundDesc') }}</p>
             </div>
           </label>
@@ -744,7 +744,7 @@ const canSubmit = computed(() =>
           </svg>
         </div>
         <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
-        <p class="text-[#64748b] mb-2 text-lg">
+        <p class="text-[18px] text-[#64748b] mb-2">
           {{ $t('businessCorrection.successMessage') }}
         </p>
         <p class="text-[16px] text-[#64748b] mb-8">
@@ -754,11 +754,11 @@ const canSubmit = computed(() =>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div>
               <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.calculation') }}</p>
-              <p class="text-lg font-bold text-[#8b5cf6] font-mono">{{ selectedCalculation?.number }}</p>
+              <p class="text-[22px] font-bold text-[#8b5cf6] font-mono">{{ selectedCalculation?.number }}</p>
             </div>
             <div>
               <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
-              <p class="text-lg font-bold text-[#10b981]">+{{ formatAmount(totalCorrectionAmount) }}</p>
+              <p class="text-[22px] font-bold text-[#10b981]">+{{ formatAmount(totalCorrectionAmount) }}</p>
             </div>
           </div>
         </div>

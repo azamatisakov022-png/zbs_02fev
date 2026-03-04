@@ -112,7 +112,7 @@ onMounted(() => {
   >
     <div class="content__header mb-8">
       <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDashboard.pageTitle') }}</h1>
-      <p class="text-[#64748b]">{{ $t('businessDashboard.pageSubtitle') }}</p>
+      <p class="text-[18px] text-[#64748b]">{{ $t('businessDashboard.pageSubtitle') }}</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -249,11 +249,11 @@ onMounted(() => {
                 <span v-else>💰</span>
               </div>
               <div>
-                <p class="font-medium text-[#1e293b]">{{ doc.name }}</p>
+                <p class="text-[18px] font-medium text-[#1e293b]">{{ doc.name }}</p>
                 <p class="text-[16px] text-[#64748b]">{{ doc.date }}</p>
               </div>
             </div>
-            <span :class="getStatusClass(doc.status)">
+            <span :class="['text-[16px]', getStatusClass(doc.status)]">
               {{ $t(statusI18nKey[doc.status] || doc.status) }}
             </span>
           </div>
@@ -269,11 +269,11 @@ onMounted(() => {
           <div>
             <h4 class="font-semibold text-[22px] mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
             <ul class="opacity-90 list-none pl-1" style="margin: 0;">
-              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
-              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
-              <li style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderDeclaration') }}</li>
+              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
+              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
+              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderDeclaration') }}</li>
             </ul>
-            <p class="opacity-90" style="margin-top: 12px; font-style: italic;">{{ $t('businessDashboard.reminderFooter') }}</p>
+            <p class="text-[18px] opacity-90" style="margin-top: 12px; font-style: italic;">{{ $t('businessDashboard.reminderFooter') }}</p>
           </div>
         </div>
       </div>

@@ -49,7 +49,7 @@ const goToNewRefund = () => {
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
       <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessRefunds.pageTitle') }}</h1>
-      <p class="text-[#64748b]">{{ $t('businessRefunds.pageSubtitle') }}</p>
+      <p class="text-[18px] text-[#64748b]">{{ $t('businessRefunds.pageSubtitle') }}</p>
     </div>
 
     <!-- Green CTA Banner -->
@@ -87,8 +87,8 @@ const goToNewRefund = () => {
           </svg>
         </div>
         <div>
-          <p class="font-medium text-[#1e293b] mb-1">{{ $t('businessRefunds.infoTitle') }}</p>
-          <p class="text-sm text-[#64748b]">{{ $t('businessRefunds.infoText') }}</p>
+          <p class="text-[18px] font-medium text-[#1e293b] mb-1">{{ $t('businessRefunds.infoTitle') }}</p>
+          <p class="text-[16px] text-[#64748b]">{{ $t('businessRefunds.infoText') }}</p>
         </div>
       </div>
     </div>
@@ -115,13 +115,13 @@ const goToNewRefund = () => {
           />
         </template>
         <template #cell-number="{ value }">
-          <span class="font-mono font-medium text-[#10b981]">{{ value }}</span>
+          <span class="text-[18px] font-mono font-medium text-[#10b981]">{{ value }}</span>
         </template>
         <template #cell-calculationNumber="{ value }">
-          <span class="font-mono text-[#64748b]">{{ value }}</span>
+          <span class="text-[18px] font-mono text-[#64748b]">{{ value }}</span>
         </template>
         <template #cell-totalRefund="{ value }">
-          <span class="font-semibold text-[#1e293b]">{{ formatAmount(value) }}</span>
+          <span class="text-[18px] font-semibold text-[#1e293b]">{{ formatAmount(value) }}</span>
         </template>
         <template #cell-status="{ value }">
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>

@@ -272,7 +272,7 @@ const toggleTwoFactor = () => {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-[28px] font-bold text-gray-900">{{ $t('businessProfile.title') }}</h1>
-          <p class="text-gray-600 mt-1">{{ $t('businessProfile.subtitle') }}</p>
+          <p class="text-[18px] text-gray-600 mt-1">{{ $t('businessProfile.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <!-- Verification Badge -->
@@ -283,7 +283,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            <span class="font-medium">{{ $t('businessProfile.verified') }}</span>
+            <span class="text-[16px] font-medium">{{ $t('businessProfile.verified') }}</span>
           </div>
           <div
             v-else-if="verificationStatus === 'pending'"
@@ -292,7 +292,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="font-medium">{{ $t('businessProfile.pending') }}</span>
+            <span class="text-[16px] font-medium">{{ $t('businessProfile.pending') }}</span>
           </div>
           <div
             v-else
@@ -301,7 +301,7 @@ const toggleTwoFactor = () => {
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span class="font-medium">{{ $t('businessProfile.notVerified') }}</span>
+            <span class="text-[16px] font-medium">{{ $t('businessProfile.notVerified') }}</span>
           </div>
         </div>
       </div>
@@ -317,7 +317,7 @@ const toggleTwoFactor = () => {
             </div>
             <div>
               <h2 class="text-[24px] font-bold">{{ $t('businessProfile.profileCompletion') }}: {{ profileCompletion }}%</h2>
-              <p class="text-teal-100 mt-1">
+              <p class="text-[18px] text-teal-100 mt-1">
                 {{ profileCompletion === 100 ? $t('businessProfile.allDataFilled') : $t('businessProfile.fillAllData') }}
               </p>
             </div>
@@ -338,7 +338,7 @@ const toggleTwoFactor = () => {
                 />
               </svg>
               <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-lg font-bold">{{ profileCompletion }}%</span>
+                <span class="text-[22px] font-bold">{{ profileCompletion }}%</span>
               </div>
             </div>
           </div>
@@ -380,7 +380,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.companyName && editingSection === 'company'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.companyName }}
               </p>
-              <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.name }}</p>
+              <p v-if="editingSection !== 'company'" class="text-[18px] text-gray-900">{{ companyData.name }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.fullName') }}</label>
@@ -390,7 +390,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ companyData.fullName }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ companyData.fullName }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.inn') }}</label>
@@ -403,7 +403,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.inn && editingSection === 'company'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.inn }}
               </p>
-              <p v-if="editingSection !== 'company'" class="text-gray-900 font-mono">{{ companyData.inn }}</p>
+              <p v-if="editingSection !== 'company'" class="text-[18px] text-gray-900 font-mono">{{ companyData.inn }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.okpo') }}</label>
@@ -413,7 +413,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ companyData.okpo }}</p>
+              <p v-else class="text-[18px] text-gray-900 font-mono">{{ companyData.okpo }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.registrationNumber') }}</label>
@@ -423,7 +423,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ companyData.registrationNumber }}</p>
+              <p v-else class="text-[18px] text-gray-900 font-mono">{{ companyData.registrationNumber }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.registrationDate') }}</label>
@@ -435,7 +435,7 @@ const toggleTwoFactor = () => {
                 :max="`${new Date().getFullYear() + 1}-12-31`"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ new Date(companyData.registrationDate).toLocaleDateString() }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ new Date(companyData.registrationDate).toLocaleDateString() }}</p>
             </div>
             <div class="md:col-span-2">
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.legalAddress') }}</label>
@@ -448,7 +448,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.legalAddress && editingSection === 'company'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.legalAddress }}
               </p>
-              <p v-if="editingSection !== 'company'" class="text-gray-900">{{ companyData.legalAddress }}</p>
+              <p v-if="editingSection !== 'company'" class="text-[18px] text-gray-900">{{ companyData.legalAddress }}</p>
             </div>
             <div class="md:col-span-2">
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.actualAddress') }}</label>
@@ -458,7 +458,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ companyData.actualAddress }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ companyData.actualAddress }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.activityType') }}</label>
@@ -468,7 +468,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ companyData.activityType }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ companyData.activityType }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.okved') }}</label>
@@ -478,7 +478,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ companyData.okved }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ companyData.okved }}</p>
             </div>
           </div>
           <!-- Edit Actions -->
@@ -639,7 +639,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.phone && editingSection === 'contact'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.phone }}
               </p>
-              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.phone }}</p>
+              <p v-if="editingSection !== 'contact'" class="text-[18px] text-gray-900">{{ contactData.phone }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.additionalPhone') }}</label>
@@ -652,7 +652,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.additionalPhone && editingSection === 'contact'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.additionalPhone }}
               </p>
-              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.additionalPhone || '---' }}</p>
+              <p v-if="editingSection !== 'contact'" class="text-[18px] text-gray-900">{{ contactData.additionalPhone || '---' }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.fax') }}</label>
@@ -662,7 +662,7 @@ const toggleTwoFactor = () => {
                 type="tel"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ contactData.fax || '—' }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ contactData.fax || '—' }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">Email</label>
@@ -675,7 +675,7 @@ const toggleTwoFactor = () => {
               <p v-if="formSubmitted && formErrors.email && editingSection === 'contact'" class="vld-error" data-validation-error>
                 <span class="vld-error__icon">&#9888;</span> {{ formErrors.email }}
               </p>
-              <p v-if="editingSection !== 'contact'" class="text-gray-900">{{ contactData.email }}</p>
+              <p v-if="editingSection !== 'contact'" class="text-[18px] text-gray-900">{{ contactData.email }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.website') }}</label>
@@ -685,7 +685,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ contactData.website || '—' }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ contactData.website || '—' }}</p>
             </div>
           </div>
           <!-- Edit Actions -->
@@ -737,7 +737,7 @@ const toggleTwoFactor = () => {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Director -->
             <div class="bg-gray-50 rounded-xl p-5">
-              <h4 class="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <h4 class="text-[18px] font-medium text-gray-900 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -752,7 +752,7 @@ const toggleTwoFactor = () => {
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.directorName }}</p>
+                  <p v-else class="text-[18px] text-gray-900">{{ representativeData.directorName }}</p>
                 </div>
                 <div>
                   <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.position') }}</label>
@@ -762,14 +762,14 @@ const toggleTwoFactor = () => {
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.directorPosition }}</p>
+                  <p v-else class="text-[18px] text-gray-900">{{ representativeData.directorPosition }}</p>
                 </div>
               </div>
             </div>
 
             <!-- Contact Person -->
             <div class="bg-gray-50 rounded-xl p-5">
-              <h4 class="font-medium text-gray-900 mb-4 flex items-center gap-2">
+              <h4 class="text-[18px] font-medium text-gray-900 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -784,7 +784,7 @@ const toggleTwoFactor = () => {
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.contactPersonName }}</p>
+                  <p v-else class="text-[18px] text-gray-900">{{ representativeData.contactPersonName }}</p>
                 </div>
                 <div>
                   <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.position') }}</label>
@@ -794,7 +794,7 @@ const toggleTwoFactor = () => {
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   />
-                  <p v-else class="text-gray-900">{{ representativeData.contactPersonPosition }}</p>
+                  <p v-else class="text-[18px] text-gray-900">{{ representativeData.contactPersonPosition }}</p>
                 </div>
                 <div>
                   <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.phone') }}</label>
@@ -807,7 +807,7 @@ const toggleTwoFactor = () => {
                   <p v-if="formSubmitted && formErrors.contactPersonPhone && editingSection === 'representative'" class="vld-error" data-validation-error>
                     <span class="vld-error__icon">&#9888;</span> {{ formErrors.contactPersonPhone }}
                   </p>
-                  <p v-if="editingSection !== 'representative'" class="text-gray-900">{{ representativeData.contactPersonPhone }}</p>
+                  <p v-if="editingSection !== 'representative'" class="text-[18px] text-gray-900">{{ representativeData.contactPersonPhone }}</p>
                 </div>
                 <div>
                   <label class="block text-[16px] font-medium text-gray-500 mb-1">Email</label>
@@ -820,7 +820,7 @@ const toggleTwoFactor = () => {
                   <p v-if="formSubmitted && formErrors.contactPersonEmail && editingSection === 'representative'" class="vld-error" data-validation-error>
                     <span class="vld-error__icon">&#9888;</span> {{ formErrors.contactPersonEmail }}
                   </p>
-                  <p v-if="editingSection !== 'representative'" class="text-gray-900">{{ representativeData.contactPersonEmail }}</p>
+                  <p v-if="editingSection !== 'representative'" class="text-[18px] text-gray-900">{{ representativeData.contactPersonEmail }}</p>
                 </div>
               </div>
             </div>
@@ -880,7 +880,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ bankData.bankName }}</p>
+              <p v-else class="text-[18px] text-gray-900">{{ bankData.bankName }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.bik') }}</label>
@@ -890,7 +890,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ bankData.bik }}</p>
+              <p v-else class="text-[18px] text-gray-900 font-mono">{{ bankData.bik }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.settlementAccount') }}</label>
@@ -900,7 +900,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ bankData.accountNumber }}</p>
+              <p v-else class="text-[18px] text-gray-900 font-mono">{{ bankData.accountNumber }}</p>
             </div>
             <div>
               <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.correspondentAccount') }}</label>
@@ -911,7 +911,7 @@ const toggleTwoFactor = () => {
                 :placeholder="$t('businessProfile.notSpecified')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ bankData.correspondentAccount || '—' }}</p>
+              <p v-else class="text-[18px] text-gray-900 font-mono">{{ bankData.correspondentAccount || '—' }}</p>
             </div>
           </div>
           <!-- Edit Actions -->
@@ -953,7 +953,7 @@ const toggleTwoFactor = () => {
           <div class="space-y-4">
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.emailNotifications') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.emailNotifications') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.emailNotificationsDesc') }}</p>
               </div>
               <div class="relative">
@@ -972,7 +972,7 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.smsNotifications') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.smsNotifications') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.smsNotificationsDesc') }}</p>
               </div>
               <div class="relative">
@@ -991,7 +991,7 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.declarationReminders') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.declarationReminders') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.declarationRemindersDesc') }}</p>
               </div>
               <div class="relative">
@@ -1010,7 +1010,7 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.paymentReminders') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.paymentReminders') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.paymentRemindersDesc') }}</p>
               </div>
               <div class="relative">
@@ -1029,7 +1029,7 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.reportDeadlines') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.reportDeadlines') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.reportDeadlinesDesc') }}</p>
               </div>
               <div class="relative">
@@ -1048,7 +1048,7 @@ const toggleTwoFactor = () => {
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <div>
-                <p class="font-medium text-gray-900">{{ $t('businessProfile.newsAndUpdates') }}</p>
+                <p class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.newsAndUpdates') }}</p>
                 <p class="text-[16px] text-gray-500">{{ $t('businessProfile.newsAndUpdatesDesc') }}</p>
               </div>
               <div class="relative">
@@ -1083,7 +1083,7 @@ const toggleTwoFactor = () => {
         <div class="p-6 space-y-6">
           <!-- Change Password -->
           <div>
-            <h4 class="font-medium text-gray-900 mb-4">{{ $t('businessProfile.changePassword') }}</h4>
+            <h4 class="text-[18px] font-medium text-gray-900 mb-4">{{ $t('businessProfile.changePassword') }}</h4>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-[16px] font-medium text-gray-500 mb-1">{{ $t('businessProfile.currentPassword') }}</label>
@@ -1126,7 +1126,7 @@ const toggleTwoFactor = () => {
           <div class="pt-6 border-t border-gray-200">
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="font-medium text-gray-900">{{ $t('businessProfile.twoFactorAuth') }}</h4>
+                <h4 class="text-[18px] font-medium text-gray-900">{{ $t('businessProfile.twoFactorAuth') }}</h4>
                 <p class="text-[16px] text-gray-500 mt-1">{{ $t('businessProfile.twoFactorAuthDesc') }}</p>
               </div>
               <button
@@ -1148,13 +1148,13 @@ const toggleTwoFactor = () => {
               <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <span class="text-green-700">{{ $t('businessProfile.twoFactorEnabled') }}</span>
+              <span class="text-[16px] text-green-700">{{ $t('businessProfile.twoFactorEnabled') }}</span>
             </div>
           </div>
 
           <!-- Session Info -->
           <div class="pt-6 border-t border-gray-200">
-            <h4 class="font-medium text-gray-900 mb-4">{{ $t('businessProfile.activeSessions') }}</h4>
+            <h4 class="text-[18px] font-medium text-gray-900 mb-4">{{ $t('businessProfile.activeSessions') }}</h4>
             <div class="space-y-3">
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div class="flex items-center gap-3">
@@ -1164,7 +1164,7 @@ const toggleTwoFactor = () => {
                     </svg>
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">Windows — Chrome</p>
+                    <p class="text-[18px] font-medium text-gray-900">Windows — Chrome</p>
                     <p class="text-[16px] text-gray-500">{{ $t('businessProfile.currentSession') }}</p>
                   </div>
                 </div>
@@ -1178,7 +1178,7 @@ const toggleTwoFactor = () => {
                     </svg>
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">iOS — Safari</p>
+                    <p class="text-[18px] font-medium text-gray-900">iOS — Safari</p>
                     <p class="text-[16px] text-gray-500">{{ $t('businessProfile.previousSession') }}</p>
                   </div>
                 </div>

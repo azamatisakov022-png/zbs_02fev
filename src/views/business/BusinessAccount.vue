@@ -296,7 +296,7 @@ const downloadPaymentPdf = async () => {
     <!-- Header -->
     <div class="content__header mb-6">
       <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessAccount.title') }}</h1>
-      <p class="text-[#64748b]">{{ $t('businessAccount.subtitle') }}</p>
+      <p class="text-[18px] text-[#64748b]">{{ $t('businessAccount.subtitle') }}</p>
     </div>
 
     <template v-if="isLoading">
@@ -361,16 +361,16 @@ const downloadPaymentPdf = async () => {
         class="mb-4"
       />
       <!-- Separate account info for debt + penalty -->
-      <div v-if="aggregatePenalty && aggregatePenalty.overdueDays > 0" class="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 mb-6 text-sm">
+      <div v-if="aggregatePenalty && aggregatePenalty.overdueDays > 0" class="bg-[#f8fafc] border border-[#e2e8f0] rounded-xl p-4 mb-6 text-[16px]">
         <div class="flex justify-between py-1">
-          <span class="text-[#64748b]">{{ $t('businessCalc.feeAmountLabel') }}</span>
-          <span class="font-semibold">{{ totalOverdueAmount.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-[14px] text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</span></span>
+          <span class="text-[16px] text-[#64748b]">{{ $t('businessCalc.feeAmountLabel') }}</span>
+          <span class="text-[16px] font-semibold">{{ totalOverdueAmount.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-[14px] text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</span></span>
         </div>
         <div class="flex justify-between py-1">
-          <span class="text-[#DC2626]">{{ $t('penalty.totalPenalty') }}</span>
-          <span class="font-semibold text-[#DC2626]">{{ aggregatePenalty.totalPenalty.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-[14px] text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.penalty.recipient }}</span></span>
+          <span class="text-[16px] text-[#DC2626]">{{ $t('penalty.totalPenalty') }}</span>
+          <span class="text-[16px] font-semibold text-[#DC2626]">{{ aggregatePenalty.totalPenalty.toLocaleString() }} {{ $t('penalty.som') }} <span class="text-[14px] text-[#94a3b8]">&rarr; {{ PAYMENT_ACCOUNTS.penalty.recipient }}</span></span>
         </div>
-        <div class="border-t border-[#e2e8f0] mt-1 pt-1 flex justify-between font-bold">
+        <div class="border-t border-[#e2e8f0] mt-1 pt-1 flex justify-between font-bold text-[16px]">
           <span>{{ $t('payment.grandTotal') }}</span>
           <span>{{ aggregatePenalty.totalToPay.toLocaleString() }} {{ $t('penalty.som') }}</span>
         </div>
@@ -383,7 +383,7 @@ const downloadPaymentPdf = async () => {
             <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div>
-            <p class="font-semibold text-amber-800">{{ $t('businessAccount.unpaidInvoicesWarning', { count: unpaidCalcs.length, amount: formatAmount(totalUnpaid) }) }}</p>
+            <p class="text-[16px] font-semibold text-amber-800">{{ $t('businessAccount.unpaidInvoicesWarning', { count: unpaidCalcs.length, amount: formatAmount(totalUnpaid) }) }}</p>
             <p class="text-[16px] text-amber-700 mt-1">{{ $t('businessAccount.payOnTimeWarning') }}</p>
           </div>
         </div>
@@ -394,7 +394,7 @@ const downloadPaymentPdf = async () => {
           </div>
           <!-- Desktop table -->
           <div class="hidden md:block overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-[16px]">
               <thead class="bg-[#f8fafc]">
                 <tr class="text-left text-[13px] font-semibold text-[#64748B] uppercase tracking-[0.05em]">
                   <th class="px-4 py-3">{{ $t('businessAccount.calculation') }}</th>
@@ -407,11 +407,11 @@ const downloadPaymentPdf = async () => {
               <tbody>
                 <tr v-for="c in unpaidCalcs" :key="c.id" class="border-b border-[#f1f5f9]" style="box-shadow: inset 4px 0 0 #f59e0b">
                   <td class="px-4 py-3">
-                    <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline">{{ c.number }}</router-link>
+                    <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-[16px] text-blue-600 hover:underline">{{ c.number }}</router-link>
                   </td>
-                  <td class="px-4 py-3 text-[#64748b]">{{ c.period }}</td>
-                  <td class="px-4 py-3 font-semibold text-[#1e293b]">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</td>
-                  <td class="px-4 py-3 text-[#64748b]">{{ c.date }}</td>
+                  <td class="px-4 py-3 text-[16px] text-[#64748b]">{{ c.period }}</td>
+                  <td class="px-4 py-3 text-[16px] font-semibold text-[#1e293b]">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</td>
+                  <td class="px-4 py-3 text-[16px] text-[#64748b]">{{ c.date }}</td>
                   <td class="px-4 py-3 text-right">
                     <button @click="router.push('/business/calculations/' + c.id + '/payment')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#22c55e] text-white rounded-lg text-[14px] font-medium hover:bg-[#16a34a] transition-colors">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
@@ -426,10 +426,10 @@ const downloadPaymentPdf = async () => {
           <div class="md:hidden">
             <div v-for="c in unpaidCalcs" :key="'m-' + c.id" class="p-4 border-b border-[#f1f5f9]" style="border-left: 4px solid #f59e0b">
               <div class="flex justify-between items-start mb-2">
-                <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline text-sm">{{ c.number }}</router-link>
+                <router-link :to="{ path: '/business/calculations/' + c.id, query: { from: 'account' } }" class="font-mono font-medium text-blue-600 hover:underline text-[16px]">{{ c.number }}</router-link>
                 <span class="text-[14px] text-[#64748b]">{{ c.date }}</span>
               </div>
-              <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+              <div class="grid grid-cols-2 gap-2 text-[16px] mb-3">
                 <div><span class="text-[#94a3b8] text-[14px]">{{ $t('common.period') }}</span><br>{{ c.period }}</div>
                 <div><span class="text-[#94a3b8] text-[14px]">{{ $t('common.amount') }}</span><br><strong class="text-[#1e293b]">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</strong></div>
               </div>
@@ -533,7 +533,7 @@ const downloadPaymentPdf = async () => {
           />
         </template>
         <template #cell-date="{ value }">
-          <span class="text-sm text-[#1e293b] whitespace-nowrap">{{ value }}</span>
+          <span class="text-[16px] text-[#1e293b] whitespace-nowrap">{{ value }}</span>
         </template>
         <template #cell-type="{ row }">
           <span :class="['inline-flex items-center gap-1.5 text-[14px] font-medium px-2.5 py-1 rounded-full', row.type === 'charge' ? 'bg-red-100 text-red-700' : row.type === 'payment' ? 'bg-green-100 text-green-700' : row.type === 'correction' ? 'bg-blue-100 text-blue-700' : row.type === 'offset' ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-700']">
@@ -544,7 +544,7 @@ const downloadPaymentPdf = async () => {
           </span>
         </template>
         <template #cell-description="{ row }">
-          <div class="text-sm text-[#374151] truncate">
+          <div class="text-[16px] text-[#374151] truncate">
             {{ row.description }}
             <router-link
               :to="{ path: '/business/calculations/' + row.calculationId, query: { from: 'account' } }"
@@ -553,12 +553,12 @@ const downloadPaymentPdf = async () => {
           </div>
         </template>
         <template #cell-amount="{ row }">
-          <span :class="['text-sm font-semibold', row.amount > 0 ? 'text-green-600' : 'text-red-600']">
+          <span :class="['text-[16px] font-semibold', row.amount > 0 ? 'text-green-600' : 'text-red-600']">
             {{ row.amount > 0 ? '+' : '' }}{{ row.amount.toLocaleString() }} {{ $t('common.som') }}
           </span>
         </template>
         <template #cell-balance="{ value }">
-          <span :class="['text-sm font-bold', value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-[#94a3b8]']">
+          <span :class="['text-[16px] font-bold', value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-[#94a3b8]']">
             {{ value.toLocaleString() }} {{ $t('common.som') }}
           </span>
         </template>
@@ -602,7 +602,7 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#1e293b]">{{ $t('businessAccount.bankTransfer') }}</p>
+                  <p class="text-[16px] font-semibold text-[#1e293b]">{{ $t('businessAccount.bankTransfer') }}</p>
                   <p class="text-[14px] text-[#94a3b8]">{{ $t('businessAccount.recommendedForLargeAmounts') }}</p>
                 </div>
               </div>
@@ -643,7 +643,7 @@ const downloadPaymentPdf = async () => {
               </div>
               <div v-else class="pm-file">
                 <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span class="text-sm text-[#374151] truncate flex-1">{{ paymentFileName }}</span>
+                <span class="text-[16px] text-[#374151] truncate flex-1">{{ paymentFileName }}</span>
                 <button @click="removePaymentFile" class="text-red-400 hover:text-red-600">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
@@ -664,7 +664,7 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#1e293b]">{{ $t('businessAccount.qrCode') }}</p>
+                  <p class="text-[16px] font-semibold text-[#1e293b]">{{ $t('businessAccount.qrCode') }}</p>
                   <p class="text-[14px] text-[#94a3b8]">{{ $t('businessAccount.qrCodeDesc') }}</p>
                 </div>
               </div>
@@ -689,7 +689,7 @@ const downloadPaymentPdf = async () => {
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 </div>
                 <div>
-                  <p class="font-semibold text-[#9ca3af]">{{ $t('businessAccount.onlineCardPayment') }}</p>
+                  <p class="text-[16px] font-semibold text-[#9ca3af]">{{ $t('businessAccount.onlineCardPayment') }}</p>
                   <p class="text-[14px] text-[#d1d5db]">Visa / MasterCard / {{ $t('businessAccount.elcart') }}</p>
                 </div>
               </div>
@@ -719,12 +719,12 @@ const downloadPaymentPdf = async () => {
           </div>
           <div class="p-6 invoice-content">
             <div class="text-center mb-6">
-              <h3 class="text-xl font-bold">{{ $t('businessAccount.invoiceTitleUpper') }}</h3>
+              <h3 class="text-[22px] font-bold">{{ $t('businessAccount.invoiceTitleUpper') }}</h3>
               <p class="text-[16px] text-[#64748b]">№ {{ payingCalc.number }} от {{ payingCalc.date }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-6 mb-6 text-sm">
+            <div class="grid grid-cols-2 gap-6 mb-6 text-[16px]">
               <div>
-                <p class="font-semibold mb-1">{{ $t('businessAccount.recipient') }}:</p>
+                <p class="text-[16px] font-semibold mb-1">{{ $t('businessAccount.recipient') }}:</p>
                 <p>{{ bankDetails.recipient }}</p>
                 <p>{{ $t('businessAccount.inn') }}: {{ bankDetails.inn }}</p>
                 <p>{{ bankDetails.bank }}</p>
@@ -732,13 +732,13 @@ const downloadPaymentPdf = async () => {
                 <p>{{ $t('businessAccount.accountNumber') }}: {{ bankDetails.account }}</p>
               </div>
               <div>
-                <p class="font-semibold mb-1">{{ $t('businessAccount.payer') }}:</p>
+                <p class="text-[16px] font-semibold mb-1">{{ $t('businessAccount.payer') }}:</p>
                 <p>{{ payingCalc.company }}</p>
                 <p>{{ $t('businessAccount.inn') }}: {{ payingCalc.inn }}</p>
                 <p v-if="payingCalc.address">{{ payingCalc.address }}</p>
               </div>
             </div>
-            <table class="w-full text-sm border border-[#e2e8f0] mb-4">
+            <table class="w-full text-[16px] border border-[#e2e8f0] mb-4">
               <thead class="bg-[#f8fafc]">
                 <tr>
                   <th class="border border-[#e2e8f0] px-3 py-2 text-left">#</th>
@@ -818,7 +818,7 @@ const downloadPaymentPdf = async () => {
 
               <div v-if="paymentDetailData.fileName" class="pd-file">
                 <svg class="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                <span class="text-sm text-[#374151]">{{ paymentDetailData.fileName }}</span>
+                <span class="text-[16px] text-[#374151]">{{ paymentDetailData.fileName }}</span>
               </div>
 
               <div class="pd-footer">

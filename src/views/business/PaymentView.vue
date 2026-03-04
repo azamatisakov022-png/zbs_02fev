@@ -178,8 +178,8 @@ function goBack() {
           {{ $t('paymentView.backToCalc') }}
         </button>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-          <h1 class="text-2xl font-bold text-[#1e293b]">{{ $t('paymentView.title') }} {{ calc.number }}</h1>
-          <span :class="['px-3 py-1 rounded-full text-xs font-medium',
+          <h1 class="text-[22px] font-bold text-[#1e293b]">{{ $t('paymentView.title') }} {{ calc.number }}</h1>
+          <span :class="['px-3 py-1 rounded-full text-[14px] font-medium',
             getStatusBadgeVariant(calc.status) === 'success' ? 'bg-green-100 text-green-800' :
             getStatusBadgeVariant(calc.status) === 'warning' ? 'bg-yellow-100 text-yellow-800' :
             getStatusBadgeVariant(calc.status) === 'info' ? 'bg-blue-100 text-blue-800' :
@@ -195,7 +195,7 @@ function goBack() {
           <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
         </div>
         <div>
-          <p class="font-semibold text-green-900">{{ $t('paymentView.calcClosed') }}</p>
+          <p class="text-[18px] font-semibold text-green-900">{{ $t('paymentView.calcClosed') }}</p>
         </div>
       </div>
 
