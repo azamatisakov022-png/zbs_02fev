@@ -192,16 +192,16 @@ const saveDraft = () => {
             </svg>
             {{ $t('businessRefundNew.backToApplications') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessRefundNew.title') }}</h1>
+          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessRefundNew.title') }}</h1>
         </div>
 
         <!-- Step 1: Select paid calculation -->
         <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-          <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
+          <h2 class="text-[22px] font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
             <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">1</div>
             {{ $t('businessRefundNew.selectPaidCalc') }}
           </h2>
-          <p class="text-sm text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.refundOnlyPaid') }}</p>
+          <p class="text-[16px] text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.refundOnlyPaid') }}</p>
 
           <div class="ml-9">
             <Select
@@ -220,7 +220,7 @@ const saveDraft = () => {
               </div>
               <div>
                 <p class="font-medium text-amber-800">{{ $t('businessRefundNew.noPaidCalcs') }}</p>
-                <p class="text-sm text-amber-700">{{ $t('businessRefundNew.noPaidCalcsDesc') }}</p>
+                <p class="text-[16px] text-amber-700">{{ $t('businessRefundNew.noPaidCalcsDesc') }}</p>
               </div>
             </div>
           </div>
@@ -229,15 +229,15 @@ const saveDraft = () => {
         <!-- Step 2: Refund items table -->
         <div v-if="selectedCalculation && refundItems.length > 0" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6">
           <div class="p-5 lg:p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
+            <h2 class="text-[22px] font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
               <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">2</div>
               {{ $t('businessRefundNew.refundItems') }}
             </h2>
-            <p class="text-sm text-[#64748b] ml-9">{{ $t('businessRefundNew.specifyExportedMass') }}</p>
+            <p class="text-[16px] text-[#64748b] ml-9">{{ $t('businessRefundNew.specifyExportedMass') }}</p>
           </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="w-full text-[16px]">
               <thead>
                 <tr class="text-left text-[#64748b] bg-[#f8fafc]">
                   <th class="px-4 py-3 font-medium">{{ $t('businessRefundNew.group') }}</th>
@@ -255,10 +255,10 @@ const saveDraft = () => {
                   class="border-t border-[#e2e8f0]"
                   :class="{ 'bg-red-50': hasExportExceedsVolume(item) }"
                 >
-                  <td class="px-4 py-3 text-xs max-w-[200px]">
+                  <td class="px-4 py-3 text-[14px] max-w-[200px]">
                     <span class="block truncate" :title="getGroupLabel(item.group)">{{ getGroupLabel(item.group) }}</span>
                   </td>
-                  <td class="px-4 py-3 text-xs max-w-[180px]">
+                  <td class="px-4 py-3 text-[14px] max-w-[180px]">
                     <span class="block truncate" :title="getSubgroupLabel(item.group, item.subgroup)">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                   </td>
                   <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
@@ -271,18 +271,18 @@ const saveDraft = () => {
                         inputmode="decimal"
                         placeholder="0.0"
                         :class="[
-                          'w-28 px-3 py-2 border rounded-lg text-center text-sm focus:outline-none transition-colors',
+                          'w-28 px-3 py-2 border rounded-lg text-center text-[16px] focus:outline-none transition-colors',
                           hasExportExceedsVolume(item)
                             ? 'border-red-400 bg-red-50 focus:border-red-500 focus:ring-2 focus:ring-red-200'
                             : 'border-[#e2e8f0] focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20'
                         ]"
                       />
-                      <span v-if="hasExportExceedsVolume(item)" class="text-xs text-red-500 mt-1">
+                      <span v-if="hasExportExceedsVolume(item)" class="text-[14px] text-red-500 mt-1">
                         {{ $t('businessRefundNew.noMoreThan', { volume: item.volume }) }}
                       </span>
                     </div>
                   </td>
-                  <td class="px-4 py-3 text-right font-semibold" :class="getRefundAmount(item) > 0 ? 'text-[#10b981]' : 'text-[#64748b]'">
+                  <td class="px-4 py-3 text-right font-semibold text-[24px]" :class="getRefundAmount(item) > 0 ? 'text-[#10b981]' : 'text-[#64748b]'">
                     {{ getRefundAmount(item) > 0 ? getRefundAmount(item).toLocaleString() : '—' }}
                   </td>
                 </tr>
@@ -290,7 +290,7 @@ const saveDraft = () => {
               <tfoot>
                 <tr class="border-t-2 border-[#1e293b] bg-[#f8fafc]">
                   <td colspan="5" class="px-4 py-3 font-semibold text-[#1e293b]">{{ $t('businessRefundNew.totalRefund') }}</td>
-                  <td class="px-4 py-3 text-right font-bold text-lg text-[#10b981]">
+                  <td class="px-4 py-3 text-right font-bold text-[22px] text-[#10b981]">
                     {{ totalRefundAmount > 0 ? formatAmount(totalRefundAmount) : '—' }}
                   </td>
                 </tr>
@@ -301,18 +301,18 @@ const saveDraft = () => {
 
         <!-- Step 3: Document upload -->
         <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-          <h2 class="text-lg font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
+          <h2 class="text-[22px] font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
             <div class="w-7 h-7 rounded-full bg-[#10b981] text-white flex items-center justify-center text-sm font-bold">3</div>
             {{ $t('businessRefundNew.supportingDocuments') }} <span class="text-red-500">*</span>
           </h2>
-          <p class="text-sm text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.supportingDocsDesc') }}</p>
+          <p class="text-[16px] text-[#64748b] mb-4 ml-9">{{ $t('businessRefundNew.supportingDocsDesc') }}</p>
 
           <div class="ml-9">
             <label class="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-[#e2e8f0] rounded-xl hover:border-[#10b981] hover:bg-green-50 transition-colors cursor-pointer">
               <svg class="w-6 h-6 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              <span class="text-[#64748b] font-medium">{{ $t('businessRefundNew.selectFiles') }}</span>
+              <span class="text-[#64748b] font-medium text-[16px]">{{ $t('businessRefundNew.selectFiles') }}</span>
               <input type="file" multiple class="hidden" @change="onFileSelect" />
             </label>
 
@@ -326,7 +326,7 @@ const saveDraft = () => {
                   <svg class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span class="text-sm text-[#1e293b]">{{ doc }}</span>
+                  <span class="text-[16px] text-[#1e293b]">{{ doc }}</span>
                 </div>
                 <button @click="removeDocument(idx)" class="text-[#64748b] hover:text-red-500 transition-colors p-1">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -336,7 +336,7 @@ const saveDraft = () => {
               </div>
             </div>
 
-            <div v-if="documents.length === 0" class="mt-3 text-xs text-amber-600">
+            <div v-if="documents.length === 0" class="mt-3 text-[14px] text-amber-600">
               {{ $t('businessRefundNew.attachAtLeastOne') }}
             </div>
           </div>
@@ -346,12 +346,12 @@ const saveDraft = () => {
         <div v-if="selectedCalculation && totalRefundAmount > 0" class="bg-gradient-to-r from-[#10b981]/10 to-[#059669]/10 rounded-2xl p-5 lg:p-6 border border-[#10b981]/20 mb-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.calculation') }}: <span class="font-mono font-medium text-[#1e293b]">{{ selectedCalculation.number }}</span></p>
-              <p class="text-sm text-[#64748b]">{{ $t('common.period') }}: {{ selectedCalculation.period }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessRefundNew.calculation') }}: <span class="font-mono font-medium text-[#1e293b]">{{ selectedCalculation.number }}</span></p>
+              <p class="text-[16px] text-[#64748b]">{{ $t('common.period') }}: {{ selectedCalculation.period }}</p>
             </div>
             <div class="text-right">
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.totalRefundAmount') }}</p>
-              <p class="text-3xl font-bold text-[#10b981]">{{ formatAmount(totalRefundAmount) }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessRefundNew.totalRefundAmount') }}</p>
+              <p class="text-[34px] font-bold text-[#10b981]">{{ formatAmount(totalRefundAmount) }}</p>
             </div>
           </div>
         </div>
@@ -396,28 +396,28 @@ const saveDraft = () => {
           </svg>
         </div>
 
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">
+        <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-4">
           {{ $t('businessRefundNew.successTitle', { number: createdRefund?.number }) }}
         </h1>
 
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.applicationNumber') }}</p>
-              <p class="text-lg font-bold text-[#10b981] font-mono">{{ createdRefund?.number }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessRefundNew.applicationNumber') }}</p>
+              <p class="text-[22px] font-bold text-[#10b981] font-mono">{{ createdRefund?.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.refundAmountLabel') }}</p>
-              <p class="text-lg font-bold text-[#1e293b]">{{ createdRefund ? formatAmount(createdRefund.amount) : '' }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessRefundNew.refundAmountLabel') }}</p>
+              <p class="text-[22px] font-bold text-[#1e293b]">{{ createdRefund ? formatAmount(createdRefund.amount) : '' }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessRefundNew.submissionDate') }}</p>
-              <p class="text-lg font-bold text-[#1e293b]">{{ createdRefund?.date }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessRefundNew.submissionDate') }}</p>
+              <p class="text-[22px] font-bold text-[#1e293b]">{{ createdRefund?.date }}</p>
             </div>
           </div>
         </div>
 
-        <p class="text-[#64748b] mb-8">
+        <p class="text-[#64748b] mb-8 text-[16px]">
           {{ $t('businessRefundNew.successLine1') }}<br />
           {{ $t('businessRefundNew.successLine2') }}
         </p>

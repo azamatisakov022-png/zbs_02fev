@@ -252,7 +252,7 @@ const resetDocFilters = () => {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessDocs.title') }}</h1>
+      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDocs.title') }}</h1>
       <p class="text-[#64748b]">{{ $t('businessDocs.subtitle') }}</p>
     </div>
 
@@ -267,8 +267,8 @@ const resetDocFilters = () => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
-          <p class="text-white/80 text-sm lg:text-base">{{ $t('businessDocs.uploadDescription') }}</p>
+          <h2 class="text-[22px] lg:text-[24px] font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
+          <p class="text-white/80 text-[16px] lg:text-base">{{ $t('businessDocs.uploadDescription') }}</p>
         </div>
         <button
           @click="showUploadModal = true"
@@ -285,20 +285,20 @@ const resetDocFilters = () => {
     <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
-        <p class="text-2xl font-bold text-[#1e293b]">{{ documents.length }}</p>
+        <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
+        <p class="text-[24px] font-bold text-[#1e293b]">{{ documents.length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.declarations') }}</p>
-        <p class="text-2xl font-bold text-[#2563eb]">{{ documents.filter(d => d.category === 'declarations').length }}</p>
+        <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessDocs.declarations') }}</p>
+        <p class="text-[24px] font-bold text-[#2563eb]">{{ documents.filter(d => d.category === 'declarations').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.reports') }}</p>
-        <p class="text-2xl font-bold text-[#10b981]">{{ documents.filter(d => d.category === 'reports').length }}</p>
+        <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessDocs.reports') }}</p>
+        <p class="text-[24px] font-bold text-[#10b981]">{{ documents.filter(d => d.category === 'reports').length }}</p>
       </div>
       <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-sm text-[#64748b] mb-1">{{ $t('businessDocs.contracts') }}</p>
-        <p class="text-2xl font-bold text-[#8b5cf6]">{{ documents.filter(d => d.category === 'contracts').length }}</p>
+        <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessDocs.contracts') }}</p>
+        <p class="text-[24px] font-bold text-[#8b5cf6]">{{ documents.filter(d => d.category === 'contracts').length }}</p>
       </div>
     </div>
 
@@ -324,7 +324,7 @@ const resetDocFilters = () => {
           <svg v-if="category.icon === 'clipboard'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           {{ category.name }}
           <span :class="[
-            'text-xs px-1.5 py-0.5 rounded',
+            'text-[14px] px-1.5 py-0.5 rounded',
             activeCategory === category.id ? 'bg-white/20' : 'bg-[#e2e8f0]'
           ]">{{ category.count }}</span>
         </button>
@@ -382,7 +382,7 @@ const resetDocFilters = () => {
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <p class="font-medium text-[#1e293b] truncate">{{ doc.name }}</p>
-            <div class="flex items-center gap-3 text-sm text-[#64748b]">
+            <div class="flex items-center gap-3 text-[16px] text-[#64748b]">
               <span>{{ doc.type }}</span>
               <span>&middot;</span>
               <span>{{ doc.size }}</span>
@@ -393,7 +393,7 @@ const resetDocFilters = () => {
 
           <!-- Category Badge -->
           <span :class="[
-            'hidden sm:inline-block px-2 py-1 rounded text-xs font-medium',
+            'hidden sm:inline-block px-2 py-1 rounded text-[14px] font-medium',
             getCategoryColor(doc.category) === 'blue' ? 'bg-blue-100 text-blue-800' :
             getCategoryColor(doc.category) === 'green' ? 'bg-green-100 text-green-800' :
             getCategoryColor(doc.category) === 'amber' ? 'bg-amber-100 text-amber-800' :
@@ -452,8 +452,8 @@ const resetDocFilters = () => {
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-[#1e293b] text-sm truncate">{{ doc.name }}</p>
-              <p class="text-xs text-[#64748b] mt-0.5">{{ doc.type }} &middot; {{ doc.size }} &middot; {{ doc.uploadedAt }}</p>
+              <p class="font-medium text-[#1e293b] text-[16px] truncate">{{ doc.name }}</p>
+              <p class="text-[14px] text-[#64748b] mt-0.5">{{ doc.type }} &middot; {{ doc.size }} &middot; {{ doc.uploadedAt }}</p>
             </div>
             <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ $t(statusI18nKey[doc.status] || doc.status) }}</AppBadge>
           </div>
@@ -503,7 +503,7 @@ const resetDocFilters = () => {
       <div class="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-[#1e293b]">{{ $t('businessDocs.uploadingDocuments') }}</h2>
+          <h2 class="text-[22px] font-semibold text-[#1e293b]">{{ $t('businessDocs.uploadingDocuments') }}</h2>
           <button @click="closeUploadModal" class="p-2 text-[#64748b] hover:bg-[#f1f5f9] rounded-lg">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -529,7 +529,7 @@ const resetDocFilters = () => {
               </svg>
             </div>
             <p class="text-[#1e293b] font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
-            <p class="text-sm text-[#64748b] mb-4">{{ $t('businessDocs.or') }}</p>
+            <p class="text-[16px] text-[#64748b] mb-4">{{ $t('businessDocs.or') }}</p>
             <label class="inline-flex items-center gap-2 bg-[#0ea5e9] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#0284c7] transition-colors cursor-pointer">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -537,12 +537,12 @@ const resetDocFilters = () => {
               {{ $t('businessDocs.selectFiles') }}
               <input type="file" multiple class="hidden" @change="handleFileSelect" />
             </label>
-            <p class="text-xs text-[#64748b] mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
+            <p class="text-[14px] text-[#64748b] mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
           </div>
 
           <!-- Uploaded Files -->
           <div v-if="uploadedFiles.length > 0" class="space-y-3">
-            <h3 class="text-sm font-medium text-[#1e293b]">{{ $t('businessDocs.uploadingFiles') }}</h3>
+            <h3 class="text-[16px] font-medium text-[#1e293b]">{{ $t('businessDocs.uploadingFiles') }}</h3>
             <div
               v-for="file in uploadedFiles"
               :key="file.id"
@@ -555,8 +555,8 @@ const resetDocFilters = () => {
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium text-[#1e293b] truncate">{{ file.name }}</p>
-                  <p class="text-xs text-[#64748b]">{{ file.size }}</p>
+                  <p class="text-[16px] font-medium text-[#1e293b] truncate">{{ file.name }}</p>
+                  <p class="text-[14px] text-[#64748b]">{{ file.size }}</p>
                 </div>
                 <div v-if="file.status === 'complete'" class="text-green-500">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

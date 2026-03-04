@@ -48,7 +48,7 @@ const goToNewRefund = () => {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessRefunds.pageTitle') }}</h1>
+      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessRefunds.pageTitle') }}</h1>
       <p class="text-[#64748b]">{{ $t('businessRefunds.pageSubtitle') }}</p>
     </div>
 
@@ -63,8 +63,8 @@ const goToNewRefund = () => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessRefunds.bannerTitle') }}</h2>
-          <p class="text-white/80 text-sm lg:text-base">{{ $t('businessRefunds.bannerDescription') }}</p>
+          <h2 class="text-[22px] lg:text-[24px] font-bold mb-2">{{ $t('businessRefunds.bannerTitle') }}</h2>
+          <p class="text-white/80 text-[16px] lg:text-[16px]">{{ $t('businessRefunds.bannerDescription') }}</p>
         </div>
         <button
           @click="goToNewRefund"
@@ -101,7 +101,7 @@ const goToNewRefund = () => {
     <template v-if="!isLoading">
       <!-- Table Header -->
       <div class="mb-4">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('businessRefunds.historyTitle') }}</h2>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4">{{ $t('businessRefunds.historyTitle') }}</h2>
       </div>
 
       <DataTable :columns="columns" :data="companyRefunds" :actions="true">

@@ -139,7 +139,7 @@ const getRateColorClass = (rate: number) => {
     <div class="space-y-6">
       <!-- Header -->
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ $t('businessNorms.pageTitle') }}</h1>
+        <h1 class="text-[24px] font-bold text-gray-900">{{ $t('businessNorms.pageTitle') }}</h1>
         <p class="text-gray-600 mt-1">{{ $t('businessNorms.pageSubtitle') }}</p>
       </div>
 
@@ -152,7 +152,7 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <div>
-            <h2 class="text-xl font-bold">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
+            <h2 class="text-[22px] font-bold">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
             <p class="text-white/80 mt-1 max-w-2xl">
               {{ $t('businessNorms.bannerDesc') }}
             </p>
@@ -179,7 +179,7 @@ const getRateColorClass = (rate: number) => {
         <button
           @click="activeTab = 'norms'"
           :class="[
-            'px-5 py-2.5 rounded-lg font-medium transition-colors text-sm',
+            'px-5 py-2.5 rounded-lg font-medium transition-colors text-[16px]',
             activeTab === 'norms'
               ? 'bg-[#0e888d] text-white'
               : 'text-gray-600 hover:bg-gray-100'
@@ -190,7 +190,7 @@ const getRateColorClass = (rate: number) => {
         <button
           @click="activeTab = 'rates'"
           :class="[
-            'px-5 py-2.5 rounded-lg font-medium transition-colors text-sm',
+            'px-5 py-2.5 rounded-lg font-medium transition-colors text-[16px]',
             activeTab === 'rates'
               ? 'bg-[#0e888d] text-white'
               : 'text-gray-600 hover:bg-gray-100'
@@ -203,23 +203,23 @@ const getRateColorClass = (rate: number) => {
       <!-- Table: Unified 24-group norms -->
       <div v-if="activeTab === 'norms'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.normsTableTitle') }}</h3>
-          <p class="text-sm text-gray-500 mt-1">{{ $t('businessNorms.normsTableDesc') }}</p>
+          <h3 class="text-[22px] font-semibold text-gray-900">{{ $t('businessNorms.normsTableTitle') }}</h3>
+          <p class="text-[16px] text-gray-500 mt-1">{{ $t('businessNorms.normsTableDesc') }}</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full min-w-[700px]">
             <thead>
               <tr class="bg-[#0e888d] text-white">
-                <th class="px-3 py-4 text-center text-sm font-semibold w-12">№</th>
-                <th class="px-4 py-4 text-left text-sm font-semibold">{{ $t('businessNorms.productCategory') }}</th>
+                <th class="px-3 py-4 text-center text-[16px] font-semibold w-12">№</th>
+                <th class="px-4 py-4 text-left text-[16px] font-semibold">{{ $t('businessNorms.productCategory') }}</th>
                 <th
                   v-for="year in years"
                   :key="year"
-                  class="px-4 py-4 text-center text-sm font-semibold"
+                  class="px-4 py-4 text-center text-[16px] font-semibold"
                   :class="year === currentYear ? 'bg-[#0b6d71] ring-2 ring-white/50' : ''"
                 >
                   {{ year }}
-                  <span v-if="year === currentYear" class="block text-xs font-normal opacity-80">{{ $t('businessNorms.current') }}</span>
+                  <span v-if="year === currentYear" class="block text-[14px] font-normal opacity-80">{{ $t('businessNorms.current') }}</span>
                 </th>
               </tr>
             </thead>
@@ -230,8 +230,8 @@ const getRateColorClass = (rate: number) => {
                 :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
                 class="hover:bg-[#0e888d]/5 transition-colors"
               >
-                <td class="px-3 py-3 text-center text-sm text-gray-500 font-mono">{{ item.id }}</td>
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ item.category }}</td>
+                <td class="px-3 py-3 text-center text-[16px] text-gray-500 font-mono">{{ item.id }}</td>
+                <td class="px-4 py-3 text-[16px] font-medium text-gray-900">{{ item.category }}</td>
                 <td
                   v-for="year in years"
                   :key="year"
@@ -252,15 +252,15 @@ const getRateColorClass = (rate: number) => {
       <div v-if="activeTab === 'rates'" class="space-y-5">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.ratesTableTitle') }}</h3>
-            <p class="text-sm text-gray-500 mt-1">{{ $t('businessNorms.ratesTableDesc') }}</p>
+            <h3 class="text-[22px] font-semibold text-gray-900">{{ $t('businessNorms.ratesTableTitle') }}</h3>
+            <p class="text-[16px] text-gray-500 mt-1">{{ $t('businessNorms.ratesTableDesc') }}</p>
           </div>
         </div>
 
         <div v-for="group in feeRateGroups" :key="group.groupLetter" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <!-- Group header -->
           <div class="px-6 py-3 bg-[#e8f5f5] border-b border-[#d1e7e8] flex items-center gap-3">
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#0e888d] text-white text-sm font-bold">{{ group.groupLetter }}</span>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#0e888d] text-white text-[16px] font-bold">{{ group.groupLetter }}</span>
             <span class="font-semibold text-[#0e888d]">{{ $t('businessNorms.groupLabel') }} {{ group.groupLetter }} — {{ group.groupTitle }}</span>
           </div>
           <!-- Group table -->
@@ -268,11 +268,11 @@ const getRateColorClass = (rate: number) => {
             <table class="w-full">
               <thead>
                 <tr class="bg-gray-50 border-b border-gray-200">
-                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">№</th>
-                  <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.productGroupCol') }}</th>
-                  <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.rateCol') }}</th>
-                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.unitCol') }}</th>
-                  <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.effectiveDateCol') }}</th>
+                  <th class="px-6 py-3 text-left text-[14px] font-semibold text-gray-500 uppercase tracking-wider">№</th>
+                  <th class="px-6 py-3 text-left text-[14px] font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.productGroupCol') }}</th>
+                  <th class="px-6 py-3 text-right text-[14px] font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.rateCol') }}</th>
+                  <th class="px-6 py-3 text-center text-[14px] font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.unitCol') }}</th>
+                  <th class="px-6 py-3 text-center text-[14px] font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.effectiveDateCol') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,11 +282,11 @@ const getRateColorClass = (rate: number) => {
                   :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
                   class="hover:bg-[#0e888d]/5 transition-colors"
                 >
-                  <td class="px-6 py-3 text-sm text-gray-500 font-mono">{{ item.id }}</td>
-                  <td class="px-6 py-3 text-sm font-medium text-gray-900">{{ item.name }}</td>
-                  <td class="px-6 py-3 text-sm font-bold text-right text-[#0e888d]">{{ item.rate.toLocaleString() }}</td>
-                  <td class="px-6 py-3 text-sm text-gray-500 text-center">{{ item.unit }}</td>
-                  <td class="px-6 py-3 text-sm text-gray-500 text-center">{{ item.effectiveDate }}</td>
+                  <td class="px-6 py-3 text-[16px] text-gray-500 font-mono">{{ item.id }}</td>
+                  <td class="px-6 py-3 text-[16px] font-medium text-gray-900">{{ item.name }}</td>
+                  <td class="px-6 py-3 text-[16px] font-bold text-right text-[#0e888d]">{{ item.rate.toLocaleString() }}</td>
+                  <td class="px-6 py-3 text-[16px] text-gray-500 text-center">{{ item.unit }}</td>
+                  <td class="px-6 py-3 text-[16px] text-gray-500 text-center">{{ item.effectiveDate }}</td>
                 </tr>
               </tbody>
             </table>
@@ -302,7 +302,7 @@ const getRateColorClass = (rate: number) => {
           </div>
           <div>
             <p class="font-medium text-gray-900">{{ $t('businessNorms.calcProcedure') }}</p>
-            <p class="text-sm text-gray-600 mt-1">
+            <p class="text-[16px] text-gray-600 mt-1">
               {{ $t('businessNorms.calcFormula') }}
               {{ $t('businessNorms.useCalc1') }} <router-link to="/business/calculator" class="text-[#0e888d] font-medium hover:underline">{{ $t('businessNorms.feeCalculator') }}</router-link> {{ $t('businessNorms.useCalc2') }}
             </p>
@@ -321,8 +321,8 @@ const getRateColorClass = (rate: number) => {
                 </svg>
               </div>
               <div>
-                <h3 class="text-lg font-semibold text-gray-900">{{ $t('businessNorms.exampleTitle') }}</h3>
-                <p class="text-sm text-gray-600">{{ $t('businessNorms.exampleSubtitle') }}</p>
+                <h3 class="text-[22px] font-semibold text-gray-900">{{ $t('businessNorms.exampleTitle') }}</h3>
+                <p class="text-[16px] text-gray-600">{{ $t('businessNorms.exampleSubtitle') }}</p>
               </div>
             </div>
           </div>
@@ -362,17 +362,17 @@ const getRateColorClass = (rate: number) => {
               <div class="bg-white rounded-xl p-5 border border-amber-200">
                 <h4 class="font-semibold text-gray-900 mb-4">{{ $t('businessNorms.calculation') }}:</h4>
                 <div class="space-y-4">
-                  <div class="p-4 bg-gray-50 rounded-lg font-mono text-sm">
+                  <div class="p-4 bg-gray-50 rounded-lg font-mono text-[16px]">
                     <p class="text-gray-600 mb-2">{{ $t('businessNorms.formula') }}:</p>
                     <p class="text-gray-900 font-semibold">У<sub>сб</sub> = С<sub>ус</sub> × М × Н<sub>пер</sub></p>
                   </div>
-                  <div class="p-4 bg-[#0e888d]/10 rounded-lg font-mono text-sm">
+                  <div class="p-4 bg-[#0e888d]/10 rounded-lg font-mono text-[16px]">
                     <p class="text-gray-600 mb-2">{{ $t('businessNorms.substituteValues') }}:</p>
                     <p class="text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
                   </div>
                   <div class="p-4 bg-[#0e888d] text-white rounded-lg text-center">
-                    <p class="text-sm opacity-80 mb-1">{{ $t('businessNorms.totalToPay') }}:</p>
-                    <p class="text-2xl font-bold">43 207,50 {{ $t('businessNorms.som') }}</p>
+                    <p class="text-[16px] opacity-80 mb-1">{{ $t('businessNorms.totalToPay') }}:</p>
+                    <p class="text-[24px] font-bold">43 207,50 {{ $t('businessNorms.som') }}</p>
                   </div>
                 </div>
               </div>
@@ -389,7 +389,7 @@ const getRateColorClass = (rate: number) => {
           </div>
           <div>
             <p class="font-medium text-gray-900">{{ $t('businessNorms.nperFormulaTitle') }}</p>
-            <p class="text-sm text-gray-600 mt-1">
+            <p class="text-[16px] text-gray-600 mt-1">
               {{ $t('businessNorms.nperFormulaDesc') }}
               <br/>
               <span class="text-gray-500">{{ $t('businessNorms.nperExample') }}</span>
@@ -407,7 +407,7 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard1Title') }}</h4>
-          <p class="text-sm text-gray-600">
+          <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard1Desc') }}
           </p>
         </div>
@@ -419,7 +419,7 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard2Title') }}</h4>
-          <p class="text-sm text-gray-600">
+          <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard2Desc') }}
           </p>
         </div>
@@ -431,7 +431,7 @@ const getRateColorClass = (rate: number) => {
             </svg>
           </div>
           <h4 class="font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard3Title') }}</h4>
-          <p class="text-sm text-gray-600">
+          <p class="text-[16px] text-gray-600">
             {{ $t('businessNorms.infoCard3Desc') }}
           </p>
         </div>

@@ -40,7 +40,7 @@ const applications = ref([
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <h2 class="text-2xl font-bold text-[#415861]">{{ $t('businessApps.title') }}</h2>
+      <h2 class="text-[24px] font-bold text-[#415861]">{{ $t('businessApps.title') }}</h2>
       <button class="flex items-center gap-2 bg-[#0e888d] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#0a6d71] transition-colors">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
