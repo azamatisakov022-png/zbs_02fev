@@ -166,14 +166,14 @@ function goBack() {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div v-if="!calc" class="text-center py-20">
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
-      <button @click="$router.push('/business/calculator')" class="mt-4 px-4 py-2 bg-[#2563eb] text-white rounded-lg text-sm">{{ $t('common.back') }}</button>
+      <h2 class="text-[22px] font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
+      <button @click="$router.push('/business/calculator')" class="mt-4 px-4 py-2 bg-[#2563eb] text-white rounded-lg text-[14px]">{{ $t('common.back') }}</button>
     </div>
 
     <template v-else>
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="flex items-center gap-2 text-sm text-[#64748b] hover:text-[#1e293b] mb-4 transition-colors">
+        <button @click="goBack" class="flex items-center gap-2 text-[14px] text-[#64748b] hover:text-[#1e293b] mb-4 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           {{ $t('paymentView.backToCalc') }}
         </button>
@@ -185,7 +185,7 @@ function goBack() {
             getStatusBadgeVariant(calc.status) === 'info' ? 'bg-blue-100 text-blue-800' :
             'bg-gray-100 text-gray-800'
           ]">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
-          <span v-if="calc.approvedAt" class="text-sm text-[#64748b]">{{ $t('paymentView.approvedDate') }}: {{ calc.approvedAt }}</span>
+          <span v-if="calc.approvedAt" class="text-[14px] text-[#64748b]">{{ $t('paymentView.approvedDate') }}: {{ calc.approvedAt }}</span>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ function goBack() {
                 {{ $t('workflow.submitReceipt') }}
               </button>
             </div>
-            <div v-else-if="feeStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-sm font-medium mt-4">
+            <div v-else-if="feeStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-[14px] font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('workflow.feeConfirmed') }}
             </div>
@@ -320,7 +320,7 @@ function goBack() {
                 {{ $t('workflow.submitReceipt') }}
               </button>
             </div>
-            <div v-else-if="penaltyStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-sm font-medium mt-4">
+            <div v-else-if="penaltyStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-[14px] font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('workflow.penaltyConfirmed') }}
             </div>
@@ -395,22 +395,22 @@ function goBack() {
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 .pv-section-number--penalty { background: #ef4444; }
 .pv-section-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1e293b;
 }
 .pv-section-subtitle {
-  font-size: 13px;
+  font-size: 17px;
   color: #64748b;
   margin-top: 2px;
 }
 .pv-section-amount {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 900;
   white-space: nowrap;
   flex-shrink: 0;
@@ -422,7 +422,7 @@ function goBack() {
 .pv-badge {
   padding: 5px 12px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -449,7 +449,7 @@ function goBack() {
   padding: 20px;
 }
 .pv-req-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 12px;
@@ -463,7 +463,7 @@ function goBack() {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 14px;
+  font-size: 16px;
 }
 .pv-req-key { color: #64748b; flex-shrink: 0; }
 .pv-req-val {
@@ -479,7 +479,7 @@ function goBack() {
   gap: 6px;
   margin-top: 12px;
   padding: 8px 16px;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   background: none;
   border-radius: 8px;
@@ -498,7 +498,7 @@ function goBack() {
   border-radius: 12px;
 }
 .pv-upload-label {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 10px;
@@ -506,7 +506,7 @@ function goBack() {
 .pv-submit {
   margin-top: 12px;
   padding: 10px 24px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #fff;
   border: none;
@@ -528,7 +528,7 @@ function goBack() {
   text-align: center;
 }
 .pv-qr-title {
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 10px;
@@ -539,7 +539,7 @@ function goBack() {
   margin: 0 auto;
 }
 .pv-qr-hint {
-  font-size: 11px;
+  font-size: 13px;
   color: #94a3b8;
   margin-top: 8px;
 }
@@ -557,7 +557,7 @@ function goBack() {
   background: #e2e8f0;
 }
 .pv-divider-text {
-  font-size: 12px;
+  font-size: 14px;
   color: #94a3b8;
   font-weight: 600;
   text-transform: uppercase;
@@ -577,7 +577,7 @@ function goBack() {
   margin: 0 auto 16px;
 }
 .pv-locked-text {
-  font-size: 15px;
+  font-size: 17px;
   color: #64748b;
   line-height: 1.6;
   max-width: 450px;
@@ -596,7 +596,7 @@ function goBack() {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 .pv-total-amount {
   font-weight: 700;
@@ -609,7 +609,7 @@ function goBack() {
   border-top: 1px solid rgba(255,255,255,0.2);
   margin-top: 8px;
   padding-top: 12px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 900;
 }
 
