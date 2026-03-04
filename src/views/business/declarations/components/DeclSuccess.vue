@@ -19,17 +19,17 @@ defineEmits<{
       </svg>
     </div>
 
-    <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessDecl.successTitle') }}</h1>
+    <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-4">{{ $t('businessDecl.successTitle') }}</h1>
 
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
         <div>
           <p class="text-[17px] font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.declarationNumber') }}</p>
-          <p class="text-lg font-bold text-[#2563eb] font-mono">{{ submittedDeclaration.number }}</p>
+          <p class="text-[22px] font-bold text-[#2563eb] font-mono">{{ submittedDeclaration.number }}</p>
         </div>
         <div>
           <p class="text-[17px] font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.submissionDate') }}</p>
-          <p class="text-lg font-bold text-[#1e293b]">{{ submittedDeclaration.date }}</p>
+          <p class="text-[22px] font-bold text-[#1e293b]">{{ submittedDeclaration.date }}</p>
         </div>
         <div>
           <p class="text-[17px] font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.statusLabel') }}</p>

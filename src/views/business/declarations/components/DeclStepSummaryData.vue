@@ -33,11 +33,11 @@ defineEmits<{
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-xl font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.summaryTitle', { year: reportingYear }) }}</h2>
+    <h2 class="text-[27px] font-semibold text-[#1e293b] mb-1">{{ $t('businessDecl.summaryTitle', { year: reportingYear }) }}</h2>
     <p class="text-[17px] font-medium text-[#1e293b] mb-6">{{ $t('businessDecl.summarySubtitle', { count: yearCalculations.length }) }}</p>
 
     <div class="overflow-x-auto mb-6">
-      <table class="w-full text-sm">
+      <table class="w-full text-[16px]">
         <thead>
           <tr class="text-left text-[#1e293b] bg-[#f8fafc]">
             <th class="px-3 py-3 font-semibold">{{ $t('businessDecl.thProductGroup') }}</th>
@@ -54,17 +54,17 @@ defineEmits<{
         </thead>
         <tbody class="text-[#1e293b]">
           <tr v-for="item in aggregatedItems" :key="item.group + item.subgroup" class="border-t border-[#e2e8f0]">
-            <td class="px-3 py-3 text-xs">{{ item.groupLabel }}</td>
-            <td class="px-3 py-3 text-xs">{{ item.subgroupLabel }}</td>
+            <td class="px-3 py-3 text-[14px]">{{ item.groupLabel }}</td>
+            <td class="px-3 py-3 text-[14px]">{{ item.subgroupLabel }}</td>
             <template v-if="!isPackagingGroup(item.group)">
-              <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
-              <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || item.tnvedCode }}</td>
-              <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedName || '—' }}</td>
+              <td class="px-3 py-3 font-mono text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
+              <td class="px-3 py-3 font-mono text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || item.tnvedCode }}</td>
+              <td class="px-3 py-3 text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedName || '—' }}</td>
             </template>
             <template v-else>
-              <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingMaterial || '—' }}</td>
-              <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
-              <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
+              <td class="px-3 py-3 text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.packagingMaterial || '—' }}</td>
+              <td class="px-3 py-3 font-mono text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
+              <td class="px-3 py-3 font-mono text-[14px]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
             </template>
             <td class="px-3 py-3 text-right font-medium">{{ item.mass.toFixed(1) }}</td>
             <td class="px-3 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
@@ -99,7 +99,7 @@ defineEmits<{
         </svg>
       </button>
       <div v-if="showDetails" class="p-4">
-        <table class="w-full text-sm">
+        <table class="w-full text-[16px]">
           <thead>
             <tr class="text-left text-[#1e293b]">
               <th class="pb-2 font-semibold">{{ $t('businessDecl.thCalcNumber') }}</th>
@@ -129,15 +129,15 @@ defineEmits<{
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200">
         <p class="text-[17px] font-semibold text-green-700 mb-1">{{ $t('businessDecl.cardTotalMass') }}</p>
-        <p class="text-2xl font-bold text-green-800">{{ totalMass.toFixed(1) }} {{ $t('businessDecl.tShort') }}</p>
+        <p class="text-[24px] font-bold text-green-800">{{ totalMass.toFixed(1) }} {{ $t('businessDecl.tShort') }}</p>
       </div>
       <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border border-orange-200">
         <p class="text-[17px] font-semibold text-orange-700 mb-1">{{ $t('businessDecl.cardCharged') }}</p>
-        <p class="text-2xl font-bold text-orange-800">{{ totalAmount.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+        <p class="text-[24px] font-bold text-orange-800">{{ totalAmount.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
       </div>
       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200">
         <p class="text-[17px] font-semibold text-blue-700 mb-1">{{ $t('businessDecl.cardPaid') }}</p>
-        <p class="text-2xl font-bold text-blue-800">{{ totalPaid.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+        <p class="text-[24px] font-bold text-blue-800">{{ totalPaid.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
         <p v-if="totalDebt > 0" class="text-[17px] font-semibold text-red-600 mt-1">{{ $t('businessDecl.debtLabel', { amount: totalDebt.toLocaleString() }) }}</p>
       </div>
     </div>
@@ -150,9 +150,9 @@ defineEmits<{
         <h3 class="text-[17px] font-semibold text-green-800">{{ $t('businessDecl.recyclingDataTitle', { count: yearReports.length }) }}</h3>
       </div>
       <div class="space-y-2">
-        <div v-for="item in aggregatedItems" :key="'proc_' + item.group + item.subgroup" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm py-1 border-b border-green-200 last:border-0">
+        <div v-for="item in aggregatedItems" :key="'proc_' + item.group + item.subgroup" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[16px] py-1 border-b border-green-200 last:border-0">
           <span class="text-green-900 font-medium">{{ item.groupLabel }}</span>
-          <div class="flex items-center gap-4 text-xs sm:text-sm">
+          <div class="flex items-center gap-4 text-[14px] sm:text-[16px]">
             <span class="text-[#1e293b]">{{ $t('businessDecl.declaredShort', { mass: item.mass.toFixed(1) }) }}</span>
             <span class="text-green-700 font-medium">{{ $t('businessDecl.processedShort', { mass: (processedByGroup.get(item.group) || 0).toFixed(1) }) }}</span>
             <span :class="[(processedByGroup.get(item.group) || 0) >= item.mass ? 'text-green-600' : 'text-orange-600', 'font-medium']">

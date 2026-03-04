@@ -256,7 +256,7 @@ const printPage = async () => {
             </svg>
             {{ $t('businessDecl.backToList') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessDecl.wizardTitle') }}</h1>
+          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessDecl.wizardTitle') }}</h1>
         </div>
 
         <StepperProgress

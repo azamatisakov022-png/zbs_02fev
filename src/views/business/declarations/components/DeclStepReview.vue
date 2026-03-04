@@ -23,7 +23,7 @@ defineEmits<{
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.reviewAndSubmit') }}</h2>
+    <h2 class="text-[27px] font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.reviewAndSubmit') }}</h2>
 
     <div class="space-y-6">
       <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
@@ -84,8 +84,8 @@ defineEmits<{
               <svg class="w-4 h-4 text-[#1e293b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
-              <span class="text-sm text-[#1e293b]">{{ doc.name }}</span>
-              <span class="text-xs text-[#475569]">{{ doc.size }}</span>
+              <span class="text-[16px] text-[#1e293b]">{{ doc.name }}</span>
+              <span class="text-[14px] text-[#475569]">{{ doc.size }}</span>
             </div>
             <button @click="$emit('removeDoc', doc.id)" class="p-1 text-[#475569] hover:text-red-500 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,7 +116,7 @@ defineEmits<{
           <p class="text-[17px] font-medium text-[#1e293b] mb-3">{{ $t('businessDecl.ecpHint') }}</p>
           <button
             @click="$emit('signEcp')"
-            class="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] text-white rounded-lg text-sm font-medium hover:bg-[#1d4ed8] transition-colors"
+            class="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] text-white rounded-lg text-[16px] font-medium hover:bg-[#1d4ed8] transition-colors"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -133,7 +133,7 @@ defineEmits<{
           </div>
           <div>
             <p class="text-[17px] font-semibold text-green-800">{{ $t('businessDecl.docSignedEcp') }}</p>
-            <p class="text-sm text-green-600">{{ $t('businessDecl.certificateLabel', { name: companyData.name, inn: companyData.inn }) }}</p>
+            <p class="text-[16px] text-green-600">{{ $t('businessDecl.certificateLabel', { name: companyData.name, inn: companyData.inn }) }}</p>
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ defineEmits<{
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.stepBasicData') }}</h2>
+    <h2 class="text-[27px] font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.stepBasicData') }}</h2>
 
     <div class="space-y-6">
       <Select
