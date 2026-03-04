@@ -206,13 +206,14 @@ watch(isOpen, (val) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
   background: #fff;
-  font-size: 14px;
-  color: #94a3b8;
+  font-size: 20px;
+  font-weight: 600;
+  color: #475569;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.2s;
@@ -228,7 +229,7 @@ watch(isOpen, (val) => {
 
 .spm-trigger--disabled {
   background: #f1f5f9;
-  color: #94a3b8;
+  color: #64748b;
   cursor: not-allowed;
 }
 
@@ -242,13 +243,14 @@ watch(isOpen, (val) => {
 
 .spm-trigger-icon {
   flex-shrink: 0;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .spm-hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #6b7280;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e293b;
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -267,10 +269,10 @@ watch(isOpen, (val) => {
 }
 
 .spm-modal {
-  width: 90vw;
-  max-width: 1000px;
-  height: 80vh;
-  max-height: 700px;
+  width: 85vw;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 800px;
   background: #fff;
   border-radius: 16px;
   display: flex;
@@ -296,8 +298,9 @@ watch(isOpen, (val) => {
 }
 
 .spm-subtitle {
-  font-size: 14px;
-  color: #64748b;
+  font-size: 16px;
+  font-weight: 500;
+  color: #475569;
   margin: 4px 0 0;
 }
 
@@ -333,10 +336,11 @@ watch(isOpen, (val) => {
 
 .spm-search {
   width: 100%;
-  padding: 10px 40px 10px 42px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 14px 44px 14px 46px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
   color: #1e293b;
   background: #f8fafc;
   outline: none;
@@ -349,7 +353,7 @@ watch(isOpen, (val) => {
 }
 
 .spm-search::placeholder {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .spm-search-clear {
@@ -377,7 +381,7 @@ watch(isOpen, (val) => {
 
 .spm-item {
   position: relative;
-  padding: 14px 40px 14px 16px;
+  padding: 16px 44px 16px 20px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   margin-bottom: 8px;
@@ -408,8 +412,8 @@ watch(isOpen, (val) => {
 }
 
 .spm-item-label {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: #1e293b;
   line-height: 1.4;
 }
@@ -418,30 +422,34 @@ watch(isOpen, (val) => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 12px;
-  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
 }
 
 .spm-item-code {
   font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
-  font-size: 12px;
-  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .spm-item-material {
-  font-size: 12px;
-  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .spm-item-rate {
-  font-weight: 500;
+  font-weight: 700;
   color: #059669;
 }
 
 .spm-item-tnved {
   margin-top: 4px;
-  font-size: 12px;
-  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
   line-height: 1.4;
 }
 
@@ -456,8 +464,9 @@ watch(isOpen, (val) => {
 .spm-empty {
   text-align: center;
   padding: 40px 0;
-  color: #94a3b8;
-  font-size: 14px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
 }
 
 .spm-footer {
@@ -471,18 +480,19 @@ watch(isOpen, (val) => {
 }
 
 .spm-footer-count {
-  font-size: 13px;
-  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e293b;
 }
 
 .spm-cancel {
-  padding: 8px 20px;
+  padding: 10px 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 500;
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }

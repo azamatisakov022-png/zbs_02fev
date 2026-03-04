@@ -12,6 +12,7 @@ import { useCalculationStore } from '../../stores/calculations'
 import { useAccountStore } from '../../stores/account'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { calculatePenalty, getOverdueDays } from '../../utils/penalty'
+import { getStatusStyle, calcRowClass } from '@/helpers/calculatorHelpers'
 import { formatNum } from '../../utils/formatNumber'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
@@ -19,6 +20,7 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import PaymentPanel from '../../components/payment/PaymentPanel.vue'
+import type { ConfirmDialogState } from '@/types/calculator'
 
 const { roleTitle, menuItems } = useBusinessMenu()
 const { t } = useI18n()
@@ -45,13 +47,13 @@ const viewMode = ref<'list'>('list')
 
 const showDraftNotification = ref(false)
 
-const confirmDialog = ref({
+const confirmDialog = ref<ConfirmDialogState>({
   visible: false,
   title: '',
   message: '',
-  icon: 'warning' as 'warning' | 'danger' | 'info' | 'success',
+  icon: 'warning',
   confirmText: '',
-  confirmColor: 'green' as 'green' | 'red' | 'orange',
+  confirmColor: 'green',
   onConfirm: () => {},
 })
 const handleConfirm = () => {
@@ -133,38 +135,6 @@ const lastCalcPeriod = computed(() => {
   if (calcStore.myCalculations.length === 0) return '—'
   return calcStore.myCalculations[0].period || '—'
 })
-
-const statusStyles: Record<string, string> = {
-  [CalcStatus.DRAFT]: 'background:#F3F4F6;color:#6B7280',
-  [CalcStatus.UNDER_REVIEW]: 'background:#FEF3C7;color:#92400E',
-  [CalcStatus.APPROVED]: 'background:#D1FAE5;color:#065F46',
-  [CalcStatus.PAID]: 'background:#DBEAFE;color:#1D4ED8',
-  [CalcStatus.REJECTED]: 'background:#FEE2E2;color:#991B1B',
-  [CalcStatus.PAYMENT_PENDING]: 'background:#EDE9FE;color:#6D28D9',
-  [CalcStatus.PAYMENT_REJECTED]: 'background:#FEE2E2;color:#991B1B',
-  [CalcStatus.FEE_PAID]: 'background:#FEF3C7;color:#92400E',
-  [CalcStatus.PENALTY_PAID]: 'background:#DBEAFE;color:#1D4ED8',
-  [CalcStatus.COMPLETED]: 'background:#D1FAE5;color:#065F46',
-}
-const getStatusStyle = (status: string) => statusStyles[status] || 'background:#F3F4F6;color:#6B7280'
-
-const calcRowClass = (row: Record<string, any>) => {
-  const map: Record<string, string> = {
-    [CalcStatus.PAID]: 'calc-row--paid',
-    [CalcStatus.APPROVED]: 'calc-row--accepted',
-    [CalcStatus.UNDER_REVIEW]: 'calc-row--review',
-    [CalcStatus.DRAFT]: 'calc-row--draft',
-    [CalcStatus.REJECTED]: 'calc-row--rejected',
-    [CalcStatus.PAYMENT_PENDING]: 'calc-row--pay-review',
-    [CalcStatus.PAYMENT_REJECTED]: 'calc-row--pay-rejected',
-    [CalcStatus.FEE_PAID]: 'calc-row--fee-paid',
-    [CalcStatus.PENALTY_PAID]: 'calc-row--penalty-paid',
-    [CalcStatus.COMPLETED]: 'calc-row--completed',
-  }
-  return map[row.status] || ''
-}
-
-
 </script>
 
 <template>
@@ -174,10 +144,9 @@ const calcRowClass = (row: Record<string, any>) => {
     :userName="companyData.name"
     :menuItems="menuItems"
   >
-    <!-- Draft saved notification -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showDraftNotification" class="fixed top-6 right-6 z-[200] bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+        <div v-if="showDraftNotification" class="draft-toast">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
@@ -186,31 +155,26 @@ const calcRowClass = (row: Record<string, any>) => {
       </Transition>
     </Teleport>
 
-    <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessCalc.pageTitle') }}</h1>
-        <p class="text-[#64748b]">{{ $t('businessCalc.pageSubtitle') }}</p>
+        <h1 class="page-title">{{ $t('businessCalc.pageTitle') }}</h1>
+        <p class="page-subtitle">{{ $t('businessCalc.pageSubtitle') }}</p>
       </div>
 
-      <!-- CTA Banner -->
-      <div class="mb-6 bg-gradient-to-r from-[#f59e0b] to-[#d97706] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-        <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
-          <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-            <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="cta-banner">
+        <div class="cta-banner__circle cta-banner__circle--top"></div>
+        <div class="cta-banner__circle cta-banner__circle--bottom"></div>
+        <div class="cta-banner__content">
+          <div class="cta-banner__icon">
+            <svg class="w-8 h-8 lg:w-10 lg:h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
-          <div class="flex-1">
-            <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessCalc.bannerTitle') }}</h2>
-            <p class="text-white/80 text-sm lg:text-base">{{ $t('businessCalc.bannerDescription') }}</p>
+          <div class="cta-banner__text">
+            <h2 class="cta-banner__title">{{ $t('businessCalc.bannerTitle') }}</h2>
+            <p class="cta-banner__desc">{{ $t('businessCalc.bannerDescription') }}</p>
           </div>
-          <button
-            @click="startWizard"
-            class="flex items-center justify-center gap-2 bg-white text-[#f59e0b] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-amber-50 transition-colors shadow-lg flex-shrink-0"
-          >
+          <button @click="startWizard" class="cta-banner__btn">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
@@ -219,17 +183,16 @@ const calcRowClass = (row: Record<string, any>) => {
         </div>
       </div>
 
-      <!-- Info Alert -->
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="info-alert">
+        <div class="info-alert__icon">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-          <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.infoTitle') }}</p>
-          <p class="text-sm text-[#64748b]">{{ $t('businessCalc.infoDescription') }}
-            <button @click="showInstruction = true" class="text-[#2D8B4E] hover:underline font-medium inline-flex items-center gap-1 mt-1">
+          <p class="info-alert__title">{{ $t('businessCalc.infoTitle') }}</p>
+          <p class="info-alert__text">{{ $t('businessCalc.infoDescription') }}
+            <button @click="showInstruction = true" class="info-alert__link">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('businessCalc.instructionLink') }}
             </button>
@@ -243,23 +206,22 @@ const calcRowClass = (row: Record<string, any>) => {
       </template>
 
       <template v-if="!isLoading">
-      <!-- Stats -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.totalCalcs') }}</p>
-          <p class="text-2xl font-bold text-[#1e293b]">{{ totalCalcsCount }}</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <p class="stat-card__label">{{ $t('businessCalc.totalCalcs') }}</p>
+          <p class="stat-card__value">{{ totalCalcsCount }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.paidForYear') }}</p>
-          <p class="text-2xl font-bold text-[#10b981]">{{ formatNum(totalPaidAmount, 0) }} {{ $t('businessCalc.som') }}</p>
+        <div class="stat-card">
+          <p class="stat-card__label">{{ $t('businessCalc.paidForYear') }}</p>
+          <p class="stat-card__value stat-card__value--green">{{ formatNum(totalPaidAmount, 0) }} {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.toPay') }}</p>
-          <p class="text-2xl font-bold text-[#f59e0b]">{{ formatNum(totalToPayAmount, 0) }} {{ $t('businessCalc.som') }}</p>
+        <div class="stat-card">
+          <p class="stat-card__label">{{ $t('businessCalc.toPay') }}</p>
+          <p class="stat-card__value stat-card__value--amber">{{ formatNum(totalToPayAmount, 0) }} {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.lastCalc') }}</p>
-          <p class="text-2xl font-bold text-[#2563eb]">{{ lastCalcPeriod }}</p>
+        <div class="stat-card">
+          <p class="stat-card__label">{{ $t('businessCalc.lastCalc') }}</p>
+          <p class="stat-card__value stat-card__value--blue">{{ lastCalcPeriod }}</p>
         </div>
       </div>
 
@@ -310,7 +272,7 @@ const calcRowClass = (row: Record<string, any>) => {
         </template>
         <template #cell-amount="{ value, row }">
           <div class="amount-cell">
-            <span class="font-semibold text-[#1e293b]">{{ value }}</span>
+            <span class="amount-cell__value">{{ value }}</span>
             <div v-if="row.penaltyInfo" class="amount-cell__penalty">
               <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('businessCalc.amountPenalty', { amount: formatNum(row.penaltyInfo.totalPenalty, 0), days: row.penaltyInfo.overdueDays }) }}
@@ -403,7 +365,7 @@ const calcRowClass = (row: Record<string, any>) => {
             </template>
             <!-- Завершено: [Закрыто badge (green)] [Просмотреть (outline)] -->
             <template v-else-if="row.status === 'completed'">
-              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+              <span class="closed-badge">
                 <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                 {{ $t('businessCalc.closedBadge') }}
               </span>
@@ -468,23 +430,16 @@ const calcRowClass = (row: Record<string, any>) => {
       </DataTable>
       </div>
 
-      <!-- Rates Info (collapsible) -->
-      <div class="mt-6 rounded-2xl border border-[#e2e8f0] overflow-hidden">
-        <button
-          @click="showRates = !showRates"
-          class="w-full flex items-center justify-between px-5 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors text-left"
-        >
-          <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="rates-section">
+        <button @click="showRates = !showRates" class="rates-toggle">
+          <div class="rates-toggle__left">
+            <svg class="rates-toggle__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span class="font-medium text-[#64748b]">{{ $t('businessCalc.ratesTitle') }}</span>
-            <span v-if="!showRates" class="text-xs text-[#94a3b8] ml-2 hidden sm:inline">{{ $t('businessCalc.ratesExpand') }}</span>
+            <span class="rates-toggle__title">{{ $t('businessCalc.ratesTitle') }}</span>
+            <span v-if="!showRates" class="rates-toggle__hint">{{ $t('businessCalc.ratesExpand') }}</span>
           </div>
-          <svg
-            :class="['w-5 h-5 text-[#94a3b8] transition-transform duration-300', showRates ? 'rotate-180' : '']"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-          >
+          <svg :class="['rates-toggle__chevron', showRates && 'rates-toggle__chevron--open']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -496,12 +451,12 @@ const calcRowClass = (row: Record<string, any>) => {
           leave-from-class="max-h-[500px] opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
-          <div v-show="showRates" class="overflow-hidden">
-            <div class="px-5 pb-5 pt-3 bg-white border-t border-[#e2e8f0]">
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div v-for="group in productGroups" :key="group.value" class="bg-[#f8fafc] rounded-lg p-3">
-                  <p class="text-xs text-[#64748b] mb-1">{{ group.label }}</p>
-                  <p class="font-bold text-[#1e293b]">{{ group.baseRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
+          <div v-show="showRates" class="rates-collapse">
+            <div class="rates-body">
+              <div class="rates-grid">
+                <div v-for="group in productGroups" :key="group.value" class="rate-card">
+                  <p class="rate-card__label">{{ group.label }}</p>
+                  <p class="rate-card__value">{{ group.baseRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
                 </div>
               </div>
             </div>
@@ -533,14 +488,313 @@ const calcRowClass = (row: Record<string, any>) => {
   opacity: 0;
 }
 
+/* ── Draft toast ── */
+.draft-toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 200;
+  background: #16a34a;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* ── Page header ── */
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-slate-800);
+  margin-bottom: 8px;
+}
+.page-subtitle {
+  font-size: 18px;
+  color: var(--color-slate-500);
+}
+@media (min-width: 1024px) {
+  .page-title { font-size: 34px; }
+}
+
+/* ── CTA banner ── */
+.cta-banner {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+.cta-banner__circle {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.1);
+}
+.cta-banner__circle--top {
+  width: 128px;
+  height: 128px;
+  top: -32px;
+  right: -32px;
+}
+.cta-banner__circle--bottom {
+  width: 80px;
+  height: 80px;
+  bottom: -16px;
+  left: 48px;
+}
+.cta-banner__content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cta-banner__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: rgba(255,255,255,0.2);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (min-width: 1024px) {
+  .cta-banner__icon { width: 56px; height: 56px; }
+}
+.cta-banner__text {
+  flex: 1;
+  min-width: 0;
+}
+.cta-banner__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .cta-banner__title { font-size: 27px; }
+}
+.cta-banner__desc {
+  margin: 4px 0 0;
+  opacity: 0.9;
+  font-size: 18px;
+}
+.cta-banner__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #d97706;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  transition: all var(--transition-fast);
+}
+.cta-banner__btn:hover {
+  background: #fffbeb;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+}
+
+/* ── Info alert ── */
+.info-alert {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.info-alert__icon {
+  flex-shrink: 0;
+  color: #f59e0b;
+  margin-top: 2px;
+}
+.info-alert__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #92400e;
+  margin: 0 0 4px;
+}
+.info-alert__text {
+  font-size: 20px;
+  font-weight: 500;
+  color: #a16207;
+  margin: 0;
+}
+.info-alert__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #d97706;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.info-alert__link:hover {
+  color: #92400e;
+}
+
+/* ── Stats grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (min-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.stat-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-slate-200);
+}
+.stat-card__label {
+  font-size: 16px;
+  color: var(--color-slate-500);
+  margin: 0 0 4px;
+}
+.stat-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-slate-800);
+  margin: 0;
+}
+.stat-card__value--green { color: #16a34a; }
+.stat-card__value--amber { color: #d97706; }
+.stat-card__value--blue { color: #2563eb; }
+
+/* ── Closed badge ── */
+.closed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ── Rates section ── */
+.rates-section {
+  margin-top: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--color-slate-200);
+  overflow: hidden;
+}
+.rates-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--color-slate-50);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+.rates-toggle:hover {
+  background: var(--color-slate-100);
+}
+.rates-toggle__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rates-toggle__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-slate-400);
+}
+.rates-toggle__title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-slate-500);
+}
+.rates-toggle__hint {
+  font-size: 14px;
+  color: var(--color-slate-400);
+  margin-left: 8px;
+}
+@media (max-width: 639px) {
+  .rates-toggle__hint { display: none; }
+}
+.rates-toggle__chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--color-slate-400);
+  transition: transform 0.3s ease;
+}
+.rates-toggle__chevron--open {
+  transform: rotate(180deg);
+}
+.rates-collapse {
+  overflow: hidden;
+}
+.rates-body {
+  padding: 12px 20px 20px;
+  background: #fff;
+  border-top: 1px solid var(--color-slate-200);
+}
+.rates-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .rates-grid { grid-template-columns: repeat(4, 1fr); }
+}
+.rate-card {
+  background: var(--color-slate-50);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+.rate-card__label {
+  font-size: 15px;
+  color: var(--color-slate-500);
+  margin: 0 0 4px;
+}
+.rate-card__value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-slate-800);
+  margin: 0;
+}
 
 /* ── History card ── */
 .history-card {
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-slate-200);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 .history-card__header {
@@ -548,8 +802,8 @@ const calcRowClass = (row: Record<string, any>) => {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #f1f5f9;
-  background: linear-gradient(to right, #fafbfc, #fff);
+  border-bottom: 1px solid var(--color-slate-100);
+  background: linear-gradient(to right, var(--color-slate-50), #fff);
 }
 
 .history-card__title-wrap {
@@ -561,7 +815,7 @@ const calcRowClass = (row: Record<string, any>) => {
 .history-card__icon {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: #eff6ff;
   color: #3b82f6;
   display: flex;
@@ -571,16 +825,16 @@ const calcRowClass = (row: Record<string, any>) => {
 }
 
 .history-card__title {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-slate-800);
   margin: 0;
   line-height: 1.3;
 }
 
 .history-card__subtitle {
-  font-size: 13px;
-  color: #94a3b8;
+  font-size: 16px;
+  color: var(--color-slate-400);
   margin: 2px 0 0;
 }
 
@@ -594,7 +848,7 @@ const calcRowClass = (row: Record<string, any>) => {
   border-radius: 13px;
   background: #3b82f6;
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -604,19 +858,19 @@ const calcRowClass = (row: Record<string, any>) => {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: #f59e0b;
+  background: var(--color-calc-accent);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .history-card__new-btn:hover {
-  background: #d97706;
+  background: var(--color-calc-accent-dark);
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
@@ -644,13 +898,13 @@ const calcRowClass = (row: Record<string, any>) => {
 .cell-number__value {
   font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
   color: #2563eb;
 }
 
 .cell-number__resubmit {
-  font-size: 11px;
-  color: #d97706;
+  font-size: 13px;
+  color: var(--color-calc-accent-dark);
   margin-top: 2px;
 }
 
@@ -659,15 +913,15 @@ const calcRowClass = (row: Record<string, any>) => {
   padding: 3px 10px;
   background: #f0f9ff;
   color: #0369a1;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .cell-date {
-  font-size: 13px;
-  color: #64748b;
+  font-size: 15px;
+  color: var(--color-slate-500);
   font-weight: 400;
 }
 
@@ -684,13 +938,13 @@ const calcRowClass = (row: Record<string, any>) => {
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: all var(--transition-fast);
 }
 .act-btn--filled {
   color: white;
@@ -698,17 +952,17 @@ const calcRowClass = (row: Record<string, any>) => {
 }
 .act-btn--green { background: #22c55e; }
 .act-btn--green:hover { background: #16a34a; box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
-.act-btn--orange { background: #f59e0b; }
-.act-btn--orange:hover { background: #d97706; box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
+.act-btn--orange { background: var(--color-calc-accent); }
+.act-btn--orange:hover { background: var(--color-calc-accent-dark); box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
 .act-btn--outline {
   background: transparent;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  color: var(--color-slate-600);
+  border: 1px solid var(--color-slate-200);
 }
 .act-btn--outline:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  color: #1e293b;
+  background: var(--color-slate-50);
+  border-color: var(--color-slate-300);
+  color: var(--color-slate-800);
 }
 
 /* Icon-only action button */
@@ -718,17 +972,17 @@ const calcRowClass = (row: Record<string, any>) => {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-slate-200);
   border-radius: 8px;
   background: #fff;
-  color: #64748b;
+  color: var(--color-slate-500);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition-fast);
 }
 .act-icon:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  color: #1e293b;
+  background: var(--color-slate-100);
+  border-color: var(--color-slate-300);
+  color: var(--color-slate-800);
 }
 .act-icon--red {
   color: #dc2626;
@@ -782,14 +1036,14 @@ const calcRowClass = (row: Record<string, any>) => {
   gap: 4px;
   border-radius: 12px;
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   width: fit-content;
 }
 
 .status-reason {
-  font-size: 11px;
+  font-size: 13px;
   color: #991b1b;
   line-height: 1.4;
   max-width: 200px;
@@ -805,7 +1059,7 @@ const calcRowClass = (row: Record<string, any>) => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: #DC2626;
   background: #FEF2F2;
@@ -821,22 +1075,26 @@ const calcRowClass = (row: Record<string, any>) => {
   flex-direction: column;
   gap: 2px;
 }
+.amount-cell__value {
+  font-weight: 600;
+  color: var(--color-slate-800);
+}
 .amount-cell__penalty {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  color: #d97706;
+  color: var(--color-calc-accent-dark);
   background: #fffbeb;
   border: 1px solid #fde68a;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
 }
 .amount-cell__total {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-slate-800);
   margin-top: 2px;
 }
 
@@ -853,10 +1111,10 @@ const calcRowClass = (row: Record<string, any>) => {
 
 /* ── Gray (collapse) button variant ── */
 .act-btn--gray {
-  background: #64748b !important;
+  background: var(--color-slate-500) !important;
   color: #fff !important;
 }
 .act-btn--gray:hover {
-  background: #475569 !important;
+  background: var(--color-slate-600) !important;
 }
 </style>
