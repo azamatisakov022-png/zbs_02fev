@@ -5,12 +5,13 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAccountStore } from '../../stores/account'
 import { reportStore } from '../../stores/reports'
-import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
+import { getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { ReportStatus } from '../../constants/statuses'
+import { fmt, fmtPercent, getGroupLabel } from '../../helpers/reportHelpers'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,10 +32,6 @@ const getStatusClass = (status: string) => {
     case 'rejected': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
-}
-
-const getGroupLabel = (value: string) => {
-  return productGroups.find(g => g.value === value)?.label || value
 }
 
 const year = computed(() => parseInt(report.value?.year || '2026'))
@@ -130,8 +127,6 @@ onMounted(async () => {
 })
 
 
-const fmt = (n: number) => n.toFixed(2)
-const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
 </script>
 
 <template>
