@@ -1193,18 +1193,6 @@ const toggleTwoFactor = () => {
 </template>
 
 <style scoped>
-.vld-error {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #EF4444;
-  margin-top: 4px;
-  line-height: 1.3;
-}
-.vld-error__icon {
-  flex-shrink: 0;
-}
 .vld-input--error {
   border-color: #EF4444 !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
