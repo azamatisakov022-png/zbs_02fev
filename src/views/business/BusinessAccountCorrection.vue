@@ -306,8 +306,8 @@ const canSubmit = computed(() =>
           {{ $t('businessCorrection.backToAccount') }}
         </button>
         <div class="flex items-center justify-between gap-4">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessCorrection.title') }}</h1>
-          <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
+          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessCorrection.title') }}</h1>
+          <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-[16px] font-medium flex-shrink-0">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -318,8 +318,8 @@ const canSubmit = computed(() =>
 
       <!-- Step 1: Select paid calculation -->
       <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">1</span>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">1</span>
           {{ $t('businessCorrection.step1Title') }}
         </h2>
         <Select
@@ -330,7 +330,7 @@ const canSubmit = computed(() =>
           :error="formSubmitted && formErrors['calculation'] ? formErrors['calculation'] : ''"
           @change="onCalculationSelect"
         />
-        <p v-if="paidCalculations.length === 0" class="mt-3 text-sm text-[#f59e0b]">
+        <p v-if="paidCalculations.length === 0" class="mt-3 text-[16px] text-[#f59e0b]">
           {{ $t('businessCorrection.noPaidCalculations') }}
         </p>
       </div>
@@ -338,11 +338,11 @@ const canSubmit = computed(() =>
       <!-- Step 2: Items table -->
       <div v-if="selectedCalculation" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6">
         <div class="p-5 lg:p-6 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-semibold text-[#1e293b] flex items-center gap-2">
-            <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">2</span>
+          <h2 class="text-[22px] font-semibold text-[#1e293b] flex items-center gap-2">
+            <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">2</span>
             {{ $t('businessCorrection.positionsOfCalc') }} {{ selectedCalculation.number }}
           </h2>
-          <p class="text-sm text-[#64748b] mt-1">{{ $t('businessCorrection.specifyAdditionalVolumes') }}</p>
+          <p class="text-[16px] text-[#64748b] mt-1">{{ $t('businessCorrection.specifyAdditionalVolumes') }}</p>
         </div>
 
         <div class="p-5 lg:p-6 pt-4 lg:pt-4">
@@ -451,7 +451,7 @@ const canSubmit = computed(() =>
 
         <!-- Validation warning -->
         <div v-if="hasValidationErrors" class="px-5 py-3 bg-red-50 border-t border-red-200 rounded-b-2xl">
-          <p class="text-sm text-red-600 flex items-center gap-2">
+          <p class="text-[16px] text-red-600 flex items-center gap-2">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -467,20 +467,20 @@ const canSubmit = computed(() =>
 
       <!-- Document upload section -->
       <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#10b981] text-white text-sm font-bold flex items-center justify-center">3</span>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#10b981] text-white text-[16px] font-bold flex items-center justify-center">3</span>
           {{ $t('businessCorrection.step3Title') }}
         </h2>
 
         <!-- No data entered yet -->
-        <p v-if="!hasAdditionalProcessing && !hasAdditionalExport" class="text-sm text-[#9ca3af] py-4">
+        <p v-if="!hasAdditionalProcessing && !hasAdditionalExport" class="text-[16px] text-[#9ca3af] py-4">
           {{ $t('businessCorrection.noDataForDocs') }}
         </p>
 
         <!-- Processing documents -->
         <div v-if="hasAdditionalProcessing" class="doc-section mb-4">
-          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#9851; {{ $t('businessCorrection.recyclingSection') }}</p>
-          <p class="text-[13px] text-[#6b7280] mb-4">{{ $t('businessCorrection.recyclingDocsDesc') }}</p>
+          <p class="font-semibold text-[17px] text-[#1e293b] mb-1">&#9851; {{ $t('businessCorrection.recyclingSection') }}</p>
+          <p class="text-[15px] text-[#6b7280] mb-4">{{ $t('businessCorrection.recyclingDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: Contract -->
@@ -505,7 +505,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingContract')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -532,7 +532,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingAct')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -562,7 +562,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingLicense')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -571,8 +571,8 @@ const canSubmit = computed(() =>
 
         <!-- Export documents -->
         <div v-if="hasAdditionalExport" class="doc-section">
-          <p class="font-semibold text-[15px] text-[#1e293b] mb-1">&#128666; {{ $t('businessCorrection.exportSection') }}</p>
-          <p class="text-[13px] text-[#6b7280] mb-4">{{ $t('businessCorrection.exportDocsDesc') }}</p>
+          <p class="font-semibold text-[17px] text-[#1e293b] mb-1">&#128666; {{ $t('businessCorrection.exportSection') }}</p>
+          <p class="text-[15px] text-[#6b7280] mb-4">{{ $t('businessCorrection.exportDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: GTD -->
@@ -597,7 +597,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportGtd')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -624,7 +624,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportInvoice')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -651,7 +651,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-xs font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportTransport')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -661,11 +661,11 @@ const canSubmit = computed(() =>
 
       <!-- Step 3.5: Correction reason / comment -->
       <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#f59e0b] text-white text-sm font-bold flex items-center justify-center">4</span>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#f59e0b] text-white text-[16px] font-bold flex items-center justify-center">4</span>
           {{ $t('businessCorrection.step4Title') }} <span class="text-red-500">*</span>
         </h2>
-        <p class="text-sm text-[#64748b] mb-3">{{ $t('businessCorrection.step4Desc') }}</p>
+        <p class="text-[16px] text-[#64748b] mb-3">{{ $t('businessCorrection.step4Desc') }}</p>
         <textarea
           v-model="correctionComment"
           rows="4"
@@ -675,7 +675,7 @@ const canSubmit = computed(() =>
         <p v-if="formSubmitted && formErrors['comment']" class="vld-error" data-validation-error>
           <span class="vld-error__icon">&#9888;</span> {{ formErrors['comment'] }}
         </p>
-        <p v-else class="text-xs text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 {{ $t('businessCorrection.minChars') }}</p>
+        <p v-else class="text-[14px] text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 {{ $t('businessCorrection.minChars') }}</p>
       </div>
 
       <!-- Total correction amount (visible only when data entered) -->
@@ -692,8 +692,8 @@ const canSubmit = computed(() =>
 
       <!-- Action selection -->
       <div v-if="selectedCalculation && hasAdditionalData" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-lg font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-sm font-bold flex items-center justify-center">5</span>
+        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">5</span>
           {{ $t('businessCorrection.step5Title') }}
         </h2>
         <div class="space-y-3">
@@ -701,14 +701,14 @@ const canSubmit = computed(() =>
             <input type="radio" v-model="correctionAction" value="balance" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
               <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionBalance') }}</p>
-              <p class="text-sm text-[#64748b]">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
+              <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
             </div>
           </label>
           <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'refund' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
             <input type="radio" v-model="correctionAction" value="refund" class="w-4 h-4 text-[#8b5cf6]" />
             <div>
               <p class="font-medium text-[#1e293b]">{{ $t('businessCorrection.actionRefund') }}</p>
-              <p class="text-sm text-[#64748b]">{{ $t('businessCorrection.actionRefundDesc') }}</p>
+              <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionRefundDesc') }}</p>
             </div>
           </label>
         </div>
@@ -743,21 +743,21 @@ const canSubmit = computed(() =>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
+        <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
         <p class="text-[#64748b] mb-2 text-lg">
           {{ $t('businessCorrection.successMessage') }}
         </p>
-        <p class="text-sm text-[#64748b] mb-8">
+        <p class="text-[16px] text-[#64748b] mb-8">
           {{ $t('businessCorrection.successNotification') }}
         </p>
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCorrection.calculation') }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.calculation') }}</p>
               <p class="text-lg font-bold text-[#8b5cf6] font-mono">{{ selectedCalculation?.number }}</p>
             </div>
             <div>
-              <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
+              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
               <p class="text-lg font-bold text-[#10b981]">+{{ formatAmount(totalCorrectionAmount) }}</p>
             </div>
           </div>
@@ -839,13 +839,13 @@ const canSubmit = computed(() =>
 }
 .doc-card__title {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   color: #1E293B;
   margin: 0 0 2px 0;
   text-decoration: none;
 }
 .doc-card__desc {
-  font-size: 12.5px;
+  font-size: 14px;
   color: #64748B;
   margin: 0;
 }
@@ -854,7 +854,7 @@ const canSubmit = computed(() =>
 }
 .doc-optional-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: #94A3B8;
   background: #F1F5F9;
@@ -873,7 +873,7 @@ const canSubmit = computed(() =>
   color: #3B82F6;
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -925,7 +925,7 @@ const canSubmit = computed(() =>
   line-height: 1.4;
 }
 .cf-info__subtitle {
-  font-size: 13px;
+  font-size: 15px;
   color: #64748B;
   margin-top: 2px;
   line-height: 1.4;
@@ -942,7 +942,7 @@ const canSubmit = computed(() =>
   gap: 4px;
 }
 .cf-info__label {
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   color: #94A3B8;
   font-weight: 600;
@@ -954,7 +954,7 @@ const canSubmit = computed(() =>
   color: #1E293B;
 }
 .cf-info__unit {
-  font-size: 13px;
+  font-size: 15px;
   color: #94A3B8;
   font-weight: 400;
 }
@@ -965,7 +965,7 @@ const canSubmit = computed(() =>
   padding-top: 16px;
 }
 .cf-correction__header {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #22C55E;
   text-transform: uppercase;
@@ -982,7 +982,7 @@ const canSubmit = computed(() =>
 }
 .cf-correction__label {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   color: #475569;
   font-weight: 500;
   margin-bottom: 6px;
@@ -1019,7 +1019,7 @@ const canSubmit = computed(() =>
 }
 .cf-correction__hint {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   color: #94A3B8;
   margin-top: 6px;
   line-height: 1.4;
@@ -1033,7 +1033,7 @@ const canSubmit = computed(() =>
   margin-top: 12px;
   padding: 10px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   line-height: 1.4;
 }
