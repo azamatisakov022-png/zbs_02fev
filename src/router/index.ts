@@ -236,6 +236,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.businessDeclarations' },
   },
   {
+    path: '/business/declarations/create',
+    name: 'business-declaration-create',
+    component: () => import('@/views/business/declarations/BusinessDeclarationCreate.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.createDeclaration' },
+  },
+  {
     path: '/business/payments',
     redirect: '/business/account',
   },
@@ -282,6 +288,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.viewCalculation' },
   },
   {
+    path: '/business/reports/create',
+    name: 'business-report-create',
+    component: () => import('@/views/business/reports/BusinessReportCreate.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.createReport' },
+  },
+  {
     path: '/business/reports/:id',
     name: 'business-report-detail',
     component: () => import('@/views/business/BusinessReportDetailView.vue'),
@@ -290,7 +302,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/business/reports/new',
     name: 'business-reports-new',
-    redirect: '/business/reports',
+    redirect: '/business/reports/create',
   },
   {
     path: '/business/declarations/:id',
@@ -301,7 +313,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/business/declarations/new',
     name: 'business-declarations-new',
-    redirect: '/business/declarations',
+    redirect: '/business/declarations/create',
   },
   {
     path: '/business/account',

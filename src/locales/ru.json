@@ -57,6 +57,8 @@
     "mainNav": "Основная навигация",
     "menu": "Меню",
     "openMenu": "Открыть меню",
+    "collapseMenu": "Свернуть меню",
+    "expandMenu": "Развернуть меню",
     "logoutSystem": "Выйти из системы",
     "home": "Главная",
     "excel": "Excel",

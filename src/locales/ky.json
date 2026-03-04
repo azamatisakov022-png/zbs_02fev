@@ -57,6 +57,8 @@
     "mainNav": "Негизги навигация",
     "menu": "Меню",
     "openMenu": "Менюну ачуу",
+    "collapseMenu": "Менюну жыюу",
+    "expandMenu": "Менюну жаюу",
     "logoutSystem": "Системадан чыгуу",
     "home": "Башкы бет",
     "excel": "Excel",
