@@ -343,7 +343,8 @@
     }
   },
   "common": {
-    "select": "Тандаңыз"
+    "select": "Тандаңыз",
+    "page": "Бет"
   },
   "roles": {
     "business": "Төлөөчү",

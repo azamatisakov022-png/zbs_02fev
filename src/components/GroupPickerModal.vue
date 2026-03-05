@@ -363,7 +363,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
 }
 
 .gpm-item-label {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: #1e293b;
   line-height: 1.4;

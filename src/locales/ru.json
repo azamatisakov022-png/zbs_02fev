@@ -60,6 +60,8 @@
     "collapseMenu": "Свернуть меню",
     "expandMenu": "Развернуть меню",
     "logoutSystem": "Выйти из системы",
+    "logoutConfirmTitle": "Выход из системы",
+    "logoutConfirmMessage": "Вы уверены, что хотите выйти из системы?",
     "home": "Главная",
     "excel": "Excel",
     "pdf": "PDF",
@@ -73,6 +75,7 @@
     "tons": "т",
     "pieces": "шт",
     "percent": "%",
+    "page": "Страница",
     "backToList": "Назад к списку",
     "saveDraft": "Сохранить черновик",
     "addRow": "Добавить строку",
@@ -169,6 +172,18 @@
       "notifications": "Уведомления",
       "settings": "Настройки системы"
     }
+  },
+  "header": {
+    "phone1": "+996 (312) 54-15-16",
+    "phone2": "+996 (312) 54-15-17",
+    "workHours": "Пн-Пт: 9:00 - 18:00",
+    "weekendClosed": "Сб-Вс: выходной",
+    "zip": "720040",
+    "city": "г. Бишкек",
+    "street": "ул. Токтогула, 228",
+    "lang": "РУС",
+    "register": "регистрация",
+    "login": "войти"
   },
   "status": {
     "draft": "Черновик",

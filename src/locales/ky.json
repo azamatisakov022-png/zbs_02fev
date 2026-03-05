@@ -60,6 +60,8 @@
     "collapseMenu": "Менюну жыюу",
     "expandMenu": "Менюну жаюу",
     "logoutSystem": "Системадан чыгуу",
+    "logoutConfirmTitle": "Системадан чыгуу",
+    "logoutConfirmMessage": "Системадан чыгууну каалайсызбы?",
     "home": "Башкы бет",
     "excel": "Excel",
     "pdf": "PDF",
@@ -73,6 +75,7 @@
     "tons": "т",
     "pieces": "даана",
     "percent": "%",
+    "page": "Бет",
     "backToList": "Тизмеге кайтуу",
     "saveDraft": "Долбоорду сактоо",
     "addRow": "Сап кошуу",
@@ -169,6 +172,18 @@
       "notifications": "Билдирүүлөр",
       "settings": "Система жөндөөлөрү"
     }
+  },
+  "header": {
+    "phone1": "+996 (312) 54-15-16",
+    "phone2": "+996 (312) 54-15-17",
+    "workHours": "Дш-Жм: 9:00 - 18:00",
+    "weekendClosed": "Иш-Жк: дем алыш",
+    "zip": "720040",
+    "city": "Бишкек ш.",
+    "street": "Токтогул көч., 228",
+    "lang": "КЫР",
+    "register": "каттоо",
+    "login": "кирүү"
   },
   "status": {
     "draft": "Долбоор",
