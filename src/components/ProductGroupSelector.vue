@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  productGroups,
-  productSubgroups,
-  isPackagingGroup,
-  type ProductSubgroup,
-} from '../data/product-groups'
+import { useProductGroupStore } from '@/stores/product-groups'
+import type { ProductSubgroupDTO } from '@/types/product-group'
 import SubgroupPickerModal from './SubgroupPickerModal.vue'
 import GroupPickerModal from './GroupPickerModal.vue'
 import TnvedCode from './TnvedCode.vue'
 
 const { t } = useI18n()
+const groupStore = useProductGroupStore()
 
 const props = withDefaults(defineProps<{
   group: string
@@ -32,27 +29,21 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:group': [value: string]
   'update:subgroup': [value: string]
-  'subgroupSelected': [data: ProductSubgroup | null]
+  'subgroupSelected': [data: ProductSubgroupDTO | null]
 }>()
 
-const availableSubgroups = computed(() => {
-  return productSubgroups[props.group] || []
-})
+const groupNumber = computed(() => groupStore.getGroupNumberFromValue(props.group))
 
-const selectedSubgroupData = computed<ProductSubgroup | null>(() => {
+const selectedSubgroupData = computed(() => {
   if (!props.group || !props.subgroup) return null
-  return availableSubgroups.value.find(s => s.value === props.subgroup) || null
+  return groupStore.getSubgroupById(groupNumber.value, props.subgroup)
 })
 
-const isPackaging = computed(() => isPackagingGroup(props.group))
+const isPackaging = computed(() => groupStore.isPackagingGroup(props.group))
 
-const groupLabel = computed(() => {
-  return productGroups.find(g => g.value === props.group)?.label || ''
-})
+const groupLabel = computed(() => groupStore.getGroupLabel(props.group))
 
-const subgroupLabel = computed(() => {
-  return selectedSubgroupData.value?.label || ''
-})
+const subgroupLabel = computed(() => selectedSubgroupData.value?.name || '')
 
 const onGroupChange = (value: string) => {
   emit('update:group', value)
@@ -64,7 +55,7 @@ const onSubgroupChange = (value: string) => {
   emit('update:subgroup', value)
 }
 
-const onSubgroupSelected = (data: ProductSubgroup | null) => {
+const onSubgroupSelected = (data: ProductSubgroupDTO | null) => {
   emit('subgroupSelected', data)
 }
 

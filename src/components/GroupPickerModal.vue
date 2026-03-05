@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { productGroups, isPackagingGroup } from '../data/product-groups'
+import { useProductGroupStore } from '@/stores/product-groups'
+import type { ProductGroupDTO } from '@/types/product-group'
 
 const { t } = useI18n()
+const groupStore = useProductGroupStore()
 
 const props = defineProps<{
   modelValue: string
@@ -13,21 +15,25 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
+onMounted(() => {
+  if (groupStore.groups.length === 0) {
+    groupStore.fetchGroups()
+  }
+})
+
 const isOpen = ref(false)
 const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const selectedGroup = computed(() => {
-  return productGroups.find(g => g.value === props.modelValue)
-})
+const selectedGroup = computed(() => groupStore.getGroupByValue(props.modelValue))
 
 const filteredGroups = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
-  if (!q) return productGroups
-  return productGroups.filter(g => {
-    if (g.label.toLowerCase().includes(q)) return true
+  if (!q) return groupStore.groups
+  return groupStore.groups.filter(g => {
+    if (g.name.toLowerCase().includes(q)) return true
     if (g.code.toLowerCase().includes(q)) return true
-    if (g.value.toLowerCase().includes(q)) return true
+    if (String(g.groupNumber).includes(q)) return true
     return false
   })
 })
@@ -44,8 +50,8 @@ const closeModal = () => {
   isOpen.value = false
 }
 
-const selectGroup = (group: typeof productGroups[0]) => {
-  emit('update:modelValue', group.value)
+const selectGroup = (group: ProductGroupDTO) => {
+  emit('update:modelValue', `group_${group.groupNumber}`)
   isOpen.value = false
 }
 
@@ -71,8 +77,8 @@ watch(isOpen, (val) => {
   }
 })
 
-const getGroupType = (group: typeof productGroups[0]) => {
-  return isPackagingGroup(group.value)
+const getGroupType = (group: ProductGroupDTO) => {
+  return group.type === 'packaging'
     ? t('groupPicker.packaging')
     : t('groupPicker.product')
 }
@@ -86,8 +92,8 @@ const getGroupType = (group: typeof productGroups[0]) => {
       :class="{ 'gpm-trigger--has-value': !!selectedGroup }"
       @click="openModal"
     >
-      <span class="gpm-trigger-text" :title="selectedGroup?.label || ''">
-        {{ selectedGroup ? selectedGroup.label : $t('productGroup.selectGroup') }}
+      <span class="gpm-trigger-text" :title="selectedGroup?.name || ''">
+        {{ selectedGroup ? `${selectedGroup.groupNumber}. ${selectedGroup.name}` : $t('productGroup.selectGroup') }}
       </span>
       <svg class="gpm-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
@@ -130,22 +136,21 @@ const getGroupType = (group: typeof productGroups[0]) => {
           <div class="gpm-list-wrap">
             <div
               v-for="group in filteredGroups"
-              :key="group.value"
+              :key="group.id"
               class="gpm-item"
-              :class="{ 'gpm-item--selected': group.value === modelValue }"
+              :class="{ 'gpm-item--selected': `group_${group.groupNumber}` === modelValue }"
               @click="selectGroup(group)"
             >
               <div class="gpm-item-main">
-                <span class="gpm-item-label">{{ group.label }}</span>
-                <span class="gpm-item-type" :class="isPackagingGroup(group.value) ? 'gpm-item-type--packaging' : 'gpm-item-type--product'">
+                <span class="gpm-item-label">{{ group.groupNumber }}. {{ group.name }}</span>
+                <span class="gpm-item-type" :class="group.type === 'packaging' ? 'gpm-item-type--packaging' : 'gpm-item-type--product'">
                   {{ getGroupType(group) }}
                 </span>
               </div>
               <div class="gpm-item-meta">
-                <span class="gpm-item-rate">{{ group.baseRate.toLocaleString('ru-RU') }} {{ $t('groupPicker.somPerTon') }}</span>
-                <span class="gpm-item-norm">{{ $t('groupPicker.norm') }}: {{ group.recyclingStandard }}%</span>
+                <span class="gpm-item-rate">{{ group.currentRate.toLocaleString('ru-RU') }} {{ $t('groupPicker.somPerTon') }}</span>
               </div>
-              <svg v-if="group.value === modelValue" class="gpm-item-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <svg v-if="`group_${group.groupNumber}` === modelValue" class="gpm-item-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                 <path d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -155,7 +160,7 @@ const getGroupType = (group: typeof productGroups[0]) => {
           </div>
 
           <div class="gpm-footer">
-            <span class="gpm-footer-count">{{ $t('groupPicker.ofGroups', { filtered: filteredGroups.length, total: productGroups.length }) }}</span>
+            <span class="gpm-footer-count">{{ $t('groupPicker.ofGroups', { filtered: filteredGroups.length, total: groupStore.groups.length }) }}</span>
             <button class="gpm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
           </div>
         </div>
