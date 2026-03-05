@@ -138,11 +138,11 @@ const signDeclaration = (id: number) => {
     :menuItems="menuItems"
   >
     <div class="content__header mb-6">
-      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDecl.title') }}</h1>
-      <p class="text-[18px] text-[#1e293b]">{{ $t('businessDecl.subtitle') }}</p>
+      <h1 class="bdecl-page-title">{{ $t('businessDecl.title') }}</h1>
+      <p class="bdecl-page-subtitle">{{ $t('businessDecl.subtitle') }}</p>
     </div>
 
-    <div class="mb-6 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
+    <div class="bdecl-cta-banner">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
       <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
@@ -152,12 +152,12 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-[24px] lg:text-[27px] font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
-          <p class="text-white/80 text-[16px] lg:text-[18px]">{{ $t('businessDecl.ctaDescription') }}</p>
+          <h2 class="bdecl-cta-title font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
+          <p class="bdecl-cta-desc text-white/80">{{ $t('businessDecl.ctaDescription') }}</p>
         </div>
         <button
           @click="startWizard"
-          class="flex items-center justify-center gap-2 bg-white text-[#2563eb] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-blue-50 transition-colors shadow-lg flex-shrink-0"
+          class="bdecl-cta-btn"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -174,8 +174,8 @@ const signDeclaration = (id: number) => {
         </svg>
       </div>
       <div>
-        <p class="text-[20px] font-semibold text-[#1e293b]">{{ $t('businessDecl.autoFormTitle') }}</p>
-        <p class="text-[20px] font-medium text-[#1e293b]">{{ $t('businessDecl.autoFormDescription') }}</p>
+        <p class="bdecl-info-title font-semibold">{{ $t('businessDecl.autoFormTitle') }}</p>
+        <p class="bdecl-info-text font-medium">{{ $t('businessDecl.autoFormDescription') }}</p>
       </div>
     </div>
 
@@ -195,11 +195,11 @@ const signDeclaration = (id: number) => {
           </svg>
         </div>
         <div class="flex-1">
-          <p :class="['text-[16px] font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
+          <p :class="['bdecl-banner-title font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
             {{ decl.number }} — {{ decl.status === 'rejected' ? $t('status.rejectedFem') : $t('businessDecl.returnedForRevision') }}
             <span v-if="decl.reviewDate" class="font-normal">{{ $t('businessDecl.fromDate') }} {{ decl.reviewDate }}</span>
           </p>
-          <p v-if="decl.reviewComment" :class="['text-[14px] mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
+          <p v-if="decl.reviewComment" :class="['bdecl-banner-comment mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
             {{ decl.reviewComment }}
           </p>
         </div>
@@ -212,13 +212,13 @@ const signDeclaration = (id: number) => {
     </template>
 
     <template v-if="!isLoading">
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <div class="bdecl-filter-card">
         <div class="flex flex-wrap gap-4">
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="$t('businessDecl.searchPlaceholder')"
-            class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+            class="bdecl-search-input flex-1 px-4 py-2 border rounded-lg focus:outline-none"
           />
           <Select v-model="filterYear" :options="yearFilterOptions" size="sm" />
           <Select v-model="filterStatus" :options="statusFilterOptions" size="sm" />
@@ -226,7 +226,7 @@ const signDeclaration = (id: number) => {
       </div>
 
       <div class="mb-4">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4">{{ $t('businessDecl.historyTitle') }}</h2>
+        <h2 class="bdecl-history-title font-semibold mb-4">{{ $t('businessDecl.historyTitle') }}</h2>
       </div>
 
       <div v-if="isFilteredEmpty" class="mb-6">
@@ -250,13 +250,13 @@ const signDeclaration = (id: number) => {
           />
         </template>
         <template #cell-number="{ value, row }">
-          <button class="font-mono font-medium text-[#2563eb] hover:underline cursor-pointer" @click="router.push({ path: '/business/declarations/' + row.id, query: { from: 'declarations' } })">{{ value }}</button>
+          <button class="bdecl-number-link font-mono font-medium hover:underline cursor-pointer" @click="router.push({ path: '/business/declarations/' + row.id, query: { from: 'declarations' } })">{{ value }}</button>
         </template>
         <template #cell-year="{ value }">
           <span>{{ value }} {{ $t('businessDecl.yearSuffix') }}</span>
         </template>
         <template #cell-totalAmount="{ value }">
-          <span class="text-[18px] font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
+          <span class="bdecl-amount font-medium">{{ value.toLocaleString() }} {{ $t('businessDecl.som') }}</span>
         </template>
         <template #cell-status="{ value }">
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
@@ -341,6 +341,58 @@ const signDeclaration = (id: number) => {
 </template>
 
 <style scoped>
+.bdecl-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .bdecl-page-title { font-size: 34px; }
+}
+.bdecl-page-subtitle {
+  font-size: 18px;
+  color: #1e293b;
+}
+.bdecl-cta-banner {
+  margin-bottom: 24px;
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  border-radius: 16px;
+  padding: 24px 32px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .bdecl-cta-banner { padding: 32px; }
+}
+.bdecl-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: white;
+  color: #2563eb;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+@media (min-width: 1024px) {
+  .bdecl-cta-btn { padding: 16px 32px; }
+}
+.bdecl-cta-btn:hover { background: #eff6ff; }
+.bdecl-filter-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
 @media print {
   .dashboard-layout > aside,
   .dashboard-layout > main > header,
@@ -401,4 +453,48 @@ const signDeclaration = (id: number) => {
 .act-dropdown__item:hover { background: #f3f4f6; }
 .act-dropdown__item--red { color: #ef4444; }
 .act-dropdown__item--red:hover { background: #fef2f2; }
+
+.bdecl-cta-title {
+  font-size: 24px;
+}
+@media (min-width: 1024px) {
+  .bdecl-cta-title { font-size: 27px; }
+}
+.bdecl-cta-desc {
+  font-size: 16px;
+}
+@media (min-width: 1024px) {
+  .bdecl-cta-desc { font-size: 18px; }
+}
+.bdecl-info-title {
+  font-size: 20px;
+  color: #1e293b;
+}
+.bdecl-info-text {
+  font-size: 20px;
+  color: #1e293b;
+}
+.bdecl-banner-title {
+  font-size: 16px;
+}
+.bdecl-banner-comment {
+  font-size: 14px;
+}
+.bdecl-search-input {
+  min-width: 200px;
+  border-color: #e2e8f0;
+}
+.bdecl-search-input:focus {
+  border-color: #2563eb;
+}
+.bdecl-history-title {
+  font-size: 22px;
+  color: #1e293b;
+}
+.bdecl-number-link {
+  color: #2563eb;
+}
+.bdecl-amount {
+  font-size: 18px;
+}
 </style>
