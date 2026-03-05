@@ -298,7 +298,7 @@ const canSubmit = computed(() =>
       <div class="mb-6">
         <button
           @click="router.push('/business/account')"
-          class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4 transition-colors"
+          class="bac-back-btn"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -306,8 +306,8 @@ const canSubmit = computed(() =>
           {{ $t('businessCorrection.backToAccount') }}
         </button>
         <div class="flex items-center justify-between gap-4">
-          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessCorrection.title') }}</h1>
-          <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-[16px] font-medium flex-shrink-0">
+          <h1 class="bac-page-title">{{ $t('businessCorrection.title') }}</h1>
+          <button @click="showInstruction = true" class="bac-instruction-btn flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-medium flex-shrink-0">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -317,9 +317,9 @@ const canSubmit = computed(() =>
       </div>
 
       <!-- Step 1: Select paid calculation -->
-      <div class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">1</span>
+      <div class="bac-card">
+        <h2 class="bac-section-title font-semibold mb-4 flex items-center gap-2">
+          <span class="bac-step-badge bac-step-badge--purple w-7 h-7 rounded-full text-white font-bold flex items-center justify-center">1</span>
           {{ $t('businessCorrection.step1Title') }}
         </h2>
         <Select
@@ -330,19 +330,19 @@ const canSubmit = computed(() =>
           :error="formSubmitted && formErrors['calculation'] ? formErrors['calculation'] : ''"
           @change="onCalculationSelect"
         />
-        <p v-if="paidCalculations.length === 0" class="mt-3 text-[16px] text-[#f59e0b]">
+        <p v-if="paidCalculations.length === 0" class="bac-warning-text mt-3">
           {{ $t('businessCorrection.noPaidCalculations') }}
         </p>
       </div>
 
       <!-- Step 2: Items table -->
-      <div v-if="selectedCalculation" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] mb-6">
-        <div class="p-5 lg:p-6 border-b border-[#e2e8f0]">
-          <h2 class="text-[22px] font-semibold text-[#1e293b] flex items-center gap-2">
-            <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">2</span>
+      <div v-if="selectedCalculation" class="bac-card bac-card--no-pad">
+        <div class="bac-section-header p-5 lg:p-6">
+          <h2 class="bac-section-title font-semibold flex items-center gap-2">
+            <span class="bac-step-badge bac-step-badge--purple w-7 h-7 rounded-full text-white font-bold flex items-center justify-center">2</span>
             {{ $t('businessCorrection.positionsOfCalc') }} {{ selectedCalculation.number }}
           </h2>
-          <p class="text-[16px] text-[#64748b] mt-1">{{ $t('businessCorrection.specifyAdditionalVolumes') }}</p>
+          <p class="bac-description mt-1">{{ $t('businessCorrection.specifyAdditionalVolumes') }}</p>
         </div>
 
         <div class="p-5 lg:p-6 pt-4 lg:pt-4">
@@ -451,7 +451,7 @@ const canSubmit = computed(() =>
 
         <!-- Validation warning -->
         <div v-if="hasValidationErrors" class="px-5 py-3 bg-red-50 border-t border-red-200 rounded-b-2xl">
-          <p class="text-[16px] text-red-600 flex items-center gap-2">
+          <p class="bac-text-base text-red-600 flex items-center gap-2">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -466,21 +466,21 @@ const canSubmit = computed(() =>
       </div>
 
       <!-- Document upload section -->
-      <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#10b981] text-white text-[16px] font-bold flex items-center justify-center">3</span>
+      <div v-if="selectedCalculation" class="bac-card">
+        <h2 class="bac-section-title font-semibold mb-4 flex items-center gap-2">
+          <span class="bac-step-badge bac-step-badge--green w-7 h-7 rounded-full text-white font-bold flex items-center justify-center">3</span>
           {{ $t('businessCorrection.step3Title') }}
         </h2>
 
         <!-- No data entered yet -->
-        <p v-if="!hasAdditionalProcessing && !hasAdditionalExport" class="text-[16px] text-[#9ca3af] py-4">
+        <p v-if="!hasAdditionalProcessing && !hasAdditionalExport" class="bac-muted-text py-4">
           {{ $t('businessCorrection.noDataForDocs') }}
         </p>
 
         <!-- Processing documents -->
         <div v-if="hasAdditionalProcessing" class="doc-section mb-4">
-          <p class="font-semibold text-[17px] text-[#1e293b] mb-1">&#9851; {{ $t('businessCorrection.recyclingSection') }}</p>
-          <p class="text-[15px] text-[#6b7280] mb-4">{{ $t('businessCorrection.recyclingDocsDesc') }}</p>
+          <p class="bac-doc-title font-semibold mb-1">&#9851; {{ $t('businessCorrection.recyclingSection') }}</p>
+          <p class="bac-doc-desc mb-4">{{ $t('businessCorrection.recyclingDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: Contract -->
@@ -490,8 +490,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('processingContract', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.processingContract ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.processingContract" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.processingContract" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <p class="doc-card__title">{{ $t('businessCorrection.docContract') }}</p>
@@ -505,7 +505,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingContract')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -517,8 +517,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('processingAct', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.processingAct ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.processingAct" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.processingAct" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <p class="doc-card__title">{{ $t('businessCorrection.docAct') }}</p>
@@ -532,7 +532,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingAct')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -544,8 +544,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('processingLicense', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.processingLicense ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.processingLicense" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.processingLicense" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -562,7 +562,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('processingLicense')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -571,8 +571,8 @@ const canSubmit = computed(() =>
 
         <!-- Export documents -->
         <div v-if="hasAdditionalExport" class="doc-section">
-          <p class="font-semibold text-[17px] text-[#1e293b] mb-1">&#128666; {{ $t('businessCorrection.exportSection') }}</p>
-          <p class="text-[15px] text-[#6b7280] mb-4">{{ $t('businessCorrection.exportDocsDesc') }}</p>
+          <p class="bac-doc-title font-semibold mb-1">&#128666; {{ $t('businessCorrection.exportSection') }}</p>
+          <p class="bac-doc-desc mb-4">{{ $t('businessCorrection.exportDocsDesc') }}</p>
 
           <div class="doc-cards-list">
             <!-- Doc 1: GTD -->
@@ -582,8 +582,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('exportGtd', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.exportGtd ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.exportGtd" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.exportGtd" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <p class="doc-card__title">{{ $t('businessCorrection.docGtd') }}</p>
@@ -597,7 +597,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportGtd')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -609,8 +609,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('exportInvoice', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.exportInvoice ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.exportInvoice" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.exportInvoice" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <p class="doc-card__title">{{ $t('businessCorrection.docInvoice') }}</p>
@@ -624,7 +624,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportInvoice')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -636,8 +636,8 @@ const canSubmit = computed(() =>
             >
               <input type="file" class="hidden" @change="handleDocUpload('exportTransport', $event)" accept=".pdf,.jpg,.png,.doc,.docx" />
               <div class="doc-card__icon" :class="docs.exportTransport ? 'doc-card__icon--done' : ''">
-                <svg v-if="!docs.exportTransport" class="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <svg v-else class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <svg v-if="!docs.exportTransport" class="bac-icon-muted w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <svg v-else class="bac-icon-success w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               </div>
               <div class="doc-card__info">
                 <p class="doc-card__title">{{ $t('businessCorrection.docTransport') }}</p>
@@ -651,7 +651,7 @@ const canSubmit = computed(() =>
                 </span>
               </div>
               <div v-else class="doc-card__status">
-                <span class="text-[14px] font-medium text-[#10b981]">{{ $t('businessCorrection.uploaded') }}</span>
+                <span class="bac-uploaded-text font-medium">{{ $t('businessCorrection.uploaded') }}</span>
                 <button @click.prevent="clearDoc('exportTransport')" class="doc-card__remove" :title="$t('common.delete')">&times;</button>
               </div>
             </label>
@@ -660,22 +660,22 @@ const canSubmit = computed(() =>
       </div>
 
       <!-- Step 3.5: Correction reason / comment -->
-      <div v-if="selectedCalculation" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#f59e0b] text-white text-[16px] font-bold flex items-center justify-center">4</span>
+      <div v-if="selectedCalculation" class="bac-card">
+        <h2 class="bac-section-title font-semibold mb-4 flex items-center gap-2">
+          <span class="bac-step-badge bac-step-badge--amber w-7 h-7 rounded-full text-white font-bold flex items-center justify-center">4</span>
           {{ $t('businessCorrection.step4Title') }} <span class="text-red-500">*</span>
         </h2>
-        <p class="text-[16px] text-[#64748b] mb-3">{{ $t('businessCorrection.step4Desc') }}</p>
+        <p class="bac-description mb-3">{{ $t('businessCorrection.step4Desc') }}</p>
         <textarea
           v-model="correctionComment"
           rows="4"
           :placeholder="$t('businessCorrection.step4Placeholder')"
-          :class="['w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] text-[#1e293b] bg-white resize-y', { 'vld-input--error': formSubmitted && formErrors['comment'] }]"
+          :class="['bac-textarea w-full px-4 py-3 rounded-xl focus:outline-none bg-white resize-y', { 'vld-input--error': formSubmitted && formErrors['comment'] }]"
         ></textarea>
         <p v-if="formSubmitted && formErrors['comment']" class="vld-error" data-validation-error>
           <span class="vld-error__icon">&#9888;</span> {{ formErrors['comment'] }}
         </p>
-        <p v-else class="text-[14px] text-[#94a3b8] mt-1">{{ correctionComment.trim().length }} / 10 {{ $t('businessCorrection.minChars') }}</p>
+        <p v-else class="bac-hint mt-1">{{ correctionComment.trim().length }} / 10 {{ $t('businessCorrection.minChars') }}</p>
       </div>
 
       <!-- Total correction amount (visible only when data entered) -->
@@ -691,24 +691,24 @@ const canSubmit = computed(() =>
       </div>
 
       <!-- Action selection -->
-      <div v-if="selectedCalculation && hasAdditionalData" class="bg-white rounded-2xl p-5 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 rounded-full bg-[#8b5cf6] text-white text-[16px] font-bold flex items-center justify-center">5</span>
+      <div v-if="selectedCalculation && hasAdditionalData" class="bac-card">
+        <h2 class="bac-section-title font-semibold mb-4 flex items-center gap-2">
+          <span class="bac-step-badge bac-step-badge--purple w-7 h-7 rounded-full text-white font-bold flex items-center justify-center">5</span>
           {{ $t('businessCorrection.step5Title') }}
         </h2>
         <div class="space-y-3">
-          <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'balance' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
-            <input type="radio" v-model="correctionAction" value="balance" class="w-4 h-4 text-[#8b5cf6]" />
+          <label class="bac-radio-label flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'balance' ? 'bac-radio-label--active bg-purple-50' : 'bac-radio-label--inactive'">
+            <input type="radio" v-model="correctionAction" value="balance" class="bac-radio-input w-4 h-4" />
             <div>
-              <p class="text-[16px] font-medium text-[#1e293b]">{{ $t('businessCorrection.actionBalance') }}</p>
-              <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
+              <p class="bac-option-title font-medium">{{ $t('businessCorrection.actionBalance') }}</p>
+              <p class="bac-description">{{ $t('businessCorrection.actionBalanceDesc') }}</p>
             </div>
           </label>
-          <label class="flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'refund' ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50'">
-            <input type="radio" v-model="correctionAction" value="refund" class="w-4 h-4 text-[#8b5cf6]" />
+          <label class="bac-radio-label flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all" :class="correctionAction === 'refund' ? 'bac-radio-label--active bg-purple-50' : 'bac-radio-label--inactive'">
+            <input type="radio" v-model="correctionAction" value="refund" class="bac-radio-input w-4 h-4" />
             <div>
-              <p class="text-[16px] font-medium text-[#1e293b]">{{ $t('businessCorrection.actionRefund') }}</p>
-              <p class="text-[16px] text-[#64748b]">{{ $t('businessCorrection.actionRefundDesc') }}</p>
+              <p class="bac-option-title font-medium">{{ $t('businessCorrection.actionRefund') }}</p>
+              <p class="bac-description">{{ $t('businessCorrection.actionRefundDesc') }}</p>
             </div>
           </label>
         </div>
@@ -719,7 +719,7 @@ const canSubmit = computed(() =>
         <button
           @click="submitCorrection"
           :disabled="!canSubmit || (formSubmitted && hasErrors)"
-          class="flex items-center justify-center gap-2 px-6 py-3 bg-[#10b981] text-white rounded-xl font-semibold hover:bg-[#059669] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          class="bac-submit-btn flex items-center justify-center gap-2 px-6 py-3 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -728,7 +728,7 @@ const canSubmit = computed(() =>
         </button>
         <button
           @click="router.push('/business/account')"
-          class="flex items-center justify-center gap-2 px-6 py-3 border border-[#e2e8f0] text-[#64748b] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors"
+          class="bac-cancel-btn flex items-center justify-center gap-2 px-6 py-3 border rounded-xl font-medium transition-colors"
         >
           {{ $t('common.cancel') }}
         </button>
@@ -743,28 +743,28 @@ const canSubmit = computed(() =>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
-        <p class="text-[18px] text-[#64748b] mb-2">
+        <h1 class="bac-page-title mb-4">{{ $t('businessCorrection.successTitle') }}</h1>
+        <p class="bac-success-message mb-2">
           {{ $t('businessCorrection.successMessage') }}
         </p>
-        <p class="text-[16px] text-[#64748b] mb-8">
+        <p class="bac-description mb-8">
           {{ $t('businessCorrection.successNotification') }}
         </p>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
+        <div class="bac-card mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div>
-              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.calculation') }}</p>
-              <p class="text-[22px] font-bold text-[#8b5cf6] font-mono">{{ selectedCalculation?.number }}</p>
+              <p class="bac-description mb-1">{{ $t('businessCorrection.calculation') }}</p>
+              <p class="bac-success-value bac-success-value--purple font-bold font-mono">{{ selectedCalculation?.number }}</p>
             </div>
             <div>
-              <p class="text-[16px] text-[#64748b] mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
-              <p class="text-[22px] font-bold text-[#10b981]">+{{ formatAmount(totalCorrectionAmount) }}</p>
+              <p class="bac-description mb-1">{{ $t('businessCorrection.correctionAmount') }}</p>
+              <p class="bac-success-value bac-success-value--green font-bold">+{{ formatAmount(totalCorrectionAmount) }}</p>
             </div>
           </div>
         </div>
         <button
           @click="router.push('/business/account')"
-          class="flex items-center justify-center gap-2 px-8 py-3 bg-[#8b5cf6] text-white rounded-xl font-medium hover:bg-[#7c3aed] transition-colors mx-auto"
+          class="bac-return-btn flex items-center justify-center gap-2 px-8 py-3 text-white rounded-xl font-medium transition-colors mx-auto"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -779,6 +779,38 @@ const canSubmit = computed(() =>
 </template>
 
 <style scoped>
+.bac-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+@media (min-width: 1024px) {
+  .bac-page-title { font-size: 34px; }
+}
+.bac-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  margin-bottom: 16px;
+  transition: color 0.15s;
+}
+.bac-back-btn:hover { color: #1e293b; }
+.bac-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+@media (min-width: 1024px) {
+  .bac-card { padding: 24px; }
+}
+.bac-card--no-pad {
+  padding: 0;
+}
+
 .doc-section {
   background: white;
   border-radius: 14px;
@@ -1136,6 +1168,147 @@ const canSubmit = computed(() =>
 .vld-input--error {
   border-color: #EF4444 !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.bac-instruction-btn {
+  color: #2D8B4E;
+  font-size: 16px;
+}
+.bac-instruction-btn:hover {
+  background-color: #ecfdf5;
+}
+
+.bac-section-title {
+  font-size: 22px;
+  color: #1e293b;
+}
+
+.bac-step-badge {
+  font-size: 16px;
+}
+.bac-step-badge--purple {
+  background-color: #8b5cf6;
+}
+.bac-step-badge--green {
+  background-color: #10b981;
+}
+.bac-step-badge--amber {
+  background-color: #f59e0b;
+}
+
+.bac-warning-text {
+  font-size: 16px;
+  color: #f59e0b;
+}
+
+.bac-section-header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bac-description {
+  font-size: 16px;
+  color: #64748b;
+}
+
+.bac-text-base {
+  font-size: 16px;
+}
+
+.bac-muted-text {
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+.bac-doc-title {
+  font-size: 17px;
+  color: #1e293b;
+}
+
+.bac-doc-desc {
+  font-size: 15px;
+  color: #6b7280;
+}
+
+.bac-icon-muted {
+  color: #94a3b8;
+}
+
+.bac-icon-success {
+  color: #10b981;
+}
+
+.bac-uploaded-text {
+  font-size: 14px;
+  color: #10b981;
+}
+
+.bac-textarea {
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+.bac-textarea:focus {
+  border-color: #f59e0b;
+}
+
+.bac-hint {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.bac-radio-label--active {
+  border-color: #8b5cf6;
+}
+.bac-radio-label--inactive {
+  border-color: #e2e8f0;
+}
+.bac-radio-label--inactive:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.bac-radio-input {
+  color: #8b5cf6;
+}
+
+.bac-option-title {
+  font-size: 16px;
+  color: #1e293b;
+}
+
+.bac-submit-btn {
+  background-color: #10b981;
+}
+.bac-submit-btn:hover {
+  background-color: #059669;
+}
+
+.bac-cancel-btn {
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+.bac-cancel-btn:hover {
+  background-color: #f8fafc;
+}
+
+.bac-success-message {
+  font-size: 18px;
+  color: #64748b;
+}
+
+.bac-success-value {
+  font-size: 22px;
+}
+.bac-success-value--purple {
+  color: #8b5cf6;
+}
+.bac-success-value--green {
+  color: #10b981;
+}
+
+.bac-return-btn {
+  background-color: #8b5cf6;
+}
+.bac-return-btn:hover {
+  background-color: #7c3aed;
 }
 
 /* ── Mobile ── */
