@@ -17,7 +17,7 @@ interface Props {
 }
 
 defineProps<Props>()
-defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
+defineEmits(['view', 'edit', 'delete', 'approve', 'reject', 'row-click'])
 </script>
 
 <template>
@@ -50,6 +50,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                   index % 2 === 1 ? 'bg-[#FAFBFC]' : 'bg-white',
                   rowClass?.(row)
                 ]"
+                @click="$emit('row-click', row)"
               >
                 <td
                   v-for="col in columns"
@@ -106,6 +107,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
           :key="index"
           :class="['p-4 border-b border-[#F1F5F9] transition-colors', rowClass?.(row)]"
           style="transition: background var(--transition-fast)"
+          @click="$emit('row-click', row)"
         >
           <div class="space-y-2">
             <div
@@ -155,6 +157,9 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
 </template>
 
 <style scoped>
+.table-row {
+  cursor: pointer;
+}
 .table-row:hover {
   background: #F0FDF4 !important;
 }

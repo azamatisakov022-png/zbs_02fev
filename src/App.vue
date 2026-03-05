@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import AppToast from '@/components/ui/AppToast.vue'
 
 const route = useRoute()
 
@@ -25,5 +26,6 @@ const isDashboard = computed(() => {
       <router-view />
     </main>
     <AppFooter v-if="!isDashboard" />
+    <AppToast />
   </div>
 </template>

@@ -166,26 +166,26 @@ function goBack() {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div v-if="!calc" class="text-center py-20">
-      <h2 class="text-[22px] font-bold text-[#1e293b] mb-2">{{ $t('calcDetail.notFound') }}</h2>
-      <button @click="$router.push('/business/calculator')" class="mt-4 px-4 py-2 bg-[#2563eb] text-white rounded-lg text-[14px]">{{ $t('common.back') }}</button>
+      <h2 class="pv-heading pv-heading--lg font-bold mb-2">{{ $t('calcDetail.notFound') }}</h2>
+      <button @click="$router.push('/business/calculator')" class="pv-back-action mt-4 px-4 py-2 text-white rounded-lg">{{ $t('common.back') }}</button>
     </div>
 
     <template v-else>
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="flex items-center gap-2 text-[14px] text-[#64748b] hover:text-[#1e293b] mb-4 transition-colors">
+        <button @click="goBack" class="pv-nav-back flex items-center gap-2 mb-4 transition-colors">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           {{ $t('paymentView.backToCalc') }}
         </button>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-          <h1 class="text-[22px] font-bold text-[#1e293b]">{{ $t('paymentView.title') }} {{ calc.number }}</h1>
-          <span :class="['px-3 py-1 rounded-full text-[14px] font-medium',
+          <h1 class="pv-heading pv-heading--lg font-bold">{{ $t('paymentView.title') }} {{ calc.number }}</h1>
+          <span :class="['pv-status-badge px-3 py-1 rounded-full font-medium',
             getStatusBadgeVariant(calc.status) === 'success' ? 'bg-green-100 text-green-800' :
             getStatusBadgeVariant(calc.status) === 'warning' ? 'bg-yellow-100 text-yellow-800' :
             getStatusBadgeVariant(calc.status) === 'info' ? 'bg-blue-100 text-blue-800' :
             'bg-gray-100 text-gray-800'
           ]">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
-          <span v-if="calc.approvedAt" class="text-[14px] text-[#64748b]">{{ $t('paymentView.approvedDate') }}: {{ calc.approvedAt }}</span>
+          <span v-if="calc.approvedAt" class="pv-approved-date">{{ $t('paymentView.approvedDate') }}: {{ calc.approvedAt }}</span>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ function goBack() {
           <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
         </div>
         <div>
-          <p class="text-[18px] font-semibold text-green-900">{{ $t('paymentView.calcClosed') }}</p>
+          <p class="pv-completed-text font-semibold text-green-900">{{ $t('paymentView.calcClosed') }}</p>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ function goBack() {
                 {{ $t('workflow.submitReceipt') }}
               </button>
             </div>
-            <div v-else-if="feeStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-[14px] font-medium mt-4">
+            <div v-else-if="feeStatus === 'confirmed'" class="pv-confirmed flex items-center gap-2 font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('workflow.feeConfirmed') }}
             </div>
@@ -320,7 +320,7 @@ function goBack() {
                 {{ $t('workflow.submitReceipt') }}
               </button>
             </div>
-            <div v-else-if="penaltyStatus === 'confirmed'" class="flex items-center gap-2 text-[#059669] text-[14px] font-medium mt-4">
+            <div v-else-if="penaltyStatus === 'confirmed'" class="pv-confirmed flex items-center gap-2 font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('workflow.penaltyConfirmed') }}
             </div>
@@ -358,6 +358,38 @@ function goBack() {
 </template>
 
 <style scoped>
+.pv-heading {
+  color: #1e293b;
+}
+.pv-heading--lg {
+  font-size: 22px;
+}
+.pv-back-action {
+  background: #2563eb;
+  font-size: 14px;
+}
+.pv-nav-back {
+  font-size: 14px;
+  color: #64748b;
+}
+.pv-nav-back:hover {
+  color: #1e293b;
+}
+.pv-status-badge {
+  font-size: 14px;
+}
+.pv-approved-date {
+  font-size: 14px;
+  color: #64748b;
+}
+.pv-completed-text {
+  font-size: 18px;
+}
+.pv-confirmed {
+  color: #059669;
+  font-size: 14px;
+}
+
 /* ===== Payment Sections ===== */
 .pv-section {
   border-radius: 16px;

@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
-import api, { silentApi } from '../api/client'
+import api from '../api/client'
 import { calculatePaymentDeadline, formatDateShort } from '../utils/dateUtils'
 import { calculatePenalty, getOverdueDays } from '../utils/penalty'
 import { CalcStatus, type CalcStatusType } from '../constants/statuses'
 import i18n from '../i18n'
 import { notificationStore } from './notifications'
+import { toastStore } from './toast'
 import type {
   Calculation,
   CalculationStatus,
@@ -172,7 +173,7 @@ export const useCalculationStore = defineStore('calculations', {
       }
     },
 
-    addCalculation(data: {
+    async addCalculation(data: {
       number: string
       date: string
       company: string
@@ -184,7 +185,8 @@ export const useCalculationStore = defineStore('calculations', {
       address?: string
       items: ProductItem[]
       totalAmount: number
-    }, status: CalculationStatus = CalcStatus.DRAFT): Calculation {
+      documents?: AttachedDocument[]
+    }, status: CalculationStatus = CalcStatus.DRAFT): Promise<Calculation> {
       const pt = data.payerType || 'producer'
       const deadline = calculatePaymentDeadline(pt, {
         quarter: data.quarter,
@@ -209,6 +211,7 @@ export const useCalculationStore = defineStore('calculations', {
         items: data.items,
         totalAmount: data.totalAmount,
         status,
+        documents: data.documents,
       }
       this.calculations.unshift(calc)
 
@@ -232,15 +235,36 @@ export const useCalculationStore = defineStore('calculations', {
         })),
       }
 
-      silentApi.post('/calculations', backendRequest).then(resp => {
+      const t = i18n.global.t as any
+      try {
+        const resp = await api.post('/calculations', backendRequest)
         if (resp.data?.id) {
           calc.id = resp.data.id
           calc.number = resp.data.number || calc.number
+
+          const filesWithData = data.documents?.filter(d => d.file) || []
+          if (filesWithData.length > 0) {
+            const formData = new FormData()
+            for (const doc of filesWithData) {
+              formData.append('files', doc.file!)
+            }
+            try {
+              await api.put(`/calculations/${resp.data.id}/documents`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              })
+            } catch {
+              toastStore.show({ type: 'error', title: t('toast.calcDocsUpdateError'), message: t('toast.calcDocsUpdateErrorMessage') })
+            }
+          }
+
           if (status === CalcStatus.UNDER_REVIEW) {
-            silentApi.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
+            api.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
           }
         }
-      }).catch(() => {})
+        toastStore.show({ type: 'success', title: t('toast.calcCreated'), message: t('toast.calcCreatedMessage', { number: calc.number }) })
+      } catch {
+        toastStore.show({ type: 'error', title: t('toast.calcCreateError'), message: t('toast.calcCreateErrorMessage') })
+      }
 
       return calc
     },
@@ -266,7 +290,11 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/eco-operator/calculations/${calc.id}`,
         })
       }
-      silentApi.post(`/calculations/${id}/submit`).catch(() => {})
+      api.post(`/calculations/${id}/submit`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcSubmitted'), message: t('toast.calcSubmittedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcSubmitError'), message: t('toast.calcSubmitErrorMessage') })
+      })
     },
 
     approveCalculation(id: number) {
@@ -289,7 +317,12 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/business/calculations/${calc.id}/payment`,
         })
       }
-      silentApi.post(`/calculations/${id}/approve`).catch(() => {})
+      const t2 = i18n.global.t as any
+      api.post(`/calculations/${id}/approve`).then(() => {
+        toastStore.show({ type: 'success', title: t2('toast.calcApproved'), message: t2('toast.calcApprovedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t2('toast.calcApproveError'), message: t2('toast.calcApproveErrorMessage') })
+      })
     },
 
     rejectCalculation(id: number, reason: string, rejectedBy?: string) {
@@ -309,7 +342,11 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/business/calculations/${calc.id}`,
         })
       }
-      silentApi.post(`/calculations/${id}/reject`, { reason, rejectedBy }).catch(() => {})
+      api.post(`/calculations/${id}/reject`, { reason, rejectedBy }).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcRejected'), message: t('toast.calcRejectedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcRejectError'), message: t('toast.calcRejectErrorMessage') })
+      })
     },
 
     submitPayment(id: number, payment: PaymentData) {
@@ -319,7 +356,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.status = CalcStatus.PAYMENT_PENDING
         calc.paymentRejectionReason = undefined
       }
-      silentApi.post(`/calculations/${id}/payment`, payment).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/payment`, payment).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.paymentSubmitted'), message: t('toast.paymentSubmittedMessage') })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.paymentSubmitError'), message: t('toast.paymentSubmitErrorMessage') })
+      })
     },
 
     approvePayment(id: number) {
@@ -328,7 +370,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.status = CalcStatus.PAID
         calc.paidAt = new Date().toLocaleDateString('ru-RU')
       }
-      silentApi.post(`/calculations/${id}/payment/approve`).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/payment/approve`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.paymentApproved'), message: t('toast.paymentApprovedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.paymentApproveError'), message: t('toast.serverError') })
+      })
     },
 
     rejectPayment(id: number, reason: string) {
@@ -337,7 +384,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.status = CalcStatus.PAYMENT_REJECTED
         calc.paymentRejectionReason = reason
       }
-      silentApi.post(`/calculations/${id}/payment/reject`, { reason }).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/payment/reject`, { reason }).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.paymentRejected'), message: t('toast.paymentRejectedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.paymentRejectError'), message: t('toast.serverError') })
+      })
     },
 
     markAsPaid(id: number) {
@@ -346,7 +398,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.status = CalcStatus.PAID
         calc.paidAt = new Date().toLocaleDateString('ru-RU')
       }
-      silentApi.post(`/calculations/${id}/mark-paid`).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/mark-paid`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.markedAsPaid'), message: t('toast.markedAsPaidMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.markAsPaidError'), message: t('toast.serverError') })
+      })
     },
 
     resubmitCalculation(id: number) {
@@ -362,24 +419,71 @@ export const useCalculationStore = defineStore('calculations', {
           userRole: 'payer',
         })
       }
-      silentApi.post(`/calculations/${id}/resubmit`).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/resubmit`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcResubmitted'), message: t('toast.calcResubmittedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcResubmitError'), message: t('toast.serverError') })
+      })
     },
 
-    updateCalculationItems(id: number, items: ProductItem[], totalAmount: number) {
+    async updateCalculation(id: number, payload: { items: ProductItem[]; totalAmount: number; documents?: AttachedDocument[]; documentsChanged?: boolean }) {
       const calc = this.calculations.find(c => c.id === id)
       if (calc && (calc.status === CalcStatus.DRAFT || calc.status === CalcStatus.REJECTED)) {
-        calc.items = items
-        calc.totalAmount = totalAmount
+        calc.items = payload.items
+        calc.totalAmount = payload.totalAmount
       }
-      silentApi.put(`/calculations/${id}/items`, { items, totalAmount }).catch(() => {})
+      if (calc && payload.documents) {
+        calc.documents = payload.documents
+      }
+
+      const t = i18n.global.t as any
+      const backendItems = payload.items.filter(i => i.group && parseFloat(i.volume) > 0).map(i => ({
+        productGroup: i.group,
+        productSubgroup: i.subgroup || undefined,
+        tnvedCode: i.tnvedCode || undefined,
+        gskpCode: i.gskpCode || undefined,
+        productName: i.subgroup || i.group,
+        quantity: parseFloat(i.volume) || 1,
+        unit: 'TON',
+        weight: parseFloat(i.volume) || 1,
+        rate: i.rate,
+        recyclingNorm: i.recyclingStandard,
+      }))
+
+      try {
+        await api.put(`/calculations/${id}/items`, { items: backendItems })
+
+        if (payload.documentsChanged && payload.documents) {
+          const newFiles = payload.documents.filter(d => d.file)
+          if (newFiles.length > 0) {
+            const formData = new FormData()
+            for (const doc of newFiles) {
+              formData.append('files', doc.file!)
+            }
+            await api.put(`/calculations/${id}/documents`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            })
+          }
+        }
+
+        toastStore.show({ type: 'success', title: t('toast.calcItemsUpdated'), message: t('toast.calcItemsUpdatedMessage') })
+      } catch {
+        toastStore.show({ type: 'error', title: t('toast.calcItemsUpdateError'), message: t('toast.calcItemsUpdateErrorMessage') })
+      }
     },
 
-    updateCalculationDocuments(id: number, documents: AttachedDocument[]) {
+    async deleteCalculation(id: number) {
       const calc = this.calculations.find(c => c.id === id)
-      if (calc) {
-        calc.documents = documents
+      const t = i18n.global.t as any
+      try {
+        await api.delete(`/calculations/${id}`)
+        this.calculations = this.calculations.filter(c => c.id !== id)
+        this.myCalculations = this.myCalculations.filter(c => c.id !== id)
+        toastStore.show({ type: 'success', title: t('toast.calcDeleted'), message: t('toast.calcDeletedMessage', { number: calc?.number }) })
+      } catch {
+        toastStore.show({ type: 'error', title: t('toast.calcDeleteError'), message: t('toast.calcDeleteErrorMessage') })
       }
-      silentApi.put(`/calculations/${id}/documents`, { documents }).catch(() => {})
     },
 
     copyCalculation(sourceId: number): Calculation | undefined {
@@ -439,7 +543,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.assignedName = userName
         this.addAuditEntry(id, { action: 'assigned', userId, userName, userRole: 'operator' })
       }
-      silentApi.post(`/calculations/${id}/assign`).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/assign`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcAssigned'), message: t('toast.calcAssignedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcAssignError'), message: t('toast.serverError') })
+      })
     },
 
     unassign(id: number) {
@@ -450,7 +559,12 @@ export const useCalculationStore = defineStore('calculations', {
         calc.assignedTo = undefined
         calc.assignedName = undefined
       }
-      silentApi.post(`/calculations/${id}/unassign`).catch(() => {})
+      const t = i18n.global.t as any
+      api.post(`/calculations/${id}/unassign`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcUnassigned'), message: t('toast.calcUnassignedMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcUnassignError'), message: t('toast.serverError') })
+      })
     },
 
     sendToRevision(id: number, comment: string) {
@@ -468,7 +582,11 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/business/calculations/${calc.id}`,
         })
       }
-      silentApi.post(`/calculations/${id}/revision`, { comment }).catch(() => {})
+      api.post(`/calculations/${id}/revision`, { comment }).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.calcRevisionSent'), message: t('toast.calcRevisionSentMessage', { number: calc?.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.calcRevisionError'), message: t('toast.serverError') })
+      })
     },
 
     uploadFeeReceipt(id: number, data: PaymentData) {
@@ -485,7 +603,12 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/eco-operator/calculations/${calc.id}`,
         })
       }
-      silentApi.post(`/calculations/${id}/fee-receipt`, data).catch(() => {})
+      const t2 = i18n.global.t as any
+      api.post(`/calculations/${id}/fee-receipt`, data).then(() => {
+        toastStore.show({ type: 'success', title: t2('toast.feeReceiptUploaded'), message: t2('toast.feeReceiptUploadedMessage') })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t2('toast.feeReceiptUploadError'), message: t2('toast.serverError') })
+      })
     },
 
     confirmFeePayment(id: number) {
@@ -536,7 +659,11 @@ export const useCalculationStore = defineStore('calculations', {
         })
       }
 
-      silentApi.post(`/calculations/${id}/confirm-fee`).catch(() => {})
+      api.post(`/calculations/${id}/confirm-fee`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.feeConfirmed'), message: t('toast.feeConfirmedMessage', { number: calc.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.feeConfirmError'), message: t('toast.serverError') })
+      })
     },
 
     uploadPenaltyReceipt(id: number, data: PaymentData) {
@@ -553,7 +680,12 @@ export const useCalculationStore = defineStore('calculations', {
           link: `/eco-operator/calculations/${calc.id}`,
         })
       }
-      silentApi.post(`/calculations/${id}/penalty-receipt`, data).catch(() => {})
+      const t2 = i18n.global.t as any
+      api.post(`/calculations/${id}/penalty-receipt`, data).then(() => {
+        toastStore.show({ type: 'success', title: t2('toast.penaltyReceiptUploaded'), message: t2('toast.penaltyReceiptUploadedMessage') })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t2('toast.penaltyReceiptUploadError'), message: t2('toast.serverError') })
+      })
     },
 
     confirmPenaltyPayment(id: number) {
@@ -571,7 +703,11 @@ export const useCalculationStore = defineStore('calculations', {
         role: 'business',
         link: `/business/calculations/${calc.id}/payment`,
       })
-      silentApi.post(`/calculations/${id}/confirm-penalty`).catch(() => {})
+      api.post(`/calculations/${id}/confirm-penalty`).then(() => {
+        toastStore.show({ type: 'success', title: t('toast.penaltyConfirmed'), message: t('toast.penaltyConfirmedMessage', { number: calc.number }) })
+      }).catch(() => {
+        toastStore.show({ type: 'error', title: t('toast.penaltyConfirmError'), message: t('toast.serverError') })
+      })
     },
   },
 })

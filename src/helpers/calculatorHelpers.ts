@@ -1,6 +1,6 @@
 import type { CalculatorProductItem, NormStatus } from '@/types/calculator'
-import { productGroups, productSubgroups } from '@/data/product-groups'
 import { getNormativeForGroup } from '@/data/recycling-norms'
+import { useProductGroupStore } from '@/stores/product-groups'
 import { PAYMENT_ACCOUNTS } from '@/config/payment-accounts'
 import { CalcStatus } from '@/constants/statuses'
 
@@ -31,7 +31,8 @@ export const resetProductIdCounter = () => {
 export const getNextProductId = () => nextProductId++
 
 export const updateItemRate = (item: CalculatorProductItem, year: string) => {
-  const group = productGroups.find(g => g.value === item.group)
+  const groupStore = useProductGroupStore()
+  const group = groupStore.getGroupByValue(item.group)
   if (!group) {
     item.rate = 0
     item.recyclingStandard = 0
@@ -47,15 +48,14 @@ export const updateItemRate = (item: CalculatorProductItem, year: string) => {
   item.recyclingStandard = Math.round(normFraction * 100)
 
   if (item.subgroup) {
-    const subgroups = productSubgroups[item.group]
-    const sub = subgroups?.find(s => s.value === item.subgroup)
+    const sub = groupStore.getSubgroupById(group.groupNumber, item.subgroup)
     if (sub) {
-      item.tnvedCode = sub.code
+      item.tnvedCode = sub.tnvedCode || group.code
       multiplier = sub.rateMultiplier
     }
   }
 
-  item.rate = Math.round(group.baseRate * multiplier)
+  item.rate = Math.round(group.currentRate * multiplier)
   calculateAmount(item)
 }
 
@@ -101,7 +101,7 @@ export const getRemaining = (item: CalculatorProductItem): number => {
 }
 
 export const getGroupLabel = (value: string): string => {
-  return productGroups.find(g => g.value === value)?.label || value
+  return useProductGroupStore().getGroupLabel(value) || value
 }
 
 export const copyRequisites = async (

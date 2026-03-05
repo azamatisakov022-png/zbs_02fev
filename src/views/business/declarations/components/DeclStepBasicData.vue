@@ -20,7 +20,7 @@ defineEmits<{
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-[27px] font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.stepBasicData') }}</h2>
+    <h2 class="dsb-section-title mb-6">{{ $t('businessDecl.stepBasicData') }}</h2>
 
     <div class="space-y-6">
       <Select
@@ -31,12 +31,12 @@ defineEmits<{
         :options="yearFormOptions"
       />
 
-      <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+      <div class="dsb-card">
         <div class="flex items-center gap-2 mb-4">
-          <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-5 h-5 dsb-icon-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <h3 class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.companyDataTitle') }}</h3>
+          <h3 class="dsb-subsection-title">{{ $t('businessDecl.companyDataTitle') }}</h3>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <AppInput
@@ -66,10 +66,10 @@ defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[17px] font-semibold text-green-800">
+          <p class="dsb-alert-text text-green-800">
             {{ $t('businessDecl.calcFound', { count: yearCalculationsCount, year: reportingYear }) }}
           </p>
-          <p class="text-[17px] font-medium text-green-700 mt-1">
+          <p class="dsb-alert-text-medium text-green-700 mt-1">
             {{ $t('businessDecl.totalAmountAndMass', { amount: totalAmount.toLocaleString(), mass: totalMass.toFixed(1) }) }}
           </p>
         </div>
@@ -82,10 +82,40 @@ defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[17px] font-semibold text-yellow-800">{{ $t('businessDecl.noCalcsForYear') }}</p>
-          <p class="text-[17px] font-medium text-yellow-700 mt-1">{{ $t('businessDecl.noCalcsHint') }}</p>
+          <p class="dsb-alert-text text-yellow-800">{{ $t('businessDecl.noCalcsForYear') }}</p>
+          <p class="dsb-alert-text-medium text-yellow-700 mt-1">{{ $t('businessDecl.noCalcsHint') }}</p>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.dsb-section-title {
+  font-size: 27px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.dsb-card {
+  background-color: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+}
+.dsb-icon-blue {
+  color: #2563eb;
+}
+.dsb-subsection-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.dsb-alert-text {
+  font-size: 17px;
+  font-weight: 600;
+}
+.dsb-alert-text-medium {
+  font-size: 17px;
+  font-weight: 500;
+}
+</style>

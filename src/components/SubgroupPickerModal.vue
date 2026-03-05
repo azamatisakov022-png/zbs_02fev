@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  productGroups,
-  productSubgroups,
-  isPackagingGroup,
-  type ProductSubgroup,
-} from '../data/product-groups'
+import { useProductGroupStore } from '@/stores/product-groups'
+import type { ProductSubgroupDTO } from '@/types/product-group'
 
 const { t } = useI18n()
+const groupStore = useProductGroupStore()
 
 const props = defineProps<{
   groupId: string
@@ -17,33 +14,31 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'subgroupSelected': [data: ProductSubgroup | null]
+  'subgroupSelected': [data: ProductSubgroupDTO | null]
 }>()
 
 const isOpen = ref(false)
 const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
-const groupData = computed(() => {
-  return productGroups.find(g => g.value === props.groupId)
-})
+const groupNumber = computed(() => groupStore.getGroupNumberFromValue(props.groupId))
 
-const isPackaging = computed(() => isPackagingGroup(props.groupId))
+const groupData = computed(() => groupStore.getGroupByValue(props.groupId))
 
-const availableSubgroups = computed(() => {
-  return productSubgroups[props.groupId] || []
-})
+const isPackaging = computed(() => groupStore.isPackagingGroup(props.groupId))
 
-const selectedSubgroupData = computed<ProductSubgroup | null>(() => {
+const availableSubgroups = computed(() => groupStore.getSubgroups(groupNumber.value))
+
+const selectedSubgroupData = computed(() => {
   if (!props.groupId || !props.modelValue) return null
-  return availableSubgroups.value.find(s => s.value === props.modelValue) || null
+  return groupStore.getSubgroupById(groupNumber.value, props.modelValue)
 })
 
 const filteredSubgroups = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
   if (!q) return availableSubgroups.value
   return availableSubgroups.value.filter(sub => {
-    if (sub.label.toLowerCase().includes(q)) return true
+    if (sub.name.toLowerCase().includes(q)) return true
     if (sub.gskpCode?.toLowerCase().includes(q)) return true
     if (sub.tnvedCode?.toLowerCase().includes(q)) return true
     if (sub.tnvedName?.toLowerCase().includes(q)) return true
@@ -54,8 +49,11 @@ const filteredSubgroups = computed(() => {
   })
 })
 
-const openModal = () => {
+const openModal = async () => {
   if (!props.groupId) return
+  if (availableSubgroups.value.length === 0) {
+    await groupStore.fetchSubgroups(groupNumber.value)
+  }
   searchQuery.value = ''
   isOpen.value = true
   nextTick(() => {
@@ -67,8 +65,8 @@ const closeModal = () => {
   isOpen.value = false
 }
 
-const selectSubgroup = (sub: ProductSubgroup) => {
-  emit('update:modelValue', sub.value)
+const selectSubgroup = (sub: ProductSubgroupDTO) => {
+  emit('update:modelValue', String(sub.id))
   emit('subgroupSelected', sub)
   isOpen.value = false
 }
@@ -105,15 +103,15 @@ watch(isOpen, (val) => {
       :disabled="!groupId"
       @click="openModal"
     >
-      <span class="spm-trigger-text" :title="selectedSubgroupData ? selectedSubgroupData.label : ''">
-        {{ selectedSubgroupData ? selectedSubgroupData.label : $t('subgroupPicker.clickToSelect') }}
+      <span class="spm-trigger-text" :title="selectedSubgroupData ? selectedSubgroupData.name : ''">
+        {{ selectedSubgroupData ? selectedSubgroupData.name : $t('subgroupPicker.clickToSelect') }}
       </span>
       <svg class="spm-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
       </svg>
     </button>
     <div v-if="selectedSubgroupData" class="spm-hint">
-      {{ selectedSubgroupData.label }}
+      {{ selectedSubgroupData.name }}
     </div>
 
     <Teleport to="body">
@@ -122,7 +120,7 @@ watch(isOpen, (val) => {
           <div class="spm-header">
             <div>
               <h2 class="spm-title">{{ $t('subgroupPicker.title') }}</h2>
-              <p v-if="groupData" class="spm-subtitle">{{ groupData.label }}</p>
+              <p v-if="groupData" class="spm-subtitle">{{ groupData.groupNumber }}. {{ groupData.name }}</p>
             </div>
             <button class="spm-close" @click="closeModal">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -153,13 +151,13 @@ watch(isOpen, (val) => {
             <template v-if="filteredSubgroups.length > 0">
               <div
                 v-for="sub in filteredSubgroups"
-                :key="sub.value"
+                :key="sub.id"
                 class="spm-item"
-                :class="{ 'spm-item--selected': sub.value === modelValue }"
+                :class="{ 'spm-item--selected': String(sub.id) === modelValue }"
                 @click="selectSubgroup(sub)"
               >
                 <div class="spm-item-main">
-                  <span class="spm-item-label">{{ sub.label }}</span>
+                  <span class="spm-item-label">{{ sub.name }}</span>
                 </div>
                 <div class="spm-item-meta">
                   <template v-if="!isPackaging">
@@ -171,12 +169,12 @@ watch(isOpen, (val) => {
                     <span v-if="sub.packagingLetterCode" class="spm-item-code">{{ sub.packagingLetterCode }}</span>
                     <span v-if="sub.packagingDigitalCode" class="spm-item-code">{{ sub.packagingDigitalCode }}</span>
                   </template>
-                  <span class="spm-item-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }} {{ $t('groupPicker.somPerTon') }}</span>
+                  <span class="spm-item-rate">{{ groupData?.currentRate?.toLocaleString('ru-RU') || '—' }} {{ $t('groupPicker.somPerTon') }}</span>
                 </div>
                 <div v-if="!isPackaging && sub.tnvedName" class="spm-item-tnved">
                   {{ sub.tnvedName }}
                 </div>
-                <svg v-if="sub.value === modelValue" class="spm-item-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <svg v-if="String(sub.id) === modelValue" class="spm-item-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                   <path d="M5 13l4 4L19 7" />
                 </svg>
               </div>

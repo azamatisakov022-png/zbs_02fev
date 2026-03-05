@@ -143,8 +143,8 @@ onMounted(async () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('businessReportDetail.reportNotFound') }}</h2>
-      <p class="text-[#64748b] mb-6">{{ $t('businessReportDetail.reportNotFoundDesc') }}</p>
+      <h2 class="brd-heading text-xl font-bold mb-2">{{ $t('businessReportDetail.reportNotFound') }}</h2>
+      <p class="brd-muted mb-6">{{ $t('businessReportDetail.reportNotFoundDesc') }}</p>
       <button @click="goBack" class="btn-back">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         {{ $t('common.back') }}
@@ -163,21 +163,21 @@ onMounted(async () => {
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-3 mb-1">
-            <h1 class="text-xl font-bold text-[#1e293b]">{{ report.number }}</h1>
+            <h1 class="brd-heading text-xl font-bold">{{ report.number }}</h1>
             <span :class="['px-3 py-1 rounded-full text-xs font-medium', getStatusClass(report.status)]">
               {{ $t('status.' + (report.status === 'approved' ? 'approvedMasc' : report.status === 'rejected' ? 'rejectedMasc' : report.status === 'under_review' ? 'underReview' : report.status)) }}
             </span>
           </div>
-          <div class="flex items-center gap-4 text-sm text-[#64748b]">
-            <span>{{ $t('businessReportDetail.period') }}: <strong class="text-[#1e293b]">{{ report.year }} {{ $t('businessReportDetail.yearSuffix') }}</strong></span>
-            <span>{{ $t('businessReportDetail.submissionDate') }}: <strong class="text-[#1e293b]">{{ report.date }}</strong></span>
+          <div class="brd-meta flex items-center gap-4 text-sm">
+            <span>{{ $t('businessReportDetail.period') }}: <strong class="brd-heading-inline">{{ report.year }} {{ $t('businessReportDetail.yearSuffix') }}</strong></span>
+            <span>{{ $t('businessReportDetail.submissionDate') }}: <strong class="brd-heading-inline">{{ report.date }}</strong></span>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm text-[#64748b]">{{ $t('businessReportDetail.completion') }}:</span>
+          <span class="brd-meta text-sm">{{ $t('businessReportDetail.completion') }}:</span>
           <span :class="[
             'text-lg font-bold',
-            report.processingPercent >= 100 ? 'text-[#10b981]' : report.processingPercent >= 80 ? 'text-[#f59e0b]' : 'text-[#ef4444]'
+            report.processingPercent >= 100 ? 'brd-text-success' : report.processingPercent >= 80 ? 'brd-text-warning' : 'brd-text-danger'
           ]">{{ report.processingPercent }}%</span>
         </div>
       </div>
@@ -225,10 +225,10 @@ onMounted(async () => {
       </div>
 
       <!-- Section 2: Product items table -->
-      <div class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
-        <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('businessReportDetail.productInfoTitle') }}</h2>
-          <p class="text-xs text-[#64748b] mt-1">{{ $t('businessReportDetail.productInfoSubtitle') }}</p>
+      <div class="brd-card mb-6 overflow-hidden">
+        <div class="brd-card-header">
+          <h2 class="brd-heading text-base font-semibold">{{ $t('businessReportDetail.productInfoTitle') }}</h2>
+          <p class="brd-muted text-xs mt-1">{{ $t('businessReportDetail.productInfoSubtitle') }}</p>
         </div>
 
         <div v-if="productItems.length > 0" class="rd-table-wrap">
@@ -264,7 +264,7 @@ onMounted(async () => {
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
                 <td class="rd-td rd-td--num">0.00</td>
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
-                <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'text-[#ef4444] font-semibold' : 'text-[#10b981]'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
+                <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'brd-text-danger font-semibold' : 'brd-text-success'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
                 <td class="rd-td rd-td--small">{{ item.contractNumber || '—' }}</td>
                 <td class="rd-td rd-td--small">—</td>
               </tr>
@@ -278,21 +278,21 @@ onMounted(async () => {
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalProcessed * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>0.00</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalProcessed * 1000) }}</strong></td>
-                <td class="rd-td rd-td--num" :class="productTotals.totalDeficit > 0 ? 'text-[#ef4444]' : 'text-[#10b981]'"><strong>{{ fmt(productTotals.totalDeficit * 1000) }}</strong></td>
+                <td class="rd-td rd-td--num" :class="productTotals.totalDeficit > 0 ? 'brd-text-danger' : 'brd-text-success'"><strong>{{ fmt(productTotals.totalDeficit * 1000) }}</strong></td>
                 <td class="rd-td" colspan="2"></td>
               </tr>
             </tfoot>
           </table>
         </div>
-        <div v-else class="px-5 py-8 text-center text-sm text-[#64748b]">
+        <div v-else class="brd-muted px-5 py-8 text-center text-sm">
           {{ $t('businessReportDetail.noProductData') }}
         </div>
       </div>
 
       <!-- Section 3: Packaging items table -->
-      <div class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
-        <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('businessReportDetail.packagingInfoTitle') }}</h2>
+      <div class="brd-card mb-6 overflow-hidden">
+        <div class="brd-card-header">
+          <h2 class="brd-heading text-base font-semibold">{{ $t('businessReportDetail.packagingInfoTitle') }}</h2>
         </div>
 
         <div v-if="packagingItems.length > 0" class="rd-table-wrap">
@@ -328,7 +328,7 @@ onMounted(async () => {
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
                 <td class="rd-td rd-td--num">0.00</td>
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
-                <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'text-[#ef4444] font-semibold' : 'text-[#10b981]'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
+                <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'brd-text-danger font-semibold' : 'brd-text-success'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
                 <td class="rd-td rd-td--small">{{ item.contractNumber || '—' }}</td>
                 <td class="rd-td rd-td--small">—</td>
               </tr>
@@ -348,28 +348,28 @@ onMounted(async () => {
             </tfoot>
           </table>
         </div>
-        <div v-else class="px-5 py-8 text-center text-sm text-[#64748b]">
+        <div v-else class="brd-muted px-5 py-8 text-center text-sm">
           {{ $t('businessReportDetail.noPackagingData') }}
         </div>
       </div>
 
       <!-- Documents section -->
-      <div v-if="report.files.length > 0" class="bg-white rounded-xl border border-[#e2e8f0] shadow-sm mb-6 overflow-hidden">
-        <div class="px-5 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-base font-semibold text-[#1e293b]">{{ $t('businessReportDetail.attachedDocuments') }} ({{ report.files.length }})</h2>
+      <div v-if="report.files.length > 0" class="brd-card mb-6 overflow-hidden">
+        <div class="brd-card-header">
+          <h2 class="brd-heading text-base font-semibold">{{ $t('businessReportDetail.attachedDocuments') }} ({{ report.files.length }})</h2>
         </div>
         <div class="p-5 space-y-2">
-          <div v-for="file in report.files" :key="file.id" class="flex items-center gap-3 bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
+          <div v-for="file in report.files" :key="file.id" class="brd-file-row flex items-center gap-3 rounded-lg px-4 py-3">
             <div class="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
               <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-[#1e293b] truncate">{{ file.name }}</p>
-              <p class="text-xs text-[#64748b]">{{ file.size }}</p>
+              <p class="brd-heading text-sm font-medium truncate">{{ file.name }}</p>
+              <p class="brd-muted text-xs">{{ file.size }}</p>
             </div>
-            <button class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium flex-shrink-0">{{ $t('common.download') }}</button>
+            <button class="brd-download-link text-sm font-medium flex-shrink-0">{{ $t('common.download') }}</button>
           </div>
         </div>
       </div>
@@ -378,21 +378,21 @@ onMounted(async () => {
       <div class="flex flex-wrap items-center gap-3">
         <button
           @click="downloadExcel"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#059669] text-white hover:bg-[#047857] transition-colors shadow-sm"
+          class="brd-btn-excel inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full text-white transition-colors shadow-sm"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
           {{ $t('common.downloadExcel') }}
         </button>
         <button
           @click="downloadPdf"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
+          class="brd-btn-pdf inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full text-white transition-colors shadow-sm"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {{ $t('common.downloadPdf') }}
         </button>
         <button
           @click="handlePrint"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full border border-[#e2e8f0] text-[#475569] hover:bg-[#f8fafc] transition-colors"
+          class="brd-btn-print inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full transition-colors"
         >
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
           {{ $t('common.print') }}
@@ -505,6 +505,67 @@ onMounted(async () => {
 }
 .rd-row--total .rd-td {
   font-weight: 600;
+}
+
+.brd-heading {
+  color: #1e293b;
+}
+.brd-heading-inline {
+  color: #1e293b;
+}
+.brd-muted {
+  color: #64748b;
+}
+.brd-meta {
+  color: #64748b;
+}
+.brd-text-success {
+  color: #10b981;
+}
+.brd-text-warning {
+  color: #f59e0b;
+}
+.brd-text-danger {
+  color: #ef4444;
+}
+.brd-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.brd-card-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.brd-file-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.brd-download-link {
+  color: #2563eb;
+}
+.brd-download-link:hover {
+  color: #1d4ed8;
+}
+.brd-btn-excel {
+  background: #059669;
+}
+.brd-btn-excel:hover {
+  background: #047857;
+}
+.brd-btn-pdf {
+  background: #8B5CF6;
+}
+.brd-btn-pdf:hover {
+  background: #7C3AED;
+}
+.brd-btn-print {
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+.brd-btn-print:hover {
+  background: #f8fafc;
 }
 
 @media print {

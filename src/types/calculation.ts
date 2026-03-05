@@ -22,6 +22,7 @@ export interface AttachedDocument {
   fileType: string
   docType: DocumentType
   dataUrl: string
+  file?: File
 }
 
 export interface ProductItem {

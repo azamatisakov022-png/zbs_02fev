@@ -250,13 +250,13 @@ const printPage = async () => {
     <template v-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="flex items-center gap-2 text-[#1e293b] hover:text-[#2563eb] mb-4">
+          <button @click="backToList" class="bdc-back-link mb-4">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             {{ $t('businessDecl.backToList') }}
           </button>
-          <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessDecl.wizardTitle') }}</h1>
+          <h1 class="bdc-page-title">{{ $t('businessDecl.wizardTitle') }}</h1>
         </div>
 
         <StepperProgress
@@ -266,7 +266,7 @@ const printPage = async () => {
           @go-to-step="goToStep"
         />
 
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
+        <div class="bdc-card">
           <DeclStepBasicData
             v-if="currentStep === 1"
             :reportingYear="reportingYear"
@@ -313,7 +313,7 @@ const printPage = async () => {
             @update:confirmData="confirmData = $event"
           />
 
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
+          <div class="bdc-footer">
             <AppButton
               v-if="currentStep > 1"
               variant="secondary"
@@ -342,7 +342,7 @@ const printPage = async () => {
                 v-if="currentStep < 3"
                 @click="nextStep"
                 :disabled="currentStep === 1 && !canProceedStep1"
-                class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="bdc-next-btn"
               >
                 {{ $t('businessDecl.next') }}
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -378,3 +378,74 @@ const printPage = async () => {
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.bdc-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+@media (min-width: 1024px) {
+  .bdc-page-title { font-size: 34px; }
+}
+.bdc-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bdc-back-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  transition: color 0.15s;
+}
+.bdc-back-link:hover {
+  color: #2563eb;
+}
+.bdc-footer {
+  padding: 16px 24px;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+@media (min-width: 640px) {
+  .bdc-footer {
+    flex-direction: row;
+    gap: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .bdc-footer {
+    padding: 16px 32px;
+  }
+}
+.bdc-next-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+.bdc-next-btn:hover {
+  background-color: #1d4ed8;
+}
+.bdc-next-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
