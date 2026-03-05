@@ -40,8 +40,8 @@ const applications = ref([
     :menuItems="menuItems"
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <h2 class="text-[24px] font-bold text-[#415861]">{{ $t('businessApps.title') }}</h2>
-      <button class="flex items-center gap-2 bg-[#0e888d] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#0a6d71] transition-colors">
+      <h2 class="bapp-title font-bold">{{ $t('businessApps.title') }}</h2>
+      <button class="bapp-new-btn flex items-center gap-2 text-white px-5 py-3 rounded-xl font-medium transition-colors">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -50,20 +50,20 @@ const applications = ref([
     </div>
 
     <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e7eb] mb-6">
+    <div class="bapp-filter-card">
       <div class="flex flex-wrap gap-4">
         <input
           type="text"
           :placeholder="$t('businessApps.searchByNumber')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]"
+          class="bapp-input flex-1 px-4 py-2 rounded-lg focus:outline-none"
         />
-        <select class="px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]">
+        <select class="bapp-select px-4 py-2 rounded-lg focus:outline-none">
           <option value="">{{ $t('businessApps.allTypes') }}</option>
           <option value="declaration">{{ $t('businessApps.declaration') }}</option>
           <option value="registration">{{ $t('businessApps.registration') }}</option>
           <option value="change">{{ $t('businessApps.dataChange') }}</option>
         </select>
-        <select class="px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]">
+        <select class="bapp-select px-4 py-2 rounded-lg focus:outline-none">
           <option value="">{{ $t('businessApps.allStatuses') }}</option>
           <option value="pending">{{ $t('businessApps.underReview') }}</option>
           <option value="approved">{{ $t('businessApps.approved') }}</option>
@@ -75,7 +75,7 @@ const applications = ref([
     <!-- Table -->
     <DataTable :columns="columns" :data="applications" :actions="true">
       <template #cell-number="{ value }">
-        <span class="font-mono font-medium text-[#0e888d]">{{ value }}</span>
+        <span class="bapp-number font-mono font-medium">{{ value }}</span>
       </template>
       <template #cell-status="{ value }">
         <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
@@ -83,7 +83,7 @@ const applications = ref([
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
           <button
-            class="p-2 text-[#0e888d] hover:bg-[#e8f5f5] rounded-lg transition-colors"
+            class="bapp-action-view p-2 rounded-lg transition-colors"
             :title="$t('common.view')"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -92,7 +92,7 @@ const applications = ref([
             </svg>
           </button>
           <button
-            class="p-2 text-[#70868f] hover:bg-[#f1f5f9] rounded-lg transition-colors"
+            class="bapp-action-download p-2 rounded-lg transition-colors"
             :title="$t('common.download')"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,3 +104,52 @@ const applications = ref([
     </DataTable>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.bapp-filter-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+.bapp-title {
+  font-size: 24px;
+  color: #415861;
+}
+.bapp-new-btn {
+  background: #0e888d;
+}
+.bapp-new-btn:hover {
+  background: #0a6d71;
+}
+.bapp-input {
+  min-width: 200px;
+  border: 1px solid #e5e7eb;
+}
+.bapp-input:focus {
+  border-color: #0e888d;
+}
+.bapp-select {
+  border: 1px solid #e5e7eb;
+}
+.bapp-select:focus {
+  border-color: #0e888d;
+}
+.bapp-number {
+  color: #0e888d;
+}
+.bapp-action-view {
+  color: #0e888d;
+}
+.bapp-action-view:hover {
+  background: #e8f5f5;
+}
+.bapp-action-download {
+  color: #70868f;
+}
+.bapp-action-download:hover {
+  background: #f1f5f9;
+}
+</style>

@@ -209,12 +209,12 @@ const goToCalculation = (calcId: number) => {
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
       <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessPayments.pageTitle') }}</h1>
-        <p class="text-[#64748b]">{{ $t('businessPayments.pageSubtitle') }}</p>
+        <h1 class="bpay-page-title text-2xl lg:text-3xl font-bold mb-2">{{ $t('businessPayments.pageTitle') }}</h1>
+        <p class="bpay-muted">{{ $t('businessPayments.pageSubtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
-      <div class="mb-6 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
+      <div class="bpay-cta-banner">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
@@ -227,7 +227,7 @@ const goToCalculation = (calcId: number) => {
             <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessPayments.ctaTitle') }}</h2>
             <p class="text-white/80 text-sm lg:text-base">{{ $t('businessPayments.ctaDesc') }}</p>
           </div>
-          <button @click="startWizard" :disabled="!hasPendingPayments" class="flex items-center justify-center gap-2 bg-white text-[#8b5cf6] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-purple-50 transition-colors shadow-lg flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button @click="startWizard" :disabled="!hasPendingPayments" class="bpay-cta-btn flex items-center justify-center gap-2 bg-white px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-purple-50 transition-colors shadow-lg flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
             {{ $t('businessPayments.payNow') }}
           </button>
@@ -241,8 +241,8 @@ const goToCalculation = (calcId: number) => {
             <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div class="flex-1">
-            <p class="font-medium text-[#1e293b]">{{ $t('businessPayments.unpaidBills') }}</p>
-            <p class="text-sm text-[#64748b]">{{ $t('businessPayments.count') }}: {{ pendingPayments.length }} | {{ $t('businessPayments.sum') }}: <span class="font-semibold text-amber-600">{{ formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0)) }}</span></p>
+            <p class="bpay-dark font-medium">{{ $t('businessPayments.unpaidBills') }}</p>
+            <p class="bpay-muted text-sm">{{ $t('businessPayments.count') }}: {{ pendingPayments.length }} | {{ $t('businessPayments.sum') }}: <span class="font-semibold text-amber-600">{{ formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0)) }}</span></p>
           </div>
           <button @click="startWizard" class="text-amber-600 hover:text-amber-700 font-medium text-sm">{{ $t('businessPayments.payArrow') }}</button>
         </div>
@@ -253,8 +253,8 @@ const goToCalculation = (calcId: number) => {
             <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
           <div>
-            <p class="font-medium text-[#1e293b]">{{ $t('businessPayments.allPaid') }}</p>
-            <p class="text-sm text-[#64748b]">{{ $t('businessPayments.noDebt') }}</p>
+            <p class="bpay-dark font-medium">{{ $t('businessPayments.allPaid') }}</p>
+            <p class="bpay-muted text-sm">{{ $t('businessPayments.noDebt') }}</p>
           </div>
         </div>
       </div>
@@ -267,48 +267,48 @@ const goToCalculation = (calcId: number) => {
       <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.totalPayments') }}</p>
-          <p class="text-2xl font-bold text-[#1e293b]">16</p>
+        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
+          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.totalPayments') }}</p>
+          <p class="bpay-dark text-2xl font-bold">16</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.paidForYear') }}</p>
-          <p class="text-2xl font-bold text-[#10b981]">161 050 {{ $t('businessPayments.som') }}</p>
+        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
+          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.paidForYear') }}</p>
+          <p class="bpay-value-green text-2xl font-bold">161 050 {{ $t('businessPayments.som') }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.toPay') }}</p>
-          <p class="text-2xl font-bold text-[#f59e0b]">{{ formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0)) }}</p>
+        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
+          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.toPay') }}</p>
+          <p class="bpay-value-amber text-2xl font-bold">{{ formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0)) }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.lastPayment') }}</p>
-          <p class="text-2xl font-bold text-[#8b5cf6]">18.01.2025</p>
+        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
+          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.lastPayment') }}</p>
+          <p class="bpay-value-purple text-2xl font-bold">18.01.2025</p>
         </div>
       </div>
 
       <!-- Payment Methods -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-        <h3 class="font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-[#8b5cf6]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+      <div class="bpay-card">
+        <h3 class="bpay-dark font-semibold mb-4 flex items-center gap-2">
+          <svg class="bpay-icon-purple w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
           {{ $t('businessPayments.paymentMethodsTitle') }}
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="flex items-center gap-3 p-3 bg-[#f8fafc] rounded-lg">
+          <div class="bpay-method-item flex items-center gap-3 p-3 rounded-lg">
             <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg></div>
-            <div><p class="font-medium text-[#1e293b] text-sm">{{ $t('businessPayments.methodCard') }}</p><p class="text-xs text-[#64748b]">{{ $t('businessPayments.methodCardDesc') }}</p></div>
+            <div><p class="bpay-dark font-medium text-sm">{{ $t('businessPayments.methodCard') }}</p><p class="bpay-muted text-xs">{{ $t('businessPayments.methodCardDesc') }}</p></div>
           </div>
-          <div class="flex items-center gap-3 p-3 bg-[#f8fafc] rounded-lg">
+          <div class="bpay-method-item flex items-center gap-3 p-3 rounded-lg">
             <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center"><svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg></div>
-            <div><p class="font-medium text-[#1e293b] text-sm">{{ $t('businessPayments.methodQrShort') }}</p><p class="text-xs text-[#64748b]">MBANK, O!Деньги</p></div>
+            <div><p class="bpay-dark font-medium text-sm">{{ $t('businessPayments.methodQrShort') }}</p><p class="bpay-muted text-xs">MBANK, O!Деньги</p></div>
           </div>
-          <div class="flex items-center gap-3 p-3 bg-[#f8fafc] rounded-lg">
+          <div class="bpay-method-item flex items-center gap-3 p-3 rounded-lg">
             <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center"><svg class="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg></div>
-            <div><p class="font-medium text-[#1e293b] text-sm">{{ $t('businessPayments.methodBank') }}</p><p class="text-xs text-[#64748b]">{{ $t('businessPayments.byRequisites') }}</p></div>
+            <div><p class="bpay-dark font-medium text-sm">{{ $t('businessPayments.methodBank') }}</p><p class="bpay-muted text-xs">{{ $t('businessPayments.byRequisites') }}</p></div>
           </div>
         </div>
       </div>
 
       <!-- History -->
-      <div class="mb-4"><h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('businessPayments.paymentHistory') }}</h2></div>
+      <div class="mb-4"><h2 class="bpay-dark text-lg font-semibold mb-4">{{ $t('businessPayments.paymentHistory') }}</h2></div>
       <DataTable :columns="columns" :data="paymentHistory" :actions="true">
         <template #empty>
           <EmptyState
@@ -317,8 +317,8 @@ const goToCalculation = (calcId: number) => {
             :description="$t('businessPayments.noPaymentsDesc')"
           />
         </template>
-        <template #cell-number="{ value }"><span class="font-mono font-medium text-[#8b5cf6]">{{ value }}</span></template>
-        <template #cell-amount="{ value }"><span class="font-semibold text-[#1e293b]">{{ value }}</span></template>
+        <template #cell-number="{ value }"><span class="bpay-mono-purple font-mono font-medium">{{ value }}</span></template>
+        <template #cell-amount="{ value }"><span class="bpay-dark font-semibold">{{ value }}</span></template>
         <template #cell-status="{ value }"><AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge></template>
         <template #actions="{ row }">
           <div class="flex items-center justify-end gap-2">
@@ -340,62 +340,62 @@ const goToCalculation = (calcId: number) => {
     <template v-else-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
+          <button @click="backToList" class="bpay-back-btn flex items-center gap-2 mb-4">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             {{ $t('businessPayments.backToList') }}
           </button>
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessPayments.wizardTitle') }}</h1>
+          <h1 class="bpay-dark text-2xl lg:text-3xl font-bold">{{ $t('businessPayments.wizardTitle') }}</h1>
         </div>
 
         <!-- Progress -->
-        <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
+        <div class="bpay-card">
           <div class="flex items-center justify-between">
             <template v-for="(step, index) in steps" :key="step.number">
               <button @click="goToStep(step.number)" :class="['flex items-center gap-2 lg:gap-3', step.number <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed']">
-                <div :class="['w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-colors', currentStep >= step.number ? 'bg-[#8b5cf6] text-white' : 'bg-[#e2e8f0] text-[#64748b]']">
+                <div :class="['w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-colors', currentStep >= step.number ? 'bpay-step-active' : 'bpay-step-inactive']">
                   <svg v-if="currentStep > step.number" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                   <span v-else>{{ step.number }}</span>
                 </div>
-                <span :class="['hidden sm:block text-sm lg:text-base font-medium', currentStep >= step.number ? 'text-[#1e293b]' : 'text-[#64748b]']">{{ step.title }}</span>
+                <span :class="['hidden sm:block text-sm lg:text-base font-medium', currentStep >= step.number ? 'bpay-dark' : 'bpay-muted']">{{ step.title }}</span>
               </button>
-              <div v-if="index < steps.length - 1" :class="['flex-1 h-1 mx-2 lg:mx-4 rounded-full', currentStep > step.number ? 'bg-[#8b5cf6]' : 'bg-[#e2e8f0]']"></div>
+              <div v-if="index < steps.length - 1" :class="['flex-1 h-1 mx-2 lg:mx-4 rounded-full', currentStep > step.number ? 'bpay-progress-filled' : 'bpay-progress-empty']"></div>
             </template>
           </div>
         </div>
 
         <!-- Steps -->
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
+        <div class="bpay-card bpay-card--flush">
           <!-- Step 1 -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessPayments.selectBills') }}</h2>
+            <h2 class="bpay-dark text-xl font-semibold mb-6">{{ $t('businessPayments.selectBills') }}</h2>
             <div class="space-y-3 mb-6">
-              <div v-for="payment in pendingPayments" :key="payment.id" @click="togglePaymentSelection(payment)" :class="['p-4 rounded-xl border-2 cursor-pointer transition-all', payment.selected ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50']">
+              <div v-for="payment in pendingPayments" :key="payment.id" @click="togglePaymentSelection(payment)" :class="['p-4 rounded-xl border-2 cursor-pointer transition-all', payment.selected ? 'bpay-selectable-active' : 'bpay-selectable-idle']">
                 <div class="flex items-center gap-4">
-                  <div :class="['w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors', payment.selected ? 'border-[#8b5cf6] bg-[#8b5cf6]' : 'border-[#d1d5db]']">
+                  <div :class="['w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors', payment.selected ? 'bpay-check-active' : 'bpay-check-idle']">
                     <svg v-if="payment.selected" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
                   </div>
                   <div class="flex-1">
                     <div class="flex items-center justify-between mb-1">
-                      <span class="font-mono font-medium text-[#8b5cf6]">{{ payment.number }}</span>
-                      <span class="font-bold text-[#1e293b]">{{ formatAmount(payment.amount) }}</span>
+                      <span class="bpay-mono-purple font-mono font-medium">{{ payment.number }}</span>
+                      <span class="bpay-dark font-bold">{{ formatAmount(payment.amount) }}</span>
                     </div>
                     <div class="flex items-center justify-between text-sm">
-                      <span class="text-[#64748b]">{{ payment.type }} • {{ payment.period }}</span>
-                      <span class="text-[#64748b]">{{ $t('businessPayments.dueDate') }}: {{ payment.dueDate }}</span>
+                      <span class="bpay-muted">{{ payment.type }} • {{ payment.period }}</span>
+                      <span class="bpay-muted">{{ $t('businessPayments.dueDate') }}: {{ payment.dueDate }}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="bg-gradient-to-r from-[#8b5cf6]/10 to-[#7c3aed]/10 rounded-xl p-5 border border-[#8b5cf6]/20">
+            <div class="bpay-summary-card">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.selected') }}: {{ selectedPayments.length }}</p>
-                  <button @click="selectAllPayments" class="text-sm text-[#8b5cf6] hover:underline">{{ pendingPayments.every(p => p.selected) ? $t('businessPayments.deselectAll') : $t('businessPayments.selectAll') }}</button>
+                  <p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.selected') }}: {{ selectedPayments.length }}</p>
+                  <button @click="selectAllPayments" class="bpay-link-purple text-sm hover:underline">{{ pendingPayments.every(p => p.selected) ? $t('businessPayments.deselectAll') : $t('businessPayments.selectAll') }}</button>
                 </div>
                 <div class="text-right">
-                  <p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.total') }}</p>
-                  <p class="text-2xl font-bold text-[#8b5cf6]">{{ formatAmount(totalSelectedAmount) }}</p>
+                  <p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.total') }}</p>
+                  <p class="bpay-value-purple text-2xl font-bold">{{ formatAmount(totalSelectedAmount) }}</p>
                 </div>
               </div>
             </div>
@@ -403,36 +403,36 @@ const goToCalculation = (calcId: number) => {
 
           <!-- Step 2 -->
           <div v-if="currentStep === 2" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessPayments.selectPaymentMethod') }}</h2>
+            <h2 class="bpay-dark text-xl font-semibold mb-6">{{ $t('businessPayments.selectPaymentMethod') }}</h2>
             <div class="space-y-3">
-              <div v-for="method in paymentMethods" :key="method.id" @click="paymentMethod = method.id as PaymentMethod" :class="['p-4 rounded-xl border-2 cursor-pointer transition-all', paymentMethod === method.id ? 'border-[#8b5cf6] bg-purple-50' : 'border-[#e2e8f0] hover:border-[#8b5cf6]/50']">
+              <div v-for="method in paymentMethods" :key="method.id" @click="paymentMethod = method.id as PaymentMethod" :class="['p-4 rounded-xl border-2 cursor-pointer transition-all', paymentMethod === method.id ? 'bpay-selectable-active' : 'bpay-selectable-idle']">
                 <div class="flex items-center gap-4">
-                  <div :class="['w-12 h-12 rounded-xl flex items-center justify-center', paymentMethod === method.id ? 'bg-[#8b5cf6]' : 'bg-[#f1f5f9]']">
-                    <svg v-if="method.icon === 'card'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'text-[#64748b]']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                    <svg v-if="method.icon === 'bank'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'text-[#64748b]']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                    <svg v-if="method.icon === 'qr'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'text-[#64748b]']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                  <div :class="['w-12 h-12 rounded-xl flex items-center justify-center', paymentMethod === method.id ? 'bpay-method-icon-active' : 'bpay-method-icon-idle']">
+                    <svg v-if="method.icon === 'card'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'bpay-muted']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                    <svg v-if="method.icon === 'bank'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'bpay-muted']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    <svg v-if="method.icon === 'qr'" :class="['w-6 h-6', paymentMethod === method.id ? 'text-white' : 'bpay-muted']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                   </div>
                   <div class="flex-1">
-                    <p class="font-medium text-[#1e293b]">{{ method.name }}</p>
-                    <p class="text-sm text-[#64748b]">{{ method.description }}</p>
+                    <p class="bpay-dark font-medium">{{ method.name }}</p>
+                    <p class="bpay-muted text-sm">{{ method.description }}</p>
                   </div>
                   <span class="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">{{ method.commission }}</span>
                 </div>
               </div>
             </div>
-            <div class="mt-6 pt-4 border-t border-[#e2e8f0] flex items-center justify-between">
-              <span class="text-[#64748b]">{{ $t('businessPayments.amountToPay') }}:</span>
-              <span class="text-xl font-bold text-[#8b5cf6]">{{ formatAmount(totalSelectedAmount) }}</span>
+            <div class="bpay-divider-top mt-6 pt-4 flex items-center justify-between">
+              <span class="bpay-muted">{{ $t('businessPayments.amountToPay') }}:</span>
+              <span class="bpay-value-purple text-xl font-bold">{{ formatAmount(totalSelectedAmount) }}</span>
             </div>
           </div>
 
           <!-- Step 3 -->
           <div v-if="currentStep === 3" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessPayments.paymentConfirmation') }}</h2>
+            <h2 class="bpay-dark text-xl font-semibold mb-6">{{ $t('businessPayments.paymentConfirmation') }}</h2>
 
             <!-- Card Form -->
             <div v-if="paymentMethod === 'card'" class="space-y-6">
-              <div class="bg-gradient-to-r from-[#1e293b] to-[#334155] rounded-2xl p-6 text-white">
+              <div class="bpay-total-card">
                 <div class="flex justify-between items-start mb-8">
                   <div class="text-xs opacity-60">{{ $t('businessPayments.methodCard') }}</div>
                   <svg class="w-12 h-8 text-white/80" viewBox="0 0 48 32" fill="currentColor"><circle cx="16" cy="16" r="14" fill="#EB001B" opacity="0.8"/><circle cx="32" cy="16" r="14" fill="#F79E1B" opacity="0.8"/></svg>
@@ -445,37 +445,37 @@ const goToCalculation = (calcId: number) => {
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessPayments.cardNumber') }}</label>
-                  <input type="text" :value="formatCardNumber(cardNumber)" @input="handleCardInput" placeholder="0000 0000 0000 0000" class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] font-mono" />
+                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.cardNumber') }}</label>
+                  <input type="text" :value="formatCardNumber(cardNumber)" @input="handleCardInput" placeholder="0000 0000 0000 0000" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessPayments.expiryDate') }}</label>
-                  <input type="text" :value="cardExpiry" @input="handleExpiryInput" placeholder="MM/YY" class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] font-mono" />
+                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.expiryDate') }}</label>
+                  <input type="text" :value="cardExpiry" @input="handleExpiryInput" placeholder="MM/YY" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">CVV</label>
-                  <input type="password" v-model="cardCvv" maxlength="3" placeholder="•••" class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] font-mono" />
+                  <label class="bpay-label block text-sm font-medium mb-2">CVV</label>
+                  <input type="password" v-model="cardCvv" maxlength="3" placeholder="•••" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessPayments.ownerName') }}</label>
-                  <input type="text" v-model="cardHolder" placeholder="IVAN IVANOV" class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#8b5cf6] uppercase" />
+                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.ownerName') }}</label>
+                  <input type="text" v-model="cardHolder" placeholder="IVAN IVANOV" class="bpay-input w-full px-4 py-3 rounded-xl uppercase" />
                 </div>
               </div>
             </div>
 
             <!-- Bank Transfer -->
             <div v-if="paymentMethod === 'bank'" class="space-y-4">
-              <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
-                <h3 class="font-medium text-[#1e293b] mb-4">{{ $t('businessPayments.requisitesTitle') }}</h3>
+              <div class="bpay-panel rounded-xl p-5">
+                <h3 class="bpay-dark font-medium mb-4">{{ $t('businessPayments.requisitesTitle') }}</h3>
                 <div class="space-y-3 text-sm">
-                  <div class="flex justify-between"><span class="text-[#64748b]">{{ $t('businessPayments.recipient') }}:</span><span class="font-medium text-[#1e293b]">{{ bankRequisites.recipient }}</span></div>
-                  <div class="flex justify-between"><span class="text-[#64748b]">{{ $t('businessPayments.inn') }}:</span><span class="font-mono text-[#1e293b]">{{ bankRequisites.inn }}</span></div>
-                  <div class="flex justify-between"><span class="text-[#64748b]">{{ $t('businessPayments.account') }}:</span><span class="font-mono text-[#1e293b]">{{ bankRequisites.account }}</span></div>
-                  <div class="flex justify-between"><span class="text-[#64748b]">{{ $t('businessPayments.bank') }}:</span><span class="text-[#1e293b]">{{ bankRequisites.bank }}</span></div>
-                  <div class="pt-2 border-t border-[#e2e8f0]"><span class="text-[#64748b]">{{ $t('businessPayments.purpose') }}:</span><p class="font-medium text-[#1e293b] mt-1">{{ bankRequisites.purpose }}</p></div>
+                  <div class="flex justify-between"><span class="bpay-muted">{{ $t('businessPayments.recipient') }}:</span><span class="bpay-dark font-medium">{{ bankRequisites.recipient }}</span></div>
+                  <div class="flex justify-between"><span class="bpay-muted">{{ $t('businessPayments.inn') }}:</span><span class="bpay-dark font-mono">{{ bankRequisites.inn }}</span></div>
+                  <div class="flex justify-between"><span class="bpay-muted">{{ $t('businessPayments.account') }}:</span><span class="bpay-dark font-mono">{{ bankRequisites.account }}</span></div>
+                  <div class="flex justify-between"><span class="bpay-muted">{{ $t('businessPayments.bank') }}:</span><span class="bpay-dark">{{ bankRequisites.bank }}</span></div>
+                  <div class="bpay-divider-top pt-2"><span class="bpay-muted">{{ $t('businessPayments.purpose') }}:</span><p class="bpay-dark font-medium mt-1">{{ bankRequisites.purpose }}</p></div>
                 </div>
               </div>
-              <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#cbd5e1] text-[#94a3b8] rounded-xl cursor-not-allowed opacity-60">
+              <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="bpay-btn-disabled w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl cursor-not-allowed opacity-60">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 {{ $t('businessPayments.downloadReceipt') }}
               </button>
@@ -483,38 +483,38 @@ const goToCalculation = (calcId: number) => {
 
             <!-- QR -->
             <div v-if="paymentMethod === 'qr'" class="text-center">
-              <div class="bg-white border-2 border-[#e2e8f0] rounded-2xl p-6 inline-block mb-4">
-                <div class="w-48 h-48 bg-[#1e293b] rounded-lg flex items-center justify-center">
+              <div class="bpay-qr-frame bg-white border-2 rounded-2xl p-6 inline-block mb-4">
+                <div class="bpay-qr-bg w-48 h-48 rounded-lg flex items-center justify-center">
                   <svg class="w-40 h-40 text-white" viewBox="0 0 100 100"><rect x="10" y="10" width="25" height="25" fill="currentColor"/><rect x="65" y="10" width="25" height="25" fill="currentColor"/><rect x="10" y="65" width="25" height="25" fill="currentColor"/><rect x="15" y="15" width="15" height="15" fill="#1e293b"/><rect x="70" y="15" width="15" height="15" fill="#1e293b"/><rect x="15" y="70" width="15" height="15" fill="#1e293b"/><rect x="20" y="20" width="5" height="5" fill="currentColor"/><rect x="75" y="20" width="5" height="5" fill="currentColor"/><rect x="20" y="75" width="5" height="5" fill="currentColor"/><rect x="40" y="40" width="20" height="20" fill="currentColor"/><rect x="45" y="45" width="10" height="10" fill="#1e293b"/></svg>
                 </div>
               </div>
-              <p class="text-[#1e293b] font-medium mb-2">{{ $t('businessPayments.scanQr') }}</p>
-              <p class="text-sm text-[#64748b]">{{ $t('businessPayments.openApp') }}</p>
+              <p class="bpay-dark font-medium mb-2">{{ $t('businessPayments.scanQr') }}</p>
+              <p class="bpay-muted text-sm">{{ $t('businessPayments.openApp') }}</p>
             </div>
 
             <!-- Summary -->
-            <div class="mt-6 pt-4 border-t border-[#e2e8f0]">
-              <div class="bg-[#f8fafc] rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2"><span class="text-[#64748b]">{{ $t('businessPayments.payer') }}:</span><span class="font-medium text-[#1e293b]">{{ companyData.name }}</span></div>
-                <div class="flex items-center justify-between pt-2 border-t border-[#e2e8f0]"><span class="font-medium text-[#1e293b]">{{ $t('businessPayments.sum') }}:</span><span class="text-xl font-bold text-[#8b5cf6]">{{ formatAmount(totalSelectedAmount) }}</span></div>
+            <div class="bpay-divider-top mt-6 pt-4">
+              <div class="bpay-panel rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2"><span class="bpay-muted">{{ $t('businessPayments.payer') }}:</span><span class="bpay-dark font-medium">{{ companyData.name }}</span></div>
+                <div class="bpay-divider-top flex items-center justify-between pt-2"><span class="bpay-dark font-medium">{{ $t('businessPayments.sum') }}:</span><span class="bpay-value-purple text-xl font-bold">{{ formatAmount(totalSelectedAmount) }}</span></div>
               </div>
             </div>
           </div>
 
           <!-- Navigation -->
-          <div class="px-6 lg:px-8 py-4 bg-[#f8fafc] border-t border-[#e2e8f0] flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
+          <div class="bpay-nav-bar px-6 lg:px-8 py-4 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-4 sticky bottom-0 z-10 rounded-b-2xl">
             <AppButton v-if="currentStep > 1" variant="secondary" @click="prevStep">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>{{ $t('businessPayments.back') }}
             </AppButton>
             <div v-else></div>
             <div class="flex flex-col sm:flex-row gap-3">
-              <button v-if="currentStep < 3" @click="nextStep" :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg font-medium hover:bg-[#7c3aed] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button v-if="currentStep < 3" @click="nextStep" :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ $t('businessPayments.next') }}<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </button>
               <AppButton v-if="currentStep === 3 && paymentMethod === 'card'" variant="primary" @click="processPayment">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{{ $t('businessPayments.payBtn') }} {{ formatAmount(totalSelectedAmount) }}
               </AppButton>
-              <button v-if="currentStep === 3 && paymentMethod === 'bank'" @click="backToList" class="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#8b5cf6] text-white rounded-lg font-medium hover:bg-[#7c3aed] transition-colors">{{ $t('businessPayments.done') }}</button>
+              <button v-if="currentStep === 3 && paymentMethod === 'bank'" @click="backToList" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors">{{ $t('businessPayments.done') }}</button>
               <AppButton v-if="currentStep === 3 && paymentMethod === 'qr'" variant="primary" @click="processPayment">{{ $t('businessPayments.iPaid') }}</AppButton>
             </div>
           </div>
@@ -526,10 +526,10 @@ const goToCalculation = (calcId: number) => {
     <template v-else-if="viewMode === 'processing'">
       <div class="max-w-md mx-auto text-center py-20">
         <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-purple-100 flex items-center justify-center">
-          <svg class="w-10 h-10 text-[#8b5cf6] animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <svg class="bpay-icon-purple w-10 h-10 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </div>
-        <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('businessPayments.processingPayment') }}</h2>
-        <p class="text-[#64748b]">{{ $t('businessPayments.dontClosePage') }}</p>
+        <h2 class="bpay-dark text-xl font-bold mb-2">{{ $t('businessPayments.processingPayment') }}</h2>
+        <p class="bpay-muted">{{ $t('businessPayments.dontClosePage') }}</p>
       </div>
     </template>
 
@@ -539,20 +539,20 @@ const goToCalculation = (calcId: number) => {
         <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 flex items-center justify-center">
           <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-4">{{ $t('businessPayments.paymentSuccess') }}</h1>
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-8">
+        <h1 class="bpay-dark text-2xl lg:text-3xl font-bold mb-4">{{ $t('businessPayments.paymentSuccess') }}</h1>
+        <div class="bpay-card mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div><p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.number') }}</p><p class="text-lg font-bold text-[#8b5cf6] font-mono">{{ paymentResult.number }}</p></div>
-            <div><p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.sum') }}</p><p class="text-lg font-bold text-[#1e293b]">{{ formatAmount(totalSelectedAmount) }}</p></div>
-            <div><p class="text-sm text-[#64748b] mb-1">{{ $t('businessPayments.date') }}</p><p class="text-lg font-bold text-[#1e293b]">{{ paymentResult.date }} {{ paymentResult.time }}</p></div>
+            <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.number') }}</p><p class="bpay-value-purple text-lg font-bold font-mono">{{ paymentResult.number }}</p></div>
+            <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.sum') }}</p><p class="bpay-dark text-lg font-bold">{{ formatAmount(totalSelectedAmount) }}</p></div>
+            <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.date') }}</p><p class="bpay-dark text-lg font-bold">{{ paymentResult.date }} {{ paymentResult.time }}</p></div>
           </div>
         </div>
-        <p class="text-[#64748b] mb-8">{{ $t('businessPayments.receiptSentToEmail') }}</p>
+        <p class="bpay-muted mb-8">{{ $t('businessPayments.receiptSentToEmail') }}</p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="flex items-center justify-center gap-2 px-6 py-3 border border-[#cbd5e1] text-[#94a3b8] rounded-xl cursor-not-allowed opacity-60">
+          <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="bpay-btn-disabled flex items-center justify-center gap-2 px-6 py-3 rounded-xl cursor-not-allowed opacity-60">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>{{ $t('businessPayments.downloadReceipt') }}
           </button>
-          <button @click="backToList" class="flex items-center justify-center gap-2 px-6 py-3 bg-[#8b5cf6] text-white rounded-xl font-medium hover:bg-[#7c3aed] transition-colors">
+          <button @click="backToList" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>{{ $t('businessPayments.toPaymentList') }}
           </button>
         </div>
@@ -613,8 +613,8 @@ const goToCalculation = (calcId: number) => {
 
               <!-- Attached file -->
               <div v-if="selectedPayment.fileName" class="pd-file">
-                <svg class="w-5 h-5 text-[#8b5cf6] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                <span class="text-sm text-[#374151]">{{ selectedPayment.fileName }}</span>
+                <svg class="bpay-icon-purple w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <span class="bpay-file-name text-sm">{{ selectedPayment.fileName }}</span>
               </div>
 
               <!-- Footer -->
@@ -634,6 +634,166 @@ const goToCalculation = (calcId: number) => {
 </template>
 
 <style scoped>
+.bpay-page-title {
+  color: #1e293b;
+}
+.bpay-dark {
+  color: #1e293b;
+}
+.bpay-muted {
+  color: #64748b;
+}
+.bpay-mono-purple {
+  color: #8b5cf6;
+}
+.bpay-icon-purple {
+  color: #8b5cf6;
+}
+.bpay-value-purple {
+  color: #8b5cf6;
+}
+.bpay-value-green {
+  color: #10b981;
+}
+.bpay-value-amber {
+  color: #f59e0b;
+}
+.bpay-link-purple {
+  color: #8b5cf6;
+}
+.bpay-cta-btn {
+  color: #8b5cf6;
+}
+.bpay-stat-card {
+  border: 1px solid #e2e8f0;
+}
+.bpay-stat-label {
+  color: #64748b;
+}
+.bpay-method-item {
+  background: #f8fafc;
+}
+.bpay-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.bpay-divider-top {
+  border-top: 1px solid #e2e8f0;
+}
+.bpay-back-btn {
+  color: #64748b;
+}
+.bpay-back-btn:hover {
+  color: #1e293b;
+}
+.bpay-step-active {
+  background: #8b5cf6;
+  color: white;
+}
+.bpay-step-inactive {
+  background: #e2e8f0;
+  color: #64748b;
+}
+.bpay-progress-filled {
+  background: #8b5cf6;
+}
+.bpay-progress-empty {
+  background: #e2e8f0;
+}
+.bpay-selectable-active {
+  border-color: #8b5cf6;
+  background: rgb(250 245 255);
+}
+.bpay-selectable-idle {
+  border-color: #e2e8f0;
+}
+.bpay-selectable-idle:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+}
+.bpay-check-active {
+  border-color: #8b5cf6;
+  background: #8b5cf6;
+}
+.bpay-check-idle {
+  border-color: #d1d5db;
+}
+.bpay-method-icon-active {
+  background: #8b5cf6;
+}
+.bpay-method-icon-idle {
+  background: #f1f5f9;
+}
+.bpay-label {
+  color: #1e293b;
+}
+.bpay-input {
+  border: 1px solid #e2e8f0;
+}
+.bpay-input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+}
+.bpay-btn-primary {
+  background: #8b5cf6;
+  color: white;
+}
+.bpay-btn-primary:hover {
+  background: #7c3aed;
+}
+.bpay-btn-disabled {
+  border: 1px solid #cbd5e1;
+  color: #94a3b8;
+}
+.bpay-nav-bar {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.bpay-qr-frame {
+  border-color: #e2e8f0;
+}
+.bpay-qr-bg {
+  background: #1e293b;
+}
+.bpay-file-name {
+  color: #374151;
+}
+.bpay-cta-banner {
+  margin-bottom: 24px;
+  background: linear-gradient(to right, #8b5cf6, #7c3aed);
+  border-radius: 16px;
+  padding: 24px 32px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .bpay-cta-banner { padding: 32px; }
+}
+.bpay-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+.bpay-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+.bpay-summary-card {
+  background: linear-gradient(to right, rgba(139,92,246,0.1), rgba(124,58,237,0.1));
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(139,92,246,0.2);
+}
+.bpay-total-card {
+  background: linear-gradient(to right, #1e293b, #334155);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+}
+
 @media print {
   .dashboard-layout > aside,
   .dashboard-layout > main > header,

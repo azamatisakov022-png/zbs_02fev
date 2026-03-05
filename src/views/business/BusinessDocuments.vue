@@ -252,12 +252,12 @@ const resetDocFilters = () => {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
-      <h1 class="text-[34px] lg:text-[40px] font-bold text-[#1e293b] mb-2">{{ $t('businessDocs.title') }}</h1>
-      <p class="text-[22px] text-[#64748b]">{{ $t('businessDocs.subtitle') }}</p>
+      <h1 class="bdoc-page-title font-bold mb-2">{{ $t('businessDocs.title') }}</h1>
+      <p class="bdoc-page-subtitle">{{ $t('businessDocs.subtitle') }}</p>
     </div>
 
     <!-- CTA Banner -->
-    <div class="mb-6 bg-gradient-to-r from-[#0ea5e9] to-[#0284c7] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
+    <div class="bdoc-cta-banner mb-6 rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
       <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
@@ -267,12 +267,12 @@ const resetDocFilters = () => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-[28px] lg:text-[22px] font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
-          <p class="text-white/80 text-[21px] lg:text-[22px]">{{ $t('businessDocs.uploadDescription') }}</p>
+          <h2 class="bdoc-cta-title font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
+          <p class="bdoc-cta-desc text-white/80">{{ $t('businessDocs.uploadDescription') }}</p>
         </div>
         <button
           @click="showUploadModal = true"
-          class="flex items-center justify-center gap-2 bg-white text-[#0ea5e9] px-6 py-3 lg:px-8 lg:py-4 rounded-xl text-[21px] font-semibold hover:bg-sky-50 transition-colors shadow-lg flex-shrink-0"
+          class="bdoc-cta-btn flex items-center justify-center gap-2 bg-white px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-sky-50 transition-colors shadow-lg flex-shrink-0"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -284,36 +284,36 @@ const resetDocFilters = () => {
 
     <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-[21px] text-[#64748b] mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
-        <p class="text-[22px] font-bold text-[#1e293b]">{{ documents.length }}</p>
+      <div class="bd-stat-card">
+        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
+        <p class="bdoc-stat-value font-bold">{{ documents.length }}</p>
       </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-[21px] text-[#64748b] mb-1">{{ $t('businessDocs.declarations') }}</p>
-        <p class="text-[22px] font-bold text-[#2563eb]">{{ documents.filter(d => d.category === 'declarations').length }}</p>
+      <div class="bd-stat-card">
+        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.declarations') }}</p>
+        <p class="bdoc-stat-value bdoc-stat-value--blue font-bold">{{ documents.filter(d => d.category === 'declarations').length }}</p>
       </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-[21px] text-[#64748b] mb-1">{{ $t('businessDocs.reports') }}</p>
-        <p class="text-[22px] font-bold text-[#10b981]">{{ documents.filter(d => d.category === 'reports').length }}</p>
+      <div class="bd-stat-card">
+        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.reports') }}</p>
+        <p class="bdoc-stat-value bdoc-stat-value--green font-bold">{{ documents.filter(d => d.category === 'reports').length }}</p>
       </div>
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-        <p class="text-[21px] text-[#64748b] mb-1">{{ $t('businessDocs.contracts') }}</p>
-        <p class="text-[22px] font-bold text-[#8b5cf6]">{{ documents.filter(d => d.category === 'contracts').length }}</p>
+      <div class="bd-stat-card">
+        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.contracts') }}</p>
+        <p class="bdoc-stat-value bdoc-stat-value--purple font-bold">{{ documents.filter(d => d.category === 'contracts').length }}</p>
       </div>
     </div>
 
     <!-- Categories -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <div class="bd-section mb-6">
       <div class="flex flex-wrap gap-2">
         <button
           v-for="category in categories"
           :key="category.id"
           @click="activeCategory = category.id"
           :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-lg text-[21px] font-medium transition-colors',
+            'bdoc-category-btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors',
             activeCategory === category.id
-              ? 'bg-[#0ea5e9] text-white'
-              : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
+              ? 'bdoc-category-btn--active'
+              : 'bdoc-category-btn--inactive'
           ]"
         >
           <svg v-if="category.icon === 'folder'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
@@ -324,25 +324,25 @@ const resetDocFilters = () => {
           <svg v-if="category.icon === 'clipboard'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
           {{ category.name }}
           <span :class="[
-            'text-[21px] px-1.5 py-0.5 rounded',
-            activeCategory === category.id ? 'bg-white/20' : 'bg-[#e2e8f0]'
+            'bdoc-category-count px-1.5 py-0.5 rounded',
+            activeCategory === category.id ? 'bg-white/20' : 'bdoc-category-count--inactive'
           ]">{{ category.count }}</span>
         </button>
       </div>
     </div>
 
     <!-- Search -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <div class="bd-section mb-6">
       <div class="flex flex-wrap gap-4">
-        <div class="flex-1 min-w-[250px] relative">
-          <svg class="w-5 h-5 text-[#64748b] absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="bdoc-search-wrap flex-1 relative">
+          <svg class="w-5 h-5 bdoc-search-icon absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input
             type="text"
             v-model="searchQuery"
             :placeholder="$t('businessDocs.searchPlaceholder')"
-            class="w-full pl-10 pr-4 py-2 text-[21px] border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0ea5e9]"
+            class="bdoc-search-input w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none"
           />
         </div>
         <Select v-model="filterType" :options="typeFilterOptions" size="sm" />
@@ -351,20 +351,20 @@ const resetDocFilters = () => {
     </div>
 
     <!-- Documents List -->
-    <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-      <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-        <h2 class="text-[28px] font-semibold text-[#1e293b]">
+    <div class="bd-card overflow-hidden">
+      <div class="bd-card__header">
+        <h2 class="bdoc-list-title font-semibold">
           {{ activeCategory === 'all' ? $t('businessDocs.allDocuments') : getCategoryName(activeCategory) }}
-          <span class="text-[22px] text-[#64748b] font-normal">({{ filteredDocuments.length }})</span>
+          <span class="bdoc-list-count font-normal">({{ filteredDocuments.length }})</span>
         </h2>
       </div>
 
       <!-- Desktop document list -->
-      <div v-if="filteredDocuments.length > 0" class="hidden md:block divide-y divide-[#f1f5f9]">
+      <div v-if="filteredDocuments.length > 0" class="bdoc-list-divider hidden md:block">
         <div
           v-for="doc in filteredDocuments"
           :key="doc.id"
-          class="px-6 py-4 flex items-center gap-4 hover:bg-[#f8fafc] transition-colors"
+          class="bdoc-doc-row px-6 py-4 flex items-center gap-4 transition-colors"
         >
           <!-- Icon -->
           <div :class="[
@@ -381,8 +381,8 @@ const resetDocFilters = () => {
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
-            <p class="text-[22px] font-medium text-[#1e293b] truncate">{{ doc.name }}</p>
-            <div class="flex items-center gap-3 text-[21px] text-[#64748b]">
+            <p class="bdoc-doc-name font-medium truncate">{{ doc.name }}</p>
+            <div class="bdoc-doc-meta flex items-center gap-3">
               <span>{{ doc.type }}</span>
               <span>&middot;</span>
               <span>{{ doc.size }}</span>
@@ -393,7 +393,7 @@ const resetDocFilters = () => {
 
           <!-- Category Badge -->
           <span :class="[
-            'hidden sm:inline-block px-2 py-1 rounded text-[21px] font-medium',
+            'bdoc-category-badge hidden sm:inline-block px-2 py-1 rounded font-medium',
             getCategoryColor(doc.category) === 'blue' ? 'bg-blue-100 text-blue-800' :
             getCategoryColor(doc.category) === 'green' ? 'bg-green-100 text-green-800' :
             getCategoryColor(doc.category) === 'amber' ? 'bg-amber-100 text-amber-800' :
@@ -433,7 +433,7 @@ const resetDocFilters = () => {
       </div>
 
       <!-- Mobile document cards -->
-      <div v-if="filteredDocuments.length > 0" class="md:hidden divide-y divide-[#f1f5f9]">
+      <div v-if="filteredDocuments.length > 0" class="bdoc-list-divider md:hidden">
         <div
           v-for="doc in filteredDocuments"
           :key="'m-' + doc.id"
@@ -452,8 +452,8 @@ const resetDocFilters = () => {
               </svg>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="font-medium text-[#1e293b] text-[22px] truncate">{{ doc.name }}</p>
-              <p class="text-[21px] text-[#64748b] mt-0.5">{{ doc.type }} &middot; {{ doc.size }} &middot; {{ doc.uploadedAt }}</p>
+              <p class="bdoc-doc-name font-medium truncate">{{ doc.name }}</p>
+              <p class="bdoc-doc-meta mt-0.5">{{ doc.type }} &middot; {{ doc.size }} &middot; {{ doc.uploadedAt }}</p>
             </div>
             <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ $t(statusI18nKey[doc.status] || doc.status) }}</AppBadge>
           </div>
@@ -500,11 +500,11 @@ const resetDocFilters = () => {
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       @click.self="closeUploadModal"
     >
-      <div class="bg-white rounded-2xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="bdoc-modal bg-white rounded-2xl w-full max-w-xl overflow-hidden flex flex-col">
         <!-- Header -->
-        <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-[28px] font-semibold text-[#1e293b]">{{ $t('businessDocs.uploadingDocuments') }}</h2>
-          <button @click="closeUploadModal" class="p-2 text-[#64748b] hover:bg-[#f1f5f9] rounded-lg">
+        <div class="bd-card__header">
+          <h2 class="bdoc-list-title font-semibold">{{ $t('businessDocs.uploadingDocuments') }}</h2>
+          <button @click="closeUploadModal" class="bdoc-close-btn p-2 rounded-lg">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -520,33 +520,33 @@ const resetDocFilters = () => {
             @drop.prevent="handleDrop"
             :class="[
               'border-2 border-dashed rounded-xl p-8 text-center transition-colors mb-6',
-              isDragging ? 'border-[#0ea5e9] bg-sky-50' : 'border-[#e2e8f0] hover:border-[#0ea5e9]'
+              isDragging ? 'bdoc-dropzone--active bg-sky-50' : 'bdoc-dropzone--idle'
             ]"
           >
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-[#f1f5f9] flex items-center justify-center">
-              <svg class="w-8 h-8 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="bdoc-dropzone-icon w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
+              <svg class="w-8 h-8 bdoc-muted-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <p class="text-[22px] text-[#1e293b] font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
-            <p class="text-[21px] text-[#64748b] mb-4">{{ $t('businessDocs.or') }}</p>
-            <label class="inline-flex items-center gap-2 bg-[#0ea5e9] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#0284c7] transition-colors cursor-pointer">
+            <p class="bdoc-doc-name font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
+            <p class="bdoc-doc-meta mb-4">{{ $t('businessDocs.or') }}</p>
+            <label class="bdoc-upload-btn inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors cursor-pointer">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               {{ $t('businessDocs.selectFiles') }}
               <input type="file" multiple class="hidden" @change="handleFileSelect" />
             </label>
-            <p class="text-[21px] text-[#64748b] mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
+            <p class="bdoc-doc-meta mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
           </div>
 
           <!-- Uploaded Files -->
           <div v-if="uploadedFiles.length > 0" class="space-y-3">
-            <h3 class="text-[21px] font-medium text-[#1e293b]">{{ $t('businessDocs.uploadingFiles') }}</h3>
+            <h3 class="bdoc-upload-heading font-medium">{{ $t('businessDocs.uploadingFiles') }}</h3>
             <div
               v-for="file in uploadedFiles"
               :key="file.id"
-              class="bg-[#f8fafc] rounded-lg p-4 border border-[#e2e8f0]"
+              class="bdoc-file-card rounded-lg p-4"
             >
               <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -555,8 +555,8 @@ const resetDocFilters = () => {
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-[21px] font-medium text-[#1e293b] truncate">{{ file.name }}</p>
-                  <p class="text-[21px] text-[#64748b]">{{ file.size }}</p>
+                  <p class="bdoc-upload-heading font-medium truncate">{{ file.name }}</p>
+                  <p class="bdoc-doc-meta">{{ file.size }}</p>
                 </div>
                 <div v-if="file.status === 'complete'" class="text-green-500">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -572,9 +572,9 @@ const resetDocFilters = () => {
                   </svg>
                 </button>
               </div>
-              <div v-if="file.status === 'uploading'" class="h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
+              <div v-if="file.status === 'uploading'" class="bdoc-progress-track h-1.5 rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-[#0ea5e9] rounded-full transition-all duration-300"
+                  class="bdoc-progress-bar h-full rounded-full transition-all duration-300"
                   :style="{ width: `${file.progress}%` }"
                 ></div>
               </div>
@@ -583,14 +583,14 @@ const resetDocFilters = () => {
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 border-t border-[#e2e8f0] flex justify-end gap-3">
+        <div class="bd-modal__footer">
           <AppButton variant="secondary" @click="closeUploadModal">
             {{ $t('common.cancel') }}
           </AppButton>
           <button
             @click="finishUpload"
             :disabled="uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'uploading')"
-            class="px-5 py-2.5 bg-[#0ea5e9] text-white rounded-lg font-medium hover:bg-[#0284c7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="bdoc-upload-btn px-5 py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ $t('businessDocs.upload') }}
           </button>
@@ -609,3 +609,195 @@ const resetDocFilters = () => {
     />
   </DashboardLayout>
 </template>
+
+<style scoped>
+.bd-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bd-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bd-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bd-card__header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bd-modal__footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.bdoc-page-title {
+  font-size: 34px;
+  color: #1e293b;
+}
+@media (min-width: 1024px) {
+  .bdoc-page-title {
+    font-size: 40px;
+  }
+}
+.bdoc-page-subtitle {
+  font-size: 22px;
+  color: #64748b;
+}
+.bdoc-cta-banner {
+  background: linear-gradient(to right, #0ea5e9, #0284c7);
+}
+.bdoc-cta-title {
+  font-size: 28px;
+}
+@media (min-width: 1024px) {
+  .bdoc-cta-title {
+    font-size: 22px;
+  }
+}
+.bdoc-cta-desc {
+  font-size: 21px;
+}
+@media (min-width: 1024px) {
+  .bdoc-cta-desc {
+    font-size: 22px;
+  }
+}
+.bdoc-cta-btn {
+  font-size: 21px;
+  color: #0ea5e9;
+}
+.bdoc-stat-label {
+  font-size: 21px;
+  color: #64748b;
+}
+.bdoc-stat-value {
+  font-size: 22px;
+  color: #1e293b;
+}
+.bdoc-stat-value--blue {
+  color: #2563eb;
+}
+.bdoc-stat-value--green {
+  color: #10b981;
+}
+.bdoc-stat-value--purple {
+  color: #8b5cf6;
+}
+.bdoc-category-btn {
+  font-size: 21px;
+}
+.bdoc-category-btn--active {
+  background: #0ea5e9;
+  color: #fff;
+}
+.bdoc-category-btn--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.bdoc-category-btn--inactive:hover {
+  background: #e2e8f0;
+}
+.bdoc-category-count {
+  font-size: 21px;
+}
+.bdoc-category-count--inactive {
+  background: #e2e8f0;
+}
+.bdoc-search-wrap {
+  min-width: 250px;
+}
+.bdoc-search-icon {
+  color: #64748b;
+}
+.bdoc-search-input {
+  font-size: 21px;
+  border: 1px solid #e2e8f0;
+}
+.bdoc-search-input:focus {
+  border-color: #0ea5e9;
+}
+.bdoc-list-title {
+  font-size: 28px;
+  color: #1e293b;
+}
+.bdoc-list-count {
+  font-size: 22px;
+  color: #64748b;
+}
+.bdoc-list-divider > * + * {
+  border-top: 1px solid #f1f5f9;
+}
+.bdoc-doc-row:hover {
+  background: #f8fafc;
+}
+.bdoc-doc-name {
+  font-size: 22px;
+  color: #1e293b;
+}
+.bdoc-doc-meta {
+  font-size: 21px;
+  color: #64748b;
+}
+.bdoc-category-badge {
+  font-size: 21px;
+}
+.bdoc-muted-text {
+  color: #64748b;
+}
+.bdoc-close-btn {
+  color: #64748b;
+}
+.bdoc-close-btn:hover {
+  background: #f1f5f9;
+}
+.bdoc-dropzone--active {
+  border-color: #0ea5e9;
+}
+.bdoc-dropzone--idle {
+  border-color: #e2e8f0;
+}
+.bdoc-dropzone--idle:hover {
+  border-color: #0ea5e9;
+}
+.bdoc-dropzone-icon {
+  background: #f1f5f9;
+}
+.bdoc-upload-btn {
+  background: #0ea5e9;
+}
+.bdoc-upload-btn:hover {
+  background: #0284c7;
+}
+.bdoc-upload-heading {
+  font-size: 21px;
+  color: #1e293b;
+}
+.bdoc-file-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+.bdoc-progress-track {
+  background: #e2e8f0;
+}
+.bdoc-progress-bar {
+  background: #0ea5e9;
+}
+.bdoc-modal {
+  max-height: 90vh;
+}
+</style>

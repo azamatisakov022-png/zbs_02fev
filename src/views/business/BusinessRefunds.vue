@@ -48,12 +48,12 @@ const goToNewRefund = () => {
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div class="content__header mb-6">
-      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessRefunds.pageTitle') }}</h1>
-      <p class="text-[18px] text-[#64748b]">{{ $t('businessRefunds.pageSubtitle') }}</p>
+      <h1 class="bref-page-title">{{ $t('businessRefunds.pageTitle') }}</h1>
+      <p class="bref-page-subtitle">{{ $t('businessRefunds.pageSubtitle') }}</p>
     </div>
 
     <!-- Green CTA Banner -->
-    <div class="mb-6 bg-gradient-to-r from-[#10b981] to-[#059669] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
+    <div class="bref-cta-banner">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
       <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
       <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
@@ -63,12 +63,12 @@ const goToNewRefund = () => {
           </svg>
         </div>
         <div class="flex-1">
-          <h2 class="text-[22px] lg:text-[24px] font-bold mb-2">{{ $t('businessRefunds.bannerTitle') }}</h2>
-          <p class="text-white/80 text-[16px] lg:text-[16px]">{{ $t('businessRefunds.bannerDescription') }}</p>
+          <h2 class="bref-banner-title font-bold mb-2">{{ $t('businessRefunds.bannerTitle') }}</h2>
+          <p class="bref-banner-desc text-white/80">{{ $t('businessRefunds.bannerDescription') }}</p>
         </div>
         <button
           @click="goToNewRefund"
-          class="flex items-center justify-center gap-2 bg-white text-[#059669] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-green-50 transition-colors shadow-lg flex-shrink-0"
+          class="bref-cta-btn"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -87,8 +87,8 @@ const goToNewRefund = () => {
           </svg>
         </div>
         <div>
-          <p class="text-[18px] font-medium text-[#1e293b] mb-1">{{ $t('businessRefunds.infoTitle') }}</p>
-          <p class="text-[16px] text-[#64748b]">{{ $t('businessRefunds.infoText') }}</p>
+          <p class="bref-info-title font-medium mb-1">{{ $t('businessRefunds.infoTitle') }}</p>
+          <p class="bref-text-secondary">{{ $t('businessRefunds.infoText') }}</p>
         </div>
       </div>
     </div>
@@ -101,7 +101,7 @@ const goToNewRefund = () => {
     <template v-if="!isLoading">
       <!-- Table Header -->
       <div class="mb-4">
-        <h2 class="text-[22px] font-semibold text-[#1e293b] mb-4">{{ $t('businessRefunds.historyTitle') }}</h2>
+        <h2 class="bref-section-title font-semibold mb-4">{{ $t('businessRefunds.historyTitle') }}</h2>
       </div>
 
       <DataTable :columns="columns" :data="companyRefunds" :actions="true">
@@ -115,13 +115,13 @@ const goToNewRefund = () => {
           />
         </template>
         <template #cell-number="{ value }">
-          <span class="text-[18px] font-mono font-medium text-[#10b981]">{{ value }}</span>
+          <span class="bref-cell-number font-mono font-medium">{{ value }}</span>
         </template>
         <template #cell-calculationNumber="{ value }">
-          <span class="text-[18px] font-mono text-[#64748b]">{{ value }}</span>
+          <span class="bref-cell-calc font-mono">{{ value }}</span>
         </template>
         <template #cell-totalRefund="{ value }">
-          <span class="text-[18px] font-semibold text-[#1e293b]">{{ formatAmount(value) }}</span>
+          <span class="bref-cell-amount font-semibold">{{ formatAmount(value) }}</span>
         </template>
         <template #cell-status="{ value }">
           <AppBadge :variant="getStatusBadgeVariant(value)">{{ $t(statusI18nKey[value] || value) }}</AppBadge>
@@ -143,6 +143,83 @@ const goToNewRefund = () => {
 </template>
 
 <style scoped>
+.bref-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .bref-page-title { font-size: 34px; }
+}
+.bref-page-subtitle {
+  font-size: 18px;
+  color: #64748b;
+}
+.bref-cta-banner {
+  margin-bottom: 24px;
+  background: linear-gradient(to right, #10b981, #059669);
+  border-radius: 16px;
+  padding: 24px 32px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .bref-cta-banner { padding: 32px; }
+}
+.bref-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: white;
+  color: #059669;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+@media (min-width: 1024px) {
+  .bref-cta-btn { padding: 16px 32px; }
+}
+.bref-cta-btn:hover { background: #ecfdf5; }
+.bref-banner-title {
+  font-size: 22px;
+}
+@media (min-width: 1024px) {
+  .bref-banner-title { font-size: 24px; }
+}
+.bref-banner-desc {
+  font-size: 16px;
+}
+.bref-info-title {
+  font-size: 18px;
+  color: #1e293b;
+}
+.bref-text-secondary {
+  font-size: 16px;
+  color: #64748b;
+}
+.bref-section-title {
+  font-size: 22px;
+  color: #1e293b;
+}
+.bref-cell-number {
+  font-size: 18px;
+  color: #10b981;
+}
+.bref-cell-calc {
+  font-size: 18px;
+  color: #64748b;
+}
+.bref-cell-amount {
+  font-size: 18px;
+  color: #1e293b;
+}
+
 @media print {
   .dashboard-layout > aside,
   .dashboard-layout > main > header,

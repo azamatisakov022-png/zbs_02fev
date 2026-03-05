@@ -111,8 +111,8 @@ onMounted(() => {
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
-      <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b] mb-2">{{ $t('businessDashboard.pageTitle') }}</h1>
-      <p class="text-[18px] text-[#64748b]">{{ $t('businessDashboard.pageSubtitle') }}</p>
+      <h1 class="bd-page-title">{{ $t('businessDashboard.pageTitle') }}</h1>
+      <p class="bd-page-subtitle">{{ $t('businessDashboard.pageSubtitle') }}</p>
     </div>
 
     <!-- Skeleton Loading -->
@@ -159,19 +159,19 @@ onMounted(() => {
               </div>
               <div>
                 <p :class="[
-                  'text-[16px] font-medium',
+                  'bd-balance-label font-medium',
                   account.currentBalance > 0 ? 'text-green-800' :
                   account.currentBalance < 0 ? 'text-red-800' : 'text-slate-600'
                 ]">{{ $t('businessDashboard.personalAccount') }}</p>
                 <p :class="[
-                  'text-[24px] font-bold',
+                  'bd-balance-value font-bold',
                   account.currentBalance > 0 ? 'text-green-900' :
                   account.currentBalance < 0 ? 'text-red-900' : 'text-slate-800'
                 ]">
                   {{ account.currentBalance > 0 ? '+' : '' }}{{ account.currentBalance.toLocaleString() }} {{ $t('businessDashboard.som') }}
                 </p>
                 <p :class="[
-                  'text-[14px] mt-0.5',
+                  'bd-balance-hint mt-0.5',
                   account.currentBalance > 0 ? 'text-green-600' :
                   account.currentBalance < 0 ? 'text-red-600' : 'text-slate-500'
                 ]">
@@ -181,7 +181,7 @@ onMounted(() => {
                 </p>
               </div>
             </div>
-            <div class="text-[#64748b] group-hover:text-[#2563eb] transition-colors">
+            <div class="bd-balance-arrow transition-colors">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
             </div>
           </div>
@@ -194,14 +194,14 @@ onMounted(() => {
           v-for="card in actionCards"
           :key="card.title"
           :to="card.route"
-          class="action-card group bg-white rounded-2xl p-6 shadow-sm border-2 border-transparent hover:border-[#2563eb] hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden"
+          class="bd-action-card group"
         >
-          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#2563eb] to-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center text-2xl mb-4">
+          <div class="bd-action-card__accent absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div class="bd-action-card__icon w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-4">
             {{ card.icon }}
           </div>
-          <h3 class="text-[22px] font-semibold text-[#1e293b] mb-2">{{ card.title }}</h3>
-          <p class="text-[16px] text-[#64748b] leading-relaxed">{{ card.description }}</p>
+          <h3 class="bd-action-card__title font-semibold mb-2">{{ card.title }}</h3>
+          <p class="bd-action-card__desc leading-relaxed">{{ card.description }}</p>
         </router-link>
       </div>
 
@@ -229,31 +229,31 @@ onMounted(() => {
       </div>
 
       <!-- Recent Documents -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-        <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-[22px] font-semibold text-[#1e293b]">{{ $t('businessDashboard.recentDocuments') }}</h2>
-          <router-link to="/business/documents" class="text-[#2563eb] text-[16px] font-medium hover:underline">
+      <div class="bd-card bd-card--overflow">
+        <div class="bd-card__header">
+          <h2 class="bd-section-title">{{ $t('businessDashboard.recentDocuments') }}</h2>
+          <router-link to="/business/documents" class="bd-link font-medium hover:underline">
             {{ $t('businessDashboard.allDocuments') }}
           </router-link>
         </div>
-        <div class="divide-y divide-[#f1f5f9]">
+        <div class="bd-doc-list">
           <div
             v-for="doc in recentDocuments"
             :key="doc.name"
-            class="px-6 py-4 flex items-center justify-between hover:bg-[#f8fafc] transition-colors"
+            class="bd-doc-row px-6 py-4 flex items-center justify-between transition-colors"
           >
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-lg bg-[#f1f5f9] flex items-center justify-center">
+              <div class="bd-doc-icon w-10 h-10 rounded-lg flex items-center justify-center">
                 <span v-if="doc.type === 'declaration'">📋</span>
                 <span v-else-if="doc.type === 'report'">📊</span>
                 <span v-else>💰</span>
               </div>
               <div>
-                <p class="text-[18px] font-medium text-[#1e293b]">{{ doc.name }}</p>
-                <p class="text-[16px] text-[#64748b]">{{ doc.date }}</p>
+                <p class="bd-doc-name font-medium">{{ doc.name }}</p>
+                <p class="bd-doc-date">{{ doc.date }}</p>
               </div>
             </div>
-            <span :class="['text-[16px]', getStatusClass(doc.status)]">
+            <span :class="['bd-doc-status', getStatusClass(doc.status)]">
               {{ $t(statusI18nKey[doc.status] || doc.status) }}
             </span>
           </div>
@@ -261,22 +261,143 @@ onMounted(() => {
       </div>
 
       <!-- Info Banner -->
-      <div class="mt-8 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] rounded-2xl p-6 text-white">
+      <div class="bd-info-banner">
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 text-2xl">
             ℹ️
           </div>
           <div>
-            <h4 class="font-semibold text-[22px] mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
+            <h4 class="bd-banner-title font-semibold mb-2">{{ $t('businessDashboard.reminderTitle') }}</h4>
             <ul class="opacity-90 list-none pl-1" style="margin: 0;">
-              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
-              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
-              <li class="text-[18px]" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderDeclaration') }}</li>
+              <li class="bd-banner-text" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderImporters') }}</li>
+              <li class="bd-banner-text" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderProducers') }}</li>
+              <li class="bd-banner-text" style="margin-bottom: 4px;">{{ $t('businessDashboard.reminderDeclaration') }}</li>
             </ul>
-            <p class="text-[18px] opacity-90" style="margin-top: 12px; font-style: italic;">{{ $t('businessDashboard.reminderFooter') }}</p>
+            <p class="bd-banner-text opacity-90" style="margin-top: 12px; font-style: italic;">{{ $t('businessDashboard.reminderFooter') }}</p>
           </div>
         </div>
       </div>
     </template>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.bd-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+@media (min-width: 1024px) {
+  .bd-page-title { font-size: 34px; }
+}
+.bd-page-subtitle {
+  font-size: 18px;
+  color: #64748b;
+}
+.bd-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bd-card--overflow {
+  overflow: hidden;
+}
+.bd-card__header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.bd-section-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.bd-action-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+.bd-action-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+}
+.bd-info-banner {
+  margin-top: 32px;
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+}
+.bd-balance-label {
+  font-size: 16px;
+}
+.bd-balance-value {
+  font-size: 24px;
+}
+.bd-balance-hint {
+  font-size: 14px;
+}
+.bd-balance-arrow {
+  color: #64748b;
+}
+.group:hover .bd-balance-arrow {
+  color: #2563eb;
+}
+.bd-action-card__accent {
+  background: linear-gradient(to right, #2563eb, #3b82f6);
+}
+.bd-action-card__icon {
+  background: linear-gradient(to bottom right, #3b82f6, #2563eb);
+}
+.bd-action-card__title {
+  font-size: 22px;
+  color: #1e293b;
+}
+.bd-action-card__desc {
+  font-size: 16px;
+  color: #64748b;
+}
+.bd-link {
+  color: #2563eb;
+  font-size: 16px;
+}
+.bd-doc-list {
+  border-top: none;
+}
+.bd-doc-list > .bd-doc-row + .bd-doc-row {
+  border-top: 1px solid #f1f5f9;
+}
+.bd-doc-row:hover {
+  background-color: #f8fafc;
+}
+.bd-doc-icon {
+  background-color: #f1f5f9;
+}
+.bd-doc-name {
+  font-size: 18px;
+  color: #1e293b;
+}
+.bd-doc-date {
+  font-size: 16px;
+  color: #64748b;
+}
+.bd-doc-status {
+  font-size: 16px;
+}
+.bd-banner-title {
+  font-size: 22px;
+}
+.bd-banner-text {
+  font-size: 18px;
+}
+</style>
