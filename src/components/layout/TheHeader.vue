@@ -1,0 +1,214 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { getLocale, setLocale } from '../../i18n'
+import IconChevron from '../icons/IconChevron.vue'
+
+const { t } = useI18n()
+
+const langOptions = [
+  { code: 'ru' as const, label: 'РУС' },
+  { code: 'ky' as const, label: 'КЫР' },
+]
+
+const currentLangLabel = computed(() => {
+  const locale = getLocale()
+  return langOptions.find(l => l.code === locale)?.label ?? 'РУС'
+})
+
+const toggleLang = () => {
+  const locale = getLocale()
+  const currentIndex = langOptions.findIndex(l => l.code === locale)
+  const next = langOptions[(currentIndex + 1) % langOptions.length]
+  setLocale(next.code)
+}
+
+const mobileMenuOpen = ref(false)
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const navItems = computed(() => [
+  { path: '/', label: t('nav.home') },
+  { path: '/about', label: t('nav.about') },
+  { path: '/legislation', label: t('nav.legislation') },
+  { path: '/licenses', label: t('nav.licenses') },
+  { path: '/publications', label: t('nav.publications') },
+  { path: '/registries', label: t('nav.gisMap') },
+  { path: '/calculator', label: t('nav.calculator') },
+  { path: '/contests', label: t('nav.contests') },
+])
+</script>
+
+<template>
+  <header class="bg-white border-b border-gray-200">
+    <div class="container-main">
+      <!-- Top bar -->
+      <div class="flex items-center justify-between py-4 lg:py-5 h-[100px] lg:h-[144px]">
+        <!-- Logo -->
+        <router-link to="/" class="flex items-center gap-2">
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 36px; width: 36px; object-fit: cover; object-position: left;" class="lg:hidden" />
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 72px; width: 72px; object-fit: cover; object-position: left;" class="hidden lg:block" />
+          <div class="flex flex-col whitespace-nowrap">
+            <span class="text-[13px] lg:text-[16px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">{{ $t('common.companyName') }}</span>
+            <span class="text-[10px] lg:text-[12px] font-normal text-[#6b7280]">{{ $t('common.companyType') }}</span>
+          </div>
+        </router-link>
+
+        <!-- Contact info - hidden on mobile -->
+        <div class="hidden lg:flex items-center gap-[50px]">
+          <!-- Phone -->
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/phone.svg" alt="phone" class="w-6 h-6" />
+            <div class="text-[#415861] text-xs leading-[15px]">
+              <p>+996 (312) 54-15-16</p>
+              <p>+996 (312) 54-15-17</p>
+            </div>
+          </div>
+
+          <!-- Working hours -->
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/clock.svg" alt="clock" class="w-6 h-6" />
+            <div class="text-[#415861] text-xs leading-[15px]">
+              <p>{{ $t('common.workHours') }}</p>
+              <p>{{ $t('common.weekendHours') }}</p>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/map-pin.svg" alt="location" class="w-6 h-6" />
+            <div class="text-[#415861] text-xs leading-[15px]">
+              <p>{{ $t('common.addressZip') }}</p>
+              <p>{{ $t('common.addressStreet') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side: Language + Auth -->
+        <div class="flex items-center gap-2 md:gap-4 lg:gap-[30px]">
+          <!-- Language selector -->
+          <div class="hidden sm:flex items-center">
+            <div class="w-px h-5 bg-gray-300"></div>
+            <button
+              @click="toggleLang"
+              class="flex items-center gap-2 px-4 lg:px-[31px] text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
+            >
+              {{ currentLangLabel }}
+              <IconChevron class="w-[10px] h-[10px]" />
+            </button>
+            <div class="w-px h-5 bg-gray-300"></div>
+          </div>
+
+          <!-- Auth buttons -->
+          <div class="hidden md:flex items-center gap-4 lg:gap-[30px]">
+            <!-- QR Code icon -->
+            <div class="hidden lg:flex w-[52px] h-[52px] bg-gray-100 rounded-lg items-center justify-center">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="10" height="10" stroke="#415861" stroke-width="2" fill="none"/>
+                <rect x="18" y="4" width="10" height="10" stroke="#415861" stroke-width="2" fill="none"/>
+                <rect x="4" y="18" width="10" height="10" stroke="#415861" stroke-width="2" fill="none"/>
+                <rect x="7" y="7" width="4" height="4" fill="#415861"/>
+                <rect x="21" y="7" width="4" height="4" fill="#415861"/>
+                <rect x="7" y="21" width="4" height="4" fill="#415861"/>
+                <rect x="18" y="18" width="3" height="3" fill="#415861"/>
+                <rect x="24" y="18" width="4" height="4" fill="#415861"/>
+                <rect x="18" y="24" width="4" height="4" fill="#415861"/>
+                <rect x="24" y="24" width="4" height="4" fill="#415861"/>
+              </svg>
+            </div>
+
+            <!-- Registration link -->
+            <RouterLink to="/register" class="hidden lg:block text-[#415861] text-sm font-bold uppercase hover:text-[#0e888d] transition-colors">
+              {{ $t('nav.registration') }}
+            </RouterLink>
+
+            <!-- Login button -->
+            <RouterLink
+              to="/login"
+              class="flex items-center gap-3 bg-[#fea629] text-[#415861] font-bold text-sm uppercase px-5 py-[15px] rounded-[30px] hover:bg-[#e5951f] transition-colors"
+            >
+              {{ $t('nav.login') }}
+              <svg width="21" height="22" viewBox="0 0 21 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.5 11C13.5376 11 16 8.53756 16 5.5C16 2.46244 13.5376 0 10.5 0C7.46244 0 5 2.46244 5 5.5C5 8.53756 7.46244 11 10.5 11ZM10.5 13.75C6.66313 13.75 0 15.6744 0 19.5V22H21V19.5C21 15.6744 14.3369 13.75 10.5 13.75Z"/>
+              </svg>
+            </RouterLink>
+          </div>
+
+          <!-- Mobile menu button -->
+          <button
+            @click="toggleMobileMenu"
+            class="md:hidden p-2 text-[#415861] hover:text-[#0e888d] transition-colors"
+          >
+            <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <svg v-else class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile menu -->
+      <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 py-4">
+        <!-- Contact info -->
+        <div class="space-y-3 mb-4">
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/phone.svg" alt="phone" class="w-5 h-5" />
+            <span class="text-[#415861] text-sm">+996 (312) 54-15-16</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/clock.svg" alt="clock" class="w-5 h-5" />
+            <span class="text-[#415861] text-sm">{{ $t('common.workHours') }}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <img src="/images/icons/map-pin.svg" alt="location" class="w-5 h-5" />
+            <span class="text-[#415861] text-sm">{{ $t('common.addressFull') }}</span>
+          </div>
+        </div>
+
+        <!-- Navigation links (mobile only) -->
+        <div class="space-y-1 mb-4 pt-3 border-t border-gray-100">
+          <RouterLink
+            v-for="item in navItems"
+            :key="item.path"
+            :to="item.path"
+            class="block py-2 text-sm font-medium uppercase text-[#415861] hover:text-[#0e888d] transition-colors"
+            @click="mobileMenuOpen = false"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </div>
+
+        <!-- Language switcher (mobile) -->
+        <div class="sm:hidden flex items-center gap-2 mb-4 pt-3 border-t border-gray-100">
+          <button
+            @click="toggleLang"
+            class="text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
+          >
+            {{ currentLangLabel }}
+            <IconChevron class="w-[10px] h-[10px] inline" />
+          </button>
+        </div>
+
+        <!-- Auth buttons -->
+        <div class="flex items-center gap-4 pt-4 border-t border-gray-100">
+          <RouterLink to="/register" class="text-[#415861] text-sm font-bold uppercase" @click="mobileMenuOpen = false">{{ $t('nav.registration') }}</RouterLink>
+          <RouterLink
+            to="/login"
+            class="flex items-center gap-2 bg-[#fea629] text-[#415861] font-bold text-sm uppercase px-4 py-2.5 rounded-full"
+            @click="mobileMenuOpen = false"
+          >
+            {{ $t('nav.login') }}
+            <svg width="16" height="16" viewBox="0 0 21 22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.5 11C13.5376 11 16 8.53756 16 5.5C16 2.46244 13.5376 0 10.5 0C7.46244 0 5 2.46244 5 5.5C5 8.53756 7.46244 11 10.5 11ZM10.5 13.75C6.66313 13.75 0 15.6744 0 19.5V22H21V19.5C21 15.6744 14.3369 13.75 10.5 13.75Z"/>
+            </svg>
+          </RouterLink>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>

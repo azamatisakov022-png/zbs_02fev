@@ -1,0 +1,332 @@
+
+  .registries-page {
+    @apply mb-[50px];
+  }
+
+  .registries-container {
+    @apply pb-16;
+  }
+
+  .registries-title-group {
+    @apply flex flex-col max-w-[601px];
+  }
+
+  .registries-filter-bar {
+    @apply pb-7;
+  }
+
+  .registries-filter-row {
+    @apply flex items-center justify-between;
+  }
+
+  .registries-filter-title {
+    @apply text-h6 font-semibold text-text-main;
+  }
+
+  .registries-filter-controls {
+    @apply flex items-center gap-10;
+  }
+
+  .registries-filter-group {
+    @apply flex items-center gap-3;
+  }
+
+  .registries-search-input {
+    @apply w-[224px];
+  }
+
+  .registries-search-btn {
+    border-radius: 16px;
+  }
+
+  .registries-map {
+    @apply pb-7.5;
+  }
+
+  .registries-tabs {
+    @apply pb-[37px];
+  }
+
+  .registries-tabs-row {
+    @apply flex gap-5;
+  }
+
+/* Table scroll wrapper */
+.registries-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.registries-table-scroll .table-wrapper {
+  min-width: max-content;
+}
+
+/* Hide mobile cards by default */
+.registries-cards-mobile {
+  display: none;
+}
+
+/* ── Tablet (≤1024px) ── */
+@media (max-width: 1024px) {
+  .registries-page {
+    margin-bottom: 40px;
+  }
+
+  .registries-container {
+    padding-bottom: 40px;
+  }
+
+  .section-header.pb-10 {
+    padding-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 24px;
+    padding-bottom: 8px;
+  }
+
+  .section-subtitle {
+    font-size: 16px;
+  }
+
+  .registries-filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .registries-filter-title {
+    font-size: 18px;
+  }
+
+  .registries-filter-controls {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .registries-filter-group {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .registries-search-input {
+    width: 200px;
+  }
+
+  .map-container {
+    height: 360px;
+    border-radius: 24px;
+  }
+
+  .map-inner {
+    width: 600px;
+    height: 295px;
+    top: 30px;
+  }
+
+  .map-label {
+    padding: 6px 12px;
+    border-radius: 16px;
+    transform: translateX(-50%) scale(0.85);
+  }
+
+  .map-count {
+    font-size: 22px;
+  }
+
+  .map-subtitle {
+    font-size: 14px;
+  }
+
+  .registries-tabs {
+    padding-bottom: 24px;
+  }
+
+  .registries-tabs-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .table-cell-text {
+    font-size: 13px;
+  }
+}
+
+/* ── Mobile (≤768px) ── */
+@media (max-width: 768px) {
+  .registries-page {
+    margin-bottom: 32px;
+  }
+
+  .registries-container {
+    padding-bottom: 24px;
+  }
+
+  .section-header.pb-10 {
+    padding-top: 20px;
+    padding-bottom: 16px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    padding-bottom: 6px;
+  }
+
+  .section-subtitle {
+    font-size: 14px;
+  }
+
+  .registries-filter-bar {
+    padding-bottom: 16px;
+  }
+
+  .registries-filter-title {
+    font-size: 16px;
+  }
+
+  .registries-filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .registries-filter-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .registries-search-input {
+    width: 100%;
+  }
+
+  .registries-map {
+    padding-bottom: 16px;
+  }
+
+  .map-container {
+    height: 260px;
+    border-radius: 20px;
+  }
+
+  .map-inner {
+    width: 420px;
+    height: 207px;
+    top: 24px;
+  }
+
+  .map-label {
+    padding: 4px 8px;
+    border-radius: 12px;
+    transform: translateX(-50%) scale(0.7);
+  }
+
+  .map-count {
+    font-size: 18px;
+  }
+
+  .map-subtitle {
+    font-size: 12px;
+  }
+
+  .registries-tabs {
+    padding-bottom: 16px;
+  }
+
+  .registries-tabs-row {
+    gap: 8px;
+  }
+
+  .btn-filter,
+  .btn-filter-active {
+    padding: 8px 16px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+
+  /* Hide desktop table */
+  .registries-table-desktop {
+    display: none;
+  }
+
+  /* Show mobile cards */
+  .registries-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .registry-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .registry-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .registry-card-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0e888d;
+  }
+
+  .registry-card-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+  }
+
+  .registry-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #415861;
+  }
+
+  .registry-card-info {
+    font-size: 13px;
+    color: #70868f;
+    line-height: 1.4;
+  }
+
+  .registry-card-actions {
+    padding-top: 4px;
+  }
+}
+
+/* ── Small mobile (≤480px) ── */
+@media (max-width: 480px) {
+  .section-title {
+    font-size: 18px;
+  }
+
+  .section-subtitle {
+    font-size: 13px;
+  }
+
+  .registries-filter-title {
+    font-size: 14px;
+  }
+
+  .map-container {
+    height: 200px;
+    border-radius: 16px;
+  }
+
+  .map-inner {
+    width: 320px;
+    height: 157px;
+    top: 20px;
+  }
+
+  .map-label {
+    transform: translateX(-50%) scale(0.55);
+  }
+}

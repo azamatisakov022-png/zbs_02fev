@@ -1,0 +1,152 @@
+<script setup lang="ts">
+
+defineProps<{
+  reportingYear: string
+  companyData: { name: string; inn: string }
+  yearCalculationsCount: number
+  totalMass: number
+  totalAmount: number
+  totalPaid: number
+  totalDebt: number
+  attachedDocs: { id: number; name: string; size: string }[]
+  signedWithEcp: boolean
+  confirmData: boolean
+}>()
+
+defineEmits<{
+  (e: 'upload', event: Event): void
+  (e: 'removeDoc', id: number): void
+  (e: 'signEcp'): void
+  (e: 'update:confirmData', value: boolean): void
+}>()
+</script>
+
+<template>
+  <div class="p-6 lg:p-8">
+    <h2 class="text-[27px] font-semibold text-[#1e293b] mb-6">{{ $t('businessDecl.reviewAndSubmit') }}</h2>
+
+    <div class="space-y-6">
+      <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+        <h3 class="text-[17px] font-semibold text-[#1e293b] mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          {{ $t('businessDecl.summaryInfo') }}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.reportingYearLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ reportingYear }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.organizationLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ companyData.name }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.innLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ companyData.inn }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.calcCountLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ yearCalculationsCount }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.totalMassLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ totalMass.toFixed(2) }} {{ $t('businessDecl.tonsSuffix') }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.totalAmountLabel') }}</span>
+            <p class="font-medium text-[#1e293b]">{{ totalAmount.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+          </div>
+          <div>
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.paidLabel') }}</span>
+            <p class="font-medium text-green-600">{{ totalPaid.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+          </div>
+          <div v-if="totalDebt > 0">
+            <span class="text-[17px] font-semibold text-[#1e293b]">{{ $t('businessDecl.remainderLabel') }}</span>
+            <p class="font-medium text-red-600">{{ totalDebt.toLocaleString() }} {{ $t('businessDecl.som') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+        <h3 class="text-[17px] font-semibold text-[#1e293b] mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-[#2563eb]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          {{ $t('businessDecl.attachedDocs') }}
+        </h3>
+        <p class="text-[17px] font-medium text-[#1e293b] mb-3">{{ $t('businessDecl.attachedDocsHint') }}</p>
+
+        <div v-if="attachedDocs.length > 0" class="space-y-2 mb-3">
+          <div v-for="doc in attachedDocs" :key="doc.id" class="flex items-center justify-between px-3 py-2 bg-white rounded-lg border border-[#e2e8f0]">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#1e293b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span class="text-[16px] text-[#1e293b]">{{ doc.name }}</span>
+              <span class="text-[14px] text-[#475569]">{{ doc.size }}</span>
+            </div>
+            <button @click="$emit('removeDoc', doc.id)" class="p-1 text-[#475569] hover:text-red-500 transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <label class="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-[#475569] rounded-lg text-[17px] font-medium text-[#1e293b] hover:border-[#2563eb] hover:text-[#2563eb] cursor-pointer transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          {{ $t('businessDecl.addFile') }}
+          <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="$emit('upload', $event)" />
+        </label>
+      </div>
+
+      <div class="rounded-xl p-5 border" :class="signedWithEcp ? 'bg-green-50 border-green-200' : 'bg-[#f8fafc] border-[#e2e8f0]'">
+        <h3 class="text-[17px] font-semibold text-[#1e293b] mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5" :class="signedWithEcp ? 'text-green-600' : 'text-[#1e293b]'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          {{ $t('businessDecl.ecpTitle') }}
+        </h3>
+
+        <div v-if="!signedWithEcp">
+          <p class="text-[17px] font-medium text-[#1e293b] mb-3">{{ $t('businessDecl.ecpHint') }}</p>
+          <button
+            @click="$emit('signEcp')"
+            class="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] text-white rounded-lg text-[16px] font-medium hover:bg-[#1d4ed8] transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            {{ $t('businessDecl.signEcp') }}
+          </button>
+        </div>
+
+        <div v-else class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-[17px] font-semibold text-green-800">{{ $t('businessDecl.docSignedEcp') }}</p>
+            <p class="text-[16px] text-green-600">{{ $t('businessDecl.certificateLabel', { name: companyData.name, inn: companyData.inn }) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <label class="flex items-start gap-3 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          :checked="confirmData"
+          @change="$emit('update:confirmData', ($event.target as HTMLInputElement).checked)"
+          class="mt-1 w-5 h-5 rounded border-[#e2e8f0] text-[#2563eb] focus:ring-[#2563eb]/20"
+        />
+        <span class="text-[17px] font-medium text-[#1e293b]">{{ $t('businessDecl.confirmCheckbox') }}</span>
+      </label>
+    </div>
+  </div>
+</template>
