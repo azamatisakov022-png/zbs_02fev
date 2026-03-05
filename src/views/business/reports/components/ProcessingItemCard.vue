@@ -43,9 +43,9 @@ const showSummary = (item: ProcessingItem) => {
 </script>
 
 <template>
-  <div class="rounded-lg p-6 border border-[#e2e8f0] mb-5">
+  <div class="pic-card rounded-lg p-6 mb-5">
     <div class="flex items-center justify-between mb-4">
-      <span class="text-[20px] font-semibold text-[#1e293b]">{{ $t('businessReports.position', { n: index + 1 }) }}</span>
+      <span class="pic-position-title font-semibold">{{ $t('businessReports.position', { n: index + 1 }) }}</span>
       <button
         v-if="canRemove"
         @click="$emit('remove', item.id)"
@@ -80,16 +80,16 @@ const showSummary = (item: ProcessingItem) => {
     <div v-if="item.wasteType" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
       <div>
         <label class="app-input__label">{{ $t('businessReports.normativePercent') }}</label>
-        <div class="w-full px-3 py-2 rounded-lg text-[16px] font-bold" style="background: #F0FDF4; border: 1px solid #D1FAE5; color: #059669;">
+        <div class="pic-normative-display w-full px-3 py-2 rounded-lg font-bold">
           {{ normativePercent.toFixed(1) }}%
         </div>
       </div>
       <div>
         <label class="app-input__label">{{ $t('businessReports.requiredProcessing') }}</label>
-        <div class="w-full px-3 py-2 rounded-lg text-[16px] font-semibold" style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #1E293B;">
+        <div class="pic-required-display w-full px-3 py-2 rounded-lg font-semibold">
           {{ requiredProcessing.toFixed(2) }}
         </div>
-        <p class="text-[13px] text-[#94a3b8] mt-1">= {{ item.declared || '0' }} × {{ normativePercent.toFixed(1) }}% / 100</p>
+        <p class="pic-formula-hint mt-1">= {{ item.declared || '0' }} × {{ normativePercent.toFixed(1) }}% / 100</p>
       </div>
     </div>
 
@@ -120,12 +120,12 @@ const showSummary = (item: ProcessingItem) => {
               :value="item.recycler"
               @input="$emit('updateRecycler', ($event.target as HTMLInputElement).value)"
               :placeholder="$t('businessReports.recyclerPlaceholder')"
-              class="flex-1 min-w-0 px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] text-[16px]"
+              class="pic-recycler-input flex-1 min-w-0 px-3 py-2 rounded-lg focus:outline-none"
             />
             <button
               @click="$emit('switchToSelect')"
               type="button"
-              class="px-2 py-2 border border-[#e2e8f0] text-[#10b981] hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
+              class="pic-switch-btn px-2 py-2 hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
               :title="$t('businessReports.selectFromList')"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -159,11 +159,11 @@ const showSummary = (item: ProcessingItem) => {
         <svg class="w-4 h-4" :style="{ color: fulfillmentColor }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
-        <span class="text-[16px] font-semibold text-[#1e293b] uppercase tracking-wide">{{ $t('businessReports.itemSummary') }}</span>
+        <span class="pic-summary-title font-semibold uppercase tracking-wide">{{ $t('businessReports.itemSummary') }}</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <p class="text-[16px] font-semibold text-[#1e293b] mb-0.5">{{ $t('businessReports.normativeFulfillmentLabel') }}</p>
+          <p class="pic-summary-label font-semibold mb-0.5">{{ $t('businessReports.normativeFulfillmentLabel') }}</p>
           <p class="text-lg font-bold" :style="{ color: fulfillmentColor }">
             {{ fulfillmentPercent.toFixed(1) }}%
           </p>
@@ -172,20 +172,20 @@ const showSummary = (item: ProcessingItem) => {
           </div>
         </div>
         <div>
-          <p class="text-[16px] font-semibold text-[#1e293b] mb-0.5">{{ $t('businessReports.remainderToProcess') }}</p>
-          <p class="text-lg font-bold text-[#1e293b]">{{ remainder.toFixed(2) }} {{ $t('businessReports.tons') }}</p>
+          <p class="pic-summary-label font-semibold mb-0.5">{{ $t('businessReports.remainderToProcess') }}</p>
+          <p class="pic-remainder-value text-lg font-bold">{{ remainder.toFixed(2) }} {{ $t('businessReports.tons') }}</p>
         </div>
         <div>
-          <p class="text-[16px] font-semibold text-[#1e293b] mb-0.5">{{ $t('businessReports.statusLabel') }}</p>
-          <span v-if="itemStatus === 'fulfilled'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[14px] font-semibold bg-emerald-100 text-emerald-700">
+          <p class="pic-summary-label font-semibold mb-0.5">{{ $t('businessReports.statusLabel') }}</p>
+          <span v-if="itemStatus === 'fulfilled'" class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             {{ $t('businessReports.fulfilled') }}
           </span>
-          <span v-else-if="itemStatus === 'partial'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[14px] font-semibold bg-amber-100 text-amber-700">
+          <span v-else-if="itemStatus === 'partial'" class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" /></svg>
             {{ $t('businessReports.partial') }}
           </span>
-          <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[14px] font-semibold bg-red-100 text-red-700">
+          <span v-else class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-700">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             {{ $t('businessReports.notFulfilled') }}
           </span>
@@ -203,5 +203,52 @@ const showSummary = (item: ProcessingItem) => {
   color: #1e293b !important;
   margin-bottom: 6px;
 }
-
+.pic-card {
+  border: 1px solid #e2e8f0;
+}
+.pic-position-title {
+  font-size: 20px;
+  color: #1e293b;
+}
+.pic-normative-display {
+  font-size: 16px;
+  background: #F0FDF4;
+  border: 1px solid #D1FAE5;
+  color: #059669;
+}
+.pic-required-display {
+  font-size: 16px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #1E293B;
+}
+.pic-formula-hint {
+  font-size: 13px;
+  color: #94a3b8;
+}
+.pic-recycler-input {
+  font-size: 16px;
+  border: 1px solid #e2e8f0;
+}
+.pic-recycler-input:focus {
+  border-color: #10b981;
+}
+.pic-switch-btn {
+  border: 1px solid #e2e8f0;
+  color: #10b981;
+}
+.pic-summary-title {
+  font-size: 16px;
+  color: #1e293b;
+}
+.pic-summary-label {
+  font-size: 16px;
+  color: #1e293b;
+}
+.pic-remainder-value {
+  color: #1e293b;
+}
+.pic-status-badge {
+  font-size: 14px;
+}
 </style>

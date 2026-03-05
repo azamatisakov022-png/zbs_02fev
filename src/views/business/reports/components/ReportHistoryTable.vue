@@ -47,7 +47,7 @@ const closeMenu = () => {
       />
     </template>
     <template #cell-number="{ value }">
-      <span class="font-mono font-medium text-[#2563eb]">{{ value }}</span>
+      <span class="rht-number font-mono font-medium">{{ value }}</span>
     </template>
     <template #cell-year="{ value }">
       <span>{{ value }} {{ $t('businessReports.yearSuffix') }}</span>
@@ -215,5 +215,8 @@ const closeMenu = () => {
 }
 .act-dropdown__item:hover {
   background: #f3f4f6;
+}
+.rht-number {
+  color: #2563eb;
 }
 </style>

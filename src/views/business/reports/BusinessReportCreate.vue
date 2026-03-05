@@ -430,15 +430,15 @@ const handlePrint = () => {
     <template v-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
+          <button @click="backToList" class="brc-back-btn">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             {{ $t('businessReports.backToList') }}
           </button>
           <div class="flex items-center justify-between gap-4">
-            <h1 class="text-[28px] lg:text-[34px] font-bold text-[#1e293b]">{{ $t('businessReports.submitReportTitle') }}</h1>
-            <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-base font-medium flex-shrink-0">
+            <h1 class="brc-page-title">{{ $t('businessReports.submitReportTitle') }}</h1>
+            <button @click="showInstruction = true" class="brc-instruction-btn">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -453,7 +453,7 @@ const handlePrint = () => {
           @goToStep="goToStep"
         />
 
-        <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
+        <div class="brc-card">
           <StepBasicData
             v-if="currentStep === 1"
             :reportingYear="reportingYear"
@@ -671,4 +671,39 @@ const handlePrint = () => {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.brc-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.brc-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  margin-bottom: 16px;
+}
+.brc-back-btn:hover { color: #1e293b; }
+.brc-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+@media (min-width: 1024px) {
+  .brc-page-title { font-size: 34px; }
+}
+.brc-instruction-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #2D8B4E;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: background 0.15s;
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.brc-instruction-btn:hover { background: #ecfdf5; }
 </style>
