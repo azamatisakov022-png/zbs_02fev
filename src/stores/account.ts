@@ -9,6 +9,7 @@ import type {
   CorrectionRequest,
   SubmitCorrectionPayload,
 } from '@/types/account'
+import type { CabinetDashboard } from '@/types/dashboard'
 
 let nextTxId = 1
 let nextCorrId = 1
@@ -19,6 +20,8 @@ export const useAccountStore = defineStore('account', {
     currentCompany: '',
     accounts: [] as CompanyAccount[],
     corrections: [] as CorrectionRequest[],
+    dashboard: null as CabinetDashboard | null,
+    dashboardLoading: false,
   }),
 
   getters: {
@@ -73,6 +76,17 @@ export const useAccountStore = defineStore('account', {
   },
 
   actions: {
+    async fetchDashboard() {
+      this.dashboardLoading = true
+      try {
+        const { data } = await api.get('/cabinet/dashboard')
+        this.dashboard = data
+      } catch {
+      } finally {
+        this.dashboardLoading = false
+      }
+    },
+
     async fetchAll() {
       this.loading = true
       try {
