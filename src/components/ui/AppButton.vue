@@ -48,14 +48,14 @@ defineEmits<{
 /* Sizes */
 .app-btn--sm {
   padding: 6px 14px;
-  font-size: 12px;
+  font-size: 14px;
   border-radius: 8px;
 }
-.app-btn--sm :deep(svg) { width: 14px; height: 14px; }
+.app-btn--sm :deep(svg) { width: 16px; height: 16px; }
 
 .app-btn--md {
   padding: 10px 20px;
-  font-size: 14px;
+  font-size: 16px;
   border-radius: 10px;
 }
 .app-btn--md :deep(svg) { width: 18px; height: 18px; }

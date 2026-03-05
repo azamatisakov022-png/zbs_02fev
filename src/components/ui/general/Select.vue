@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
 .app-select--sm.app-select--default .app-select-trigger,
 .app-select--sm.app-select--form .app-select-trigger {
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 /* ──────────────────────────────────

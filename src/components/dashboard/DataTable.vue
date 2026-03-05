@@ -31,12 +31,12 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
               v-for="col in columns"
               :key="col.key"
               :style="col.width ? { width: col.width } : {}"
-              class="px-4 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap"
+              class="px-4 py-3.5 text-left text-[14px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap"
               scope="col"
             >
               {{ col.label }}
             </th>
-            <th v-if="actions" class="px-4 py-3.5 text-right text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
+            <th v-if="actions" class="px-4 py-3.5 text-right text-[14px] font-semibold text-[#64748B] uppercase tracking-[0.05em] whitespace-nowrap" scope="col">
               {{ t('common.actions') }}
             </th>
           </tr>
@@ -54,7 +54,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                 <td
                   v-for="col in columns"
                   :key="col.key"
-                  class="px-4 py-4 text-sm text-[#374151]"
+                  class="px-4 py-4 text-[16px] text-[#374151]"
                 >
                   <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
                     {{ row[col.key] }}
@@ -65,7 +65,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                     <div class="flex items-center justify-end gap-2">
                       <button
                         @click="$emit('view', row)"
-                        class="btn-action btn-action-secondary text-xs px-3 py-1.5"
+                        class="btn-action btn-action-secondary text-[14px] px-3 py-1.5"
                         :aria-label="t('common.view')"
                         :data-tooltip="t('common.view')"
                       >
@@ -88,8 +88,8 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
                   <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#64748b]">
                     <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                   </div>
-                  <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
-                  <p class="text-sm text-[#64748b]">{{ t('common.noDataDescription') }}</p>
+                  <h3 class="text-[20px] font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
+                  <p class="text-[16px] text-[#64748b]">{{ t('common.noDataDescription') }}</p>
                 </div>
               </slot>
             </td>
@@ -113,8 +113,8 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
               :key="col.key"
               class="flex items-start justify-between gap-3"
             >
-              <span class="text-[11px] font-semibold text-[#64748B] uppercase tracking-[0.05em] flex-shrink-0 min-w-[100px]">{{ col.label }}</span>
-              <span class="text-sm text-[#374151] text-right">
+              <span class="text-[13px] font-semibold text-[#64748B] uppercase tracking-[0.05em] flex-shrink-0 min-w-[100px]">{{ col.label }}</span>
+              <span class="text-[15px] text-[#374151] text-right">
                 <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">
                   {{ row[col.key] }}
                 </slot>
@@ -125,7 +125,7 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
             <slot name="actions" :row="row">
               <button
                 @click="$emit('view', row)"
-                class="btn-action btn-action-secondary w-full text-sm py-2"
+                class="btn-action btn-action-secondary w-full text-[15px] py-2"
                 :aria-label="t('common.view')"
               >
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
