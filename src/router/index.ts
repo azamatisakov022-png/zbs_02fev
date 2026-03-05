@@ -35,8 +35,12 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/publications/decomposition',
-    name: 'publications-decomposition',
-    component: () => import('@/views/DecompositionView.vue'),
+    redirect: '/publications/waste-lifetime',
+  },
+  {
+    path: '/publications/waste-lifetime',
+    name: 'publications-waste-lifetime',
+    component: () => import('@/views/publications/WasteLifetime.vue'),
   },
   {
     path: '/registries',
