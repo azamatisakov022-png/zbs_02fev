@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { CalculatorProductItem, CalculationResult, PayerType } from '@/types/calculator'
 import { getGroupLabel } from '@/helpers/calculatorHelpers'
-import { getSubgroupLabel } from '@/data/product-groups'
+import { useProductGroupStore } from '@/stores/product-groups'
 import { tnvedNotes, tnvedNotesSource } from '@/data/tnved-notes'
 import { PAYMENT_ACCOUNTS } from '@/config/payment-accounts'
 import TnvedCode from '@/components/TnvedCode.vue'
 import PenaltyInfo from '@/components/PenaltyInfo.vue'
 import { ref } from 'vue'
+
+const groupStore = useProductGroupStore()
 
 defineProps<{
   productItems: CalculatorProductItem[]
@@ -39,24 +41,24 @@ const tnvedNotesOpen = ref(false)
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-[27px] font-semibold text-slate-800 mb-6">{{ $t('businessCalc.resultTitle') }}</h2>
+    <h2 class="sres-section-title font-semibold text-slate-800 mb-6">{{ $t('businessCalc.resultTitle') }}</h2>
 
     <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 mb-6">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <p class="text-[20px] font-semibold text-slate-800 mb-1">{{ $t('businessCalc.calcNumberLabel') }}</p>
+          <p class="sres-text font-semibold text-slate-800 mb-1">{{ $t('businessCalc.calcNumberLabel') }}</p>
           <p class="font-bold text-slate-800 font-mono">{{ calculationResult.number }}</p>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-slate-800 mb-1">{{ $t('businessCalc.calcDateLabel') }}</p>
+          <p class="sres-text font-semibold text-slate-800 mb-1">{{ $t('businessCalc.calcDateLabel') }}</p>
           <p class="font-bold text-slate-800">{{ calculationResult.date }}</p>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-slate-800 mb-1">{{ $t('businessCalc.paymentDueLabel') }}</p>
+          <p class="sres-text font-semibold text-slate-800 mb-1">{{ $t('businessCalc.paymentDueLabel') }}</p>
           <p :class="['font-bold', deadlineStatus && (deadlineStatus.overdue || deadlineStatus.days <= 5) ? 'text-red-600' : 'text-amber-500']">
             {{ calculationResult.dueDate }}
           </p>
-          <p v-if="deadlineStatus" :class="['text-[20px] font-semibold mt-0.5', deadlineStatus.overdue ? 'text-red-600' : 'text-slate-600']">
+          <p v-if="deadlineStatus" :class="['sres-text font-semibold mt-0.5', deadlineStatus.overdue ? 'text-red-600' : 'text-slate-600']">
             <template v-if="deadlineStatus.overdue">{{ $t('businessCalc.overdueDays', { days: deadlineStatus.days }) }}</template>
             <template v-else>{{ $t('businessCalc.remainingDays', { days: deadlineStatus.days }) }}</template>
           </p>
@@ -104,7 +106,7 @@ const tnvedNotesOpen = ref(false)
             <tr v-for="item in productItems.filter(i => i.group && i.volume)" :key="item.id" class="hover:bg-slate-50">
               <td class="px-4 py-3">
                 <span class="text-slate-800 block">{{ getGroupLabel(item.group) }}</span>
-                <span class="text-xs text-slate-400">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
+                <span class="text-xs text-slate-400">{{ groupStore.getSubgroupName(item.group, item.subgroup) }}</span>
                 <span v-if="item.tnvedCode" class="block text-xs text-slate-400 font-mono mt-0.5">ТН ВЭД <TnvedCode :code="item.tnvedCode" /></span>
               </td>
               <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
@@ -352,4 +354,12 @@ const tnvedNotesOpen = ref(false)
 .summary-block__row--total span:last-child { font-size: 28px; font-weight: 900; color: #fff; }
 .summary-block__sub { font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 2px; }
 .summary-block__sep { border-top: 1px solid rgba(255,255,255,0.2); margin: 4px 0; }
+
+.sres-section-title {
+  font-size: 27px;
+}
+
+.sres-text {
+  font-size: 20px;
+}
 </style>

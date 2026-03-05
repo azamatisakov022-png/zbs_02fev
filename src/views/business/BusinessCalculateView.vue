@@ -19,6 +19,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import type { SelectOption } from '@/types/select'
 import type { CalculatorProductItem, PayerType, ConfirmDialogState, CalculationResult } from '@/types/calculator'
 import { emptyItem, updateItemRate, calculateAmount, buildCalcData, copyRequisites, getNextProductId } from '@/helpers/calculatorHelpers'
+import { useProductGroupStore } from '@/stores/product-groups'
 
 import CalculatorStepper from './components/calculator/CalculatorStepper.vue'
 import StepPeriod from './components/calculator/StepPeriod.vue'
@@ -31,9 +32,13 @@ const { t } = useI18n()
 const router = useRouter()
 const calcStore = useCalculationStore()
 const accountStore = useAccountStore()
+const productGroupStore = useProductGroupStore()
 
 onMounted(() => {
   accountStore.fetchAll()
+  if (productGroupStore.groups.length === 0) {
+    productGroupStore.fetchGroups()
+  }
 })
 
 const showInstruction = ref(false)
@@ -182,6 +187,10 @@ const removeProductItem = (id: number) => {
 }
 
 const onGroupChanged = (item: CalculatorProductItem) => {
+  const groupNumber = productGroupStore.getGroupNumberFromValue(item.group)
+  if (groupNumber && productGroupStore.getSubgroups(groupNumber).length === 0) {
+    productGroupStore.fetchSubgroups(groupNumber)
+  }
   updateItemRate(item, calculationYear.value)
 }
 
@@ -538,7 +547,7 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
   >
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="showDraftNotification" class="fixed top-6 right-6 z-[200] bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
+        <div v-if="showDraftNotification" class="bcv-notification fixed top-6 right-6 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
@@ -549,15 +558,15 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
 
     <div class="max-w-6xl mx-auto">
       <div class="mb-6">
-        <button @click="backToList" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-4">
+        <button @click="backToList" class="bcv-back-btn flex items-center gap-2 mb-4">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
           {{ $t('businessCalc.backToList') }}
         </button>
         <div class="flex items-center justify-between gap-4">
-          <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessCalc.pageTitle') }}</h1>
-          <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-base font-medium flex-shrink-0">
+          <h1 class="bcv-title text-2xl lg:text-3xl font-bold">{{ $t('businessCalc.pageTitle') }}</h1>
+          <button @click="showInstruction = true" class="bcv-instruction-btn flex items-center gap-2 px-4 py-2 rounded-xl transition-colors text-base font-medium flex-shrink-0">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -572,7 +581,7 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
         @go-to-step="goToStep"
       />
 
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
+      <div class="bcv-card">
         <StepPeriod
           v-if="currentStep === 1"
           :payerType="payerType"
@@ -671,6 +680,31 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
 </template>
 
 <style scoped>
+.bcv-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.bcv-notification {
+  z-index: 200;
+}
+.bcv-back-btn {
+  color: #64748b;
+}
+.bcv-back-btn:hover {
+  color: #1e293b;
+}
+.bcv-title {
+  color: #1e293b;
+}
+.bcv-instruction-btn {
+  color: #2D8B4E;
+}
+.bcv-instruction-btn:hover {
+  background: #ecfdf5;
+}
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }

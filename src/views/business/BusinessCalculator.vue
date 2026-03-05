@@ -4,42 +4,33 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import DataTable from '../../components/dashboard/DataTable.vue'
-import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { productGroups } from '../../data/product-groups'
-import { generateCalculationExcel } from '../../utils/excelExport'
 import { useCalculationStore } from '../../stores/calculations'
+import { useProductGroupStore } from '../../stores/product-groups'
 import { useAccountStore } from '../../stores/account'
-import { CalcStatus, statusI18nKey } from '../../constants/statuses'
-import { calculatePenalty, getOverdueDays } from '../../utils/penalty'
-import { getStatusStyle, calcRowClass } from '@/helpers/calculatorHelpers'
+import { CalcStatus } from '../../constants/statuses'
 import { formatNum } from '../../utils/formatNumber'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
-import PaymentPanel from '../../components/payment/PaymentPanel.vue'
+import CalculationHistory from './components/calculator/CalculationHistory.vue'
 import type { ConfirmDialogState } from '@/types/calculator'
+import { toastStore } from '../../stores/toast'         
 
 const { roleTitle, menuItems } = useBusinessMenu()
-const { t } = useI18n()
+useI18n()
 const router = useRouter()
 const account = useAccountStore()
 const calcStore = useCalculationStore()
+const productGroupStore = useProductGroupStore()
 
-const expandedCalcId = ref<number | null>(null)
-const togglePayment = (id: number) => {
-  expandedCalcId.value = expandedCalcId.value === id ? null : id
-}
-
-const mockAction = (action: string) => {
-  toastStore.show({ type: 'info', title: action })
-}
 const isLoading = ref(true)
 onMounted(async () => {
-  await account.fetchAll()
-  await calcStore.fetchMyCalc()
+  await Promise.all([
+    account.fetchAll(),
+    calcStore.fetchMyCalc(),
+    productGroupStore.fetchGroups(),
+  ])
   isLoading.value = false
 })
 
@@ -67,58 +58,11 @@ const handleCancel = () => {
 const showRates = ref(false)
 const showInstruction = ref(false)
 
-const companyData = computed(() => ({
-  name: account.myAccount?.company || '',
-  inn: account.myAccount?.inn || '',
-}))
-
-const downloadExcel = (calcId: number) => {
-  const calc = calcStore.getCalculationById(calcId)
-  if (!calc) return
-  const recon = account.getReconciliationForCalculation(calc.id)
-  generateCalculationExcel(calc, companyData.value, recon)
-}
+const companyName = computed(() => account.myAccount?.company || '')
 
 const startWizard = () => {
   router.push('/business/calculator/calculate')
 }
-
-const columns = computed(() => [
-  { key: 'number', label: t('businessCalc.colNumber'), width: '14%' },
-  { key: 'period', label: t('businessCalc.colPeriod'), width: '10%' },
-  { key: 'amount', label: t('businessCalc.colAmount'), width: '16%' },
-  { key: 'createdAt', label: t('businessCalc.colCalcDate'), width: '12%' },
-  { key: 'status', label: t('businessCalc.colStatus'), width: '14%' },
-])
-
-const myCalcRows = computed(() => {
-  return calcStore.myCalculations.map(c => {
-    let penaltyInfo: { overdueDays: number; totalPenalty: number } | null = null
-    if (c.dueDate && c.status !== CalcStatus.PAID && c.totalAmount > 0) {
-      const days = getOverdueDays(c.dueDate)
-      if (days > 0) {
-        const p = calculatePenalty(c.totalAmount, c.dueDate)
-        penaltyInfo = { overdueDays: p.overdueDays, totalPenalty: p.totalPenalty }
-      }
-    }
-    return {
-      id: c.id,
-      number: c.number,
-      period: c.period,
-      amount: c.totalAmount.toLocaleString() + ' ' + t('businessCalc.som'),
-      createdAt: c.date,
-      status: c.status,
-      rejectionReason: c.rejectionReason,
-      rejectedAt: c.rejectedAt,
-      rejectedBy: c.rejectedBy,
-      paymentRejectionReason: c.paymentRejectionReason,
-      totalAmount: c.totalAmount,
-      parentId: c.parentId,
-      parentNumber: c.parentId ? calcStore.getCalculationById(c.parentId)?.number : undefined,
-      penaltyInfo,
-    }
-  })
-})
 
 const totalCalcsCount = computed(() => calcStore.myCalculations.length)
 const totalPaidAmount = computed(() => {
@@ -141,7 +85,7 @@ const lastCalcPeriod = computed(() => {
   <DashboardLayout
     role="business"
     :roleTitle="roleTitle"
-    :userName="companyData.name"
+    :userName="companyName"
     :menuItems="menuItems"
   >
     <Teleport to="body">
@@ -225,210 +169,7 @@ const lastCalcPeriod = computed(() => {
         </div>
       </div>
 
-      <!-- History Table -->
-      <div class="history-card">
-        <div class="history-card__header">
-          <div class="history-card__title-wrap">
-            <div class="history-card__icon">
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h2 class="history-card__title">{{ $t('businessCalc.historyTitle') }}</h2>
-              <p class="history-card__subtitle">{{ $t('businessCalc.historySubtitle') }}</p>
-            </div>
-            <span v-if="myCalcRows.length > 0" class="history-card__count">{{ myCalcRows.length }}</span>
-          </div>
-          <button @click="startWizard" class="history-card__new-btn">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            {{ $t('businessCalc.newCalcBtn') }}
-          </button>
-        </div>
-
-      <DataTable :columns="columns" :data="myCalcRows" :actions="true" :rowClass="calcRowClass">
-        <template #empty>
-          <EmptyState
-            :icon="'<svg class=&quot;w-10 h-10&quot; fill=&quot;none&quot; viewBox=&quot;0 0 40 40&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.5&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M15 11.67h10m0 16.66v-5m-5 5h.017M15 28.33h.017M15 23.33h.017M20 23.33h.017M25 18.33h.017M20 18.33h.017M15 18.33h.017M11.67 35h16.66A3.33 3.33 0 0031.67 31.67V8.33A3.33 3.33 0 0028.33 5H11.67A3.33 3.33 0 008.33 8.33v23.34A3.33 3.33 0 0011.67 35z&quot;/></svg>'"
-            :title="$t('businessCalc.emptyTitle')"
-            :description="$t('businessCalc.emptyDescription')"
-            :actionLabel="$t('businessCalc.emptyAction')"
-            @action="startWizard()"
-          />
-        </template>
-        <template #cell-number="{ value, row }">
-          <div class="cell-number">
-            <span class="cell-number__value">{{ value }}</span>
-            <div v-if="row.parentNumber" class="cell-number__resubmit">{{ $t('businessCalc.resubmitted', { number: row.parentNumber }) }}</div>
-          </div>
-        </template>
-        <template #cell-period="{ value }">
-          <span class="cell-period">{{ value }}</span>
-        </template>
-        <template #cell-createdAt="{ value }">
-          <span class="cell-date">{{ value }}</span>
-        </template>
-        <template #cell-amount="{ value, row }">
-          <div class="amount-cell">
-            <span class="amount-cell__value">{{ value }}</span>
-            <div v-if="row.penaltyInfo" class="amount-cell__penalty">
-              <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              {{ $t('businessCalc.amountPenalty', { amount: formatNum(row.penaltyInfo.totalPenalty, 0), days: row.penaltyInfo.overdueDays }) }}
-            </div>
-            <div v-if="row.penaltyInfo" class="amount-cell__total">
-              {{ $t('businessCalc.amountTotal', { amount: formatNum(row.totalAmount + row.penaltyInfo.totalPenalty, 0) }) }}
-            </div>
-          </div>
-        </template>
-        <template #cell-status="{ value, row }">
-          <div class="status-cell">
-            <span class="status-badge" :style="getStatusStyle(value)">
-              <svg v-if="value === 'paid' || value === 'completed'" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-              <svg v-if="value === 'rejected' || value === 'payment_rejected'" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              {{ $t(statusI18nKey[value] || value) }}
-            </span>
-            <div v-if="(value === 'rejected' || value === 'payment_rejected') && row.rejectionReason" class="status-reason">
-              {{ row.rejectionReason }}
-            </div>
-          </div>
-        </template>
-        <template #actions="{ row }">
-          <div class="act-wrap">
-            <!-- Черновик: [Отправить (filled green)] [Редактировать (outline)] [⋯ → Удалить] -->
-            <template v-if="row.status === 'draft'">
-              <button @click="calcStore.submitForReview(row.id)" class="act-btn act-btn--filled act-btn--green">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                {{ $t('businessCalc.sendBtn') }}
-              </button>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {{ $t('businessCalc.editBtn') }}
-              </router-link>
-              <button class="act-icon act-icon--red" :title="$t('businessCalc.deleteBtn')" @click="mockAction($t('businessCalc.deleteBtn') + ' ' + row.number)">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </button>
-            </template>
-            <!-- На проверке: [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'under_review'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Принято: [Оплатить → PaymentView (filled green)] [Просмотреть (outline)] [⋯ → PDF, Excel] -->
-            <template v-else-if="row.status === 'approved'">
-              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--green']">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payBtn') }} {{ expandedCalcId !== row.id ? formatNum(row.totalAmount, 0) + ' ' + $t('businessCalc.som') : '' }}
-              </button>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-              <button class="act-icon" :title="$t('businessCalc.downloadPdf')" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              </button>
-              <button class="act-icon" :title="$t('businessCalc.downloadExcel')" @click="downloadExcel(row.id)">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              </button>
-            </template>
-            <!-- Подано / На рассмотрении: [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'submitted' || row.status === 'in_review'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- На доработке: [Исправить (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'revision'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {{ $t('businessCalc.fixBtn') }}
-              </router-link>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Сбор оплачен: [Оплатить пеню → PaymentView (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'fee_paid'">
-              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payPenaltyBtn') }}
-              </button>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Завершено: [Закрыто badge (green)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'completed'">
-              <span class="closed-badge">
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                {{ $t('businessCalc.closedBadge') }}
-              </span>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Оплачено: [Просмотреть (outline)] [⋯ → PDF, Excel] -->
-            <template v-else-if="row.status === 'paid'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-              <button class="act-icon" :title="$t('businessCalc.downloadPdf')" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-              </button>
-              <button class="act-icon" :title="$t('businessCalc.downloadExcel')" @click="downloadExcel(row.id)">
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              </button>
-            </template>
-            <!-- Отклонено: [Исправить (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'rejected'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                {{ $t('businessCalc.fixBtn') }}
-              </router-link>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Оплата на проверке: [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'payment_pending'">
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-            <!-- Оплата отклонена: [Подтвердить оплату → PaymentView (filled orange)] [Просмотреть (outline)] -->
-            <template v-else-if="row.status === 'payment_rejected'">
-              <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.confirmPayment') }}
-              </button>
-              <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                {{ $t('businessCalc.viewBtn') }}
-              </router-link>
-            </template>
-          </div>
-        </template>
-
-        <template #row-after="{ row, colspan }">
-          <tr v-if="expandedCalcId === row.id && (row.status === 'approved' || row.status === 'fee_paid' || row.status === 'payment_rejected')" class="payment-expand-row">
-            <td :colspan="colspan" class="p-0">
-              <PaymentPanel :calculationId="row.id" :modelValue="expandedCalcId === row.id" @close="expandedCalcId = null" />
-            </td>
-          </tr>
-        </template>
-
-      </DataTable>
-      </div>
+      <CalculationHistory @new-calc="startWizard" />
 
       <div class="rates-section">
         <button @click="showRates = !showRates" class="rates-toggle">
@@ -447,16 +188,16 @@ const lastCalcPeriod = computed(() => {
           enter-active-class="transition-all duration-300 ease-out"
           leave-active-class="transition-all duration-200 ease-in"
           enter-from-class="max-h-0 opacity-0"
-          enter-to-class="max-h-[500px] opacity-100"
-          leave-from-class="max-h-[500px] opacity-100"
+          enter-to-class="bcalc-max-h-expanded opacity-100"
+          leave-from-class="bcalc-max-h-expanded opacity-100"
           leave-to-class="max-h-0 opacity-0"
         >
           <div v-show="showRates" class="rates-collapse">
             <div class="rates-body">
               <div class="rates-grid">
-                <div v-for="group in productGroups" :key="group.value" class="rate-card">
-                  <p class="rate-card__label">{{ group.label }}</p>
-                  <p class="rate-card__value">{{ group.baseRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
+                <div v-for="group in productGroupStore.groups" :key="group.id" class="rate-card">
+                  <p class="rate-card__label">{{ group.groupNumber }}. {{ group.name }}</p>
+                  <p class="rate-card__value">{{ group.currentRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
                 </div>
               </div>
             </div>
@@ -688,19 +429,6 @@ const lastCalcPeriod = computed(() => {
 .stat-card__value--amber { color: #d97706; }
 .stat-card__value--blue { color: #2563eb; }
 
-/* ── Closed badge ── */
-.closed-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: #dcfce7;
-  color: #166534;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
 /* ── Rates section ── */
 .rates-section {
   margin-top: 24px;
@@ -788,333 +516,7 @@ const lastCalcPeriod = computed(() => {
   margin: 0;
 }
 
-/* ── History card ── */
-.history-card {
-  background: #fff;
-  border: 1px solid var(--color-slate-200);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-}
-
-.history-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--color-slate-100);
-  background: linear-gradient(to right, var(--color-slate-50), #fff);
-}
-
-.history-card__title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.history-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: #eff6ff;
-  color: #3b82f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.history-card__title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--color-slate-800);
-  margin: 0;
-  line-height: 1.3;
-}
-
-.history-card__subtitle {
-  font-size: 16px;
-  color: var(--color-slate-400);
-  margin: 2px 0 0;
-}
-
-.history-card__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 13px;
-  background: #3b82f6;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.history-card__new-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: var(--color-calc-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-}
-
-.history-card__new-btn:hover {
-  background: var(--color-calc-accent-dark);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-}
-
-.history-card :deep(.dash-card) {
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-@media (max-width: 640px) {
-  .history-card__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .history-card__new-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* ── Cell styles ── */
-.cell-number__value {
-  font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
-  font-weight: 600;
-  font-size: 15px;
-  color: #2563eb;
-}
-
-.cell-number__resubmit {
-  font-size: 13px;
-  color: var(--color-calc-accent-dark);
-  margin-top: 2px;
-}
-
-.cell-period {
-  display: inline-block;
-  padding: 3px 10px;
-  background: #f0f9ff;
-  color: #0369a1;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.cell-date {
-  font-size: 15px;
-  color: var(--color-slate-500);
-  font-weight: 400;
-}
-
-/* ── Action buttons ── */
-.act-wrap {
-  display: flex;
-  gap: 6px;
-  justify-content: flex-end;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.act-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-.act-btn--filled {
-  color: white;
-  border: none;
-}
-.act-btn--green { background: #22c55e; }
-.act-btn--green:hover { background: #16a34a; box-shadow: 0 2px 8px rgba(34,197,94,0.25); }
-.act-btn--orange { background: var(--color-calc-accent); }
-.act-btn--orange:hover { background: var(--color-calc-accent-dark); box-shadow: 0 2px 8px rgba(245,158,11,0.25); }
-.act-btn--outline {
-  background: transparent;
-  color: var(--color-slate-600);
-  border: 1px solid var(--color-slate-200);
-}
-.act-btn--outline:hover {
-  background: var(--color-slate-50);
-  border-color: var(--color-slate-300);
-  color: var(--color-slate-800);
-}
-
-/* Icon-only action button */
-.act-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-slate-200);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--color-slate-500);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.act-icon:hover {
-  background: var(--color-slate-100);
-  border-color: var(--color-slate-300);
-  color: var(--color-slate-800);
-}
-.act-icon--red {
-  color: #dc2626;
-  border-color: #fecaca;
-}
-.act-icon--red:hover {
-  background: #fef2f2;
-  border-color: #f87171;
-  color: #991b1b;
-}
-
-/* ── Status row left-border indicators ── */
-:deep(.calc-row--paid td:first-child) {
-  box-shadow: inset 4px 0 0 #22c55e;
-}
-:deep(.calc-row--accepted td:first-child) {
-  box-shadow: inset 4px 0 0 #3b82f6;
-}
-:deep(.calc-row--review td:first-child) {
-  box-shadow: inset 4px 0 0 #f59e0b;
-}
-:deep(.calc-row--draft td:first-child) {
-  box-shadow: inset 4px 0 0 #d1d5db;
-}
-:deep(.calc-row--rejected td:first-child) {
-  box-shadow: inset 4px 0 0 #ef4444;
-}
-:deep(.calc-row--rejected) {
-  background: #fffbeb !important;
-}
-:deep(.calc-row--rejected.table-row:hover) {
-  background: #fef9c3 !important;
-}
-:deep(.calc-row--pay-review td:first-child) {
-  box-shadow: inset 4px 0 0 #f97316;
-}
-:deep(.calc-row--pay-rejected td:first-child) {
-  box-shadow: inset 4px 0 0 #ef4444;
-}
-
-/* ── Status cell ── */
-.status-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 12px;
-  padding: 4px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  width: fit-content;
-}
-
-.status-reason {
-  font-size: 13px;
-  color: #991b1b;
-  line-height: 1.4;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-/* Penalty badge in calc list */
-.penalty-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #DC2626;
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
-  border-radius: 6px;
-  padding: 2px 8px;
-  margin-top: 4px;
-}
-
-/* ── Amount cell 3-line ── */
-.amount-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.amount-cell__value {
-  font-weight: 600;
-  color: var(--color-slate-800);
-}
-.amount-cell__penalty {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-calc-accent-dark);
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: var(--radius-sm);
-  padding: 2px 8px;
-}
-.amount-cell__total {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-slate-800);
-  margin-top: 2px;
-}
-
-/* ── Row status colors (new) ── */
-.calc-row--fee-paid { border-left: 3px solid #f59e0b; }
-.calc-row--penalty-paid { border-left: 3px solid #3b82f6; }
-.calc-row--completed { border-left: 3px solid #059669; }
-
-/* ── Inline payment expand row ── */
-.payment-expand-row td {
-  padding: 0 !important;
-  border-bottom: none;
-}
-
-/* ── Gray (collapse) button variant ── */
-.act-btn--gray {
-  background: var(--color-slate-500) !important;
-  color: #fff !important;
-}
-.act-btn--gray:hover {
-  background: var(--color-slate-600) !important;
+.bcalc-max-h-expanded {
+  max-height: 500px;
 }
 </style>

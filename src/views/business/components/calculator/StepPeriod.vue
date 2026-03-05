@@ -34,7 +34,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="p-6 lg:p-8">
-    <h2 class="text-[27px] font-semibold text-slate-800 mb-6">{{ $t('businessCalc.periodAndPayerTitle') }}</h2>
+    <h2 class="sp-section-title font-semibold text-slate-800 mb-6">{{ $t('businessCalc.periodAndPayerTitle') }}</h2>
 
     <div class="space-y-6">
       <div>
@@ -44,7 +44,7 @@ const emit = defineEmits<{
             type="button"
             @click="emit('update:payerType', 'producer')"
             :class="[
-              'px-6 py-3 text-[20px] font-semibold transition-all duration-200',
+              'px-6 py-3 sp-text font-semibold transition-all duration-200',
               payerType === 'producer'
                 ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-800 hover:bg-white'
@@ -54,7 +54,7 @@ const emit = defineEmits<{
             type="button"
             @click="emit('update:payerType', 'importer')"
             :class="[
-              'px-6 py-3 text-[20px] font-semibold transition-all duration-200',
+              'px-6 py-3 sp-text font-semibold transition-all duration-200',
               payerType === 'importer'
                 ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-800 hover:bg-white'
@@ -96,8 +96,8 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
-          <p class="text-[20px] font-medium text-slate-600">{{ $t('businessCalc.deadlineBefore', { date: producerDeadlineFormatted }) }}</p>
+          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
+          <p class="sp-text font-medium text-slate-600">{{ $t('businessCalc.deadlineBefore', { date: producerDeadlineFormatted }) }}</p>
         </div>
       </div>
 
@@ -130,8 +130,8 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
-          <p class="text-[20px] font-medium text-slate-600">{{ $t('businessCalc.deadlineBeforeWithDays', { date: importerDeadlineFormatted, days: importerDaysLeft }) }}</p>
+          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
+          <p class="sp-text font-medium text-slate-600">{{ $t('businessCalc.deadlineBeforeWithDays', { date: importerDeadlineFormatted, days: importerDaysLeft }) }}</p>
         </div>
       </div>
 
@@ -142,8 +142,8 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-red-800">{{ $t('businessCalc.deadlineExpired') }}</p>
-          <p class="text-[20px] font-medium text-red-600">{{ $t('businessCalc.deadlineWas', { date: importerDeadlineFormatted }) }}</p>
+          <p class="sp-text font-semibold text-red-800">{{ $t('businessCalc.deadlineExpired') }}</p>
+          <p class="sp-text font-medium text-red-600">{{ $t('businessCalc.deadlineWas', { date: importerDeadlineFormatted }) }}</p>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ const emit = defineEmits<{
           <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <h3 class="text-[20px] font-semibold text-slate-800">{{ $t('businessCalc.payerDataTitle') }}</h3>
+          <h3 class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.payerDataTitle') }}</h3>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <AppInput
@@ -182,8 +182,8 @@ const emit = defineEmits<{
           </svg>
         </div>
         <div>
-          <p class="text-[20px] font-semibold text-slate-800">{{ $t('businessCalc.paymentTermsTitle') }}</p>
-          <p class="text-[20px] font-medium text-slate-600" v-html="$t('businessCalc.paymentTermsText')"></p>
+          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.paymentTermsTitle') }}</p>
+          <p class="sp-text font-medium text-slate-600" v-html="$t('businessCalc.paymentTermsText')"></p>
         </div>
       </div>
     </div>
@@ -198,4 +198,11 @@ const emit = defineEmits<{
   color: #1e293b;
 }
 
+.sp-section-title {
+  font-size: 27px;
+}
+
+.sp-text {
+  font-size: 20px;
+}
 </style>

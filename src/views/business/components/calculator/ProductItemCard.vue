@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CalculatorProductItem, PayerType } from '@/types/calculator'
-import type { ProductSubgroup } from '@/data/product-groups'
+import type { ProductSubgroupDTO } from '@/types/product-group'
 import ProductGroupSelector from '@/components/ProductGroupSelector.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { calculateAmount, getVolumeError, getNormStatus, getRemaining } from '@/helpers/calculatorHelpers'
@@ -79,7 +79,7 @@ const remaining = () => getRemaining(props.item)
 <template>
   <div class="cf-card">
     <div class="flex items-center justify-between mb-4">
-      <span class="text-[20px] font-semibold text-slate-800">{{ $t('businessCalc.positionN', { n: index + 1 }) }}</span>
+      <span class="pic-text font-semibold text-slate-800">{{ $t('businessCalc.positionN', { n: index + 1 }) }}</span>
       <button v-if="canRemove" @click="emit('remove', item.id)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors" :title="$t('businessCalc.deletePosition')">
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -93,10 +93,10 @@ const remaining = () => getRemaining(props.item)
         :subgroup="item.subgroup"
         @update:group="(v: string) => { item.group = v; item.subgroup = ''; item.tnvedCode = ''; emit('group-changed', item) }"
         @update:subgroup="(v: string) => { item.subgroup = v; emit('subgroup-changed', item) }"
-        @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.tnvedCode = data.code }"
+        @subgroup-selected="(data: ProductSubgroupDTO | null) => { if (data) item.tnvedCode = data.tnvedCode || '' }"
         accent-color="#f59e0b"
       />
-      <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-[20px] font-semibold text-red-500">{{ validationErrors[`product_${index}_group`] }}</p>
+      <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 pic-text font-semibold text-red-500">{{ validationErrors[`product_${index}_group`] }}</p>
       <p v-else-if="formSubmitted && formErrors[`product_${index}_group`]" class="vld-error" data-validation-error>
         <span class="vld-error__icon">&#9888;</span> {{ formErrors[`product_${index}_group`] }}
       </p>
@@ -433,5 +433,9 @@ const remaining = () => getRemaining(props.item)
   .fc-card__icon { width: 36px; height: 36px; }
   .fc-card__icon svg { width: 16px; height: 16px; }
   .fc-card__btn { padding: 6px 12px; font-size: 12px; }
+}
+
+.pic-text {
+  font-size: 20px;
 }
 </style>
