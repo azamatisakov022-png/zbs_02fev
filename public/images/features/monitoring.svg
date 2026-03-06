@@ -1,0 +1,82 @@
+<svg viewBox="0 0 267 267" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background window -->
+  <rect x="85" y="20" width="120" height="90" rx="5" fill="#e3f2fd" opacity="0.3"/>
+  <line x1="145" y1="20" x2="145" y2="110" stroke="#b3e5fc" stroke-width="2"/>
+  <line x1="85" y1="65" x2="205" y2="65" stroke="#b3e5fc" stroke-width="2"/>
+
+  <!-- Shadow -->
+  <ellipse cx="150" cy="235" rx="90" ry="12" fill="#e0e0e0" opacity="0.5"/>
+
+  <!-- Monitor -->
+  <rect x="90" y="70" width="150" height="110" rx="8" fill="#37474f"/>
+  <rect x="98" y="78" width="134" height="94" rx="4" fill="white"/>
+  <!-- Monitor stand -->
+  <rect x="145" y="180" width="30" height="15" fill="#37474f"/>
+  <rect x="130" y="195" width="60" height="8" rx="2" fill="#455a64"/>
+
+  <!-- Dashboard content -->
+  <!-- Header bar -->
+  <rect x="102" y="82" width="126" height="12" fill="#f5f5f5"/>
+  <circle cx="110" cy="88" r="3" fill="#ef5350"/>
+  <circle cx="120" cy="88" r="3" fill="#ffc107"/>
+  <circle cx="130" cy="88" r="3" fill="#4caf50"/>
+
+  <!-- Sidebar -->
+  <rect x="102" y="98" width="30" height="70" fill="#fafafa"/>
+  <rect x="106" y="105" width="22" height="6" rx="2" fill="#e0e0e0"/>
+  <rect x="106" y="115" width="18" height="6" rx="2" fill="#e0e0e0"/>
+  <rect x="106" y="125" width="20" height="6" rx="2" fill="#0e888d"/>
+  <rect x="106" y="135" width="16" height="6" rx="2" fill="#e0e0e0"/>
+
+  <!-- Pie chart -->
+  <circle cx="160" cy="125" r="22" fill="#e0e0e0"/>
+  <path d="M160 125 L160 103 A22 22 0 0 1 180 135 Z" fill="#0e888d"/>
+  <path d="M160 125 L180 135 A22 22 0 0 1 145 143 Z" fill="#fea629"/>
+  <circle cx="160" cy="125" r="10" fill="white"/>
+
+  <!-- Line chart -->
+  <rect x="190" y="105" width="35" height="35" fill="#fafafa" rx="2"/>
+  <polyline points="195,135 202,125 210,130 218,115 225,120" stroke="#fea629" stroke-width="2" fill="none"/>
+  <polyline points="195,130 202,132 210,128 218,122 225,125" stroke="#0e888d" stroke-width="2" fill="none"/>
+
+  <!-- Stats cards -->
+  <rect x="138" y="152" width="40" height="14" rx="2" fill="#e8f5e9"/>
+  <rect x="182" y="152" width="40" height="14" rx="2" fill="#fff3e0"/>
+
+  <!-- Person -->
+  <!-- Head -->
+  <circle cx="45" cy="100" r="22" fill="#ffcba4"/>
+  <!-- Hair -->
+  <path d="M23 95 Q28 70 45 67 Q62 70 67 95 Q64 80 45 78 Q26 80 23 95" fill="#2d2d2d"/>
+  <!-- Face -->
+  <circle cx="38" cy="98" r="2.5" fill="#2d2d2d"/>
+  <circle cx="52" cy="98" r="2.5" fill="#2d2d2d"/>
+  <path d="M40 108 Q45 112 50 108" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+
+  <!-- Body -->
+  <rect x="28" y="125" width="34" height="60" rx="5" fill="#fea629"/>
+  <!-- Legs -->
+  <rect x="32" y="185" width="10" height="42" rx="3" fill="#2d2d2d"/>
+  <rect x="50" y="185" width="10" height="42" rx="3" fill="#2d2d2d"/>
+  <!-- Shoes -->
+  <ellipse cx="37" cy="230" rx="12" ry="5" fill="#1a1a1a"/>
+  <ellipse cx="55" cy="230" rx="12" ry="5" fill="#1a1a1a"/>
+
+  <!-- Arm pointing at screen -->
+  <path d="M62 135 L85 115 L90 120 L68 145" fill="#ffcba4"/>
+  <circle cx="88" cy="118" r="4" fill="#ffcba4"/>
+
+  <!-- Tablet/clipboard in other hand -->
+  <rect x="15" y="145" width="25" height="35" rx="3" fill="#eceff1" stroke="#b0bec5"/>
+  <rect x="19" y="150" width="17" height="4" fill="#0e888d"/>
+  <rect x="19" y="157" width="12" height="3" fill="#e0e0e0"/>
+  <rect x="19" y="163" width="15" height="3" fill="#e0e0e0"/>
+  <rect x="19" y="169" width="10" height="3" fill="#e0e0e0"/>
+
+  <!-- Left arm holding tablet -->
+  <path d="M28 135 L20 150 L15 148 L25 130" fill="#ffcba4"/>
+
+  <!-- Decorative elements -->
+  <circle cx="250" cy="50" r="15" fill="#0e888d" opacity="0.1"/>
+  <circle cx="240" cy="80" r="10" fill="#fea629" opacity="0.1"/>
+</svg>

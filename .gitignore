@@ -1,1 +1,27 @@
+# Dependencies
+node_modules
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist
+
+# IDE / Editor
+.vscode
+.idea
 .vercel
+
+# OS files
+.DS_Store
+.localized
+
+# Claude
+.claude
+.mcp.json
+
+# MD files (except README.md)
+*.md
+!README.md

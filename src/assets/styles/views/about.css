@@ -1,0 +1,63 @@
+.header-section {
+  @apply pt-20 pb-16;
+}
+
+.header-content {
+  @apply flex flex-col items-center text-center max-w-[700px] mx-auto mb-[70px];
+}
+
+.main-title {
+  @apply text-[32px] font-bold mb-4 uppercase;
+}
+
+.subtitle {
+  @apply text-[24px] font-medium text-text-main leading-normal;
+}
+
+.cards-grid {
+  @apply flex flex-wrap gap-[30px] justify-center items-stretch;
+}
+
+/* Card Styles */
+.info-card {
+  @apply flex-1 max-w-[606px] bg-white rounded-[30px] border border-border-card 
+         shadow-card relative flex flex-col items-center pt-[34px] pb-[45px];
+}
+
+.accent-bar-top {
+  @apply absolute top-0 w-[160px] h-[5px] bg-primary rounded-b-[5px];
+}
+
+.accent-bar-bottom {
+  @apply absolute bottom-0 w-[160px] h-[5px] bg-text-main rounded-t-[5px];
+}
+
+.illustration-container {
+  @apply h-[220px] flex items-center justify-center mb-10;
+}
+
+.illustration-container img {
+  @apply max-h-full;
+}
+
+/* Text Styles */
+.card-content {
+  @apply flex flex-col gap-[25px] items-center text-center w-full;
+}
+
+.card-title {
+  @apply text-[24px] font-semibold text-text-main uppercase tracking-wide;
+}
+
+.card-description {
+  @apply text-[14px] font-medium text-text-main leading-relaxed max-w-[340px];
+}
+
+.functions-list {
+  @apply text-[14px] font-medium text-text-main leading-loose list-disc text-left inline-block pl-5;
+}
+
+.functions-list li{
+    margin:0;
+    padding:0;
+}

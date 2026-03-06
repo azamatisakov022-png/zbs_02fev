@@ -1,0 +1,1333 @@
+<script setup lang="ts">
+import { ref, computed, watch, nextTick } from 'vue'
+import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import SectionGuide from '../../components/common/SectionGuide.vue'
+import 'leaflet/dist/leaflet.css'
+import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
+import L from 'leaflet'
+import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
+import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { useI18n } from 'vue-i18n'
+import { toastStore } from '../../stores/toast'
+import { AppButton, AppInput, AppModal, AppCard } from '../../components/ui'
+import { landfillStore, getFillPercent, type Landfill as StoreLandfill } from '../../stores/landfills'
+import { recyclerStore, type Recycler as StoreRecycler } from '../../stores/recyclers'
+import { collectionPointStore, type CollectionPoint } from '../../stores/collectionPoints'
+import { dumpStore, getDumpStatusLabel, type Dump as StoreDump } from '../../stores/dumps'
+
+const { t } = useI18n()
+const { roleTitle, menuItems } = useEmployeeMenu()
+
+// ==================== MAP STATE ====================
+const mapCenter = ref<[number, number]>([41.2, 74.7])
+const mapZoom = ref(7)
+const mapRef = ref<any>(null)
+const mapSearchQuery = ref('')
+const mapSearchResults = ref<MapPoint[]>([])
+const showMapSearchResults = ref(false)
+
+type LayerType = 'recyclers' | 'reception' | 'landfills' | 'dumps' | 'payers'
+
+const layerVisibility = ref<Record<LayerType, boolean>>({
+  landfills: true, recyclers: true, reception: true, dumps: true, payers: false,
+})
+const layers = computed(() => [
+  { id: 'landfills' as LayerType, name: t('employeeMap.layerLandfills'), icon: '🟢', visible: layerVisibility.value.landfills, color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: t('employeeMap.layerRecyclers'), icon: '🔵', visible: layerVisibility.value.recyclers, color: '#2563EB' },
+  { id: 'reception' as LayerType, name: t('employeeMap.layerReception'), icon: '🟡', visible: layerVisibility.value.reception, color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: t('employeeMap.layerDumps'), icon: '🟠', visible: layerVisibility.value.dumps, color: '#DC2626' },
+  { id: 'payers' as LayerType, name: t('employeeMap.layerPayers'), icon: '🟣', visible: layerVisibility.value.payers, color: '#9333EA' },
+])
+
+interface MapPoint {
+  id: number
+  type: LayerType
+  name: string
+  lat: number
+  lng: number
+  address: string
+  phone: string
+  status: string
+  description?: string
+}
+
+// ==================== REGISTRY STATE ====================
+const activeRegistry = ref<LayerType>('landfills')
+const registrySearchQuery = ref('')
+const showViewModal = ref(false)
+const showEditModal = ref(false)
+const showDeleteConfirm = ref(false)
+const showNotification = ref(false)
+const notificationMessage = ref('')
+const isCreating = ref(false)
+
+const showCoordPicker = ref(false)
+const pickerCoords = ref<{ lat: number; lng: number } | null>(null)
+const activeFormForPicker = ref<any>(null)
+
+const openCoordPicker = (form: any) => {
+  activeFormForPicker.value = form
+  pickerCoords.value = (form.gpsLat && form.gpsLng) ? { lat: parseFloat(form.gpsLat), lng: parseFloat(form.gpsLng) } : null
+  showCoordPicker.value = true
+}
+
+const onPickerConfirm = (coords: { lat: number; lng: number }) => {
+  if (activeFormForPicker.value) {
+    activeFormForPicker.value.gpsLat = String(coords.lat)
+    activeFormForPicker.value.gpsLng = String(coords.lng)
+  }
+}
+
+const registries = computed(() => [
+  { id: 'landfills' as LayerType, name: t('employeeMap.layerLandfills'), icon: '🟢', color: '#22c55e' },
+  { id: 'recyclers' as LayerType, name: t('employeeMap.layerRecyclers'), icon: '🔵', color: '#2563EB' },
+  { id: 'reception' as LayerType, name: t('employeeMap.layerReception'), icon: '🟡', color: '#EAB308' },
+  { id: 'dumps' as LayerType, name: t('employeeMap.layerDumps'), icon: '🟠', color: '#DC2626' },
+  { id: 'payers' as LayerType, name: t('employeeMap.layerPayers'), icon: '🟣', color: '#9333EA' },
+])
+
+const regions = ['г. Бишкек', 'г. Ош', 'Чуйская обл.', 'Ошская обл.', 'Джалал-Абадская обл.', 'Иссык-Кульская обл.', 'Нарынская обл.', 'Таласская обл.', 'Баткенская обл.']
+const wasteTypeOptions = ['Пластик', 'Бумага', 'Картон', 'Стекло', 'Металл', 'Алюминий', 'Электроника', 'Батарейки', 'Текстиль', 'Органика', 'Шины', 'Масла', 'Строительные', 'Бытовые']
+
+// ==================== LANDFILLS ====================
+interface Landfill {
+  id: number; name: string; region: string; district: string; type: string; area: number; volume: number
+  wasteTypes: string[]; gpsLat: string; gpsLng: string; address: string; organization: string
+  discoveryDate: string; status: string; photo: string; notes: string
+}
+
+const landfills = computed(() => landfillStore.state.landfills.map(l => ({
+  id: l.id,
+  name: l.name,
+  region: l.region,
+  district: l.district,
+  type: l.type === 'sanitary' ? t('employeeMap.statusSanctioned') : t('employeeMap.statusUnsanctioned'),
+  area: l.designCapacity / 100,
+  volume: l.currentVolume * 1000,
+  wasteTypes: l.wasteAcceptance.map(w => w.category),
+  gpsLat: String(l.lat),
+  gpsLng: String(l.lng),
+  address: l.address,
+  organization: l.operator,
+  discoveryDate: '01.01.' + l.openYear,
+  status: l.status === 'active' ? t('employeeMap.statusActive') : l.status === 'closed' ? t('employeeMap.statusClosed') : t('employeeMap.statusReconstruction'),
+  photo: '',
+  notes: '',
+})))
+
+const selectedLandfill = ref<Landfill | null>(null)
+const landfillForm = ref<Landfill>({ id: 0, name: '', region: '', district: '', type: '', area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: '', photo: '', notes: '' })
+
+const filteredLandfills = computed(() => {
+  if (!registrySearchQuery.value) return landfills.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return landfills.value.filter(l => l.name.toLowerCase().includes(q) || l.region.toLowerCase().includes(q))
+})
+
+// ==================== RECEPTION POINTS ====================
+interface ReceptionPoint {
+  id: number; name: string; region: string; district: string; address: string; gpsLat: string; gpsLng: string
+  wasteTypes: string[]; workingHours: string; phone: string; email: string; organization: string; status: string; notes: string
+}
+
+const receptionPoints = computed(() => collectionPointStore.state.points.map(p => ({
+  id: p.id,
+  name: p.name,
+  region: p.region,
+  district: p.district,
+  address: p.address,
+  gpsLat: String(p.lat),
+  gpsLng: String(p.lng),
+  wasteTypes: p.wasteTypes,
+  workingHours: p.workingHours,
+  phone: p.phone,
+  email: p.email,
+  organization: p.organization,
+  status: p.status === 'active' ? t('employeeMap.statusWorking') : p.status === 'paused' ? t('employeeMap.statusTempClosed') : t('employeeMap.statusClosed'),
+  notes: p.notes,
+})))
+
+const selectedReception = ref<ReceptionPoint | null>(null)
+const receptionForm = ref<ReceptionPoint>({ id: 0, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: '', notes: '' })
+
+const filteredReception = computed(() => {
+  if (!registrySearchQuery.value) return receptionPoints.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return receptionPoints.value.filter(r => r.name.toLowerCase().includes(q) || r.region.toLowerCase().includes(q) || r.address.toLowerCase().includes(q))
+})
+
+// ==================== RECYCLERS ====================
+interface Recycler {
+  id: number; name: string; inn: string; address: string; gpsLat: string; gpsLng: string; director: string
+  contactPerson: string; phone: string; email: string; activityType: string; wasteTypes: string[]
+  capacity: number; licenseNumber: string; licenseExpiry: string; region: string; status: string; notes: string
+}
+
+const recyclers = computed(() => recyclerStore.state.recyclers.map(r => ({
+  id: r.id,
+  name: r.name,
+  inn: r.inn,
+  address: r.address,
+  gpsLat: String(r.coordinates?.lat || 42.87),
+  gpsLng: String(r.coordinates?.lng || 74.59),
+  director: r.directorName || '',
+  contactPerson: r.contactPerson || '',
+  phone: r.contactPhone,
+  email: r.contactEmail,
+  activityType: r.wasteTypes.join(', '),
+  wasteTypes: r.wasteTypes,
+  capacity: r.capacities?.reduce((s: number, c: any) => s + (c.capacityTons || 0), 0) || 0,
+  licenseNumber: r.licenseNumber,
+  licenseExpiry: r.licenseExpiry,
+  region: r.region || '',
+  status: r.status === 'active' ? t('employeeMap.statusActive') : r.status === 'suspended' ? t('employeeMap.statusSuspended') : t('employeeMap.statusInactive'),
+  notes: r.notes || '',
+})))
+
+const selectedRecycler = ref<Recycler | null>(null)
+const recyclerForm = ref<Recycler>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: '', notes: '' })
+
+const filteredRecyclers = computed(() => {
+  if (!registrySearchQuery.value) return recyclers.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return recyclers.value.filter(r => r.name.toLowerCase().includes(q) || r.inn.includes(q) || r.region.toLowerCase().includes(q))
+})
+
+// ==================== PRODUCERS ====================
+interface Producer {
+  id: number; name: string; inn: string; address: string; gpsLat: string; gpsLng: string; director: string
+  contactPerson: string; phone: string; email: string; productType: string; packagingTypes: string[]
+  annualVolume: number; region: string; status: string; notes: string
+}
+
+const producers = ref<Producer[]>([
+  { id: 1, name: 'ОсОО «Кока-Кола Бишкек Ботлерс»', inn: '01234567891301', address: 'г. Бишкек, ул. Фучика, 14/1', gpsLat: '42.8345', gpsLng: '74.5567', director: 'Иванов Петр', contactPerson: 'Сидорова Анна', phone: '+996 312 54-32-10', email: 'info@coca-cola.kg', productType: 'Производство напитков', packagingTypes: ['ПЭТ-бутылки', 'Алюминиевые банки'], annualVolume: 50000, region: 'г. Бишкек', status: 'Активен', notes: '' },
+  { id: 2, name: 'ОАО «Бишкексут»', inn: '01234567891302', address: 'г. Бишкек, ул. Фрунзе, 480', gpsLat: '42.8567', gpsLng: '74.5234', director: 'Асанов Кубат', contactPerson: 'Жумабаева Айгуль', phone: '+996 312 43-21-09', email: 'info@bishkeksut.kg', productType: 'Молочная продукция', packagingTypes: ['ПЭТ-бутылки', 'Тетрапак', 'Пластиковые стаканы'], annualVolume: 25000, region: 'г. Бишкек', status: 'Активен', notes: '' },
+  { id: 3, name: 'ОсОО «Шоро»', inn: '01234567891303', address: 'г. Бишкек, ул. Ибраимова, 29', gpsLat: '42.8789', gpsLng: '74.5890', director: 'Эгембердиева Жылдыз', contactPerson: 'Токтосунов Азамат', phone: '+996 312 32-10-98', email: 'info@shoro.kg', productType: 'Производство напитков', packagingTypes: ['ПЭТ-бутылки', 'Стеклянные бутылки'], annualVolume: 15000, region: 'г. Бишкек', status: 'Активен', notes: '' },
+  { id: 4, name: 'ОсОО «Арпа»', inn: '01234567891304', address: 'г. Бишкек, ул. Льва Толстого, 36', gpsLat: '42.8123', gpsLng: '74.6012', director: 'Касымов Эрнис', contactPerson: 'Бейшенова Айжан', phone: '+996 312 21-09-87', email: 'info@arpa.kg', productType: 'Пивоваренная компания', packagingTypes: ['Стеклянные бутылки', 'Алюминиевые банки', 'ПЭТ-бутылки'], annualVolume: 35000, region: 'г. Бишкек', status: 'Активен', notes: '' },
+  { id: 5, name: 'ОсОО «Южный пластик»', inn: '01234567891305', address: 'г. Ош, ул. Промышленная, 12', gpsLat: '40.5345', gpsLng: '72.7789', director: 'Мамытов Бакыт', contactPerson: 'Асанова Динара', phone: '+996 3222 3-45-67', email: 'south@plastic.kg', productType: 'Производство пластиковой тары', packagingTypes: ['ПЭТ-бутылки', 'Пластиковые контейнеры'], annualVolume: 8000, region: 'г. Ош', status: 'На проверке', notes: '' },
+])
+
+const selectedProducer = ref<Producer | null>(null)
+const producerForm = ref<Producer>({ id: 0, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: '', notes: '' })
+
+const filteredProducers = computed(() => {
+  if (!registrySearchQuery.value) return producers.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return producers.value.filter(p => p.name.toLowerCase().includes(q) || p.inn.includes(q) || p.region.toLowerCase().includes(q))
+})
+
+// ==================== DUMPS ====================
+interface Dump {
+  id: number; name: string; region: string; address: string; gpsLat: string; gpsLng: string
+  area: number; discoveryDate: string; dumpStatus: string; notes: string
+}
+
+const dumps = computed(() => dumpStore.state.dumps.map(d => ({
+  id: d.id,
+  name: d.name,
+  region: d.region,
+  address: d.address,
+  gpsLat: String(d.lat),
+  gpsLng: String(d.lng),
+  area: d.area,
+  discoveryDate: d.discoveryDate,
+  dumpStatus: getDumpStatusLabel(d.dumpStatus),
+  notes: d.notes,
+})))
+
+const selectedDump = ref<Dump | null>(null)
+const dumpForm = ref<Dump>({ id: 0, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: '', notes: '' })
+
+const dumpPhotos = ref<Array<{ name: string; data: string; size: string }>>([])
+
+const handleDumpPhotoUpload = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  const files = Array.from(input.files)
+  for (const file of files) {
+    if (dumpPhotos.value.length >= 5) break
+    const reader = new FileReader()
+    reader.onload = () => {
+      const sizeKB = Math.round(file.size / 1024)
+      dumpPhotos.value.push({
+        name: file.name,
+        data: reader.result as string,
+        size: sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' ' + t('employeeMap.mb') : sizeKB + ' ' + t('employeeMap.kb'),
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+  input.value = ''
+}
+
+const removeDumpPhoto = (index: number) => {
+  dumpPhotos.value.splice(index, 1)
+}
+
+const filteredDumps = computed(() => {
+  if (!registrySearchQuery.value) return dumps.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return dumps.value.filter(d => d.name.toLowerCase().includes(q) || d.region.toLowerCase().includes(q))
+})
+
+// ==================== PAYERS ====================
+interface Payer {
+  id: number; name: string; inn: string; region: string; address: string; gpsLat: string; gpsLng: string
+  phone: string; category: string; calcStatus: string
+}
+
+const payers = ref<Payer[]>([
+  { id: 61, name: 'ОсОО «Кока-Кола Бишкек Ботлерс»', inn: '02907202010020', region: 'г. Бишкек', address: 'ул. Фучика, 14/1', gpsLat: '42.8345', gpsLng: '74.5567', phone: '+996 312 54-32-10', category: 'Крупный импортёр', calcStatus: 'Оплачен' },
+  { id: 62, name: 'ОАО «Бишкексут»', inn: '01204200010399', region: 'г. Бишкек', address: 'ул. Фрунзе, 480', gpsLat: '42.8567', gpsLng: '74.5234', phone: '+996 312 43-21-09', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 63, name: 'ОсОО «Шоро»', inn: '02406200210072', region: 'г. Бишкек', address: 'ул. Ибраимова, 29', gpsLat: '42.8789', gpsLng: '74.5890', phone: '+996 312 32-10-98', category: 'Производитель', calcStatus: 'На проверке' },
+  { id: 64, name: 'ОсОО «Арпа»', inn: '02502200310045', region: 'г. Бишкек', address: 'ул. Льва Толстого, 36', gpsLat: '42.8123', gpsLng: '74.6012', phone: '+996 312 21-09-87', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 65, name: 'ОсОО «Южный Пластик»', inn: '12308200110089', region: 'г. Ош', address: 'ул. Промышленная, 12', gpsLat: '40.5345', gpsLng: '72.7789', phone: '+996 3222 3-45-67', category: 'Производитель', calcStatus: 'Просрочен' },
+  { id: 66, name: 'ОсОО «ИнтерГласс»', inn: '02309200410156', region: 'Чуйская обл.', address: 'г. Токмок, ул. Промышленная, 25', gpsLat: '42.8234', gpsLng: '75.2789', phone: '+996 3138 8-76-54', category: 'Производитель', calcStatus: 'Оплачен' },
+  { id: 67, name: 'ОсОО «Азия Фуд»', inn: '02410200510234', region: 'г. Бишкек', address: 'ул. Жибек Жолу, 498', gpsLat: '42.8456', gpsLng: '74.6234', phone: '+996 312 10-98-76', category: 'Импортёр', calcStatus: 'На проверке' },
+  { id: 68, name: 'ОсОО «ЭнергоПром»', inn: '02511200610312', region: 'г. Бишкек', address: 'ул. Сухэ-Батора, 5', gpsLat: '42.8678', gpsLng: '74.5012', phone: '+996 312 09-87-65', category: 'Импортёр', calcStatus: 'Оплачен' },
+])
+
+const selectedPayer = ref<Payer | null>(null)
+const payerForm = ref<Payer>({ id: 0, name: '', inn: '', region: '', address: '', gpsLat: '', gpsLng: '', phone: '', category: '', calcStatus: '' })
+
+const filteredPayers = computed(() => {
+  if (!registrySearchQuery.value) return payers.value
+  const q = registrySearchQuery.value.toLowerCase()
+  return payers.value.filter(p => p.name.toLowerCase().includes(q) || p.inn.includes(q) || p.region.toLowerCase().includes(q))
+})
+
+// ==================== MAP POINTS FROM REGISTRY DATA ====================
+const allMapPoints = computed<MapPoint[]>(() => {
+  const points: MapPoint[] = []
+
+  landfills.value.forEach(l => {
+    if (l.gpsLat && l.gpsLng) {
+      points.push({
+        id: l.id, type: 'landfills', name: l.name, lat: parseFloat(l.gpsLat), lng: parseFloat(l.gpsLng),
+        address: l.address || l.region, phone: '', status: l.status, description: l.notes
+      })
+    }
+  })
+
+  receptionPoints.value.forEach(r => {
+    if (r.gpsLat && r.gpsLng) {
+      points.push({
+        id: r.id, type: 'reception', name: r.name, lat: parseFloat(r.gpsLat), lng: parseFloat(r.gpsLng),
+        address: r.address, phone: r.phone, status: r.status, description: r.notes
+      })
+    }
+  })
+
+  recyclers.value.forEach(r => {
+    if (r.gpsLat && r.gpsLng) {
+      points.push({
+        id: r.id, type: 'recyclers', name: r.name, lat: parseFloat(r.gpsLat), lng: parseFloat(r.gpsLng),
+        address: r.address, phone: r.phone, status: r.status, description: r.activityType
+      })
+    }
+  })
+
+  producers.value.forEach(p => {
+    if (p.gpsLat && p.gpsLng) {
+      points.push({
+        id: p.id, type: 'recyclers' as LayerType, name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
+        address: p.address, phone: p.phone, status: p.status, description: p.productType
+      })
+    }
+  })
+
+  dumps.value.forEach(d => {
+    if (d.gpsLat && d.gpsLng) {
+      points.push({
+        id: d.id, type: 'dumps', name: d.name, lat: parseFloat(d.gpsLat), lng: parseFloat(d.gpsLng),
+        address: d.address || d.region, phone: '', status: d.dumpStatus, description: d.notes
+      })
+    }
+  })
+
+  payers.value.forEach(p => {
+    if (p.gpsLat && p.gpsLng) {
+      points.push({
+        id: p.id, type: 'payers', name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
+        address: p.address, phone: p.phone, status: p.calcStatus, description: p.category
+      })
+    }
+  })
+
+  return points
+})
+
+const visiblePoints = computed(() => {
+  return allMapPoints.value.filter(point => {
+    const layer = layers.value.find(l => l.id === point.type)
+    return layer?.visible
+  })
+})
+
+// ==================== CLUSTERING ====================
+interface ClusterItem { type: 'cluster'; lat: number; lng: number; count: number; points: MapPoint[] }
+interface MarkerItem { type: 'marker'; point: MapPoint }
+type DisplayItem = ClusterItem | MarkerItem
+
+const getGridSize = (zoom: number): number => {
+  if (zoom <= 7) return 2.0
+  if (zoom <= 8) return 1.0
+  if (zoom <= 9) return 0.5
+  if (zoom <= 10) return 0.25
+  return 0
+}
+
+const displayItems = computed<DisplayItem[]>(() => {
+  const gridSize = getGridSize(mapZoom.value)
+  if (gridSize === 0) {
+    return visiblePoints.value.map(p => ({ type: 'marker' as const, point: p }))
+  }
+  const grid: Record<string, MapPoint[]> = {}
+  visiblePoints.value.forEach(p => {
+    const cellX = Math.floor(p.lng / gridSize)
+    const cellY = Math.floor(p.lat / gridSize)
+    const key = `${cellX}:${cellY}`
+    if (!grid[key]) grid[key] = []
+    grid[key].push(p)
+  })
+  const items: DisplayItem[] = []
+  Object.values(grid).forEach(points => {
+    if (points.length === 1) {
+      items.push({ type: 'marker', point: points[0] })
+    } else {
+      let latSum = 0; let lngSum = 0
+      points.forEach(p => { latSum += p.lat; lngSum += p.lng })
+      items.push({ type: 'cluster', lat: latSum / points.length, lng: lngSum / points.length, count: points.length, points })
+    }
+  })
+  return items
+})
+
+const onClusterClick = (cluster: ClusterItem) => {
+  const map = mapRef.value?.leafletObject
+  if (map) {
+    const bounds = L.latLngBounds(cluster.points.map(p => [p.lat, p.lng] as [number, number]))
+    map.flyToBounds(bounds, { padding: [50, 50], duration: 1 })
+  }
+}
+
+// ==================== MAP FUNCTIONS ====================
+const createIcon = (color: string) => {
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background-color:${color};width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -28],
+  })
+}
+
+const getMarkerIcon = (type: LayerType) => {
+  const layer = layers.value.find(l => l.id === type)
+  return createIcon(layer?.color || '#666')
+}
+
+const createClusterIcon = (count: number) => {
+  const size = count > 20 ? 50 : count > 10 ? 44 : 38
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="background-color:#0e888d;width:${size}px;height:${size}px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(14,136,141,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:${count > 99 ? 12 : 14}px;">${count}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
+
+const getStatusInfo = (status: string) => {
+  const colorMap: Record<string, string> = {
+    [t('employeeMap.statusActive')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusWorking')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusClosed')]: 'bg-gray-100 text-gray-700',
+    [t('employeeMap.statusTempClosed')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusOnCheck')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusReconstruction')]: 'bg-blue-100 text-blue-700',
+    [t('employeeMap.statusDiscovered')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusLiquidating')]: 'bg-orange-100 text-orange-700',
+    [t('employeeMap.statusLiquidated')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusPaid')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusOverdue')]: 'bg-red-100 text-red-700',
+  }
+  return { label: status, color: colorMap[status] || 'bg-gray-100 text-gray-700' }
+}
+
+const getTypeLabel = (type: LayerType) => {
+  const layer = layers.value.find(l => l.id === type)
+  return layer?.name || type
+}
+
+const toggleLayer = (layerId: LayerType) => {
+  layerVisibility.value[layerId] = !layerVisibility.value[layerId]
+}
+
+const performMapSearch = () => {
+  if (!mapSearchQuery.value.trim()) {
+    mapSearchResults.value = []
+    showMapSearchResults.value = false
+    return
+  }
+  const query = mapSearchQuery.value.toLowerCase()
+  mapSearchResults.value = allMapPoints.value.filter(point =>
+    point.name.toLowerCase().includes(query) || point.address.toLowerCase().includes(query)
+  ).slice(0, 10)
+  showMapSearchResults.value = mapSearchResults.value.length > 0
+}
+
+watch(mapSearchQuery, performMapSearch)
+
+// Go to point on map (used by map search and table row clicks)
+const goToMapPoint = (point: MapPoint) => {
+  mapCenter.value = [point.lat, point.lng]
+  mapZoom.value = 14
+  showMapSearchResults.value = false
+  mapSearchQuery.value = point.name
+
+  if (!layerVisibility.value[point.type]) layerVisibility.value[point.type] = true
+}
+
+// Click on table row to go to map
+const onTableRowClick = (item: any, type: LayerType) => {
+  if (item.gpsLat && item.gpsLng) {
+    const lat = parseFloat(item.gpsLat)
+    const lng = parseFloat(item.gpsLng)
+    if (!isNaN(lat) && !isNaN(lng)) {
+      mapCenter.value = [lat, lng]
+      mapZoom.value = 14
+      if (!layerVisibility.value[type]) layerVisibility.value[type] = true
+
+      // Scroll to map
+      nextTick(() => {
+        document.querySelector('.map-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }
+}
+
+// ==================== REGISTRY CRUD FUNCTIONS ====================
+const getStatusClass = (status: string) => {
+  const map: Record<string, string> = {
+    [t('employeeMap.statusActive')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusWorking')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusClosed')]: 'bg-gray-100 text-gray-700',
+    [t('employeeMap.statusTempClosed')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusOnCheck')]: 'bg-yellow-100 text-yellow-700',
+    [t('employeeMap.statusReconstruction')]: 'bg-blue-100 text-blue-700',
+    [t('employeeMap.statusSuspended')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusRecultivated')]: 'bg-teal-100 text-teal-700',
+    [t('employeeMap.statusDiscovered')]: 'bg-red-100 text-red-700',
+    [t('employeeMap.statusLiquidating')]: 'bg-orange-100 text-orange-700',
+    [t('employeeMap.statusLiquidated')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusPaid')]: 'bg-green-100 text-green-700',
+    [t('employeeMap.statusOverdue')]: 'bg-red-100 text-red-700',
+  }
+  return map[status] || 'bg-gray-100 text-gray-700'
+}
+
+const openView = (item: any) => {
+  if (activeRegistry.value === 'landfills') selectedLandfill.value = item
+  else if (activeRegistry.value === 'reception') selectedReception.value = item
+  else if (activeRegistry.value === 'recyclers') selectedRecycler.value = item
+  else if (activeRegistry.value === 'producers') selectedProducer.value = item
+  else if (activeRegistry.value === 'dumps') selectedDump.value = item
+  else if (activeRegistry.value === 'payers') selectedPayer.value = item
+  showViewModal.value = true
+}
+
+const openEdit = (item: any) => {
+  isCreating.value = false
+  if (activeRegistry.value === 'landfills') { landfillForm.value = { ...item }; selectedLandfill.value = item }
+  else if (activeRegistry.value === 'reception') { receptionForm.value = { ...item }; selectedReception.value = item }
+  else if (activeRegistry.value === 'recyclers') { recyclerForm.value = { ...item }; selectedRecycler.value = item }
+  else if (activeRegistry.value === 'producers') { producerForm.value = { ...item }; selectedProducer.value = item }
+  else if (activeRegistry.value === 'dumps') { dumpForm.value = { ...item }; selectedDump.value = item }
+  else if (activeRegistry.value === 'payers') { payerForm.value = { ...item }; selectedPayer.value = item }
+  showEditModal.value = true
+}
+
+const openCreate = () => {
+  isCreating.value = true
+  if (activeRegistry.value === 'landfills') {
+    landfillForm.value = { id: Math.max(0, ...landfills.value.map(l => l.id)) + 1, name: '', region: '', district: '', type: t('employeeMap.statusSanctioned'), area: 0, volume: 0, wasteTypes: [], gpsLat: '', gpsLng: '', address: '', organization: '', discoveryDate: '', status: t('employeeMap.statusActive'), photo: '', notes: '' }
+  } else if (activeRegistry.value === 'reception') {
+    receptionForm.value = { id: Math.max(0, ...receptionPoints.value.map(r => r.id)) + 1, name: '', region: '', district: '', address: '', gpsLat: '', gpsLng: '', wasteTypes: [], workingHours: '', phone: '', email: '', organization: '', status: t('employeeMap.statusWorking'), notes: '' }
+  } else if (activeRegistry.value === 'recyclers') {
+    recyclerForm.value = { id: Math.max(0, ...recyclers.value.map(r => r.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', activityType: '', wasteTypes: [], capacity: 0, licenseNumber: '', licenseExpiry: '', region: '', status: t('employeeMap.statusActive'), notes: '' }
+  } else if (activeRegistry.value === 'producers') {
+    producerForm.value = { id: Math.max(0, ...producers.value.map(p => p.id)) + 1, name: '', inn: '', address: '', gpsLat: '', gpsLng: '', director: '', contactPerson: '', phone: '', email: '', productType: '', packagingTypes: [], annualVolume: 0, region: '', status: t('employeeMap.statusActive'), notes: '' }
+  } else if (activeRegistry.value === 'dumps') {
+    dumpForm.value = { id: Math.max(0, ...dumps.value.map(d => d.id)) + 1, name: '', region: '', address: '', gpsLat: '', gpsLng: '', area: 0, discoveryDate: '', dumpStatus: t('employeeMap.statusDiscovered'), notes: '' }
+  } else if (activeRegistry.value === 'payers') {
+    payerForm.value = { id: Math.max(0, ...payers.value.map(p => p.id)) + 1, name: '', inn: '', region: '', address: '', gpsLat: '', gpsLng: '', phone: '', category: '', calcStatus: '' }
+  }
+  showEditModal.value = true
+}
+
+const openDelete = (item: any) => {
+  if (activeRegistry.value === 'landfills') selectedLandfill.value = item
+  else if (activeRegistry.value === 'reception') selectedReception.value = item
+  else if (activeRegistry.value === 'recyclers') selectedRecycler.value = item
+  else if (activeRegistry.value === 'producers') selectedProducer.value = item
+  else if (activeRegistry.value === 'dumps') selectedDump.value = item
+  else if (activeRegistry.value === 'payers') selectedPayer.value = item
+  showDeleteConfirm.value = true
+}
+
+const mapLandfillFormToStore = (form: Landfill): Omit<StoreLandfill, 'id'> => {
+  const existing = landfillStore.getLandfillById(form.id)
+  return {
+    name: form.name, region: form.region, district: form.district,
+    type: form.type === t('employeeMap.statusSanctioned') ? 'sanitary' : 'unauthorized',
+    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusClosed') ? 'closed' : 'recultivation',
+    operator: form.organization, address: form.address,
+    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+    designCapacity: form.area * 100, currentVolume: form.volume / 1000,
+    openYear: parseInt(form.discoveryDate.split('.').pop() || '2000') || 2000,
+    wasteAcceptance: form.wasteTypes.map(w => ({ category: w, hazardClass: 'IV-V', acceptedPerYear: 0, limitPerYear: 0 })),
+    settlement: existing?.settlement || '', expiryYear: existing?.expiryYear || 2050,
+    hazardClasses: existing?.hazardClasses || ['IV', 'V'],
+    monthlyIntake: existing?.monthlyIntake || [0,0,0,0,0,0,0,0,0,0,0,0],
+    infrastructure: existing?.infrastructure || { fencing: false, weighControl: false, monitoring: false, drainage: false, leachateCollection: false, fireSafety: false, ecoMonitoring: false },
+    permits: existing?.permits || { operationPermit: { number: '', date: '', expiry: '' }, ecoConclusion: { number: '', date: '' } },
+    documents: existing?.documents || [],
+    population: existing?.population || 0, servicedPopulation: existing?.servicedPopulation || 0,
+    tariffPhysical: existing?.tariffPhysical || 0, tariffLegal: existing?.tariffLegal || 0,
+    dailyVolume: existing?.dailyVolume || 0, wasteSchedule: existing?.wasteSchedule || '',
+    equipment: existing?.equipment || { trucks: 0, excavators: 0, tractors: 0, bulldozers: 0 },
+    morphology: existing?.morphology || { plastic: 0, paper: 0, glass: 0, food: 0, other: 0 },
+    landCategory: existing?.landCategory || '',
+  }
+}
+
+const mapReceptionFormToStore = (form: ReceptionPoint): Omit<CollectionPoint, 'id'> => ({
+  name: form.name, region: form.region, district: form.district, address: form.address,
+  lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+  wasteTypes: form.wasteTypes, workingHours: form.workingHours,
+  phone: form.phone, email: form.email, organization: form.organization,
+  status: form.status === t('employeeMap.statusWorking') ? 'active' : form.status === t('employeeMap.statusTempClosed') ? 'paused' : 'closed',
+  notes: form.notes,
+})
+
+const mapDumpFormToStore = (form: Dump): Omit<StoreDump, 'id'> => {
+  const existing = dumpStore.getDumpById(form.id)
+  const statusMap: Record<string, 'discovered' | 'liquidating' | 'liquidated'> = {
+    [t('employeeMap.statusDiscovered')]: 'discovered', [t('employeeMap.statusLiquidating')]: 'liquidating', [t('employeeMap.statusLiquidated')]: 'liquidated',
+  }
+  return {
+    name: form.name, region: form.region, address: form.address,
+    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
+    area: form.area, discoveryDate: form.discoveryDate,
+    dumpStatus: statusMap[form.dumpStatus] || 'discovered',
+    district: existing?.district || '', responsibleAuthority: existing?.responsibleAuthority || '',
+    notes: form.notes, photos: existing?.photos || [],
+  }
+}
+
+const mapRecyclerFormToStore = (form: Recycler): Partial<StoreRecycler> => {
+  const existing = recyclerStore.getRecyclerById(form.id)
+  return {
+    name: form.name, inn: form.inn, address: form.address, region: form.region,
+    coordinates: { lat: parseFloat(form.gpsLat) || 42.87, lng: parseFloat(form.gpsLng) || 74.59 },
+    directorName: form.director, contactPerson: form.contactPerson || null,
+    contactPhone: form.phone, contactEmail: form.email,
+    wasteTypes: form.wasteTypes, licenseNumber: form.licenseNumber, licenseExpiry: form.licenseExpiry,
+    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusSuspended') ? 'suspended' : 'revoked',
+    notes: form.notes || null,
+    ...(existing ? {} : {
+      fullName: form.name, opf: 'ОсОО', legalAddress: form.address, actualAddress: form.address,
+      directorPosition: 'Директор', contactPosition: null, website: '',
+      licenseDate: '', licenseAuthority: '', licenseActivities: [],
+      ecoPassportNumber: null, ecoPassportDate: null,
+      capacities: [], technologies: {}, equipment: null, productionArea: null,
+      employeesCount: '0', certifications: [], processingMethods: [],
+      inspectionStatus: null, lastInspectionDate: null, inspectionRemarks: null, nextInspectionDate: null,
+      processedCurrentYear: 0, processedPreviousYear: 0,
+      suspensionReason: null, updatedAt: new Date().toLocaleDateString(),
+      addedDate: new Date().toLocaleDateString(), addedBy: '',
+      documents: [], rating: 0,
+    }),
+  }
+}
+
+const saveItem = () => {
+  if (activeRegistry.value === 'landfills') {
+    const storeData = mapLandfillFormToStore(landfillForm.value)
+    if (isCreating.value) landfillStore.addLandfill(storeData)
+    else landfillStore.updateLandfill(landfillForm.value.id, storeData)
+  } else if (activeRegistry.value === 'reception') {
+    const storeData = mapReceptionFormToStore(receptionForm.value)
+    if (isCreating.value) collectionPointStore.addPoint(storeData)
+    else collectionPointStore.updatePoint(receptionForm.value.id, storeData)
+  } else if (activeRegistry.value === 'recyclers') {
+    const storeData = mapRecyclerFormToStore(recyclerForm.value)
+    if (isCreating.value) recyclerStore.addRecycler(storeData as Omit<StoreRecycler, 'id'>)
+    else recyclerStore.updateRecycler(recyclerForm.value.id, storeData)
+  } else if (activeRegistry.value === 'producers') {
+    if (isCreating.value) producers.value.push({ ...producerForm.value })
+    else { const idx = producers.value.findIndex(p => p.id === producerForm.value.id); if (idx !== -1) producers.value[idx] = { ...producerForm.value } }
+  } else if (activeRegistry.value === 'dumps') {
+    const storeData = mapDumpFormToStore(dumpForm.value)
+    if (isCreating.value) dumpStore.addDump(storeData)
+    else dumpStore.updateDump(dumpForm.value.id, storeData)
+  } else if (activeRegistry.value === 'payers') {
+    if (isCreating.value) payers.value.push({ ...payerForm.value })
+    else { const idx = payers.value.findIndex(p => p.id === payerForm.value.id); if (idx !== -1) payers.value[idx] = { ...payerForm.value } }
+  }
+  showEditModal.value = false
+  notificationMessage.value = isCreating.value ? t('employeeMap.recordCreated') : t('employeeMap.dataUpdated')
+  showNotification.value = true
+  setTimeout(() => { showNotification.value = false }, 3000)
+}
+
+const deleteItem = () => {
+  if (activeRegistry.value === 'landfills' && selectedLandfill.value) {
+    const idx = landfillStore.state.landfills.findIndex(l => l.id === selectedLandfill.value!.id)
+    if (idx !== -1) landfillStore.state.landfills.splice(idx, 1)
+  }
+  else if (activeRegistry.value === 'reception' && selectedReception.value) collectionPointStore.deletePoint(selectedReception.value.id)
+  else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) {
+    const idx = recyclerStore.state.recyclers.findIndex(r => r.id === selectedRecycler.value!.id)
+    if (idx !== -1) recyclerStore.state.recyclers.splice(idx, 1)
+  }
+  else if (activeRegistry.value === 'producers' && selectedProducer.value) producers.value = producers.value.filter(p => p.id !== selectedProducer.value!.id)
+  else if (activeRegistry.value === 'dumps' && selectedDump.value) dumpStore.deleteDump(selectedDump.value.id)
+  else if (activeRegistry.value === 'payers' && selectedPayer.value) payers.value = payers.value.filter(p => p.id !== selectedPayer.value!.id)
+  showDeleteConfirm.value = false
+  notificationMessage.value = t('employeeMap.recordDeleted')
+  showNotification.value = true
+  setTimeout(() => { showNotification.value = false }, 3000)
+}
+
+const toggleWasteType = (form: any, type: string) => {
+  const key = 'wasteTypes' in form ? 'wasteTypes' : 'packagingTypes'
+  const idx = form[key].indexOf(type)
+  if (idx === -1) form[key].push(type)
+  else form[key].splice(idx, 1)
+}
+
+const getSelectedItemName = () => {
+  if (activeRegistry.value === 'landfills') return selectedLandfill.value?.name
+  if (activeRegistry.value === 'reception') return selectedReception.value?.name
+  if (activeRegistry.value === 'recyclers') return selectedRecycler.value?.name
+  if (activeRegistry.value === 'producers') return selectedProducer.value?.name
+  if (activeRegistry.value === 'dumps') return selectedDump.value?.name
+  if (activeRegistry.value === 'payers') return selectedPayer.value?.name
+  return ''
+}
+
+const getRegistryAddButtonText = () => {
+  return t('common.add')
+}
+
+const countByType = computed(() => ({
+  landfills: landfills.value.length,
+  reception: receptionPoints.value.length,
+  recyclers: recyclers.value.length,
+  producers: producers.value.length,
+  dumps: dumps.value.length,
+  payers: payers.value.length,
+  total: allMapPoints.value.length,
+}))
+</script>
+
+<template>
+  <DashboardLayout role="employee" :roleTitle="roleTitle" userName="Мамытова Айгуль" :menuItems="menuItems">
+    <div class="space-y-6">
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.employee.mapTitle') }}</h1>
+          <p class="text-gray-600 mt-1">{{ $t('pages.employee.mapSubtitle') }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <AppButton variant="export" @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeMap.exportNotReady') })">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            {{ $t('common.export') }}
+          </AppButton>
+          <AppButton variant="primary" @click="openCreate">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+            {{ getRegistryAddButtonText() }}
+          </AppButton>
+        </div>
+      </div>
+
+      <SectionGuide
+        :title="$t('employeeMap.guideTitle')"
+        :description="$t('employeeMap.guideDescription')"
+        :actions="[$t('employeeMap.guideAction1'), $t('employeeMap.guideAction2'), $t('employeeMap.guideAction3'), $t('employeeMap.guideAction4')]"
+        storageKey="employee-gis-map"
+      />
+
+      <!-- Horizontal Filter Bar -->
+      <AppCard radius="sm" padding="none">
+        <div class="flex items-center gap-3 px-4 py-3 flex-wrap">
+          <!-- Search -->
+          <div class="relative w-[220px] flex-shrink-0">
+            <AppInput
+              v-model="mapSearchQuery"
+              :placeholder="$t('employeeMap.searchObject')"
+              hideLabel
+              size="sm"
+              bg="#f9fafb"
+              borderColor="#e5e7eb"
+              @focus="showMapSearchResults = mapSearchResults.length > 0"
+              @blur="setTimeout(() => showMapSearchResults = false, 200)"
+            >
+              <template #prefix>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </template>
+            </AppInput>
+            <div v-if="showMapSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto z-50">
+              <div v-for="result in mapSearchResults" :key="`${result.type}-${result.id}`" @mousedown.prevent="goToMapPoint(result)" class="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layers.find(l => l.id === result.type)?.color }"></div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ result.name }}</p>
+                    <p class="text-[11px] text-gray-500 truncate">{{ result.address }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-px h-7 bg-gray-200 flex-shrink-0"></div>
+
+          <!-- Layer type chips -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="layer in layers"
+              :key="layer.id"
+              @click="toggleLayer(layer.id)"
+              :class="[
+                'flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] font-medium transition-all border',
+                layer.visible
+                  ? 'bg-white border-current shadow-sm'
+                  : 'bg-gray-100 border-gray-200 text-gray-400'
+              ]"
+              :style="layer.visible ? { color: layer.color, borderColor: layer.color } : {}"
+            >
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.visible ? layer.color : '#d1d5db' }"></span>
+              <span class="whitespace-nowrap">{{ layer.name }}</span>
+              <span class="text-[11px] px-1.5 py-0.5 rounded-full font-semibold"
+                :style="layer.visible ? { backgroundColor: layer.color + '1a', color: layer.color } : { backgroundColor: '#e5e7eb', color: '#6b7280' }"
+              >{{ countByType[layer.id] }}</span>
+            </button>
+          </div>
+        </div>
+      </AppCard>
+
+      <!-- Map Section -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="relative" style="height: calc(100vh - 360px); min-height: 350px; max-height: 600px;">
+          <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0" @update:zoom="mapZoom = $event">
+            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' layer-type="base" name="OpenStreetMap" />
+            <template v-for="(item, idx) in displayItems" :key="'di-' + idx">
+              <LMarker v-if="item.type === 'marker'" :lat-lng="[item.point.lat, item.point.lng]" :icon="getMarkerIcon(item.point.type)">
+                <LPopup :options="{ maxWidth: 300 }">
+                  <div class="min-w-[220px]">
+                    <div class="flex items-start justify-between mb-2">
+                      <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ item.point.name }}</h4>
+                      <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(item.point.status).color]">{{ getStatusInfo(item.point.status).label }}</span>
+                    </div>
+                    <div class="space-y-1 text-xs">
+                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('common.type') }}:</span><span class="text-gray-700">{{ getTypeLabel(item.point.type) }}</span></p>
+                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.address') }}:</span><span class="text-gray-700">{{ item.point.address }}</span></p>
+                      <p v-if="item.point.phone" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.phoneShort') }}:</span><span class="text-gray-700">{{ item.point.phone }}</span></p>
+                      <p v-if="item.point.description" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.info') }}:</span><span class="text-gray-700">{{ item.point.description }}</span></p>
+                    </div>
+                  </div>
+                </LPopup>
+              </LMarker>
+              <LMarker v-else :lat-lng="[item.lat, item.lng]" :icon="createClusterIcon(item.count)" @click="onClusterClick(item as ClusterItem)" />
+            </template>
+          </LMap>
+
+          <!-- Legend -->
+          <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-gray-200/60 px-3 py-2.5 z-[1000]">
+            <div class="space-y-1.5">
+              <div v-for="layer in layers" :key="layer.id" class="flex items-center gap-2">
+                <div class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: layer.color }"></div>
+                <span class="text-[12px] text-gray-600 whitespace-nowrap">{{ layer.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registry Tabs -->
+      <AppCard radius="sm" padding="none" class="p-2">
+        <div class="flex flex-wrap gap-2">
+          <button v-for="reg in registries" :key="reg.id" @click="activeRegistry = reg.id; registrySearchQuery = ''" :class="['px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2', activeRegistry === reg.id ? 'bg-sky-100 text-sky-700' : 'text-gray-600 hover:bg-gray-100']">
+            <span>{{ reg.icon }}</span>
+            <span>{{ reg.name }}</span>
+            <span class="px-1.5 py-0.5 text-xs rounded-full" :class="activeRegistry === reg.id ? 'bg-sky-200' : 'bg-gray-200'">{{ countByType[reg.id] }}</span>
+          </button>
+        </div>
+      </AppCard>
+
+      <!-- Search -->
+      <AppCard radius="sm" padding="sm">
+        <AppInput v-model="registrySearchQuery" :placeholder="$t('common.search')" hideLabel>
+          <template #prefix>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </template>
+        </AppInput>
+      </AppCard>
+
+      <!-- LANDFILLS TABLE -->
+      <div v-if="activeRegistry === 'landfills'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryLandfills') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.type') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.area') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredLandfills" :key="item.id" @click="onTableRowClick(item, 'landfills')" class="hover:bg-sky-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm"><span :class="item.type === 'Санкционированный' ? 'text-green-600' : 'text-red-600'">{{ item.type }}</span></td>
+                <td class="px-4 py-3 text-sm text-right text-gray-900">{{ item.area }} га</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="primary" size="sm" @click="openView(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ $t('common.view') }}</AppButton>
+                    <AppButton variant="warning" size="sm" @click="openEdit(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>{{ $t('common.edit') }}</AppButton>
+                    <AppButton variant="danger" size="sm" @click="openDelete(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</AppButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECEPTION TABLE -->
+      <div v-if="activeRegistry === 'reception'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryReception') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.address') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.wasteTypes') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredReception" :key="item.id" @click="onTableRowClick(item, 'reception')" class="hover:bg-sky-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.address }}</td>
+                <td class="px-4 py-3"><div class="flex flex-wrap gap-1"><span v-for="wt in item.wasteTypes.slice(0, 3)" :key="wt" class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">{{ wt }}</span><span v-if="item.wasteTypes.length > 3" class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">+{{ item.wasteTypes.length - 3 }}</span></div></td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECYCLERS TABLE -->
+      <div v-if="activeRegistry === 'recyclers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryRecyclers') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.activityType') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredRecyclers" :key="item.id" @click="onTableRowClick(item, 'recyclers')" class="hover:bg-sky-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ item.inn }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.activityType }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PRODUCERS TABLE -->
+      <div v-if="activeRegistry === 'producers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryProducers') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.productType') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredProducers" :key="item.id" @click="onTableRowClick(item, 'producers')" class="hover:bg-sky-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ item.inn }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.productType }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DUMPS TABLE -->
+      <div v-if="activeRegistry === 'dumps'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryDumps') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.areaHa') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.discoveryDate') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.status') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredDumps" :key="item.id" @click="onTableRowClick(item, 'dumps')" class="hover:bg-red-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-sm text-right text-gray-900">{{ item.area }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.discoveryDate }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.dumpStatus)]">{{ item.dumpStatus }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="primary" size="sm" :label="$t('common.view')" @click="openView(item)" />
+                    <AppButton variant="warning" size="sm" :label="$t('common.edit')" @click="openEdit(item)" />
+                    <AppButton variant="danger" size="sm" :label="$t('common.delete')" @click="openDelete(item)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PAYERS TABLE -->
+      <div v-if="activeRegistry === 'payers'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 class="font-semibold text-gray-900">{{ $t('employeeMap.registryPayers') }}</h3></div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.name') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.inn') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.category') }}</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('common.region') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('employeeMap.calcStatus') }}</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('common.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr v-for="item in filteredPayers" :key="item.id" @click="onTableRowClick(item, 'payers')" class="hover:bg-purple-50 cursor-pointer transition-colors">
+                <td class="px-4 py-3 font-medium text-gray-900">{{ item.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600 font-mono">{{ item.inn }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.category }}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">{{ item.region }}</td>
+                <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.calcStatus)]">{{ item.calcStatus }}</span></td>
+                <td class="px-4 py-3" @click.stop>
+                  <div class="flex items-center justify-center gap-1">
+                    <AppButton variant="primary" size="sm" :label="$t('common.view')" @click="openView(item)" />
+                    <AppButton variant="warning" size="sm" :label="$t('common.edit')" @click="openEdit(item)" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Modal -->
+    <AppModal :visible="showViewModal" :title="$t('employeeMap.viewRecord')" size="lg" @close="showViewModal = false">
+      <div>
+            <!-- Landfill view -->
+            <div v-if="activeRegistry === 'landfills' && selectedLandfill" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedLandfill.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedLandfill.status)]">{{ selectedLandfill.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedLandfill.region }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.district') }}</label><p>{{ selectedLandfill.district }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.type') }}</label><p>{{ selectedLandfill.type }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.area') }}</label><p>{{ selectedLandfill.area }} {{ $t('employeeMap.ha') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.volume') }}</label><p>{{ selectedLandfill.volume?.toLocaleString() }} {{ $t('common.tons') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedLandfill.organization || '—' }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedLandfill.address }}</p></div>
+                <div><label class="text-sm text-gray-500">GPS</label><p class="font-mono text-sm">{{ selectedLandfill.gpsLat }}, {{ selectedLandfill.gpsLng }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.discoveryDate') }}</label><p>{{ selectedLandfill.discoveryDate || '—' }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedLandfill.wasteTypes" :key="wt" class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">{{ wt }}</span></div></div>
+                <div class="col-span-2" v-if="selectedLandfill.notes"><label class="text-sm text-gray-500">{{ $t('employeeMap.notes') }}</label><p>{{ selectedLandfill.notes }}</p></div>
+              </div>
+            </div>
+            <!-- Reception view -->
+            <div v-if="activeRegistry === 'reception' && selectedReception" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedReception.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedReception.status)]">{{ selectedReception.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedReception.region }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.district') }}</label><p>{{ selectedReception.district }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedReception.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.workingHours') }}</label><p>{{ selectedReception.workingHours }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedReception.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedReception.email }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedReception.organization }}</p></div>
+                <div><label class="text-sm text-gray-500">GPS</label><p class="font-mono text-sm">{{ selectedReception.gpsLat }}, {{ selectedReception.gpsLng }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedReception.wasteTypes" :key="wt" class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">{{ wt }}</span></div></div>
+              </div>
+            </div>
+            <!-- Recycler view -->
+            <div v-if="activeRegistry === 'recyclers' && selectedRecycler" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedRecycler.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedRecycler.status)]">{{ selectedRecycler.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.inn') }}</label><p class="font-mono">{{ selectedRecycler.inn }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedRecycler.region }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedRecycler.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.director') }}</label><p>{{ selectedRecycler.director }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.contactPerson') }}</label><p>{{ selectedRecycler.contactPerson }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedRecycler.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedRecycler.email }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.activityType') }}</label><p>{{ selectedRecycler.activityType }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.capacity') }}</label><p>{{ selectedRecycler.capacity?.toLocaleString() }} {{ $t('employeeMap.tonsPerYear') }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.license') }}</label><p class="font-mono text-sky-600">{{ selectedRecycler.licenseNumber }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.validUntil') }}</label><p>{{ selectedRecycler.licenseExpiry }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedRecycler.wasteTypes" :key="wt" class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">{{ wt }}</span></div></div>
+              </div>
+            </div>
+            <!-- Producer view -->
+            <div v-if="activeRegistry === 'producers' && selectedProducer" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-sm text-gray-500">{{ $t('common.name') }}</label><p class="font-medium">{{ selectedProducer.name }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.status') }}</label><p><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(selectedProducer.status)]">{{ selectedProducer.status }}</span></p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.inn') }}</label><p class="font-mono">{{ selectedProducer.inn }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('common.region') }}</label><p>{{ selectedProducer.region }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedProducer.address }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.director') }}</label><p>{{ selectedProducer.director }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.contactPerson') }}</label><p>{{ selectedProducer.contactPerson }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.phone') }}</label><p>{{ selectedProducer.phone }}</p></div>
+                <div><label class="text-sm text-gray-500">Email</label><p>{{ selectedProducer.email }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.productType') }}</label><p>{{ selectedProducer.productType }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.annualVolume') }}</label><p>{{ selectedProducer.annualVolume?.toLocaleString() }} {{ $t('common.tons') }}</p></div>
+                <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="pt in selectedProducer.packagingTypes" :key="pt" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">{{ pt }}</span></div></div>
+              </div>
+            </div>
+      </div>
+      <template #footer>
+        <AppButton variant="primary" :label="$t('common.close')" @click="showViewModal = false" />
+      </template>
+    </AppModal>
+
+    <!-- Edit Modal -->
+    <AppModal :visible="showEditModal" :title="isCreating ? $t('employeeMap.createRecord') : $t('employeeMap.editRecord')" size="lg" @close="showEditModal = false">
+      <div class="space-y-4">
+            <!-- Landfill form -->
+            <template v-if="activeRegistry === 'landfills'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="landfillForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="landfillForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><AppInput v-model="landfillForm.district" :label="$t('employeeMap.district')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.type') }}</label><select v-model="landfillForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusSanctioned')">{{ $t('employeeMap.statusSanctioned') }}</option><option :value="$t('employeeMap.statusUnsanctioned')">{{ $t('employeeMap.statusUnsanctioned') }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="landfillForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option><option :value="$t('employeeMap.statusReconstruction')">{{ $t('employeeMap.statusReconstruction') }}</option><option :value="$t('employeeMap.statusRecultivated')">{{ $t('employeeMap.statusRecultivated') }}</option></select></div>
+                <div><AppInput v-model="landfillForm.area" type="number" :label="$t('employeeMap.areaHa')" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.volume" type="number" :label="$t('employeeMap.volumeT')" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.gpsLat" :label="$t('employeeMap.gpsLat')" placeholder="42.8746" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.gpsLng" :label="$t('employeeMap.gpsLng')" placeholder="74.5698" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(landfillForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.organization" :label="$t('employeeMap.organization')" size="sm" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(landfillForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', landfillForm.wasteTypes.includes(wt) ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.notes" type="textarea" :rows="2" :label="$t('employeeMap.notes')" size="sm" /></div>
+              </div>
+            </template>
+            <!-- Reception form -->
+            <template v-if="activeRegistry === 'reception'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="receptionForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="receptionForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><AppInput v-model="receptionForm.district" :label="$t('employeeMap.district')" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="receptionForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(receptionForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="receptionForm.workingHours" :label="$t('employeeMap.workingHours')" placeholder="09:00-18:00" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="receptionForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusWorking')">{{ $t('employeeMap.statusWorking') }}</option><option :value="$t('employeeMap.statusTempClosed')">{{ $t('employeeMap.statusTempClosed') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option></select></div>
+                <div><AppInput v-model="receptionForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.email" type="email" label="Email" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="receptionForm.organization" :label="$t('employeeMap.organization')" size="sm" /></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(receptionForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', receptionForm.wasteTypes.includes(wt) ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+              </div>
+            </template>
+            <!-- Recycler form -->
+            <template v-if="activeRegistry === 'recyclers'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="recyclerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="recyclerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><AppInput v-model="recyclerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(recyclerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="recyclerForm.director" :label="$t('employeeMap.director')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.contactPerson" :label="$t('employeeMap.contactPerson')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.email" type="email" label="Email" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.activityType" :label="$t('employeeMap.activityType')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.capacity" type="number" :label="$t('employeeMap.capacityTonsYear')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.licenseNumber" :label="$t('employeeMap.license')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="recyclerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(recyclerForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', recyclerForm.wasteTypes.includes(wt) ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
+              </div>
+            </template>
+            <!-- Producer form -->
+            <template v-if="activeRegistry === 'producers'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="producerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="producerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="producerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><AppInput v-model="producerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(producerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="producerForm.director" :label="$t('employeeMap.director')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.contactPerson" :label="$t('employeeMap.contactPerson')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.email" type="email" label="Email" size="sm" /></div>
+                <div><AppInput v-model="producerForm.productType" :label="$t('employeeMap.productType')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.annualVolume" type="number" :label="$t('employeeMap.annualVolumeT')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="producerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
+                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="pt in ['ПЭТ-бутылки', 'Стеклянные бутылки', 'Алюминиевые банки', 'Тетрапак', 'Пластиковые контейнеры', 'Пластиковые стаканы', 'Картонная упаковка']" :key="pt" @click="toggleWasteType(producerForm, pt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', producerForm.packagingTypes.includes(pt) ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ pt }}</button></div></div>
+              </div>
+            </template>
+            <!-- Dump form -->
+            <template v-if="activeRegistry === 'dumps'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="dumpForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="dumpForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="dumpForm.dumpStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusDiscovered')">{{ $t('employeeMap.statusDiscovered') }}</option><option :value="$t('employeeMap.statusLiquidating')">{{ $t('employeeMap.statusLiquidating') }}</option><option :value="$t('employeeMap.statusLiquidated')">{{ $t('employeeMap.statusLiquidated') }}</option></select></div>
+                <div class="col-span-2"><AppInput v-model="dumpForm.address" :label="$t('employeeMap.addressLocation')" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.gpsLat" :label="$t('employeeMap.gpsLat')" placeholder="42.8746" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.gpsLng" :label="$t('employeeMap.gpsLng')" placeholder="74.5698" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(dumpForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="dumpForm.area" type="number" step="0.1" :label="$t('employeeMap.areaHa')" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.discoveryDate" :label="$t('employeeMap.discoveryDate')" placeholder="01.01.2024" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="dumpForm.notes" type="textarea" :rows="2" :label="$t('employeeMap.notes')" size="sm" /></div>
+                <!-- Photo upload -->
+                <div class="col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.photosMax5') }}</label>
+                  <div class="flex flex-wrap gap-3 mb-3">
+                    <div v-for="(photo, idx) in dumpPhotos" :key="idx" class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
+                      <img :src="photo.data" :alt="photo.name" class="w-full h-full object-cover" />
+                      <AppButton variant="icon-danger" size="sm" class="absolute top-0.5 right-0.5 !w-5 !h-5 !min-w-0 !p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" @click="removeDumpPhoto(idx)">&times;</AppButton>
+                      <p class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5 truncate">{{ photo.size }}</p>
+                    </div>
+                    <label v-if="dumpPhotos.length < 5" class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition-colors">
+                      <svg class="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                      <span class="text-[10px] text-gray-400 mt-0.5">{{ $t('employeeMap.photo') }}</span>
+                      <input type="file" accept=".jpg,.jpeg,.png" multiple class="hidden" @change="handleDumpPhotoUpload" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <!-- Payer form -->
+            <template v-if="activeRegistry === 'payers'">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2"><AppInput v-model="payerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="payerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="payerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
+                <div class="col-span-2"><AppInput v-model="payerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(payerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="payerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.category" :label="$t('employeeMap.category')" size="sm" /></div>
+              </div>
+            </template>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showEditModal = false" />
+        <AppButton variant="primary" :label="isCreating ? $t('common.add') : $t('common.save')" @click="saveItem" />
+      </template>
+    </AppModal>
+
+    <!-- Delete Confirm Modal -->
+    <AppModal :visible="showDeleteConfirm" :title="$t('employeeMap.deleteRecordTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+        <p class="text-gray-600">{{ $t('employeeMap.deleteRecordConfirm', { name: getSelectedItemName() }) }}</p>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showDeleteConfirm = false" />
+        <AppButton variant="danger" :label="$t('common.delete')" @click="deleteItem" />
+      </template>
+    </AppModal>
+
+    <!-- Success Notification -->
+    <Teleport to="body">
+      <div v-if="showNotification" class="fixed top-4 right-4 z-[100] bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
+        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        <span class="font-medium">{{ notificationMessage }}</span>
+      </div>
+    </Teleport>
+    <MapCoordinatePicker
+      :visible="showCoordPicker"
+      :modelValue="pickerCoords"
+      @update:visible="showCoordPicker = $event"
+      @update:modelValue="onPickerConfirm"
+    />
+  </DashboardLayout>
+</template>
+
+<style>
+.custom-marker { background: transparent !important; border: none !important; }
+.leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
+.leaflet-popup-content { margin: 12px 14px; }
+.leaflet-popup-close-button { top: 8px !important; right: 8px !important; }
+</style>
