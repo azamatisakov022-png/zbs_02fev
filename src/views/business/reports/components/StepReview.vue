@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import type { ProcessingItem } from '@/stores/reports'
-
-interface UploadedFile {
-  id: number
-  name: string
-  size: string
-  type: string
-}
+import { AppAlert } from '@/components/ui'
+import type { ProcessingItem, UploadedFile } from '@/types/report'
 
 defineProps<{
   reportingYear: string
@@ -30,17 +24,11 @@ defineProps<{
   <div class="p-6 lg:p-8">
     <h2 class="sr-title font-semibold mb-6">{{ $t('businessReports.reviewTitle') }}</h2>
 
-    <div v-if="formSubmitted && hasErrors" class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3" data-validation-error>
-      <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-      <div>
-        <p class="font-medium text-red-800">{{ $t('businessReports.formErrors') }}</p>
-        <ul class="sr-error-list mt-1 text-red-700 list-disc list-inside">
-          <li v-for="(msg, key) in formErrors" :key="key">{{ msg }}</li>
-        </ul>
-      </div>
-    </div>
+    <AppAlert v-if="formSubmitted && hasErrors" variant="error" :title="$t('businessReports.formErrors')" class="mb-6" data-validation-error>
+      <ul class="sr-error-list mt-1 text-red-700 list-disc list-inside">
+        <li v-for="(msg, key) in formErrors" :key="key">{{ msg }}</li>
+      </ul>
+    </AppAlert>
 
     <div class="space-y-6">
       <div class="sr-panel rounded-xl p-5">

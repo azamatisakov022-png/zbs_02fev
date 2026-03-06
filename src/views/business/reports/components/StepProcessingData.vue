@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppAlert, AppStatCard } from '@/components/ui'
 import type { ProcessingItem } from '@/stores/reports'
 import type { SelectOption } from '@/types/select'
 import type { ProductSubgroup } from '@/data/product-groups'
@@ -47,15 +48,13 @@ defineEmits<{
   <div class="p-6 lg:p-8">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <h2 class="spd-title font-semibold">{{ $t('businessReports.step2Title') }}</h2>
-      <button
+      <AppButton
+        variant="ghost"
         @click="$emit('importFromDeclaration')"
-        class="spd-action-link flex items-center gap-2 hover:bg-green-50 px-4 py-2 rounded-lg transition-colors"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-        {{ $t('businessReports.importFromDeclarations') }}
-      </button>
+        :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12&quot; /></svg>'"
+        :label="$t('businessReports.importFromDeclarations')"
+        color="#10b981"
+      />
     </div>
 
     <div v-if="formSubmitted && formErrors['items']" class="vld-error mb-4">
@@ -95,15 +94,14 @@ defineEmits<{
       />
     </div>
 
-    <button
+    <AppButton
+      variant="ghost"
       @click="$emit('addItem')"
-      class="spd-action-link mt-4 flex items-center gap-2 hover:bg-green-50 px-4 py-2 rounded-lg transition-colors"
-    >
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      {{ $t('businessReports.addPosition') }}
-    </button>
+      :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'"
+      :label="$t('businessReports.addPosition')"
+      color="#10b981"
+      class="mt-4"
+    />
 
     <div class="spd-divider mt-8 pt-6">
       <div class="flex items-center gap-2 mb-4">
@@ -114,39 +112,24 @@ defineEmits<{
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <div class="bg-blue-50 rounded-xl p-4 text-center border border-blue-100">
-          <p class="spd-stat-label font-semibold mb-1">{{ $t('businessReports.declared') }}</p>
-          <p class="spd-stat-value spd-stat-value--blue font-bold">{{ totalDeclared }} {{ $t('businessReports.tons') }}</p>
-        </div>
-        <div class="bg-purple-50 rounded-xl p-4 text-center border border-purple-100">
-          <p class="spd-stat-label font-semibold mb-1">{{ $t('businessReports.requiredByNormative') }}</p>
-          <p class="spd-stat-value spd-stat-value--purple font-bold">{{ totalRequiredProcessing.toFixed(2) }} {{ $t('businessReports.tons') }}</p>
-        </div>
-        <div class="bg-green-50 rounded-xl p-4 text-center border border-green-100">
-          <p class="spd-stat-label font-semibold mb-1">{{ $t('businessReports.actuallyProcessed') }}</p>
-          <p class="spd-stat-value spd-stat-value--green font-bold">{{ totalProcessed }} {{ $t('businessReports.tons') }}</p>
-        </div>
-        <div :class="[
-          'rounded-xl p-4 text-center border',
-          overallFulfillmentPercent >= 100 ? 'bg-emerald-50 border-emerald-100' : overallFulfillmentPercent >= 50 ? 'bg-amber-50 border-amber-100' : 'bg-red-50 border-red-100'
-        ]">
-          <p class="spd-stat-label font-semibold mb-1">{{ $t('businessReports.normativeFulfillment') }}</p>
-          <p class="spd-stat-value font-bold" :style="{ color: getFulfillmentColor(overallFulfillmentPercent) }">
-            {{ overallFulfillmentPercent.toFixed(1) }}%
-          </p>
-        </div>
+        <AppStatCard :label="$t('businessReports.declared')" :value="totalDeclared + ' ' + $t('businessReports.tons')" color="blue" bg="#eff6ff" borderColor="#bfdbfe" :centered="true" />
+        <AppStatCard :label="$t('businessReports.requiredByNormative')" :value="totalRequiredProcessing.toFixed(2) + ' ' + $t('businessReports.tons')" color="purple" bg="#faf5ff" borderColor="#e9d5ff" :centered="true" />
+        <AppStatCard :label="$t('businessReports.actuallyProcessed')" :value="totalProcessed + ' ' + $t('businessReports.tons')" color="green" bg="#f0fdf4" borderColor="#bbf7d0" :centered="true" />
+        <AppStatCard
+          :label="$t('businessReports.normativeFulfillment')"
+          :bg="overallFulfillmentPercent >= 100 ? '#ecfdf5' : overallFulfillmentPercent >= 50 ? '#fffbeb' : '#fef2f2'"
+          :borderColor="overallFulfillmentPercent >= 100 ? '#a7f3d0' : overallFulfillmentPercent >= 50 ? '#fde68a' : '#fecaca'"
+          :valueColor="getFulfillmentColor(overallFulfillmentPercent)"
+          :centered="true"
+        >
+          {{ overallFulfillmentPercent.toFixed(1) }}%
+        </AppStatCard>
       </div>
 
-      <div v-if="totalSurcharge > 0" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 flex items-start gap-3">
-        <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div>
-          <p class="font-medium text-red-800">{{ $t('businessReports.preliminarySurcharge') }}</p>
-          <p class="text-lg font-bold text-red-700 mt-1">{{ totalSurcharge.toLocaleString() }} {{ $t('businessReports.som') }}</p>
-          <p class="spd-surcharge-note text-red-600 mt-1">{{ $t('businessReports.surchargeNote') }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="totalSurcharge > 0" variant="error" :title="$t('businessReports.preliminarySurcharge')" class="mb-4">
+        <p class="text-lg font-bold text-red-700 mt-1">{{ totalSurcharge.toLocaleString() }} {{ $t('businessReports.som') }}</p>
+        <p class="spd-surcharge-note text-red-600 mt-1">{{ $t('businessReports.surchargeNote') }}</p>
+      </AppAlert>
 
       <div class="spd-formula-panel rounded-xl p-4">
         <p class="spd-formula-label mb-2 uppercase font-medium tracking-wide">{{ $t('businessReports.formulaTitle') }}</p>
@@ -164,9 +147,6 @@ defineEmits<{
   font-size: 27px;
   color: #1e293b;
 }
-.spd-action-link {
-  color: #10b981;
-}
 .spd-divider {
   border-top: 1px solid #e2e8f0;
 }
@@ -176,22 +156,6 @@ defineEmits<{
 .spd-subtitle {
   font-size: 20px;
   color: #1e293b;
-}
-.spd-stat-label {
-  font-size: 16px;
-  color: #1e293b;
-}
-.spd-stat-value {
-  font-size: 24px;
-}
-.spd-stat-value--blue {
-  color: #2563eb;
-}
-.spd-stat-value--purple {
-  color: #7c3aed;
-}
-.spd-stat-value--green {
-  color: #10b981;
 }
 .spd-surcharge-note {
   font-size: 14px;

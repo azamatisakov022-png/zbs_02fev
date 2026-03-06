@@ -1,10 +1,6 @@
 <script setup lang="ts">
-interface UploadedFile {
-  id: number
-  name: string
-  size: string
-  type: string
-}
+import { AppButton } from '@/components/ui'
+import type { UploadedFile } from '@/types/report'
 
 defineProps<{
   uploadedFiles: UploadedFile[]
@@ -98,14 +94,11 @@ defineEmits<{
               <p class="sd-file-size">{{ file.size }}</p>
             </div>
           </div>
-          <button
-            @click="$emit('removeFile', file.id)"
-            class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-          >
+          <AppButton variant="icon-danger" size="sm" @click="$emit('removeFile', file.id)">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>

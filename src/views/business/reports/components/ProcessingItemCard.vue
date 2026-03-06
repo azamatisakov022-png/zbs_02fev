@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppBadge } from '@/components/ui'
 import AppInput from '@/components/ui/AppInput.vue'
 import Select from '@/components/ui/general/Select.vue'
 import ProductGroupSelector from '@/components/ProductGroupSelector.vue'
@@ -46,15 +47,16 @@ const showSummary = (item: ProcessingItem) => {
   <div class="pic-card rounded-lg p-6 mb-5">
     <div class="flex items-center justify-between mb-4">
       <span class="pic-position-title font-semibold">{{ $t('businessReports.position', { n: index + 1 }) }}</span>
-      <button
+      <AppButton
         v-if="canRemove"
+        variant="icon-danger"
+        size="sm"
         @click="$emit('remove', item.id)"
-        class="text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
       >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
-      </button>
+      </AppButton>
     </div>
 
     <ProductGroupSelector
@@ -122,16 +124,16 @@ const showSummary = (item: ProcessingItem) => {
               :placeholder="$t('businessReports.recyclerPlaceholder')"
               class="pic-recycler-input flex-1 min-w-0 px-3 py-2 rounded-lg focus:outline-none"
             />
-            <button
+            <AppButton
+              variant="icon-only"
+              size="sm"
               @click="$emit('switchToSelect')"
-              type="button"
-              class="pic-switch-btn px-2 py-2 hover:bg-green-50 rounded-lg transition-colors flex-shrink-0"
               :title="$t('businessReports.selectFromList')"
             >
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
               </svg>
-            </button>
+            </AppButton>
           </div>
         </template>
         <div v-if="formSubmitted && formErrors[`item_${item.id}_recycler`]" class="vld-error">
@@ -177,18 +179,18 @@ const showSummary = (item: ProcessingItem) => {
         </div>
         <div>
           <p class="pic-summary-label font-semibold mb-0.5">{{ $t('businessReports.statusLabel') }}</p>
-          <span v-if="itemStatus === 'fulfilled'" class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700">
+          <AppBadge v-if="itemStatus === 'fulfilled'" variant="success" size="sm">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
             {{ $t('businessReports.fulfilled') }}
-          </span>
-          <span v-else-if="itemStatus === 'partial'" class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">
+          </AppBadge>
+          <AppBadge v-else-if="itemStatus === 'partial'" variant="warning" size="sm">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01" /></svg>
             {{ $t('businessReports.partial') }}
-          </span>
-          <span v-else class="pic-status-badge inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-700">
+          </AppBadge>
+          <AppBadge v-else variant="danger" size="sm">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             {{ $t('businessReports.notFulfilled') }}
-          </span>
+          </AppBadge>
         </div>
       </div>
     </div>
@@ -233,10 +235,6 @@ const showSummary = (item: ProcessingItem) => {
 .pic-recycler-input:focus {
   border-color: #10b981;
 }
-.pic-switch-btn {
-  border: 1px solid #e2e8f0;
-  color: #10b981;
-}
 .pic-summary-title {
   font-size: 16px;
   color: #1e293b;
@@ -247,8 +245,5 @@ const showSummary = (item: ProcessingItem) => {
 }
 .pic-remainder-value {
   color: #1e293b;
-}
-.pic-status-badge {
-  font-size: 14px;
 }
 </style>

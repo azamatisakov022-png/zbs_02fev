@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppInput from '@/components/ui/AppInput.vue'
 import Select from '@/components/ui/general/Select.vue'
+import { AppAlert } from '@/components/ui'
 import type { SelectOption } from '@/types/select'
 
 defineProps<{
@@ -60,17 +61,9 @@ defineEmits<{
         </div>
       </div>
 
-      <div class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="sbd-heading font-medium">{{ $t('businessReports.normativeInfo', { year: reportingYear, high: yearNormativeHigh, standard: yearNormativeStandard }) }}</p>
-          <p class="sbd-description">{{ $t('businessReports.normativeDescription') }}</p>
-        </div>
-      </div>
+      <AppAlert variant="success" :title="$t('businessReports.normativeInfo', { year: reportingYear, high: yearNormativeHigh, standard: yearNormativeStandard })">
+        {{ $t('businessReports.normativeDescription') }}
+      </AppAlert>
     </div>
   </div>
 </template>
