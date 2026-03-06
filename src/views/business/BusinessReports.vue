@@ -2,10 +2,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { AppPageHeader, AppAlert } from '../../components/ui'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { normativeTiers } from '../../data/recycling-norms'
-import { reportStore } from '../../stores/reports'
+import { useReportStore } from '../../stores/reports'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
@@ -18,10 +19,11 @@ const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
 const accountStore = useAccountStore()
+const reportStore = useReportStore()
 
 const isLoading = ref(true)
 onMounted(async () => {
-  await Promise.all([reportStore.fetchAll(), accountStore.fetchAll()])
+  await Promise.all([reportStore.fetchAll(), accountStore.fetchAll(), accountStore.fetchDashboard()])
   isLoading.value = false
 })
 
@@ -50,7 +52,7 @@ const columns = computed(() => [
 ])
 
 const businessReports = computed(() => {
-  return reportStore.getBusinessReports(companyData.value.name)
+  return reportStore.businessReports
 })
 
 const editDraft = (id: number) => {
@@ -62,12 +64,13 @@ const handleDownloadPdf = () => {
 }
 
 const downloadReportExcel = (reportId: number) => {
-  const report = reportStore.state.reports.find(r => r.id === reportId)
+  const report = reportStore.reports.find(r => r.id === reportId)
   if (!report) return
+  const cp = accountStore.dashboard?.companyProfile
   generateRecyclingReportExcel(report, {
     name: report.company || companyData.value.name,
-    inn: report.inn || '01234567890123',
-    address: 'г. Бишкек, ул. Московская, 123',
+    inn: report.inn || cp?.inn || '',
+    address: cp?.legalAddress || '',
   })
 }
 </script>
@@ -79,24 +82,13 @@ const downloadReportExcel = (reportId: number) => {
     :userName="companyData.name"
     :menuItems="menuItems"
   >
-    <div class="page-header">
-      <h1 class="page-title">{{ $t('businessReports.pageTitle') }}</h1>
-      <p class="page-subtitle">{{ $t('businessReports.pageSubtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessReports.pageTitle')" :subtitle="$t('businessReports.pageSubtitle')" />
 
     <ReportCtaBanner @create="startWizard" />
 
-    <div class="hint-banner">
-      <div class="hint-banner__icon">
-        <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div>
-        <p class="hint-banner__title">{{ $t('businessReports.hint') }}</p>
-        <p class="hint-banner__text">{{ $t('businessReports.hintText') }}</p>
-      </div>
-    </div>
+    <AppAlert variant="success" :title="$t('businessReports.hint')" class="mb-6">
+      {{ $t('businessReports.hintText') }}
+    </AppAlert>
 
     <template v-if="isLoading">
       <div class="skeleton-card"><SkeletonLoader variant="card" /></div>
@@ -108,10 +100,6 @@ const downloadReportExcel = (reportId: number) => {
         :yearNormativeStandard="yearNormativeStandard"
         :yearNormativeHigh="yearNormativeHigh"
       />
-
-      <div class="history-header">
-        <h2 class="history-title">{{ $t('businessReports.historyTitle') }}</h2>
-      </div>
 
       <ReportHistoryTable
         :reports="businessReports"
@@ -126,72 +114,8 @@ const downloadReportExcel = (reportId: number) => {
 </template>
 
 <style scoped>
-.page-header {
-  margin-bottom: 24px;
-}
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-@media (min-width: 1024px) {
-  .page-title {
-    font-size: 34px;
-  }
-}
-.page-subtitle {
-  font-size: 18px;
-  color: #64748b;
-}
-
-.hint-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
-  margin-bottom: 24px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-}
-.hint-banner__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #dcfce7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.hint-banner__title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #1e293b;
-}
-.hint-banner__text {
-  font-size: 20px;
-  font-weight: 500;
-  color: #64748b;
-}
 
 .skeleton-card {
   margin-bottom: 24px;
 }
-
-.history-header {
-  margin-bottom: 16px;
-}
-.history-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 16px;
-}
-
-:deep(.row-green) { border-left: 4px solid #22c55e !important; }
-:deep(.row-yellow) { border-left: 4px solid #f59e0b !important; }
-:deep(.row-red) { border-left: 4px solid #ef4444 !important; background: #fffbeb !important; }
-:deep(.row-gray) { border-left: 4px solid #d1d5db !important; }
 </style>

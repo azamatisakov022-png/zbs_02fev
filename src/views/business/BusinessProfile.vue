@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppCard, AppToggleSwitch } from '../../components/ui'
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -20,32 +21,72 @@ const dashboard = computed(() => accountStore.dashboard)
 const payer = computed(() => dashboard.value?.payer)
 
 const companyData = ref({
-  name: 'ОсОО «ТехПром»',
-  fullName: 'Общество с ограниченной ответственностью «ТехПром»',
-  inn: '01234567891234',
-  okpo: '12345678',
-  registrationNumber: 'ГРП-12345-2020',
-  registrationDate: '2020-03-15',
-  legalAddress: 'г. Бишкек, ул. Киевская, д. 107, офис 205',
-  actualAddress: 'г. Бишкек, ул. Киевская, д. 107, офис 205',
-  activityType: 'Производство и импорт электроники',
-  okved: '26.20 - Производство компьютеров и периферийного оборудования',
+  name: '',
+  fullName: '',
+  inn: '',
+  okpo: '',
+  registrationNumber: '',
+  registrationDate: '',
+  legalAddress: '',
+  actualAddress: '',
+  activityType: '',
+  okved: '',
 })
 
 const selectedProductGroups = ref(['group_6', 'group_7', 'group_9', 'group_10', 'group_15', 'group_16'])
 
 watch(dashboard, (d) => {
   if (!d) return
+
+  const cp = d.companyProfile
+  if (cp) {
+    companyData.value.name = cp.companyName || ''
+    companyData.value.fullName = cp.fullName || ''
+    companyData.value.inn = cp.inn || ''
+    companyData.value.okpo = cp.okpo || ''
+    companyData.value.registrationNumber = cp.registrationNumber || ''
+    companyData.value.legalAddress = cp.legalAddress || ''
+    companyData.value.actualAddress = cp.actualAddress || ''
+    companyData.value.activityType = cp.typeOfActivity || ''
+    companyData.value.okved = cp.okved || ''
+
+    contactData.value.phone = cp.phone || ''
+    contactData.value.email = cp.email || ''
+
+    representativeData.value.directorName = cp.directorFullName || ''
+    representativeData.value.directorPosition = cp.directorPosition || ''
+    representativeData.value.contactPersonName = cp.contactPersonFullName || ''
+    representativeData.value.contactPersonPosition = cp.contactPersonPosition || ''
+    representativeData.value.contactPersonPhone = cp.contactPersonPhone || ''
+    representativeData.value.contactPersonEmail = cp.contactPersonEmail || ''
+
+    bankData.value.bankName = cp.bankName || ''
+    bankData.value.bik = cp.bik || ''
+    bankData.value.accountNumber = cp.paymentAccount || ''
+    bankData.value.correspondentAccount = cp.correspondentAccount || ''
+
+    if (cp.notificationSettings) {
+      notificationSettings.value.emailNotifications = cp.notificationSettings.emailNotifications
+      notificationSettings.value.smsNotifications = cp.notificationSettings.smsNotifications
+      notificationSettings.value.declarationReminders = cp.notificationSettings.remindersAboutDeclarations
+      notificationSettings.value.paymentReminders = cp.notificationSettings.paymentReminders
+      notificationSettings.value.newsAndUpdates = cp.notificationSettings.newsAndUpdates
+      notificationSettings.value.reportDeadlines = cp.notificationSettings.reportingDates
+    }
+  }
+
   const p = d.payer
-  companyData.value.name = p.companyName || companyData.value.name
-  companyData.value.inn = p.inn || companyData.value.inn
-  companyData.value.registrationDate = p.registrationDate || companyData.value.registrationDate
-  companyData.value.legalAddress = p.address || companyData.value.legalAddress
-  selectedProductGroups.value = p.productGroups?.length ? p.productGroups : selectedProductGroups.value
-  contactData.value.phone = p.phone || contactData.value.phone
-  contactData.value.email = p.email || contactData.value.email
-  representativeData.value.directorName = p.director || representativeData.value.directorName
-  representativeData.value.contactPersonName = p.contactPerson || representativeData.value.contactPersonName
+  if (p) {
+    if (!companyData.value.name) companyData.value.name = p.companyName || ''
+    if (!companyData.value.inn) companyData.value.inn = p.inn || ''
+    if (!companyData.value.legalAddress) companyData.value.legalAddress = p.address || ''
+    if (!companyData.value.registrationDate) companyData.value.registrationDate = p.registrationDate || ''
+    selectedProductGroups.value = p.productGroups?.length ? p.productGroups : selectedProductGroups.value
+    if (!contactData.value.phone) contactData.value.phone = p.phone || ''
+    if (!contactData.value.email) contactData.value.email = p.email || ''
+    if (!representativeData.value.directorName) representativeData.value.directorName = p.director || ''
+    if (!representativeData.value.contactPersonName) representativeData.value.contactPersonName = p.contactPerson || ''
+  }
 }, { immediate: true })
 
 const getProductGroupLabel = (value: string) => {
@@ -89,36 +130,36 @@ const saveProducts = async () => {
 }
 
 const contactData = ref({
-  phone: '+996 312 123-456',
-  additionalPhone: '+996 555 123-456',
-  email: 'info@techprom.kg',
-  website: 'www.techprom.kg',
-  fax: '+996 312 123-457',
+  phone: '',
+  additionalPhone: '',
+  email: '',
+  website: '',
+  fax: '',
 })
 
 const representativeData = ref({
-  directorName: 'Асанов Алмаз Бекович',
-  directorPosition: 'Генеральный директор',
-  contactPersonName: 'Иванова Мария Петровна',
-  contactPersonPosition: 'Главный бухгалтер',
-  contactPersonPhone: '+996 555 987-654',
-  contactPersonEmail: 'm.ivanova@techprom.kg',
+  directorName: '',
+  directorPosition: '',
+  contactPersonName: '',
+  contactPersonPosition: '',
+  contactPersonPhone: '',
+  contactPersonEmail: '',
 })
 
 const bankData = ref({
-  bankName: 'ОАО «РСК Банк»',
-  bik: '109001',
-  accountNumber: '1091620000123456',
+  bankName: '',
+  bik: '',
+  accountNumber: '',
   correspondentAccount: '',
 })
 
 const notificationSettings = ref({
-  emailNotifications: true,
+  emailNotifications: false,
   smsNotifications: false,
-  declarationReminders: true,
-  paymentReminders: true,
+  declarationReminders: false,
+  paymentReminders: false,
   newsAndUpdates: false,
-  reportDeadlines: true,
+  reportDeadlines: false,
 })
 
 const securityData = ref({
@@ -364,7 +405,7 @@ const toggleTwoFactor = () => {
       </div>
 
       <!-- Company Information -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
@@ -374,16 +415,14 @@ const toggleTwoFactor = () => {
             </div>
             <h3 class="bp-section-title font-semibold text-gray-900">{{ $t('businessProfile.companyData') }}</h3>
           </div>
-          <button
+          <AppButton
             v-if="editingSection !== 'company'"
+            variant="ghost"
+            color="#0d9488"
             @click="startEditing('company')"
-            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
+          />
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -501,29 +540,21 @@ const toggleTwoFactor = () => {
           </div>
           <!-- Edit Actions -->
           <div v-if="editingSection === 'company'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-            <button
-              @click="cancelEditing"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
+            <AppButton variant="outline" @click="cancelEditing" :label="$t('common.cancel')" />
+            <AppButton
+              variant="primary"
+              bg="#0d9488"
               @click="saveSection"
               :disabled="saving || (formSubmitted && sectionHasErrors('company'))"
-              class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
-            </button>
+              :loading="saving"
+              :label="saving ? $t('businessProfile.saving') : $t('common.save')"
+            />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Product Groups -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -536,16 +567,14 @@ const toggleTwoFactor = () => {
               <p class="bp-description text-gray-500">{{ $t('businessProfile.productGroupsDesc') }}</p>
             </div>
           </div>
-          <button
+          <AppButton
             v-if="!editingProducts"
+            variant="ghost"
+            color="#0d9488"
             @click="startEditingProducts"
-            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
+          />
         </div>
         <div class="p-6">
           <!-- View mode: green badges -->
@@ -600,30 +629,22 @@ const toggleTwoFactor = () => {
 
             <!-- Save / Cancel buttons -->
             <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-              <button
-                @click="cancelEditingProducts"
-                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {{ $t('common.cancel') }}
-              </button>
-              <button
+              <AppButton variant="outline" @click="cancelEditingProducts" :label="$t('common.cancel')" />
+              <AppButton
+                variant="primary"
+                bg="#0d9488"
                 @click="saveProducts"
                 :disabled="savingProducts"
-                class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                <svg v-if="savingProducts" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                {{ savingProducts ? $t('businessProfile.saving') : $t('common.save') }}
-              </button>
+                :loading="savingProducts"
+                :label="savingProducts ? $t('businessProfile.saving') : $t('common.save')"
+              />
             </div>
           </template>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Contact Information -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -633,16 +654,14 @@ const toggleTwoFactor = () => {
             </div>
             <h3 class="bp-section-title font-semibold text-gray-900">{{ $t('businessProfile.contactInfo') }}</h3>
           </div>
-          <button
+          <AppButton
             v-if="editingSection !== 'contact'"
+            variant="ghost"
+            color="#0d9488"
             @click="startEditing('contact')"
-            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
+          />
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -708,29 +727,21 @@ const toggleTwoFactor = () => {
           </div>
           <!-- Edit Actions -->
           <div v-if="editingSection === 'contact'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-            <button
-              @click="cancelEditing"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
+            <AppButton variant="outline" @click="cancelEditing" :label="$t('common.cancel')" />
+            <AppButton
+              variant="primary"
+              bg="#0d9488"
               @click="saveSection"
               :disabled="saving || (formSubmitted && sectionHasErrors('contact'))"
-              class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
-            </button>
+              :loading="saving"
+              :label="saving ? $t('businessProfile.saving') : $t('common.save')"
+            />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Representative Information -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -740,16 +751,14 @@ const toggleTwoFactor = () => {
             </div>
             <h3 class="bp-section-title font-semibold text-gray-900">{{ $t('businessProfile.representatives') }}</h3>
           </div>
-          <button
+          <AppButton
             v-if="editingSection !== 'representative'"
+            variant="ghost"
+            color="#0d9488"
             @click="startEditing('representative')"
-            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
+          />
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -845,29 +854,21 @@ const toggleTwoFactor = () => {
           </div>
           <!-- Edit Actions -->
           <div v-if="editingSection === 'representative'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-            <button
-              @click="cancelEditing"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
+            <AppButton variant="outline" @click="cancelEditing" :label="$t('common.cancel')" />
+            <AppButton
+              variant="primary"
+              bg="#0d9488"
               @click="saveSection"
               :disabled="saving || (formSubmitted && sectionHasErrors('representative'))"
-              class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
-            </button>
+              :loading="saving"
+              :label="saving ? $t('businessProfile.saving') : $t('common.save')"
+            />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Bank Details -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -877,16 +878,14 @@ const toggleTwoFactor = () => {
             </div>
             <h3 class="bp-section-title font-semibold text-gray-900">{{ $t('businessProfile.bankDetails') }}</h3>
           </div>
-          <button
+          <AppButton
             v-if="editingSection !== 'bank'"
+            variant="ghost"
+            color="#0d9488"
             @click="startEditing('bank')"
-            class="text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
+          />
         </div>
         <div class="p-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -934,29 +933,21 @@ const toggleTwoFactor = () => {
           </div>
           <!-- Edit Actions -->
           <div v-if="editingSection === 'bank'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-            <button
-              @click="cancelEditing"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              {{ $t('common.cancel') }}
-            </button>
-            <button
+            <AppButton variant="outline" @click="cancelEditing" :label="$t('common.cancel')" />
+            <AppButton
+              variant="primary"
+              bg="#0d9488"
               @click="saveSection"
               :disabled="saving"
-              class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              <svg v-if="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {{ saving ? $t('businessProfile.saving') : $t('common.save') }}
-            </button>
+              :loading="saving"
+              :label="saving ? $t('businessProfile.saving') : $t('common.save')"
+            />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Notification Settings -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -974,18 +965,7 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.emailNotifications') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.emailNotificationsDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.emailNotifications" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.emailNotifications ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.emailNotifications ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.emailNotifications" />
             </label>
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -993,18 +973,7 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.smsNotifications') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.smsNotificationsDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.smsNotifications" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.smsNotifications ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.smsNotifications ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.smsNotifications" />
             </label>
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -1012,18 +981,7 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.declarationReminders') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.declarationRemindersDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.declarationReminders" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.declarationReminders ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.declarationReminders ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.declarationReminders" />
             </label>
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -1031,18 +989,7 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.paymentReminders') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.paymentRemindersDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.paymentReminders" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.paymentReminders ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.paymentReminders ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.paymentReminders" />
             </label>
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -1050,18 +997,7 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.reportDeadlines') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.reportDeadlinesDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.reportDeadlines" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.reportDeadlines ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.reportDeadlines ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.reportDeadlines" />
             </label>
 
             <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
@@ -1069,25 +1005,14 @@ const toggleTwoFactor = () => {
                 <p class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.newsAndUpdates') }}</p>
                 <p class="bp-description text-gray-500">{{ $t('businessProfile.newsAndUpdatesDesc') }}</p>
               </div>
-              <div class="relative">
-                <input type="checkbox" v-model="notificationSettings.newsAndUpdates" class="sr-only" />
-                <div :class="[
-                  'w-11 h-6 rounded-full transition-colors',
-                  notificationSettings.newsAndUpdates ? 'bg-teal-600' : 'bg-gray-300'
-                ]">
-                  <div :class="[
-                    'w-5 h-5 bg-white rounded-full shadow transform transition-transform',
-                    notificationSettings.newsAndUpdates ? 'translate-x-5' : 'translate-x-0.5'
-                  ]" style="margin-top: 2px;"></div>
-                </div>
-              </div>
+              <AppToggleSwitch v-model="notificationSettings.newsAndUpdates" />
             </label>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Security Settings -->
-      <div class="bp-section">
+      <AppCard padding="none" radius="sm" class="overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -1131,13 +1056,14 @@ const toggleTwoFactor = () => {
                 />
               </div>
             </div>
-            <button
+            <AppButton
+              variant="primary"
+              bg="#0d9488"
+              class="mt-4"
               @click="changePassword"
               :disabled="!securityData.currentPassword || !securityData.newPassword || !securityData.confirmPassword || saving"
-              class="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ $t('businessProfile.changePasswordBtn') }}
-            </button>
+              :label="$t('businessProfile.changePasswordBtn')"
+            />
           </div>
 
           <!-- Two-Factor Authentication -->
@@ -1147,17 +1073,12 @@ const toggleTwoFactor = () => {
                 <h4 class="bp-item-title font-medium text-gray-900">{{ $t('businessProfile.twoFactorAuth') }}</h4>
                 <p class="bp-description text-gray-500 mt-1">{{ $t('businessProfile.twoFactorAuthDesc') }}</p>
               </div>
-              <button
+              <AppButton
+                :variant="securityData.twoFactorEnabled ? 'danger' : 'primary'"
+                :bg="securityData.twoFactorEnabled ? undefined : '#0d9488'"
                 @click="toggleTwoFactor"
-                :class="[
-                  'px-4 py-2 rounded-lg font-medium transition-colors',
-                  securityData.twoFactorEnabled
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
-                ]"
-              >
-                {{ securityData.twoFactorEnabled ? $t('businessProfile.disable') : $t('businessProfile.enable') }}
-              </button>
+                :label="securityData.twoFactorEnabled ? $t('businessProfile.disable') : $t('businessProfile.enable')"
+              />
             </div>
             <div
               v-if="securityData.twoFactorEnabled"
@@ -1205,19 +1126,12 @@ const toggleTwoFactor = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
     </div>
   </DashboardLayout>
 </template>
 
 <style scoped>
-.bp-section {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-}
 
 .bp-page-title {
   font-size: 34px;
