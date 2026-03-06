@@ -9,6 +9,8 @@ import kg.eco.operator.entity.DeclarationItem;
 import kg.eco.operator.entity.enums.DeclarationStatus;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
+import kg.eco.operator.integration.customs.CustomsServicePort;
+import kg.eco.operator.integration.customs.dto.CustomsVolumeVerificationResponse;
 import kg.eco.operator.repository.CompanyRepository;
 import kg.eco.operator.repository.DeclarationRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class DeclarationService {
 
     private final DeclarationRepository declarationRepository;
     private final CompanyRepository companyRepository;
+    private final CustomsServicePort customsServicePort;
 
     public PaginatedResponse<DeclarationResponse> getDeclarations(int page, int pageSize,
                                                                     String search, String status, Integer year) {
@@ -155,6 +158,15 @@ public class DeclarationService {
         return declPage.getContent().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Cross-reference declaration volumes with customs (ГТС КР) import data.
+     */
+    public CustomsVolumeVerificationResponse verifyDeclarationVolumes(Long id) {
+        Declaration decl = findById(id);
+        return customsServicePort.verifyDeclaredVolumes(
+                decl.getCompany().getInn(), decl.getYear(), 1);
     }
 
     private Declaration findById(Long id) {
