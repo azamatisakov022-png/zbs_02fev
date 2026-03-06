@@ -74,7 +74,7 @@ const onInput = (event: Event) => {
     </label>
     <div class="app-input__wrap" :class="{ 'app-input__wrap--error': error, 'app-input__wrap--disabled': disabled }">
       <span v-if="prefix" class="app-input__prefix">{{ prefix }}</span>
-      <slot name="prefix" />
+      <span v-if="$slots.prefix" class="app-input__prefix"><slot name="prefix" /></span>
       <textarea
         v-if="type === 'textarea'"
         :id="inputId"
@@ -214,6 +214,8 @@ const onInput = (event: Event) => {
   font-weight: 500;
   pointer-events: none;
   z-index: 1;
+  display: flex;
+  align-items: center;
 }
 
 .app-input__hint {
