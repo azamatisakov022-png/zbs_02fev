@@ -2,6 +2,7 @@ package kg.eco.operator.service.impl;
 
 import kg.eco.operator.dto.response.*;
 import kg.eco.operator.entity.enums.CalculationStatus;
+import kg.eco.operator.entity.enums.DeclarationStatus;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final CategoryRepository categoryRepository;
     private final RateRepository rateRepository;
     private final RecyclingNormRepository recyclingNormRepository;
+    private final CompanyRepository companyRepository;
+    private final DeclarationRepository declarationRepository;
 
     @Override
     public AnalyticsSummaryResponse getSummary(String periodFrom, String periodTo, String region) {
@@ -59,7 +62,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         long pendingCalculations = calculationRepository.countByStatus(CalculationStatus.SUBMITTED)
                 + calculationRepository.countByStatus(CalculationStatus.UNDER_REVIEW);
-        long pendingDeclarations = 0; // TODO: from DeclarationRepository when implemented
+        long pendingDeclarations = declarationRepository.countByStatus(DeclarationStatus.SUBMITTED);
 
         return AnalyticsSummaryResponse.builder()
                 .totalPayers(totalPayers)
@@ -119,18 +122,18 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public List<RegionDataResponse> getRegions() {
-        // Get distinct regions from payers (companies)
-        List<String> regions = List.of(
-                "г. Бишкек", "Чуйская обл.", "Ошская обл.", "Джалал-Абадская обл.",
-                "Иссык-Кульская обл.", "Нарынская обл.", "Таласская обл.", "Баткенская обл.");
+        List<String> regions = companyRepository.findDistinctRegions();
+        if (regions.isEmpty()) {
+            return List.of();
+        }
 
         return regions.stream()
                 .map(region -> RegionDataResponse.builder()
                         .region(region)
-                        .payersCount(0) // TODO: count by region
-                        .recyclersCount(0)
-                        .landfillsCount(0)
-                        .dumpsCount(0)
+                        .payersCount(companyRepository.countByRegion(region))
+                        .recyclersCount(recyclerRepository.countByRegion(region))
+                        .landfillsCount(landfillRepository.countByRegion(region))
+                        .dumpsCount(dumpRepository.countByRegion(region))
                         .totalWaste(BigDecimal.ZERO)
                         .totalRecycled(BigDecimal.ZERO)
                         .build())
