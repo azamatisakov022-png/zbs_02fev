@@ -58,9 +58,9 @@ const valueStyle = computed(() => {
 }
 
 .app-stat-card__label {
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 500;
-  color: #64748b;
+  color: #363a41;
   margin: 0 0 4px;
 }
 

@@ -19,19 +19,19 @@ defineProps<{
       <router-link
         v-if="item.path"
         :to="item.path"
-        class="text-[13px] text-[#94a3b8] hover:text-[#0e888d] transition-colors"
+        class="text-[18px] text-[#94a3b8] hover:text-[#0e888d] transition-colors"
       >
         {{ t(item.label) }}
       </router-link>
       <span
         v-else
-        class="text-[13px] text-[#1e293b] font-medium"
+        class="text-[18px] text-[#1e293b] font-medium"
       >
         {{ t(item.label) }}
       </span>
       <span
         v-if="index < items.length - 1"
-        class="text-[13px] text-[#94a3b8] mx-1"
+        class="text-[18px] text-[#94a3b8] mx-1"
       >›</span>
     </template>
   </nav>

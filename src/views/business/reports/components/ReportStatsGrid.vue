@@ -40,8 +40,9 @@ defineProps<{
   border: 1px solid #e2e8f0;
 }
 .rsg-label {
-  font-size: 16px;
+  font-size: 19px;
   color: #64748b;
+  font-weight:600;
 }
 .rsg-value {
   font-size: 24px;
@@ -62,7 +63,7 @@ defineProps<{
   color: #ef4444;
 }
 .rsg-hint {
-  font-size: 14px;
-  color: #94a3b8;
+  font-size: 15px;
+  color: #575858;
 }
 </style>

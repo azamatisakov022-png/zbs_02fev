@@ -108,13 +108,13 @@ const defaultIcon = computed(() => {
 .app-alert__body { flex: 1; min-width: 0; }
 
 .app-alert__title {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .app-alert__content {
-  font-size: 15px;
+  font-size: 20px;
   font-weight: 500;
 }
 
