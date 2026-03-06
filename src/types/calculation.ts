@@ -25,6 +25,14 @@ export interface AttachedDocument {
   file?: File
 }
 
+export interface ItemDocument {
+  id: number
+  name: string
+  type: string
+  url: string
+  size: number
+}
+
 export interface ProductItem {
   id: number
   group: string
@@ -39,6 +47,7 @@ export interface ProductItem {
   taxableVolume: number
   rate: number
   amount: number
+  documents?: ItemDocument[]
 }
 
 export type CalculationStatus = CalcStatusType

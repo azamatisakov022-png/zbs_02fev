@@ -336,7 +336,7 @@ const breadcrumbs = computed(() => {
   transform: translateX(0);
 }
 .sidebar--expanded {
-  width: 300px;
+  width: 350px;
 }
 .sidebar--collapsed {
   width: 76px;
@@ -464,7 +464,7 @@ const breadcrumbs = computed(() => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 .nav-item__label {
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -594,7 +594,7 @@ const breadcrumbs = computed(() => {
   transition: margin-left 0.3s ease;
 }
 @media (min-width: 1024px) {
-  .main-content { margin-left: 300px; }
+  .main-content { margin-left: 350px; }
   .main-content--narrow { margin-left: 76px; }
 }
 

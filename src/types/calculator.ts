@@ -3,8 +3,8 @@ import type { ProductItem } from './calculation'
 export type PayerType = 'producer' | 'importer'
 
 export interface CalculatorProductItem extends ProductItem {
-  recycledFile: { name: string } | null
-  exportedFile: { name: string } | null
+  recycledFile: { name: string; file: File } | null
+  exportedFile: { name: string; file: File } | null
 }
 
 export type NormStatus = { met: boolean; message: string }

@@ -44,7 +44,7 @@ const handleRecycledFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (file) {
-    props.item.recycledFile = { name: file.name }
+    props.item.recycledFile = { name: file.name, file }
   }
   input.value = ''
 }
@@ -57,7 +57,7 @@ const handleExportedFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (file) {
-    props.item.exportedFile = { name: file.name }
+    props.item.exportedFile = { name: file.name, file }
   }
   input.value = ''
 }
@@ -75,6 +75,7 @@ const normStatus = () => getNormStatus(
 )
 
 const remaining = () => getRemaining(props.item)
+
 </script>
 
 <template>

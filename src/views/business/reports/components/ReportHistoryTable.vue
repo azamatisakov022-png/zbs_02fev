@@ -201,7 +201,7 @@ const onRowClick = (row: any) => {
 }
 
 .history-card__title {
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
@@ -209,8 +209,8 @@ const onRowClick = (row: any) => {
 }
 
 .history-card__subtitle {
-  font-size: 15px;
-  color: #94a3b8;
+  font-size: 18px;
+  color: #595e66;
   margin: 2px 0 0;
 }
 

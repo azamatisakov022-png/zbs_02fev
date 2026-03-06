@@ -4,9 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
-import { AppButton, AppBadge, AppInput, AppPageHeader, AppModal, AppCtaBanner, AppStatCard } from '../../components/ui'
-import Select from '@/components/ui/general/Select.vue'
-import type { SelectOption } from '@/types/select'
+import { AppButton, AppBadge, AppInput, AppPageHeader, AppModal, AppCtaBanner, AppStatCard, AppSelect } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useAccountStore } from '../../stores/account'
@@ -27,14 +25,14 @@ const searchQuery = ref('')
 const filterType = ref('')
 const filterYear = ref('')
 
-const typeFilterOptions = computed<SelectOption[]>(() => [
+const typeFilterOptions = computed(() => [
   { value: '', label: t('businessDocs.allTypes') },
   { value: 'pdf', label: 'PDF' },
   { value: 'doc', label: 'DOC/DOCX' },
   { value: 'xls', label: 'XLS/XLSX' },
 ])
 
-const yearFilterOptions = computed<SelectOption[]>(() => [
+const yearFilterOptions = computed(() => [
   { value: '', label: t('businessDocs.allTime') },
   { value: '2025', label: '2025' },
   { value: '2026', label: '2026' },
@@ -301,28 +299,31 @@ const resetDocFilters = () => {
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Search & Filters -->
     <div class="bd-section mb-6">
-      <div class="flex flex-wrap gap-4">
-        <div class="bdoc-search-wrap flex-1">
+      <div class="bdoc-filter-bar">
+        <div class="bdoc-filter-bar__search">
           <AppInput
             v-model="searchQuery"
             :placeholder="$t('businessDocs.searchPlaceholder')"
             size="sm"
             borderColor="#e2e8f0"
             focusColor="#0ea5e9"
-            fontSize="21px"
             hideLabel
           >
             <template #prefix>
-              <svg class="w-5 h-5 bdoc-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg class="w-4 h-4" style="color: #94a3b8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </template>
           </AppInput>
         </div>
-        <Select v-model="filterType" :options="typeFilterOptions" size="sm" />
-        <Select v-model="filterYear" :options="yearFilterOptions" size="sm" />
+        <div class="bdoc-filter-bar__select">
+          <AppSelect v-model="filterType" :options="typeFilterOptions" :placeholder="$t('businessDocs.allTypes')" size="sm" borderColor="#e2e8f0" focusColor="#0ea5e9" hideLabel />
+        </div>
+        <div class="bdoc-filter-bar__select">
+          <AppSelect v-model="filterYear" :options="yearFilterOptions" :placeholder="$t('businessDocs.allTime')" size="sm" borderColor="#e2e8f0" focusColor="#0ea5e9" hideLabel />
+        </div>
       </div>
     </div>
 
@@ -608,18 +609,26 @@ const resetDocFilters = () => {
 .bdoc-category-count--inactive {
   background: #e2e8f0;
 }
-.bdoc-search-wrap {
-  min-width: 250px;
+.bdoc-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
 }
-.bdoc-search-icon {
-  color: #64748b;
+.bdoc-filter-bar__search {
+  flex: 1;
+  min-width: 200px;
 }
-.bdoc-search-input {
-  font-size: 21px;
-  border: 1px solid #e2e8f0;
+.bdoc-filter-bar__select {
+  width: 180px;
+  flex-shrink: 0;
 }
-.bdoc-search-input:focus {
-  border-color: #0ea5e9;
+@media (max-width: 768px) {
+  .bdoc-filter-bar {
+    flex-direction: column;
+  }
+  .bdoc-filter-bar__select {
+    width: 100%;
+  }
 }
 .bdoc-list-title {
   font-size: 28px;

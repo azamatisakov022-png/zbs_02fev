@@ -648,6 +648,18 @@ function submitPaymentConfirmation() {
                     <span v-if="item.subgroup" class="block cdv-text-14 cdv-text-muted">{{ getSubgroupLabel(item.group, item.subgroup) }}</span>
                     <span v-if="item.gskpCode" class="block cdv-text-14 cdv-text-light font-mono">{{ item.gskpCode }}</span>
                     <span v-if="item.tnvedCode" class="block cdv-text-14 cdv-text-light font-mono mt-0.5">{{ $t('calcDetail.tnved') }} <TnvedCode :code="item.tnvedCode" /></span>
+                    <div v-if="item.documents && item.documents.length > 0" class="item-docs mt-2">
+                      <a
+                        v-for="doc in item.documents"
+                        :key="doc.id"
+                        :href="doc.url"
+                        target="_blank"
+                        class="item-docs__link"
+                      >
+                        <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <span class="truncate">{{ doc.name }}</span>
+                      </a>
+                    </div>
                   </template>
                 </td>
                 <!-- Volume -->
@@ -1454,6 +1466,29 @@ function submitPaymentConfirmation() {
 .doc-dropzone__btn:hover {
   background: #2563EB;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.item-docs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.item-docs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  max-width: 200px;
+  transition: background 0.15s;
+}
+.item-docs__link:hover {
+  background: #dbeafe;
 }
 
 .doc-file-row {
