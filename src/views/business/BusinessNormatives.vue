@@ -3,8 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAccountStore } from '../../stores/account'
+import { useProductGroupStore } from '../../stores/product-groups'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { getRateByGroup } from '../../data/rates'
 import { AppTabs, AppPageHeader } from '../../components/ui'
 import NormsTable from './components/normatives/NormsTable.vue'
 import RatesTab from './components/normatives/RatesTab.vue'
@@ -14,119 +14,19 @@ import InfoCards from './components/normatives/InfoCards.vue'
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 const accountStore = useAccountStore()
+const productGroupStore = useProductGroupStore()
 
-onMounted(() => { accountStore.fetchAll() })
+onMounted(() => {
+  accountStore.fetchAll()
+  productGroupStore.fetchAllGroupsWithNorms()
+})
 
-const currentYear = 2026
-const years = [2025, 2026, 2027, 2028, 2029, 2030]
-
+const currentYear = new Date().getFullYear()
 const activeTab = ref<'norms' | 'rates'>('norms')
 
 const tabItems = computed(() => [
   { key: 'norms', label: t('businessNorms.tabNorms') },
   { key: 'rates', label: t('businessNorms.tabRates') },
-])
-
-const norms = [
-  { id: 1,  category: 'Изделия из гофрированной бумаги/картона',                          rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
-  { id: 2,  category: 'Изделия из негофрированной бумаги/картона',                         rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
-  { id: 3,  category: 'Масла',                                                             rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
-  { id: 4,  category: 'Шины, покрышки и камеры резиновые',                                 rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
-  { id: 5,  category: 'Изделия из резины (за исключением шин)',                             rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 6,  category: 'Изделия пластмассовые упаковочные',                                 rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 7,  category: 'Изделия пластмассовые прочие',                                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 8,  category: 'Стекло полое',                                                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 9,  category: 'Компьютеры и периферийное оборудование, офисное оборудование',       rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 10, category: 'Мониторы, приемники телевизионные',                                  rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 11, category: 'Элементы первичные и батареи первичных элементов',                   rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 12, category: 'Аккумуляторы свинцовые',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 13, category: 'Батареи аккумуляторные',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 14, category: 'Оборудование электрическое осветительное',                           rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 15, category: 'Техника бытовая крупная',                                            rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 16, category: 'Техника бытовая мелкая, инструмент ручной',                          rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 17, category: 'Оборудование холодильное и вентиляционное',                          rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 18, category: 'Фильтры для двигателей внутреннего сгорания',                        rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 19, category: 'Упаковка из полимерных материалов, не содержащих галогены',           rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 20, category: 'Упаковка из полимерных материалов, содержащих галоген',               rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 21, category: 'Упаковка из комбинированных материалов',                             rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 22, category: 'Упаковка из гофрированного картона',                                 rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 23, category: 'Упаковка из бумаги и негофрированного картона',                      rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-  { id: 24, category: 'Упаковка стеклянная',                                                rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
-]
-
-interface FeeRateGroup {
-  groupLetter: string
-  groupTitle: string
-  items: {
-    id: number
-    name: string
-    rate: number
-    unit: string
-    effectiveDate: string
-  }[]
-}
-
-const feeRateGroups = computed<FeeRateGroup[]>(() => [
-  {
-    groupLetter: 'А',
-    groupTitle: t('businessNorms.groupA'),
-    items: [
-      { id: 1, name: 'Изделия из гофрированной бумаги/картона', rate: getRateByGroup(1), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 2, name: 'Изделия из негофрированной бумаги/картона', rate: getRateByGroup(2), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
-  {
-    groupLetter: 'Б',
-    groupTitle: t('businessNorms.groupB'),
-    items: [
-      { id: 3, name: 'Масла', rate: getRateByGroup(3), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 4, name: 'Шины, покрышки и камеры резиновые', rate: getRateByGroup(4), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 5, name: 'Изделия из резины (за исключением шин)', rate: getRateByGroup(5), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
-  {
-    groupLetter: 'В',
-    groupTitle: t('businessNorms.groupV'),
-    items: [
-      { id: 6, name: 'Изделия пластмассовые упаковочные', rate: getRateByGroup(6), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 7, name: 'Изделия пластмассовые прочие', rate: getRateByGroup(7), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 8, name: 'Стекло полое', rate: getRateByGroup(8), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
-  {
-    groupLetter: 'Г',
-    groupTitle: t('businessNorms.groupG'),
-    items: [
-      { id: 9, name: 'Компьютеры и периферийное оборудование', rate: getRateByGroup(9), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 10, name: 'Мониторы, приёмники телевизионные', rate: getRateByGroup(10), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 11, name: 'Элементы первичные и батареи', rate: getRateByGroup(11), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 12, name: 'Аккумуляторы свинцовые', rate: getRateByGroup(12), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 13, name: 'Батареи аккумуляторные', rate: getRateByGroup(13), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 14, name: 'Оборудование электрическое осветительное', rate: getRateByGroup(14), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
-  {
-    groupLetter: 'Д',
-    groupTitle: t('businessNorms.groupD'),
-    items: [
-      { id: 15, name: 'Техника бытовая крупная', rate: getRateByGroup(15), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 16, name: 'Техника бытовая мелкая, инструмент ручной', rate: getRateByGroup(16), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 17, name: 'Оборудование холодильное и вентиляционное', rate: getRateByGroup(17), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 18, name: 'Фильтры для двигателей внутреннего сгорания', rate: getRateByGroup(18), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
-  {
-    groupLetter: 'Е',
-    groupTitle: t('businessNorms.groupE'),
-    items: [
-      { id: 19, name: 'Упаковка из полимерных материалов (без галогенов)', rate: getRateByGroup(19), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 20, name: 'Упаковка из полимерных материалов (с галогеном)', rate: getRateByGroup(20), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 21, name: 'Упаковка из комбинированных материалов', rate: getRateByGroup(21), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 22, name: 'Упаковка из гофрированного картона', rate: getRateByGroup(22), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 23, name: 'Упаковка из бумаги и негофрированного картона', rate: getRateByGroup(23), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-      { id: 24, name: 'Упаковка стеклянная', rate: getRateByGroup(24), unit: t('businessNorms.somPerTon'), effectiveDate: '01.01.2025' },
-    ],
-  },
 ])
 </script>
 
@@ -170,16 +70,20 @@ const feeRateGroups = computed<FeeRateGroup[]>(() => [
 
       <AppTabs v-model="activeTab" :tabs="tabItems" activeBg="#0e888d" />
 
+      <div v-if="productGroupStore.loading" class="bn-loading">
+        {{ $t('common.loading', 'Загрузка...') }}
+      </div>
+
       <NormsTable
-        v-if="activeTab === 'norms'"
-        :norms="norms"
-        :years="years"
+        v-if="activeTab === 'norms' && !productGroupStore.loading"
+        :norms="productGroupStore.normsTableData"
+        :years="productGroupStore.normYears"
         :currentYear="currentYear"
       />
 
       <RatesTab
-        v-if="activeTab === 'rates'"
-        :feeRateGroups="feeRateGroups"
+        v-if="activeTab === 'rates' && !productGroupStore.loading"
+        :feeRateGroups="productGroupStore.feeRateGroups"
       />
 
       <template v-if="activeTab === 'norms'">
@@ -263,5 +167,11 @@ const feeRateGroups = computed<FeeRateGroup[]>(() => [
 }
 .bn-link-secondary:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+.bn-loading {
+  text-align: center;
+  padding: 48px;
+  font-size: 20px;
+  color: #6b7280;
 }
 </style>
