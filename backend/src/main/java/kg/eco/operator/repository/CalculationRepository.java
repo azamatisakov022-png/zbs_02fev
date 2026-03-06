@@ -22,6 +22,6 @@ public interface CalculationRepository extends JpaRepository<Calculation, Long>,
     long countByStatus(CalculationStatus status);
     long countByStatusIn(List<CalculationStatus> statuses);
 
-    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(c.number, 4, 4) AS int)), 0) FROM Calculation c WHERE c.number LIKE :prefix")
+    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(c.number, 9, 6) AS int)), 0) FROM Calculation c WHERE c.number LIKE :prefix")
     int findMaxNumberByPrefix(@Param("prefix") String prefix);
 }
