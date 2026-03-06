@@ -1,5 +1,6 @@
 package kg.eco.operator.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import kg.eco.operator.entity.enums.RoleEnum;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 14)
     private String inn;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -38,6 +40,7 @@ public class User {
     @JoinColumn(name = "company_id")
     private Company company;
 
+    @JsonIgnore
     @Column(name = "refresh_token")
     private String refreshToken;
 
