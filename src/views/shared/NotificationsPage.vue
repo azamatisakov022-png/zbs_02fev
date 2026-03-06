@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, type ComputedRef } from 'vue'
+import { ref, computed, onMounted, type ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton } from '../../components/ui'
 import { notificationStore, type Notification, type NotificationRole } from '../../stores/notifications'
 import { useBusinessMenu, useEcoOperatorMenu, useEmployeeMenu } from '../../composables/useRoleMenu'
 
@@ -13,7 +14,6 @@ const props = defineProps<{
   role: NotificationRole
 }>()
 
-// Dynamically select menu based on role
 const roleMenuMap: Record<string, () => ReturnType<typeof useBusinessMenu>> = {
   business: useBusinessMenu,
   'eco-operator': useEcoOperatorMenu,
@@ -22,12 +22,16 @@ const roleMenuMap: Record<string, () => ReturnType<typeof useBusinessMenu>> = {
 
 const { roleTitle, menuItems } = (roleMenuMap[props.role] || useBusinessMenu)()
 
+onMounted(() => {
+  notificationStore.fetchAll()
+})
+
 const filter = ref<'all' | 'unread'>('all')
 
+const allNotifications = computed(() => notificationStore.getByRole(props.role))
 const notifications = computed(() => {
-  const all = notificationStore.getByRole(props.role)
-  if (filter.value === 'unread') return all.filter(n => !n.read)
-  return all
+  if (filter.value === 'unread') return allNotifications.value.filter(n => !n.read)
+  return allNotifications.value
 })
 
 const unreadCount = computed(() => notificationStore.getUnreadCount(props.role))
@@ -38,6 +42,10 @@ function handleMarkAllRead() {
 
 function handleMarkRead(id: number) {
   notificationStore.markAsRead(id)
+}
+
+function handleDelete(id: number) {
+  notificationStore.remove(id)
 }
 
 function handleDeleteAllRead() {
@@ -84,9 +92,7 @@ function getNotificationLink(n: Notification): string | null {
 function handleNavigate(n: Notification) {
   notificationStore.markAsRead(n.id)
   const link = getNotificationLink(n)
-  if (link) {
-    router.push(link)
-  }
+  if (link) router.push(link)
 }
 
 const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: string; label: string }>> = computed(() => ({
@@ -99,53 +105,57 @@ const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: 
 
 <template>
   <DashboardLayout :role-title="roleTitle" :menu-items="menuItems" :role="role">
-    <div class="space-y-6">
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="np-page">
+      <div class="np-header">
         <div>
-          <h1 class="text-[34px] lg:text-[40px] font-bold text-[#1e293b]">{{ t('notifications.pageTitle') }}</h1>
-          <p class="text-[24px] text-[#64748b] mt-1">{{ t('notifications.pageSubtitle') }}</p>
+          <h1 class="np-title">{{ t('notifications.pageTitle') }}</h1>
+          <p class="np-subtitle">{{ t('notifications.pageSubtitle') }}</p>
         </div>
-        <div class="flex items-center gap-3">
-          <button
+        <div class="np-actions">
+          <AppButton
             v-if="unreadCount > 0"
+            variant="outline"
             @click="handleMarkAllRead"
-            class="px-4 py-2 text-[21px] font-medium text-[#0e888d] bg-[#f0fdfa] rounded-lg hover:bg-[#ccfbf1] transition-colors"
-          >{{ t('notifications.readAll') }}</button>
-          <button
-            @click="handleDeleteAllRead"
-            class="px-4 py-2 text-[21px] font-medium text-[#64748b] bg-[#f1f5f9] rounded-lg hover:bg-[#e2e8f0] transition-colors"
-          >{{ t('notifications.deleteAll') }}</button>
+          >{{ t('notifications.readAll') }}</AppButton>
+          <AppButton variant="secondary" @click="handleDeleteAllRead">{{ t('notifications.deleteAll') }}</AppButton>
+        </div>
+      </div>
+
+      <div class="np-summary">
+        <div class="np-summary-item">
+          <span class="np-summary-count">{{ allNotifications.length }}</span>
+          <span class="np-summary-label">{{ t('notifications.filterAll') }}</span>
+        </div>
+        <div class="np-summary-divider"></div>
+        <div class="np-summary-item">
+          <span class="np-summary-count np-summary-count--unread">{{ unreadCount }}</span>
+          <span class="np-summary-label">{{ t('notifications.filterUnread') }}</span>
         </div>
       </div>
 
       <slot />
 
-      <!-- Filters -->
-      <div class="flex gap-2">
+      <div class="np-filters">
         <button
           @click="filter = 'all'"
-          :class="[
-            'px-4 py-2 rounded-lg text-[21px] font-medium transition-colors',
-            filter === 'all' ? 'bg-[#0e888d] text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
-          ]"
-        >{{ t('notifications.filterAll') }} ({{ notificationStore.getByRole(role).length }})</button>
+          class="np-filter-btn"
+          :class="{ 'np-filter-btn--active': filter === 'all' }"
+        >{{ t('notifications.filterAll') }} ({{ allNotifications.length }})</button>
         <button
           @click="filter = 'unread'"
-          :class="[
-            'px-4 py-2 rounded-lg text-[21px] font-medium transition-colors',
-            filter === 'unread' ? 'bg-[#0e888d] text-white' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0]'
-          ]"
+          class="np-filter-btn"
+          :class="{ 'np-filter-btn--active': filter === 'unread' }"
         >{{ t('notifications.filterUnread') }} ({{ unreadCount }})</button>
       </div>
 
-      <!-- Notification List -->
-      <div class="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden">
-        <div v-if="notifications.length === 0" class="px-6 py-12 text-center">
-          <svg class="w-12 h-12 mx-auto text-[#cbd5e1] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          <p class="text-[#94a3b8] text-[21px]">{{ filter === 'unread' ? t('notifications.noUnread') : t('notifications.empty') }}</p>
+      <div class="np-list">
+        <div v-if="notifications.length === 0" class="np-empty">
+          <div class="np-empty-icon">
+            <svg class="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+          </div>
+          <p class="np-empty-text">{{ filter === 'unread' ? t('notifications.noUnread') : t('notifications.empty') }}</p>
         </div>
 
         <TransitionGroup
@@ -160,14 +170,11 @@ const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: 
             v-for="n in notifications"
             :key="n.id"
             @click="handleNavigate(n)"
-            :class="[
-              'px-6 py-4 flex gap-4 cursor-pointer transition-colors border-b border-[#f1f5f9] last:border-0',
-              n.read ? 'bg-white hover:bg-[#f8fafc]' : 'bg-blue-50/40 hover:bg-blue-50/60'
-            ]"
+            class="np-item"
+            :class="{ 'np-item--unread': !n.read }"
           >
-            <!-- Type icon -->
             <div
-              class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+              class="np-item-icon"
               :style="{ backgroundColor: typeConfig[n.type].bg }"
             >
               <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" :stroke="typeConfig[n.type].color" stroke-width="2">
@@ -175,31 +182,258 @@ const typeConfig: ComputedRef<Record<string, { color: string; bg: string; icon: 
               </svg>
             </div>
 
-            <!-- Content -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start gap-2">
-                <p class="text-[24px] font-semibold text-[#1e293b] leading-tight">{{ n.title }}</p>
-                <span v-if="!n.read" class="w-2.5 h-2.5 rounded-full bg-[#0e888d] flex-shrink-0 mt-1.5"></span>
+            <div class="np-item-content">
+              <div class="np-item-title-row">
+                <p class="np-item-title">{{ n.title }}</p>
+                <span v-if="!n.read" class="np-unread-dot"></span>
               </div>
-              <p class="text-[21px] text-[#64748b] mt-1">{{ n.message }}</p>
-              <div class="flex items-center gap-3 mt-2">
-                <span class="text-[18px] text-[#94a3b8]">{{ notificationStore.formatRelativeTime(n.createdAt) }}</span>
+              <p class="np-item-message">{{ n.message }}</p>
+              <div class="np-item-meta">
+                <span class="np-item-time">{{ notificationStore.formatRelativeTime(n.createdAt) }}</span>
                 <span
-                  class="text-[17px] font-medium px-2 py-0.5 rounded-full"
+                  class="np-item-badge"
                   :style="{ color: typeConfig[n.type].color, backgroundColor: typeConfig[n.type].bg }"
                 >{{ typeConfig[n.type].label }}</span>
               </div>
             </div>
 
-            <!-- Link button -->
-            <button
-              v-if="getNotificationLink(n)"
-              @click.stop="handleNavigate(n)"
-              class="self-center px-4 py-2 text-[21px] font-semibold text-[#0e888d] bg-[#f0fdfa] rounded-lg hover:bg-[#ccfbf1] transition-colors flex-shrink-0"
-            >{{ t('notificationsPage.goTo') }}</button>
+            <div class="np-item-actions">
+              <button
+                v-if="getNotificationLink(n)"
+                @click.stop="handleNavigate(n)"
+                class="np-go-btn"
+              >{{ t('notificationsPage.goTo') }}</button>
+              <button
+                @click.stop="handleDelete(n.id)"
+                class="np-delete-btn"
+              >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </TransitionGroup>
       </div>
     </div>
   </DashboardLayout>
 </template>
+
+<style scoped>
+.np-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.np-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .np-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.np-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #1e293b;
+}
+@media (min-width: 1024px) {
+  .np-title {
+    font-size: 40px;
+  }
+}
+.np-subtitle {
+  font-size: 24px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.np-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.np-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 24px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.np-summary-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.np-summary-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+.np-summary-count--unread {
+  color: #0e888d;
+}
+.np-summary-label {
+  font-size: 20px;
+  color: #64748b;
+}
+.np-summary-divider {
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+}
+
+.np-filters {
+  display: flex;
+  gap: 8px;
+}
+.np-filter-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 21px;
+  font-weight: 500;
+  transition: all 0.15s;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.np-filter-btn:hover:not(.np-filter-btn--active) {
+  background: #e2e8f0;
+}
+.np-filter-btn--active {
+  background: #0e888d;
+  color: #fff;
+}
+
+.np-list {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+.np-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+.np-empty-icon {
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+}
+.np-empty-text {
+  font-size: 21px;
+  color: #94a3b8;
+}
+
+.np-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+}
+.np-item:last-child {
+  border-bottom: none;
+}
+.np-item:hover {
+  background: #f8fafc;
+}
+.np-item--unread {
+  background: rgba(14, 136, 141, 0.04);
+}
+.np-item--unread:hover {
+  background: rgba(14, 136, 141, 0.07);
+}
+.np-item-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.np-item-content {
+  flex: 1;
+  min-width: 0;
+}
+.np-item-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.np-item-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+.np-unread-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0e888d;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.np-item-message {
+  font-size: 21px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.np-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.np-item-time {
+  font-size: 18px;
+  color: #94a3b8;
+}
+.np-item-badge {
+  font-size: 17px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+.np-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  flex-shrink: 0;
+}
+.np-go-btn {
+  padding: 8px 16px;
+  font-size: 21px;
+  font-weight: 600;
+  color: #0e888d;
+  background: #f0fdfa;
+  border-radius: 8px;
+  transition: background-color 0.15s;
+}
+.np-go-btn:hover {
+  background: #ccfbf1;
+}
+.np-delete-btn {
+  padding: 8px;
+  color: #94a3b8;
+  border-radius: 8px;
+  transition: all 0.15s;
+}
+.np-delete-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+</style>
