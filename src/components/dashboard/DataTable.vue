@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import AppButton from '../ui/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -64,17 +65,12 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject', 'row-click'])
                 <td v-if="actions" class="px-4 py-4 text-right whitespace-nowrap">
                   <slot name="actions" :row="row">
                     <div class="flex items-center justify-end gap-2">
-                      <button
+                      <AppButton
+                        variant="icon-only"
+                        size="sm"
+                        :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot; aria-hidden=&quot;true&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 12a3 3 0 11-6 0 3 3 0 016 0z&quot; /><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z&quot; /></svg>'"
                         @click="$emit('view', row)"
-                        class="btn-action btn-action-secondary text-[14px] px-3 py-1.5"
-                        :aria-label="t('common.view')"
-                        :data-tooltip="t('common.view')"
-                      >
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
+                      />
                     </div>
                   </slot>
                 </td>
@@ -125,17 +121,14 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject', 'row-click'])
           </div>
           <div v-if="actions" class="mt-3 pt-3 border-t border-[#F1F5F9]">
             <slot name="actions" :row="row">
-              <button
+              <AppButton
+                variant="secondary"
+                size="sm"
+                :label="t('common.view')"
+                :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot; aria-hidden=&quot;true&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 12a3 3 0 11-6 0 3 3 0 016 0z&quot; /><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z&quot; /></svg>'"
+                full-width
                 @click="$emit('view', row)"
-                class="btn-action btn-action-secondary w-full text-[15px] py-2"
-                :aria-label="t('common.view')"
-              >
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                {{ t('common.view') }}
-              </button>
+              />
             </slot>
           </div>
           <slot name="row-after" :row="row" :index="index" :colspan="1" />

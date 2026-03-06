@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from '../ui/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -40,12 +41,13 @@ const scrollToContacts = () => {
           >
             {{ button.label }}
           </router-link>
-          <button
+          <AppButton
+            variant="ghost"
+            :label="$t('cta.contactUs')"
+            bg="rgba(255,255,255,0.2)"
+            color="#fff"
             @click="scrollToContacts"
-            class="w-full sm:w-auto min-w-[200px] lg:min-w-[224px] bg-white/20 text-white px-6 lg:px-[30px] py-3.5 lg:py-[14px] rounded-[25px] text-sm lg:text-base font-semibold uppercase hover:bg-white/30 transition-colors"
-          >
-            {{ $t('cta.contactUs') }}
-          </button>
+          />
         </div>
       </div>
     </div>

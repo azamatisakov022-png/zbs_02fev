@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { getLocale, setLocale } from '../../i18n'
 import { authStore } from '../../stores/auth'
 import { notificationStore } from '../../stores/notifications'
+import AppButton from '../ui/AppButton.vue'
 import NotificationBell from './NotificationBell.vue'
 import BreadcrumbNav from './BreadcrumbNav.vue'
 import ConfirmDialog from '../common/ConfirmDialog.vue'
@@ -216,12 +217,12 @@ const breadcrumbs = computed(() => {
           </div>
           <span class="desktop-header__user">{{ userName }}</span>
           <NotificationBell :role="role" />
-          <button @click="requestLogout" class="desktop-header__logout" :aria-label="t('common.logoutSystem')">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            {{ t('common.logout') }}
-          </button>
+          <AppButton
+            variant="outline"
+            :label="t('common.logout')"
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot; aria-hidden=&quot;true&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1&quot; /></svg>'"
+            @click="requestLogout"
+          />
         </div>
       </header>
 
@@ -627,27 +628,6 @@ const breadcrumbs = computed(() => {
   font-weight: 700;
   color: #1e293b;
 }
-.desktop-header__logout {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #475569;
-  background: none;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.desktop-header__logout:hover {
-  background: #f8fafc;
-  color: #1e293b;
-  border-color: #94a3b8;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-}
-
 /* ── Locale switch ── */
 .locale-switch {
   display: flex;

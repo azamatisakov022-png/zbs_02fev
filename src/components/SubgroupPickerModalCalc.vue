@@ -5,6 +5,7 @@
  */
 import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from './ui/AppButton.vue'
 
 interface GoodsSubgroup {
   name: string
@@ -236,7 +237,7 @@ watch(isOpen, (val) => {
           <!-- Footer -->
           <div class="spm-footer">
             <span class="spm-footer-count">{{ $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: group?.subgroups.length || 0 }) }}</span>
-            <button class="spm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
+            <AppButton variant="secondary" :label="$t('common.cancel')" size="sm" @click="closeModal" />
           </div>
         </div>
       </div>
@@ -486,23 +487,6 @@ watch(isOpen, (val) => {
 }
 
 .spm-footer-count { font-size: 13px; color: #64748b; }
-
-.spm-cancel {
-  padding: 8px 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fff;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.spm-cancel:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
 
 @media (max-width: 768px) {
   .spm-modal { width: 95vw; height: 90vh; }

@@ -6,6 +6,7 @@ import QRCode from 'qrcode'
 import { useCalculationStore } from '../../stores/calculations'
 import type { PaymentData } from '@/types/calculation'
 import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
+import AppButton from '../ui/AppButton.vue'
 import FileUploadZone from '../ui/FileUploadZone.vue'
 import { formatNum } from '../../utils/formatNumber'
 import { toastStore } from '../../stores/toast'
@@ -209,22 +210,26 @@ function close() {
               <div class="req-row"><span class="req-key">{{ t('paymentPanel.inn') }}</span><span class="req-val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.inn }}</span></div>
               <div class="req-row"><span class="req-key">{{ t('paymentPanel.paymentPurpose') }}</span><span class="req-val">{{ feePurpose }}</span></div>
             </div>
-            <button @click="copyRequisites(PAYMENT_ACCOUNTS.utilization_fee, feePurpose)" class="copy-btn copy-btn--green">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              {{ t('paymentPanel.copyRequisites') }}
-            </button>
+            <AppButton
+              variant="outline"
+              size="sm"
+              :label="t('paymentPanel.copyRequisites')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+              color="#059669"
+              @click="copyRequisites(PAYMENT_ACCOUNTS.utilization_fee, feePurpose)"
+            />
             <!-- Upload receipt -->
             <div v-if="!feeDisabled" class="upload-receipt">
               <p class="upload-receipt-label">{{ t('paymentPanel.uploadFeeReceipt') }}</p>
               <FileUploadZone v-model="feeFile" :label="t('paymentPanel.uploadReceipt')" />
-              <button
+              <AppButton
                 v-if="feeFile"
-                @click="submitFeeReceipt"
+                variant="success"
+                :label="t('paymentPanel.submitReceipt')"
                 :disabled="feeSubmitting"
-                class="submit-btn submit-btn--green"
-              >
-                {{ t('paymentPanel.submitReceipt') }}
-              </button>
+                :loading="feeSubmitting"
+                @click="submitFeeReceipt"
+              />
             </div>
           </div>
 
@@ -279,22 +284,26 @@ function close() {
               <div class="req-row"><span class="req-key">{{ t('paymentPanel.bik') }}</span><span class="req-val font-mono">{{ PAYMENT_ACCOUNTS.penalty.bik }}</span></div>
               <div class="req-row"><span class="req-key">{{ t('paymentPanel.paymentPurpose') }}</span><span class="req-val">{{ penaltyPurpose }}</span></div>
             </div>
-            <button @click="copyRequisites(PAYMENT_ACCOUNTS.penalty, penaltyPurpose)" class="copy-btn copy-btn--red">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              {{ t('paymentPanel.copyRequisites') }}
-            </button>
+            <AppButton
+              variant="outline"
+              size="sm"
+              :label="t('paymentPanel.copyRequisites')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+              color="#dc2626"
+              @click="copyRequisites(PAYMENT_ACCOUNTS.penalty, penaltyPurpose)"
+            />
             <!-- Upload receipt -->
             <div v-if="!penaltyDisabled" class="upload-receipt">
               <p class="upload-receipt-label">{{ t('paymentPanel.uploadPenaltyReceipt') }}</p>
               <FileUploadZone v-model="penaltyFile" :label="t('paymentPanel.uploadReceipt')" />
-              <button
+              <AppButton
                 v-if="penaltyFile"
-                @click="submitPenaltyReceipt"
+                variant="danger"
+                :label="t('paymentPanel.submitReceipt')"
                 :disabled="penaltySubmitting"
-                class="submit-btn submit-btn--red"
-              >
-                {{ t('paymentPanel.submitReceipt') }}
-              </button>
+                :loading="penaltySubmitting"
+                @click="submitPenaltyReceipt"
+              />
             </div>
           </div>
 
@@ -508,29 +517,6 @@ function close() {
   font-size: 12px;
 }
 
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  background: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.copy-btn--green {
-  color: #059669;
-  border: 1px solid #a7f3d0;
-}
-.copy-btn--green:hover { background: #ecfdf5; }
-.copy-btn--red {
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-.copy-btn--red:hover { background: #fef2f2; }
 
 .upload-receipt {
   margin-top: 16px;
@@ -545,22 +531,6 @@ function close() {
   margin-bottom: 8px;
 }
 
-.submit-btn {
-  margin-top: 10px;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.submit-btn--green { background: #059669; }
-.submit-btn--green:hover:not(:disabled) { background: #047857; }
-.submit-btn--red { background: #dc2626; }
-.submit-btn--red:hover:not(:disabled) { background: #b91c1c; }
 
 .qr-block {
   background: white;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import AppButton from '../ui/AppButton.vue'
 
 defineProps<{
   title?: string
@@ -26,11 +27,10 @@ const { t } = useI18n()
     <p v-if="description" class="text-sm text-[#94a3b8] text-center max-w-sm mb-5">
       {{ description }}
     </p>
-    <button
+    <AppButton
+      variant="danger"
+      :label="t('error.retry')"
       @click="emit('retry')"
-      class="px-5 py-2.5 bg-[#ef4444] text-white rounded-lg font-medium hover:bg-[#dc2626] transition-colors text-sm"
-    >
-      {{ t('error.retry') }}
-    </button>
+    />
   </div>
 </template>

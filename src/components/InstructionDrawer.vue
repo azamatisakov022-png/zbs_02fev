@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from './ui/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -61,7 +62,7 @@ onUnmounted(() => {
 
           <!-- Footer -->
           <div class="drawer-footer">
-            <button @click="close" class="drawer-footer__btn">{{ t('common.close') }}</button>
+            <AppButton variant="secondary" :label="t('common.close')" full-width @click="close" />
           </div>
         </div>
       </div>
@@ -155,22 +156,6 @@ onUnmounted(() => {
   padding: 14px 20px;
   border-top: 1px solid #e2e8f0;
   flex-shrink: 0;
-}
-
-.drawer-footer__btn {
-  width: 100%;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 14px;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  transition: all 0.15s;
-}
-
-.drawer-footer__btn:hover {
-  background: #f8fafc;
-  color: #1e293b;
 }
 
 /* Transitions */
