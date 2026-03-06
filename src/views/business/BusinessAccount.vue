@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppPageHeader, AppAlert, AppBadge, AppInfoRow } from '../../components/ui'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -293,11 +294,7 @@ const downloadPaymentPdf = async () => {
 
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="companyName" :menuItems="menuItems">
-    <!-- Header -->
-    <div class="content__header mb-6">
-      <h1 class="ba-page-title">{{ $t('businessAccount.title') }}</h1>
-      <p class="ba-page-subtitle">{{ $t('businessAccount.subtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessAccount.title')" :subtitle="$t('businessAccount.subtitle')" />
 
     <template v-if="isLoading">
       <div class="mb-6"><SkeletonLoader variant="card" /></div>
@@ -378,15 +375,9 @@ const downloadPaymentPdf = async () => {
 
       <!-- BLOCK 2: Unpaid Invoices -->
       <template v-if="unpaidCalcs.length > 0">
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-          <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <p class="ba-text font-semibold text-amber-800">{{ $t('businessAccount.unpaidInvoicesWarning', { count: unpaidCalcs.length, amount: formatAmount(totalUnpaid) }) }}</p>
-            <p class="ba-text text-amber-700 mt-1">{{ $t('businessAccount.payOnTimeWarning') }}</p>
-          </div>
-        </div>
+        <AppAlert variant="warning" :title="$t('businessAccount.unpaidInvoicesWarning', { count: unpaidCalcs.length, amount: formatAmount(totalUnpaid) })" class="mb-6">
+          {{ $t('businessAccount.payOnTimeWarning') }}
+        </AppAlert>
 
         <div class="ba-card ba-card--flush">
           <div class="ba-section-header">
@@ -413,10 +404,14 @@ const downloadPaymentPdf = async () => {
                   <td class="px-4 py-3 ba-cell-bold">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</td>
                   <td class="px-4 py-3 ba-cell-muted">{{ c.date }}</td>
                   <td class="px-4 py-3 text-right">
-                    <button @click="router.push('/business/calculations/' + c.id + '/payment')" class="ba-pay-btn inline-flex items-center gap-1.5 px-4 py-2 text-white rounded-lg font-medium transition-colors">
-                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                      {{ $t('businessAccount.pay') }}
-                    </button>
+                    <AppButton
+                      variant="primary"
+                      bg="#f59e0b"
+                      size="sm"
+                      @click="router.push('/business/calculations/' + c.id + '/payment')"
+                      :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z&quot; /></svg>'"
+                      :label="$t('businessAccount.pay')"
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -433,10 +428,14 @@ const downloadPaymentPdf = async () => {
                 <div><span class="ba-hint ba-hint-sm">{{ $t('common.period') }}</span><br>{{ c.period }}</div>
                 <div><span class="ba-hint ba-hint-sm">{{ $t('common.amount') }}</span><br><strong class="ba-dark">{{ formatNum(c.totalAmount, 0) }} {{ $t('common.som') }}</strong></div>
               </div>
-              <button @click="router.push('/business/calculations/' + c.id + '/payment')" class="ba-pay-btn ba-pay-btn--lg w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-white rounded-lg font-medium transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                {{ $t('businessAccount.pay') }}
-              </button>
+              <AppButton
+                variant="primary"
+                bg="#f59e0b"
+                full-width
+                @click="router.push('/business/calculations/' + c.id + '/payment')"
+                :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z&quot; /></svg>'"
+                :label="$t('businessAccount.pay')"
+              />
             </div>
           </div>
         </div>
@@ -536,12 +535,15 @@ const downloadPaymentPdf = async () => {
           <span class="ba-cell-date whitespace-nowrap">{{ value }}</span>
         </template>
         <template #cell-type="{ row }">
-          <span :class="['ba-badge inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-full', row.type === 'charge' ? 'bg-red-100 text-red-700' : row.type === 'payment' ? 'bg-green-100 text-green-700' : row.type === 'correction' ? 'bg-blue-100 text-blue-700' : row.type === 'offset' ? 'bg-yellow-100 text-yellow-700' : 'bg-purple-100 text-purple-700']">
+          <AppBadge
+            :variant="row.type === 'charge' ? 'danger' : row.type === 'payment' ? 'success' : row.type === 'correction' ? 'info' : row.type === 'offset' ? 'warning' : 'neutral'"
+            size="sm"
+          >
             <svg v-if="row.type === 'charge'" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" /></svg>
             <svg v-else-if="row.type === 'payment'" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
             <svg v-else class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
             {{ row.typeLabel }}
-          </span>
+          </AppBadge>
         </template>
         <template #cell-description="{ row }">
           <div class="ba-cell-desc truncate">
@@ -563,13 +565,14 @@ const downloadPaymentPdf = async () => {
           </span>
         </template>
         <template #actions="{ row }">
-          <button
+          <AppButton
+            variant="ghost"
+            size="sm"
+            color="#2563eb"
             @click="handleRowAction(row)"
-            class="ba-action-btn inline-flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-800 px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-            {{ row.type === 'payment' ? $t('common.details') : $t('businessAccount.open') }}
-          </button>
+            :icon="'<svg class=&quot;w-3.5 h-3.5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 12a3 3 0 11-6 0 3 3 0 016 0z&quot; /><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z&quot; /></svg>'"
+            :label="row.type === 'payment' ? $t('common.details') : $t('businessAccount.open')"
+          />
         </template>
       </DataTable>
     </template>
@@ -581,9 +584,12 @@ const downloadPaymentPdf = async () => {
           <!-- Header -->
           <div class="pm-header">
             <h2 class="ba-modal-title">{{ $t('businessAccount.paymentForCalc', { number: payingCalc.number }) }}</h2>
-            <button @click="closePayment" class="pm-close">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              @click="closePayment"
+              :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+            />
           </div>
 
           <!-- Amount -->
@@ -608,23 +614,29 @@ const downloadPaymentPdf = async () => {
               </div>
 
               <div class="pm-reqs">
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.recipient') }}</span><span class="pm-req-value">{{ bankDetails.recipient }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.inn') }}</span><span class="pm-req-value font-mono">{{ bankDetails.inn }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.bankLabel') }}</span><span class="pm-req-value">{{ bankDetails.bank }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.bik') }}</span><span class="pm-req-value font-mono">{{ bankDetails.bik }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.accountNumber') }}</span><span class="pm-req-value font-mono">{{ bankDetails.account }}</span></div>
-                <div class="pm-req-row"><span class="pm-req-label">{{ $t('businessAccount.purpose') }}</span><span class="pm-req-value">{{ $t('businessAccount.recyclingFeeForCalc', { number: payingCalc.number }) }}</span></div>
+                <AppInfoRow :label="$t('businessAccount.recipient')" :value="bankDetails.recipient" />
+                <AppInfoRow :label="$t('businessAccount.inn')" :value="bankDetails.inn" :mono="true" />
+                <AppInfoRow :label="$t('businessAccount.bankLabel')" :value="bankDetails.bank" />
+                <AppInfoRow :label="$t('businessAccount.bik')" :value="bankDetails.bik" :mono="true" />
+                <AppInfoRow :label="$t('businessAccount.accountNumber')" :value="bankDetails.account" :mono="true" />
+                <AppInfoRow :label="$t('businessAccount.purpose')" :value="$t('businessAccount.recyclingFeeForCalc', { number: payingCalc.number })" />
               </div>
 
               <div class="flex gap-2 mb-4">
-                <button @click="copyRequisites" class="pm-btn pm-btn--outline">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                  {{ $t('businessAccount.copyRequisites') }}
-                </button>
-                <button @click="showInvoicePreview = true" class="pm-btn pm-btn--outline">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  {{ $t('businessAccount.downloadInvoicePdf') }}
-                </button>
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  @click="copyRequisites"
+                  :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3&quot; /></svg>'"
+                  :label="$t('businessAccount.copyRequisites')"
+                />
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  @click="showInvoicePreview = true"
+                  :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z&quot; /></svg>'"
+                  :label="$t('businessAccount.downloadInvoicePdf')"
+                />
               </div>
 
               <!-- Upload payment confirmation -->
@@ -644,16 +656,23 @@ const downloadPaymentPdf = async () => {
               <div v-else class="pm-file">
                 <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span class="ba-cell-desc truncate flex-1">{{ paymentFileName }}</span>
-                <button @click="removePaymentFile" class="text-red-400 hover:text-red-600">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                <AppButton
+                  variant="icon-danger"
+                  size="sm"
+                  @click="removePaymentFile"
+                  :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+                />
               </div>
 
-              <button
+              <AppButton
+                variant="primary"
+                bg="#f59e0b"
+                full-width
+                class="mt-3"
                 @click="submitPaymentConfirmation"
                 :disabled="!paymentFile"
-                :class="['w-full mt-3 py-2.5 rounded-xl ba-text font-semibold transition-colors', paymentFile ? 'ba-pay-btn text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed']"
-              >{{ $t('businessAccount.sendForConfirmation') }}</button>
+                :label="$t('businessAccount.sendForConfirmation')"
+              />
               <p class="ba-hint mt-2 text-center">{{ $t('businessAccount.ecoOperatorWillVerify') }}</p>
             </div>
 
@@ -701,7 +720,7 @@ const downloadPaymentPdf = async () => {
 
           <!-- Footer -->
           <div class="pm-footer">
-            <button @click="closePayment" class="ba-close-btn px-6 py-2.5 rounded-xl font-medium transition-colors">{{ $t('common.close') }}</button>
+            <AppButton variant="outline" @click="closePayment" :label="$t('common.close')" />
           </div>
         </div>
       </div>
@@ -713,9 +732,13 @@ const downloadPaymentPdf = async () => {
         <div class="pm-modal pm-modal--invoice">
           <div class="pm-header">
             <h2 class="ba-modal-title">{{ $t('businessAccount.invoiceTitle') }}</h2>
-            <button @click="showInvoicePreview = false" class="pm-close no-print">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              class="no-print"
+              @click="showInvoicePreview = false"
+              :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+            />
           </div>
           <div class="p-6 invoice-content">
             <div class="text-center mb-6">
@@ -763,11 +786,13 @@ const downloadPaymentPdf = async () => {
             <p class="ba-hint">{{ $t('businessAccount.paymentPurpose') }}: {{ $t('businessAccount.recyclingFeeForCalc', { number: payingCalc.number }) }}</p>
           </div>
           <div class="pm-footer no-print">
-            <button @click="showInvoicePreview = false" class="ba-close-btn px-5 py-2 rounded-xl font-medium">{{ $t('common.close') }}</button>
-            <button @click="printInvoice" class="ba-dark-btn px-5 py-2 rounded-xl font-medium text-white">
-              <svg class="w-4 h-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              {{ $t('common.print') }}
-            </button>
+            <AppButton variant="outline" @click="showInvoicePreview = false" :label="$t('common.close')" />
+            <AppButton
+              variant="primary"
+              @click="printInvoice"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z&quot; /></svg>'"
+              :label="$t('common.print')"
+            />
           </div>
         </div>
       </div>
@@ -781,9 +806,12 @@ const downloadPaymentPdf = async () => {
             <div ref="paymentDetailRef" class="pd-modal">
               <div class="pd-header">
                 <h2 class="pd-title">{{ $t('businessAccount.paymentDetails') }}</h2>
-                <button class="pd-close" @click="closePaymentDetail">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                <AppButton
+                  variant="icon-only"
+                  size="sm"
+                  @click="closePaymentDetail"
+                  :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+                />
               </div>
 
               <div class="pd-grid">
@@ -822,11 +850,13 @@ const downloadPaymentPdf = async () => {
               </div>
 
               <div class="pd-footer">
-                <button class="pd-btn pd-btn--outline" @click="downloadPaymentPdf">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                  {{ $t('common.downloadPdf') }}
-                </button>
-                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">{{ $t('common.close') }}</button>
+                <AppButton
+                  variant="outline"
+                  @click="downloadPaymentPdf"
+                  :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'"
+                  :label="$t('common.downloadPdf')"
+                />
+                <AppButton variant="outline" @click="closePaymentDetail" :label="$t('common.close')" />
               </div>
             </div>
           </Transition>
@@ -837,19 +867,6 @@ const downloadPaymentPdf = async () => {
 </template>
 
 <style scoped>
-.ba-page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-@media (min-width: 1024px) {
-  .ba-page-title { font-size: 34px; }
-}
-.ba-page-subtitle {
-  font-size: 18px;
-  color: #64748b;
-}
 .ba-card {
   background: white;
   border-radius: 16px;
@@ -1003,9 +1020,6 @@ const downloadPaymentPdf = async () => {
   background: #1e293b;
   color: white;
 }
-.ba-badge {
-  font-size: 14px;
-}
 .ba-action-btn {
   font-size: 14px;
 }
@@ -1120,22 +1134,6 @@ const downloadPaymentPdf = async () => {
   border-radius: 8px;
   padding: 12px;
   margin: 12px 0;
-}
-.pm-req-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 0;
-  font-size: 15px;
-}
-.pm-req-label {
-  color: #64748b;
-  flex-shrink: 0;
-}
-.pm-req-value {
-  color: #1e293b;
-  font-weight: 500;
-  text-align: right;
 }
 
 /* Buttons */

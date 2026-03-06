@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton } from '@/components/ui'
 
 defineProps<{
   reportingYear: string
@@ -87,11 +88,12 @@ defineEmits<{
               <span class="dsr-doc-name">{{ doc.name }}</span>
               <span class="dsr-doc-size">{{ doc.size }}</span>
             </div>
-            <button @click="$emit('removeDoc', doc.id)" class="p-1 dsr-remove-btn transition-colors">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <AppButton
+              variant="icon-danger"
+              size="sm"
+              @click="$emit('removeDoc', doc.id)"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+            />
           </div>
         </div>
 
@@ -114,15 +116,12 @@ defineEmits<{
 
         <div v-if="!signedWithEcp">
           <p class="dsr-body-text mb-3">{{ $t('businessDecl.ecpHint') }}</p>
-          <button
+          <AppButton
+            variant="primary"
             @click="$emit('signEcp')"
-            class="dsr-sign-btn"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('businessDecl.signEcp') }}
-          </button>
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('businessDecl.signEcp')"
+          />
         </div>
 
         <div v-else class="flex items-center gap-3">
@@ -203,12 +202,6 @@ defineEmits<{
   font-size: 14px;
   color: #475569;
 }
-.dsr-remove-btn {
-  color: #475569;
-}
-.dsr-remove-btn:hover {
-  color: #ef4444;
-}
 .dsr-upload-label {
   display: inline-flex;
   align-items: center;
@@ -225,21 +218,6 @@ defineEmits<{
 .dsr-upload-label:hover {
   border-color: #2563eb;
   color: #2563eb;
-}
-.dsr-sign-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background-color 0.15s;
-}
-.dsr-sign-btn:hover {
-  background-color: #1d4ed8;
 }
 .dsr-signed-title {
   font-size: 17px;

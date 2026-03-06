@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Select from '@/components/ui/general/Select.vue'
 import AppInput from '@/components/ui/AppInput.vue'
+import { AppAlert } from '@/components/ui'
 import type { SelectOption } from '@/types/select'
 
 defineProps<{
@@ -59,33 +60,13 @@ defineEmits<{
         </div>
       </div>
 
-      <div v-if="hasCalculations" class="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="dsb-alert-text text-green-800">
-            {{ $t('businessDecl.calcFound', { count: yearCalculationsCount, year: reportingYear }) }}
-          </p>
-          <p class="dsb-alert-text-medium text-green-700 mt-1">
-            {{ $t('businessDecl.totalAmountAndMass', { amount: totalAmount.toLocaleString(), mass: totalMass.toFixed(1) }) }}
-          </p>
-        </div>
-      </div>
+      <AppAlert v-if="hasCalculations" variant="success" :title="$t('businessDecl.calcFound', { count: yearCalculationsCount, year: reportingYear })">
+        {{ $t('businessDecl.totalAmountAndMass', { amount: totalAmount.toLocaleString(), mass: totalMass.toFixed(1) }) }}
+      </AppAlert>
 
-      <div v-else class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <div>
-          <p class="dsb-alert-text text-yellow-800">{{ $t('businessDecl.noCalcsForYear') }}</p>
-          <p class="dsb-alert-text-medium text-yellow-700 mt-1">{{ $t('businessDecl.noCalcsHint') }}</p>
-        </div>
-      </div>
+      <AppAlert v-else variant="warning" :title="$t('businessDecl.noCalcsForYear')">
+        {{ $t('businessDecl.noCalcsHint') }}
+      </AppAlert>
     </div>
   </div>
 </template>
@@ -109,13 +90,5 @@ defineEmits<{
   font-size: 17px;
   font-weight: 600;
   color: #1e293b;
-}
-.dsb-alert-text {
-  font-size: 17px;
-  font-weight: 600;
-}
-.dsb-alert-text-medium {
-  font-size: 17px;
-  font-weight: 500;
 }
 </style>

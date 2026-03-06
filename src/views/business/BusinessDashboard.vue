@@ -7,6 +7,7 @@ import StatsCard from '../../components/dashboard/StatsCard.vue'
 import LineChart from '../../components/charts/LineChart.vue'
 import PieChart from '../../components/charts/PieChart.vue'
 import ProgressBar from '../../components/charts/ProgressBar.vue'
+import { AppPageHeader } from '../../components/ui'
 import { statsIcons } from '../../utils/menuIcons'
 import { useCalculationStore } from '../../stores/calculations'
 import { useAccountStore } from '../../stores/account'
@@ -110,10 +111,7 @@ onMounted(() => {
     :userName="account.myAccount?.company || ''"
     :menuItems="menuItems"
   >
-    <div class="content__header mb-8">
-      <h1 class="bd-page-title">{{ $t('businessDashboard.pageTitle') }}</h1>
-      <p class="bd-page-subtitle">{{ $t('businessDashboard.pageSubtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessDashboard.pageTitle')" :subtitle="$t('businessDashboard.pageSubtitle')" />
 
     <!-- Skeleton Loading -->
     <template v-if="isLoading">
@@ -282,19 +280,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.bd-page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-@media (min-width: 1024px) {
-  .bd-page-title { font-size: 34px; }
-}
-.bd-page-subtitle {
-  font-size: 18px;
-  color: #64748b;
-}
 .bd-card {
   background: white;
   border-radius: 16px;

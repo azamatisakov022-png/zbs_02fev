@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppPageHeader, AppAlert, AppCtaBanner } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { refundStore } from '../../stores/refunds'
@@ -47,51 +47,22 @@ const goToNewRefund = () => {
 
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
-    <div class="content__header mb-6">
-      <h1 class="bref-page-title">{{ $t('businessRefunds.pageTitle') }}</h1>
-      <p class="bref-page-subtitle">{{ $t('businessRefunds.pageSubtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessRefunds.pageTitle')" :subtitle="$t('businessRefunds.pageSubtitle')" />
 
-    <!-- Green CTA Banner -->
-    <div class="bref-cta-banner">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-      <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
-        <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h2 class="bref-banner-title font-bold mb-2">{{ $t('businessRefunds.bannerTitle') }}</h2>
-          <p class="bref-banner-desc text-white/80">{{ $t('businessRefunds.bannerDescription') }}</p>
-        </div>
-        <button
-          @click="goToNewRefund"
-          class="bref-cta-btn"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('businessRefunds.submitRefund') }}
-        </button>
-      </div>
-    </div>
+    <AppCtaBanner :title="$t('businessRefunds.bannerTitle')" :description="$t('businessRefunds.bannerDescription')" color="green" class="mb-6">
+      <template #icon>
+        <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+        </svg>
+      </template>
+      <template #action>
+        <AppButton variant="secondary" bg="white" color="#059669" font-size="16px" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'" :label="$t('businessRefunds.submitRefund')" @click="goToNewRefund" />
+      </template>
+    </AppCtaBanner>
 
-    <!-- Yellow Info Block -->
-    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-      <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="bref-info-title font-medium mb-1">{{ $t('businessRefunds.infoTitle') }}</p>
-          <p class="bref-text-secondary">{{ $t('businessRefunds.infoText') }}</p>
-        </div>
-      </div>
-    </div>
+    <AppAlert variant="warning" :title="$t('businessRefunds.infoTitle')" class="mb-6">
+      {{ $t('businessRefunds.infoText') }}
+    </AppAlert>
 
     <template v-if="isLoading">
       <div class="mb-6"><SkeletonLoader variant="card" /></div>
@@ -143,66 +114,6 @@ const goToNewRefund = () => {
 </template>
 
 <style scoped>
-.bref-page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-@media (min-width: 1024px) {
-  .bref-page-title { font-size: 34px; }
-}
-.bref-page-subtitle {
-  font-size: 18px;
-  color: #64748b;
-}
-.bref-cta-banner {
-  margin-bottom: 24px;
-  background: linear-gradient(to right, #10b981, #059669);
-  border-radius: 16px;
-  padding: 24px 32px;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-@media (min-width: 1024px) {
-  .bref-cta-banner { padding: 32px; }
-}
-.bref-cta-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: white;
-  color: #059669;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-@media (min-width: 1024px) {
-  .bref-cta-btn { padding: 16px 32px; }
-}
-.bref-cta-btn:hover { background: #ecfdf5; }
-.bref-banner-title {
-  font-size: 22px;
-}
-@media (min-width: 1024px) {
-  .bref-banner-title { font-size: 24px; }
-}
-.bref-banner-desc {
-  font-size: 16px;
-}
-.bref-info-title {
-  font-size: 18px;
-  color: #1e293b;
-}
-.bref-text-secondary {
-  font-size: 16px;
-  color: #64748b;
-}
 .bref-section-title {
   font-size: 22px;
   color: #1e293b;

@@ -4,7 +4,12 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { UTILIZATION_RATES_2025, getRateByGroup } from '../../data/rates'
+import { getRateByGroup } from '../../data/rates'
+import { AppTabs, AppPageHeader } from '../../components/ui'
+import NormsTable from './components/normatives/NormsTable.vue'
+import RatesTab from './components/normatives/RatesTab.vue'
+import CalculationExample from './components/normatives/CalculationExample.vue'
+import InfoCards from './components/normatives/InfoCards.vue'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
@@ -17,7 +22,11 @@ const years = [2025, 2026, 2027, 2028, 2029, 2030]
 
 const activeTab = ref<'norms' | 'rates'>('norms')
 
-// Unified 24-group norms data (ПКМ КР №322)
+const tabItems = computed(() => [
+  { key: 'norms', label: t('businessNorms.tabNorms') },
+  { key: 'rates', label: t('businessNorms.tabRates') },
+])
+
 const norms = [
   { id: 1,  category: 'Изделия из гофрированной бумаги/картона',                          rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
   { id: 2,  category: 'Изделия из негофрированной бумаги/картона',                         rates: { 2025: 20, 2026: 30, 2027: 50, 2028: 60, 2029: 70, 2030: 80 } },
@@ -45,7 +54,6 @@ const norms = [
   { id: 24, category: 'Упаковка стеклянная',                                                rates: { 2025: 10, 2026: 20, 2027: 40, 2028: 50, 2029: 70, 2030: 80 } },
 ]
 
-// Utility fee rates by 24 product groups (РОП)
 interface FeeRateGroup {
   groupLetter: string
   groupTitle: string
@@ -58,7 +66,6 @@ interface FeeRateGroup {
   }[]
 }
 
-// Ставки импортируются из единого источника data/rates.ts (ПКМ КР №730)
 const feeRateGroups = computed<FeeRateGroup[]>(() => [
   {
     groupLetter: 'А',
@@ -121,12 +128,6 @@ const feeRateGroups = computed<FeeRateGroup[]>(() => [
     ],
   },
 ])
-
-const getRateColorClass = (rate: number) => {
-  if (rate >= 60) return 'text-red-600'
-  if (rate >= 30) return 'text-orange-600'
-  return 'text-green-600'
-}
 </script>
 
 <template>
@@ -136,32 +137,27 @@ const getRateColorClass = (rate: number) => {
     :userName="accountStore.myAccount?.company || ''"
     :menuItems="menuItems"
   >
-    <div class="space-y-6">
-      <div>
-        <h1 class="bn-page-title font-bold text-gray-900">{{ $t('businessNorms.pageTitle') }}</h1>
-        <p class="bn-subtitle text-gray-600 mt-1">{{ $t('businessNorms.pageSubtitle') }}</p>
-      </div>
+    <div class="bn-page">
+      <AppPageHeader :title="$t('businessNorms.pageTitle')" :subtitle="$t('businessNorms.pageSubtitle')" subtitleSize="22px" subtitleColor="#4b5563" titleColor="#111827" />
 
-      <div class="bn-banner rounded-2xl p-6 text-white">
-        <div class="flex items-start gap-4">
-          <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+      <div class="bn-banner">
+        <div class="bn-banner-inner">
+          <div class="bn-banner-icon">
             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
           <div>
-            <h2 class="bn-section-title font-bold">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
-            <p class="bn-body-text text-white/80 mt-1 max-w-2xl">
-              {{ $t('businessNorms.bannerDesc') }}
-            </p>
-            <div class="flex items-center gap-4 mt-4">
-              <router-link to="/legislation" class="bn-banner-link-primary inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+            <h2 class="bn-banner-title">{{ $t('businessNorms.bannerTitle', { year: currentYear }) }}</h2>
+            <p class="bn-banner-desc">{{ $t('businessNorms.bannerDesc') }}</p>
+            <div class="bn-banner-links">
+              <router-link to="/legislation" class="bn-link-primary">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
                 {{ $t('businessNorms.legislation') }}
               </router-link>
-              <router-link to="/business/calculator" class="bn-banner-link-secondary inline-flex items-center gap-2 px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30 transition-colors">
+              <router-link to="/business/calculator" class="bn-link-secondary">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
@@ -172,395 +168,100 @@ const getRateColorClass = (rate: number) => {
         </div>
       </div>
 
-      <div class="bn-tabs">
-        <button
-          @click="activeTab = 'norms'"
-          :class="[
-            'bn-tab-btn px-5 py-2.5 rounded-lg font-medium transition-colors',
-            activeTab === 'norms'
-              ? 'bn-tab-btn--active text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          ]"
-        >
-          {{ $t('businessNorms.tabNorms') }}
-        </button>
-        <button
-          @click="activeTab = 'rates'"
-          :class="[
-            'bn-tab-btn px-5 py-2.5 rounded-lg font-medium transition-colors',
-            activeTab === 'rates'
-              ? 'bn-tab-btn--active text-white'
-              : 'text-gray-600 hover:bg-gray-100'
-          ]"
-        >
-          {{ $t('businessNorms.tabRates') }}
-        </button>
-      </div>
+      <AppTabs v-model="activeTab" :tabs="tabItems" activeBg="#0e888d" />
 
-      <div v-if="activeTab === 'norms'" class="bn-card">
-        <div class="bn-card__header">
-          <h3 class="bn-section-title font-semibold text-gray-900">{{ $t('businessNorms.normsTableTitle') }}</h3>
-          <p class="bn-body-text text-gray-500 mt-1">{{ $t('businessNorms.normsTableDesc') }}</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="bn-norms-table w-full">
-            <thead>
-              <tr class="bn-table-header text-white">
-                <th class="bn-tab-btn px-3 py-4 text-center font-semibold w-12">№</th>
-                <th class="bn-tab-btn px-4 py-4 text-left font-semibold">{{ $t('businessNorms.productCategory') }}</th>
-                <th
-                  v-for="year in years"
-                  :key="year"
-                  class="bn-tab-btn px-4 py-4 text-center font-semibold"
-                  :class="year === currentYear ? 'bn-year-current' : ''"
-                >
-                  {{ year }}
-                  <span v-if="year === currentYear" class="bn-year-label block font-normal opacity-80">{{ $t('businessNorms.current') }}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(item, index) in norms"
-                :key="item.id"
-                :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
-                class="bn-table-row transition-colors"
-              >
-                <td class="bn-tab-btn px-3 py-3 text-center text-gray-500 font-mono">{{ item.id }}</td>
-                <td class="bn-tab-btn px-4 py-3 font-medium text-gray-900">{{ item.category }}</td>
-                <td
-                  v-for="year in years"
-                  :key="year"
-                  class="px-4 py-3 text-center"
-                  :class="year === currentYear ? 'bn-cell-current font-bold' : ''"
-                >
-                  <span :class="getRateColorClass(item.rates[year])" class="bn-tab-btn font-semibold">
-                    {{ item.rates[year] }}%
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <NormsTable
+        v-if="activeTab === 'norms'"
+        :norms="norms"
+        :years="years"
+        :currentYear="currentYear"
+      />
 
-      <div v-if="activeTab === 'rates'" class="space-y-5">
-        <div class="bn-card">
-          <div class="bn-card__header">
-            <h3 class="bn-section-title font-semibold text-gray-900">{{ $t('businessNorms.ratesTableTitle') }}</h3>
-            <p class="bn-body-text text-gray-500 mt-1">{{ $t('businessNorms.ratesTableDesc') }}</p>
-          </div>
-        </div>
-
-        <div v-for="group in feeRateGroups" :key="group.groupLetter" class="bn-card">
-          <div class="bn-group-header px-6 py-3 flex items-center gap-3">
-            <span class="bn-group-badge inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold">{{ group.groupLetter }}</span>
-            <span class="bn-group-title font-semibold">{{ $t('businessNorms.groupLabel') }} {{ group.groupLetter }} — {{ group.groupTitle }}</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="bg-gray-50 border-b border-gray-200">
-                  <th class="bn-rates-th px-6 py-3 text-left font-semibold text-gray-500 uppercase tracking-wider">№</th>
-                  <th class="bn-rates-th px-6 py-3 text-left font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.productGroupCol') }}</th>
-                  <th class="bn-rates-th px-6 py-3 text-right font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.rateCol') }}</th>
-                  <th class="bn-rates-th px-6 py-3 text-center font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.unitCol') }}</th>
-                  <th class="bn-rates-th px-6 py-3 text-center font-semibold text-gray-500 uppercase tracking-wider">{{ $t('businessNorms.effectiveDateCol') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(item, index) in group.items"
-                  :key="item.id"
-                  :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
-                  class="bn-table-row transition-colors"
-                >
-                  <td class="bn-tab-btn px-6 py-3 text-gray-500 font-mono">{{ item.id }}</td>
-                  <td class="bn-tab-btn px-6 py-3 font-medium text-gray-900">{{ item.name }}</td>
-                  <td class="bn-rate-value px-6 py-3 font-bold text-right">{{ item.rate.toLocaleString() }}</td>
-                  <td class="bn-tab-btn px-6 py-3 text-gray-500 text-center">{{ item.unit }}</td>
-                  <td class="bn-tab-btn px-6 py-3 text-gray-500 text-center">{{ item.effectiveDate }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="bn-note">
-          <div class="bn-note__icon">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <p class="bn-subtitle font-medium text-gray-900">{{ $t('businessNorms.calcProcedure') }}</p>
-            <p class="bn-tab-btn text-gray-600 mt-1">
-              {{ $t('businessNorms.calcFormula') }}
-              {{ $t('businessNorms.useCalc1') }} <router-link to="/business/calculator" class="bn-accent-link font-medium hover:underline">{{ $t('businessNorms.feeCalculator') }}</router-link> {{ $t('businessNorms.useCalc2') }}
-            </p>
-          </div>
-        </div>
-      </div>
+      <RatesTab
+        v-if="activeTab === 'rates'"
+        :feeRateGroups="feeRateGroups"
+      />
 
       <template v-if="activeTab === 'norms'">
-        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-amber-200 bg-amber-100/50">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <h3 class="bn-section-title font-semibold text-gray-900">{{ $t('businessNorms.exampleTitle') }}</h3>
-                <p class="bn-tab-btn text-gray-600">{{ $t('businessNorms.exampleSubtitle') }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div class="space-y-3">
-                <h4 class="bn-subtitle font-semibold text-gray-900 mb-4">{{ $t('businessNorms.initialData') }}:</h4>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.category') }}:</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">{{ $t('businessNorms.exCategory') }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.batchMass') }}:</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">{{ $t('businessNorms.exMass') }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.calcYear') }}:</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">2026</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.operation') }}:</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">{{ $t('businessNorms.importOp') }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.rateLabel') }} (С<sub>ус</sub>):</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">{{ $t('businessNorms.exRate') }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-amber-200/50">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.recyclingNorm') }} (2026):</span>
-                  <span class="bn-tab-btn font-medium bn-accent-text">30%</span>
-                </div>
-                <div class="flex justify-between py-2">
-                  <span class="bn-tab-btn text-gray-600">{{ $t('businessNorms.coefficient') }} (Н<sub>пер</sub>):</span>
-                  <span class="bn-tab-btn font-medium text-gray-900">1 − 0,30 = <strong>0,70</strong></span>
-                </div>
-              </div>
-              <div class="bg-white rounded-xl p-5 border border-amber-200">
-                <h4 class="bn-subtitle font-semibold text-gray-900 mb-4">{{ $t('businessNorms.calculation') }}:</h4>
-                <div class="space-y-4">
-                  <div class="bn-tab-btn p-4 bg-gray-50 rounded-lg font-mono">
-                    <p class="bn-tab-btn text-gray-600 mb-2">{{ $t('businessNorms.formula') }}:</p>
-                    <p class="bn-tab-btn text-gray-900 font-semibold">У<sub>сб</sub> = С<sub>ус</sub> × М × Н<sub>пер</sub></p>
-                  </div>
-                  <div class="bn-calc-highlight bn-tab-btn p-4 rounded-lg font-mono">
-                    <p class="bn-tab-btn text-gray-600 mb-2">{{ $t('businessNorms.substituteValues') }}:</p>
-                    <p class="bn-tab-btn text-gray-900">У<sub>сб</sub> = 12 345 × 5 × 0,70</p>
-                  </div>
-                  <div class="bn-calc-result p-4 text-white rounded-lg text-center">
-                    <p class="bn-tab-btn opacity-80 mb-1">{{ $t('businessNorms.totalToPay') }}:</p>
-                    <p class="bn-total-amount font-bold">43 207,50 {{ $t('businessNorms.som') }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bn-note">
-          <div class="bn-note__icon">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <p class="bn-subtitle font-medium text-gray-900">{{ $t('businessNorms.nperFormulaTitle') }}</p>
-            <p class="bn-tab-btn text-gray-600 mt-1">
-              {{ $t('businessNorms.nperFormulaDesc') }}
-              <br/>
-              <span class="bn-tab-btn text-gray-500">{{ $t('businessNorms.nperExample') }}</span>
-            </p>
-          </div>
-        </div>
+        <CalculationExample />
       </template>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bn-info-card rounded-xl p-5">
-          <div class="bn-icon-box w-10 h-10 rounded-lg flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h4 class="bn-subtitle font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard1Title') }}</h4>
-          <p class="bn-tab-btn text-gray-600">
-            {{ $t('businessNorms.infoCard1Desc') }}
-          </p>
-        </div>
-
-        <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-5 border border-amber-200">
-          <div class="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h4 class="bn-subtitle font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard2Title') }}</h4>
-          <p class="bn-tab-btn text-gray-600">
-            {{ $t('businessNorms.infoCard2Desc') }}
-          </p>
-        </div>
-
-        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200">
-          <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mb-3">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h4 class="bn-subtitle font-semibold text-gray-900 mb-1">{{ $t('businessNorms.infoCard3Title') }}</h4>
-          <p class="bn-tab-btn text-gray-600">
-            {{ $t('businessNorms.infoCard3Desc') }}
-          </p>
-        </div>
-      </div>
+      <InfoCards />
     </div>
   </DashboardLayout>
 </template>
 
 <style scoped>
-.bn-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
+.bn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.bn-card__header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+.bn-banner {
+  background: linear-gradient(to right, #0e888d, #0b6d71);
+  border-radius: 16px;
+  padding: 24px;
+  color: #fff;
 }
-.bn-tabs {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  border: 1px solid #e5e7eb;
-  padding: 4px;
-  display: inline-flex;
-}
-.bn-note {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 12px;
-  padding: 16px;
+.bn-banner-inner {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 16px;
 }
-.bn-note__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #dbeafe;
+.bn-banner-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
-.bn-page-title {
-  font-size: 28px;
-}
-@media (min-width: 1024px) {
-  .bn-page-title {
-    font-size: 34px;
-  }
-}
-.bn-subtitle {
-  font-size: 22px;
-}
-.bn-section-title {
+.bn-banner-title {
   font-size: 26px;
+  font-weight: 700;
 }
-.bn-body-text {
+.bn-banner-desc {
   font-size: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 4px;
+  max-width: 42rem;
 }
-.bn-tab-btn {
+.bn-banner-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+.bn-link-primary {
   font-size: 21px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  background: #fff;
+  color: #0e888d;
+  transition: background-color 0.15s;
 }
-.bn-rates-th {
-  font-size: 19px;
+.bn-link-primary:hover {
+  background: #f3f4f6;
 }
-.bn-year-label {
-  font-size: 19px;
-}
-.bn-total-amount {
-  font-size: 24px;
-}
-.bn-banner {
-  background: linear-gradient(to right, #0e888d, #0b6d71);
-}
-.bn-banner-link-primary {
+.bn-link-secondary {
   font-size: 21px;
-  background: white;
-  color: #0e888d;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.15s;
 }
-.bn-banner-link-secondary {
-  font-size: 21px;
-}
-.bn-tab-btn--active {
-  background-color: #0e888d;
-}
-.bn-table-header {
-  background-color: #0e888d;
-}
-.bn-year-current {
-  background-color: #0b6d71;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
-}
-.bn-norms-table {
-  min-width: 700px;
-}
-.bn-table-row:hover {
-  background-color: rgba(14, 136, 141, 0.05);
-}
-.bn-cell-current {
-  background-color: rgba(14, 136, 141, 0.1);
-}
-.bn-group-header {
-  background-color: #e8f5f5;
-  border-bottom: 1px solid #d1e7e8;
-}
-.bn-group-badge {
-  background-color: #0e888d;
-  font-size: 20px;
-}
-.bn-group-title {
-  font-size: 22px;
-  color: #0e888d;
-}
-.bn-rate-value {
-  font-size: 21px;
-  color: #0e888d;
-}
-.bn-accent-link {
-  color: #0e888d;
-}
-.bn-accent-text {
-  color: #0e888d;
-}
-.bn-calc-highlight {
-  background-color: rgba(14, 136, 141, 0.1);
-}
-.bn-calc-result {
-  background-color: #0e888d;
-}
-.bn-icon-box {
-  background-color: #0e888d;
-}
-.bn-info-card {
-  background: linear-gradient(to bottom right, rgba(14, 136, 141, 0.1), rgba(14, 136, 141, 0.05));
-  border: 1px solid rgba(14, 136, 141, 0.2);
+.bn-link-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>

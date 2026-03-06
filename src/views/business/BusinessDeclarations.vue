@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppAlert, AppPageHeader, AppCtaBanner, AppActionMenu } from '../../components/ui'
 import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -113,9 +113,7 @@ const getRowClass = (row: Record<string, any>) => {
   }
 }
 
-const openMenuId = ref<number | null>(null)
-const toggleMenu = (id: number) => { openMenuId.value = openMenuId.value === id ? null : id }
-const closeMenu = () => { openMenuId.value = null }
+
 
 const handleDownloadPdf = (id: number) => {
   router.push({ path: '/business/declarations/' + id, query: { from: 'declarations', print: 'true' } })
@@ -137,47 +135,22 @@ const signDeclaration = (id: number) => {
     :userName="companyName"
     :menuItems="menuItems"
   >
-    <div class="content__header mb-6">
-      <h1 class="bdecl-page-title">{{ $t('businessDecl.title') }}</h1>
-      <p class="bdecl-page-subtitle">{{ $t('businessDecl.subtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessDecl.title')" :subtitle="$t('businessDecl.subtitle')" />
 
-    <div class="bdecl-cta-banner">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-      <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
-        <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h2 class="bdecl-cta-title font-bold mb-2">{{ $t('businessDecl.ctaTitle') }}</h2>
-          <p class="bdecl-cta-desc text-white/80">{{ $t('businessDecl.ctaDescription') }}</p>
-        </div>
-        <button
-          @click="startWizard"
-          class="bdecl-cta-btn"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('businessDecl.startFilling') }}
-        </button>
-      </div>
-    </div>
-
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-      <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-        <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <AppCtaBanner :title="$t('businessDecl.ctaTitle')" :description="$t('businessDecl.ctaDescription')" color="blue" class="mb-6">
+      <template #icon>
+        <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
-      </div>
-      <div>
-        <p class="bdecl-info-title font-semibold">{{ $t('businessDecl.autoFormTitle') }}</p>
-        <p class="bdecl-info-text font-medium">{{ $t('businessDecl.autoFormDescription') }}</p>
-      </div>
-    </div>
+      </template>
+      <template #action>
+        <AppButton variant="secondary" bg="white" color="#2563eb" font-size="16px" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'" :label="$t('businessDecl.startFilling')" @click="startWizard" />
+      </template>
+    </AppCtaBanner>
+
+    <AppAlert variant="info" :title="$t('businessDecl.autoFormTitle')" class="mb-6">
+      {{ $t('businessDecl.autoFormDescription') }}
+    </AppAlert>
 
     <div v-for="decl in storeDeclarations.filter(d => d.status === 'rejected' || d.status === 'revision')" :key="'banner-' + decl.id" class="mb-4">
       <div
@@ -274,19 +247,13 @@ const signDeclaration = (id: number) => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 {{ $t('businessDecl.view') }}
               </router-link>
-              <div class="act-more-wrap">
-                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
-                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
-                  <button class="act-dropdown__item" @click="handleDownloadPdf(row.id); closeMenu()">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    {{ $t('businessDecl.downloadPdf') }}
-                  </button>
-                  <button class="act-dropdown__item" @click="toastStore.show({ type: 'info', title: 'Excel', message: t('businessDecl.excelExportToast') }); closeMenu()">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    {{ $t('businessDecl.downloadExcel') }}
-                  </button>
-                </div>
-              </div>
+              <AppActionMenu
+                :items="[
+                  { label: $t('businessDecl.downloadPdf'), icon: '<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>' },
+                  { label: $t('businessDecl.downloadExcel'), icon: '<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>' }
+                ]"
+                @select="$event === 0 ? handleDownloadPdf(row.id) : toastStore.show({ type: 'info', title: 'Excel', message: t('businessDecl.excelExportToast') })"
+              />
             </template>
             <template v-else-if="row.status === 'rejected'">
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--filled act-btn--orange">
@@ -307,21 +274,15 @@ const signDeclaration = (id: number) => {
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 {{ $t('businessDecl.view') }}
               </router-link>
-              <div class="act-more-wrap">
-                <button class="act-more" @click.stop="toggleMenu(row.id)">&#x22EF;</button>
-                <div v-if="openMenuId === row.id" class="act-dropdown" @mouseleave="closeMenu">
-                  <button class="act-dropdown__item act-dropdown__item--red" @click="deleteDeclaration(row.id); closeMenu()">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    {{ $t('businessDecl.deleteLabel') }}
-                  </button>
-                </div>
-              </div>
+              <AppActionMenu
+                :items="[
+                  { label: $t('businessDecl.deleteLabel'), icon: '<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16&quot; /></svg>', danger: true }
+                ]"
+                @select="deleteDeclaration(row.id)"
+              />
             </template>
             <template v-else-if="row.status === 'Автосформирована'">
-              <button @click="signDeclaration(row.id)" class="act-btn act-btn--filled act-btn--green">
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {{ $t('businessDecl.sign') }}
-              </button>
+              <AppButton variant="success" size="sm" :icon="'<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z&quot; /></svg>'" :label="$t('businessDecl.sign')" @click="signDeclaration(row.id)" />
               <router-link :to="{ path: '/business/declarations/' + row.id, query: { from: 'declarations' } }" class="act-btn act-btn--outline">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                 {{ $t('businessDecl.view') }}
@@ -341,49 +302,6 @@ const signDeclaration = (id: number) => {
 </template>
 
 <style scoped>
-.bdecl-page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-@media (min-width: 1024px) {
-  .bdecl-page-title { font-size: 34px; }
-}
-.bdecl-page-subtitle {
-  font-size: 18px;
-  color: #1e293b;
-}
-.bdecl-cta-banner {
-  margin-bottom: 24px;
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
-  border-radius: 16px;
-  padding: 24px 32px;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-@media (min-width: 1024px) {
-  .bdecl-cta-banner { padding: 32px; }
-}
-.bdecl-cta-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: white;
-  color: #2563eb;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  flex-shrink: 0;
-  transition: background 0.15s;
-}
-@media (min-width: 1024px) {
-  .bdecl-cta-btn { padding: 16px 32px; }
-}
-.bdecl-cta-btn:hover { background: #eff6ff; }
 .bdecl-filter-card {
   background: white;
   border-radius: 16px;
@@ -430,42 +348,7 @@ const signDeclaration = (id: number) => {
   background: #f8fafc; border-color: #cbd5e1; color: #1e293b;
 }
 
-.act-more-wrap { position: relative; }
-.act-more {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 30px; border: 1px solid #e5e7eb; border-radius: 6px;
-  background: transparent; color: #9ca3af; font-size: 16px; font-weight: bold;
-  cursor: pointer; letter-spacing: 2px; transition: all 0.15s;
-}
-.act-more:hover { background: #f3f4f6; color: #6b7280; border-color: #d1d5db; }
-.act-dropdown {
-  position: absolute; right: 0; top: calc(100% + 4px); z-index: 10;
-  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
-  min-width: 170px; padding: 4px; overflow: hidden;
-}
-.act-dropdown__item {
-  display: flex; align-items: center; gap: 8px; width: 100%;
-  padding: 8px 12px; font-size: 15px; font-weight: 400; color: #374151;
-  background: transparent; border: none; border-radius: 6px; cursor: pointer;
-  transition: background 0.1s; white-space: nowrap;
-}
-.act-dropdown__item:hover { background: #f3f4f6; }
-.act-dropdown__item--red { color: #ef4444; }
-.act-dropdown__item--red:hover { background: #fef2f2; }
 
-.bdecl-cta-title {
-  font-size: 24px;
-}
-@media (min-width: 1024px) {
-  .bdecl-cta-title { font-size: 27px; }
-}
-.bdecl-cta-desc {
-  font-size: 16px;
-}
-@media (min-width: 1024px) {
-  .bdecl-cta-desc { font-size: 18px; }
-}
 .bdecl-info-title {
   font-size: 20px;
   color: #1e293b;
