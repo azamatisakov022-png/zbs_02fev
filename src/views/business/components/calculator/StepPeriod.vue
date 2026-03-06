@@ -4,6 +4,7 @@ import type { SelectOption } from '@/types/select'
 import Select from '@/components/ui/general/Select.vue'
 import DatePicker from '@/components/ui/general/DatePicker.vue'
 import AppInput from '@/components/ui/AppInput.vue'
+import { AppAlert } from '@/components/ui'
 
 defineProps<{
   payerType: PayerType
@@ -89,17 +90,9 @@ const emit = defineEmits<{
         </div>
       </div>
 
-      <div v-if="payerType === 'producer' && producerDeadlineFormatted" class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
-          <p class="sp-text font-medium text-slate-600">{{ $t('businessCalc.deadlineBefore', { date: producerDeadlineFormatted }) }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="payerType === 'producer' && producerDeadlineFormatted" variant="info" :title="$t('businessCalc.deadlineTitle')">
+        {{ $t('businessCalc.deadlineBefore', { date: producerDeadlineFormatted }) }}
+      </AppAlert>
 
       <div v-if="payerType === 'importer'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -123,29 +116,13 @@ const emit = defineEmits<{
         </div>
       </div>
 
-      <div v-if="payerType === 'importer' && importerDeadlineFormatted && !importerDeadlinePassed" class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.deadlineTitle') }}</p>
-          <p class="sp-text font-medium text-slate-600">{{ $t('businessCalc.deadlineBeforeWithDays', { date: importerDeadlineFormatted, days: importerDaysLeft }) }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="payerType === 'importer' && importerDeadlineFormatted && !importerDeadlinePassed" variant="info" :title="$t('businessCalc.deadlineTitle')">
+        {{ $t('businessCalc.deadlineBeforeWithDays', { date: importerDeadlineFormatted, days: importerDaysLeft }) }}
+      </AppAlert>
 
-      <div v-if="payerType === 'importer' && importerDeadlineFormatted && importerDeadlinePassed" class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        </div>
-        <div>
-          <p class="sp-text font-semibold text-red-800">{{ $t('businessCalc.deadlineExpired') }}</p>
-          <p class="sp-text font-medium text-red-600">{{ $t('businessCalc.deadlineWas', { date: importerDeadlineFormatted }) }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="payerType === 'importer' && importerDeadlineFormatted && importerDeadlinePassed" variant="error" :title="$t('businessCalc.deadlineExpired')">
+        {{ $t('businessCalc.deadlineWas', { date: importerDeadlineFormatted }) }}
+      </AppAlert>
 
       <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
         <div class="flex items-center gap-2 mb-4">
@@ -175,17 +152,9 @@ const emit = defineEmits<{
         </div>
       </div>
 
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="sp-text font-semibold text-slate-800">{{ $t('businessCalc.paymentTermsTitle') }}</p>
-          <p class="sp-text font-medium text-slate-600" v-html="$t('businessCalc.paymentTermsText')"></p>
-        </div>
-      </div>
+      <AppAlert variant="warning" :title="$t('businessCalc.paymentTermsTitle')">
+        <span v-html="$t('businessCalc.paymentTermsText')"></span>
+      </AppAlert>
     </div>
   </div>
 </template>

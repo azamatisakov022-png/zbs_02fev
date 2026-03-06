@@ -6,6 +6,7 @@ import { tnvedNotes, tnvedNotesSource } from '@/data/tnved-notes'
 import { PAYMENT_ACCOUNTS } from '@/config/payment-accounts'
 import TnvedCode from '@/components/TnvedCode.vue'
 import PenaltyInfo from '@/components/PenaltyInfo.vue'
+import { AppButton, AppTooltip } from '@/components/ui'
 import { ref } from 'vue'
 
 const groupStore = useProductGroupStore()
@@ -171,12 +172,11 @@ const tnvedNotesOpen = ref(false)
     <div class="g13-container mt-4">
       <div class="g13-header">
         <h3 class="g13-title">{{ $t('businessCalc.g13Title') }}</h3>
-        <div class="g13-tooltip-wrap">
+        <AppTooltip :text="$t('businessCalc.g13Tooltip')">
           <svg class="w-4 h-4 text-slate-400 cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <div class="g13-tooltip">{{ $t('businessCalc.g13Tooltip') }}</div>
-        </div>
+        </AppTooltip>
       </div>
       <div class="g13-cards">
         <div class="g13-card">
@@ -220,14 +220,21 @@ const tnvedNotesOpen = ref(false)
             <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.purposeLabel') }}</span><span class="pay-card__val text-xs">{{ feePurpose }}</span></div>
           </div>
           <div class="pay-card__actions">
-            <button @click="emit('copy-requisites', 'utilization_fee')" class="pay-card__btn">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-              {{ $t('payment.copyRequisites') }}
-            </button>
-            <button disabled class="pay-card__btn pay-card__btn--disabled" :title="$t('payment.receiptTooltip')">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              {{ $t('payment.downloadReceipt') }}
-            </button>
+            <AppButton
+              variant="outline"
+              size="sm"
+              @click="emit('copy-requisites', 'utilization_fee')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3&quot; /></svg>'"
+              :label="$t('payment.copyRequisites')"
+            />
+            <AppButton
+              variant="outline"
+              size="sm"
+              disabled
+              :title="$t('payment.receiptTooltip')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z&quot; /></svg>'"
+              :label="$t('payment.downloadReceipt')"
+            />
           </div>
         </div>
         <div v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="pay-card pay-card--penalty">
@@ -243,14 +250,21 @@ const tnvedNotesOpen = ref(false)
             <div class="pay-card__row"><span class="pay-card__key">{{ $t('payment.purposeLabel') }}</span><span class="pay-card__val text-xs">{{ penaltyPurpose }}</span></div>
           </div>
           <div class="pay-card__actions">
-            <button @click="emit('copy-requisites', 'penalty')" class="pay-card__btn">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-              {{ $t('payment.copyRequisites') }}
-            </button>
-            <button disabled class="pay-card__btn pay-card__btn--disabled" :title="$t('payment.receiptTooltip')">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              {{ $t('payment.downloadReceipt') }}
-            </button>
+            <AppButton
+              variant="outline"
+              size="sm"
+              @click="emit('copy-requisites', 'penalty')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3&quot; /></svg>'"
+              :label="$t('payment.copyRequisites')"
+            />
+            <AppButton
+              variant="outline"
+              size="sm"
+              disabled
+              :title="$t('payment.receiptTooltip')"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z&quot; /></svg>'"
+              :label="$t('payment.downloadReceipt')"
+            />
           </div>
         </div>
       </div>
@@ -290,15 +304,6 @@ const tnvedNotesOpen = ref(false)
 .g13-container { background: var(--color-slate-50); border: 1px solid var(--color-slate-200); border-radius: var(--radius-lg); padding: 20px; }
 .g13-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .g13-title { font-size: 22px; font-weight: 600; color: var(--color-slate-800); }
-.g13-tooltip-wrap { position: relative; }
-.g13-tooltip-wrap:hover .g13-tooltip { opacity: 1; visibility: visible; }
-.g13-tooltip {
-  position: absolute; left: 50%; transform: translateX(-50%);
-  bottom: calc(100% + 8px); width: 320px; padding: 10px 14px;
-  background: var(--color-slate-800); color: var(--color-slate-100); font-size: 12px; line-height: 1.5;
-  border-radius: 8px; opacity: 0; visibility: hidden;
-  transition: all var(--transition-fast); z-index: 50; pointer-events: none;
-}
 .g13-cards { display: flex; gap: 16px; }
 @media (max-width: 768px) { .g13-cards { flex-direction: column; } }
 .g13-card {
@@ -334,15 +339,6 @@ const tnvedNotesOpen = ref(false)
 .pay-card__key { color: var(--color-slate-600); flex-shrink: 0; }
 .pay-card__val { text-align: right; word-break: break-all; }
 .pay-card__actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.pay-card__btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; font-size: 16px; font-weight: 600;
-  border-radius: 8px; border: 1px solid var(--color-slate-200); background: #fff;
-  color: var(--color-slate-800); cursor: pointer; transition: background var(--transition-fast);
-}
-.pay-card__btn:hover { background: var(--color-slate-100); }
-.pay-card__btn--disabled { opacity: 0.5; cursor: not-allowed; }
-.pay-card__btn--disabled:hover { background: #fff; }
 
 .summary-block { background: var(--color-slate-800); color: #fff; border-radius: 12px; padding: 20px 24px; }
 .summary-block__title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }

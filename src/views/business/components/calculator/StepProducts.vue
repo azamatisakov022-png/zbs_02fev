@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton } from '@/components/ui'
 import type { CalculatorProductItem, PayerType } from '@/types/calculator'
 import ProductItemCard from './ProductItemCard.vue'
 
@@ -30,12 +31,13 @@ const emit = defineEmits<{
   <div class="p-6 lg:p-8">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <h2 class="spr-section-title font-semibold text-slate-800">{{ $t('businessCalc.productsTitle') }}</h2>
-      <button @click="emit('import-declaration')" class="flex items-center gap-2 spr-text font-semibold text-amber-500 hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-        </svg>
-        {{ $t('businessCalc.importFromDeclaration') }}
-      </button>
+      <AppButton
+        variant="ghost"
+        @click="emit('import-declaration')"
+        color="#f59e0b"
+        :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12&quot; /></svg>'"
+        :label="$t('businessCalc.importFromDeclaration')"
+      />
     </div>
 
     <p v-if="formSubmitted && formErrors.products" class="vld-error mb-4" data-validation-error>
@@ -60,12 +62,14 @@ const emit = defineEmits<{
       />
     </div>
 
-    <button @click="emit('add-item')" class="mt-4 flex items-center gap-2 spr-text font-semibold text-amber-500 hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      {{ $t('businessCalc.addPosition') }}
-    </button>
+    <AppButton
+      variant="ghost"
+      @click="emit('add-item')"
+      color="#f59e0b"
+      class="mt-4"
+      :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'"
+      :label="$t('businessCalc.addPosition')"
+    />
 
     <div class="cf-total-banner mt-8">
       <div class="cf-total-banner__grid">

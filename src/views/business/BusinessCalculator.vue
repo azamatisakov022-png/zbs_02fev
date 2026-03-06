@@ -13,6 +13,7 @@ import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import { AppButton, AppPageHeader, AppCtaBanner, AppStatCard } from '../../components/ui'
 import CalculationHistory from './components/calculator/CalculationHistory.vue'
 import type { ConfirmDialogState } from '@/types/calculator'
 import { toastStore } from '../../stores/toast'         
@@ -100,32 +101,18 @@ const lastCalcPeriod = computed(() => {
     </Teleport>
 
     <template v-if="viewMode === 'list'">
-      <div class="content__header mb-6">
-        <h1 class="page-title">{{ $t('businessCalc.pageTitle') }}</h1>
-        <p class="page-subtitle">{{ $t('businessCalc.pageSubtitle') }}</p>
-      </div>
+      <AppPageHeader :title="$t('businessCalc.pageTitle')" :subtitle="$t('businessCalc.pageSubtitle')" />
 
-      <div class="cta-banner">
-        <div class="cta-banner__circle cta-banner__circle--top"></div>
-        <div class="cta-banner__circle cta-banner__circle--bottom"></div>
-        <div class="cta-banner__content">
-          <div class="cta-banner__icon">
-            <svg class="w-8 h-8 lg:w-10 lg:h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div class="cta-banner__text">
-            <h2 class="cta-banner__title">{{ $t('businessCalc.bannerTitle') }}</h2>
-            <p class="cta-banner__desc">{{ $t('businessCalc.bannerDescription') }}</p>
-          </div>
-          <button @click="startWizard" class="cta-banner__btn">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            {{ $t('businessCalc.startCalc') }}
-          </button>
-        </div>
-      </div>
+      <AppCtaBanner :title="$t('businessCalc.bannerTitle')" :description="$t('businessCalc.bannerDescription')" color="amber" class="mb-6">
+        <template #icon>
+          <svg class="w-8 h-8 lg:w-10 lg:h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </template>
+        <template #action>
+          <AppButton variant="secondary" bg="white" color="#d97706" font-size="16px" @click="startWizard" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z&quot; /></svg>'" :label="$t('businessCalc.startCalc')" />
+        </template>
+      </AppCtaBanner>
 
       <div class="info-alert">
         <div class="info-alert__icon">
@@ -150,23 +137,11 @@ const lastCalcPeriod = computed(() => {
       </template>
 
       <template v-if="!isLoading">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <p class="stat-card__label">{{ $t('businessCalc.totalCalcs') }}</p>
-          <p class="stat-card__value">{{ totalCalcsCount }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">{{ $t('businessCalc.paidForYear') }}</p>
-          <p class="stat-card__value stat-card__value--green">{{ formatNum(totalPaidAmount, 0) }} {{ $t('businessCalc.som') }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">{{ $t('businessCalc.toPay') }}</p>
-          <p class="stat-card__value stat-card__value--amber">{{ formatNum(totalToPayAmount, 0) }} {{ $t('businessCalc.som') }}</p>
-        </div>
-        <div class="stat-card">
-          <p class="stat-card__label">{{ $t('businessCalc.lastCalc') }}</p>
-          <p class="stat-card__value stat-card__value--blue">{{ lastCalcPeriod }}</p>
-        </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <AppStatCard :label="$t('businessCalc.totalCalcs')" :value="String(totalCalcsCount)" />
+        <AppStatCard :label="$t('businessCalc.paidForYear')" :value="formatNum(totalPaidAmount, 0) + ' ' + $t('businessCalc.som')" color="green" />
+        <AppStatCard :label="$t('businessCalc.toPay')" :value="formatNum(totalToPayAmount, 0) + ' ' + $t('businessCalc.som')" color="amber" />
+        <AppStatCard :label="$t('businessCalc.lastCalc')" :value="lastCalcPeriod" color="blue" />
       </div>
 
       <CalculationHistory @new-calc="startWizard" />
@@ -247,106 +222,6 @@ const lastCalcPeriod = computed(() => {
   font-weight: 500;
 }
 
-/* ── Page header ── */
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-slate-800);
-  margin-bottom: 8px;
-}
-.page-subtitle {
-  font-size: 18px;
-  color: var(--color-slate-500);
-}
-@media (min-width: 1024px) {
-  .page-title { font-size: 34px; }
-}
-
-/* ── CTA banner ── */
-.cta-banner {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  margin-bottom: 24px;
-  color: #fff;
-}
-.cta-banner__circle {
-  position: absolute;
-  border-radius: 9999px;
-  background: rgba(255,255,255,0.1);
-}
-.cta-banner__circle--top {
-  width: 128px;
-  height: 128px;
-  top: -32px;
-  right: -32px;
-}
-.cta-banner__circle--bottom {
-  width: 80px;
-  height: 80px;
-  bottom: -16px;
-  left: 48px;
-}
-.cta-banner__content {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.cta-banner__icon {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  background: rgba(255,255,255,0.2);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-@media (min-width: 1024px) {
-  .cta-banner__icon { width: 56px; height: 56px; }
-}
-.cta-banner__text {
-  flex: 1;
-  min-width: 0;
-}
-.cta-banner__title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-}
-@media (min-width: 1024px) {
-  .cta-banner__title { font-size: 27px; }
-}
-.cta-banner__desc {
-  margin: 4px 0 0;
-  opacity: 0.9;
-  font-size: 18px;
-}
-.cta-banner__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  color: #d97706;
-  font-weight: 600;
-  font-size: 16px;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-  transition: all var(--transition-fast);
-}
-.cta-banner__btn:hover {
-  background: #fffbeb;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-}
 
 /* ── Info alert ── */
 .info-alert {
@@ -393,41 +268,6 @@ const lastCalcPeriod = computed(() => {
 .info-alert__link:hover {
   color: #92400e;
 }
-
-/* ── Stats grid ── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-@media (min-width: 640px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1024px) {
-  .stats-grid { grid-template-columns: repeat(4, 1fr); }
-}
-.stat-card {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--color-slate-200);
-}
-.stat-card__label {
-  font-size: 16px;
-  color: var(--color-slate-500);
-  margin: 0 0 4px;
-}
-.stat-card__value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-slate-800);
-  margin: 0;
-}
-.stat-card__value--green { color: #16a34a; }
-.stat-card__value--amber { color: #d97706; }
-.stat-card__value--blue { color: #2563eb; }
 
 /* ── Rates section ── */
 .rates-section {

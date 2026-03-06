@@ -34,6 +34,7 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
+import { AppButton, AppCard, AppInput, AppAlert, AppTooltip } from '../../components/ui'
 import CalculationTimeline from '../../components/CalculationTimeline.vue'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -517,20 +518,18 @@ function submitPaymentConfirmation() {
       </div>
       <h2 class="cdv-heading-22 font-bold mb-2">{{ $t('calcDetail.notFound') }}</h2>
       <p class="cdv-text-18 cdv-text-muted mb-6">{{ $t('calcDetail.notFoundDesc') }}</p>
-      <button @click="goBack" class="btn-back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      <AppButton variant="back" @click="goBack">
         {{ $t('common.back') }}
-      </button>
+      </AppButton>
     </div>
 
     <template v-else>
       <div ref="printAreaRef">
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="btn-back mb-4 no-print">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        <AppButton variant="back" class="mb-4 no-print" @click="goBack">
           {{ $t('common.back') }}
-        </button>
+        </AppButton>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 class="cdv-page-title font-mono">{{ calc.number }}</h1>
           <span :class="getStatusClass(calc.status)" class="cdv-text-16">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
@@ -653,7 +652,7 @@ function submitPaymentConfirmation() {
                 </td>
                 <!-- Volume -->
                 <td class="px-5 py-3 text-right font-medium cdv-text-dark">
-                  <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.volume" @input="recalcItem(item)" class="edit-input text-right" />
+                  <AppInput v-if="isEditing" type="number" step="0.01" min="0" v-model="item.volume" @update:modelValue="recalcItem(item)" size="sm" hideLabel class="text-right" />
                   <template v-else>{{ formatNum(item.volume) }}</template>
                 </td>
                 <!-- Standard -->
@@ -662,12 +661,12 @@ function submitPaymentConfirmation() {
                 <td class="px-5 py-3 text-right cdv-text-muted">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '—' }}</td>
                 <!-- Transferred -->
                 <td class="px-5 py-3 text-right cdv-text-green">
-                  <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.transferredToRecycling" @input="recalcItem(item)" class="edit-input text-right" />
+                  <AppInput v-if="isEditing" type="number" step="0.01" min="0" v-model="item.transferredToRecycling" @update:modelValue="recalcItem(item)" size="sm" hideLabel class="text-right" />
                   <template v-else>{{ formatNum(item.transferredToRecycling || '0') }}</template>
                 </td>
                 <!-- Exported -->
                 <td class="px-5 py-3 text-right cdv-text-blue">
-                  <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.exportedFromKR" @input="recalcItem(item)" class="edit-input text-right" />
+                  <AppInput v-if="isEditing" type="number" step="0.01" min="0" v-model="item.exportedFromKR" @update:modelValue="recalcItem(item)" size="sm" hideLabel class="text-right" />
                   <template v-else>{{ formatNum(item.exportedFromKR || '0') }}</template>
                 </td>
                 <!-- Taxable -->
@@ -678,9 +677,9 @@ function submitPaymentConfirmation() {
                 <td class="px-5 py-3 text-right font-bold cdv-text-amber">{{ formatNum(item.amount, 0) }}</td>
                 <!-- Remove -->
                 <td v-if="isEditing" class="px-3 py-3 text-center">
-                  <button v-if="editItems.length > 1" @click="removeRow(index)" class="text-red-400 hover:text-red-600 transition-colors" :title="$t('calcDetail.deleteRow')">
+                  <AppButton v-if="editItems.length > 1" variant="icon-danger" size="sm" @click="removeRow(index)" :title="$t('calcDetail.deleteRow')">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                  </button>
+                  </AppButton>
                 </td>
               </tr>
             </tbody>
@@ -688,15 +687,15 @@ function submitPaymentConfirmation() {
         </div>
         <!-- Add row button -->
         <div v-if="isEditing" class="px-6 py-3 cdv-border-top cdv-bg-light">
-          <button @click="addRow" class="inline-flex items-center gap-2 cdv-text-16 text-blue-600 hover:text-blue-800 font-medium transition-colors">
+          <AppButton variant="ghost" color="#2563eb" @click="addRow">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             {{ $t('common.addRow') }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
       <!-- Documents: Edit mode upload -->
-      <div v-if="isEditing" class="bg-white rounded-xl shadow-sm cdv-border p-6 mb-6">
+      <AppCard v-if="isEditing" radius="sm" class="mb-6">
         <div class="flex items-center gap-3 mb-2">
           <div class="doc-section-icon">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
@@ -723,9 +722,9 @@ function submitPaymentConfirmation() {
               </div>
             </div>
             <Select :modelValue="doc.docType" :options="docTypeOptions" variant="compact" @change="(v: string | number | null) => changeDocType(doc, v as DocumentType)" />
-            <button @click="removeDocument(doc.id)" class="doc-file-row__delete" :title="$t('common.delete')">
+            <AppButton variant="icon-danger" size="sm" @click="removeDocument(doc.id)" :title="$t('common.delete')">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -746,10 +745,10 @@ function submitPaymentConfirmation() {
             <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden" @change="handleFileSelect" />
           </label>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Documents: View mode (read-only) -->
-      <div v-if="!isEditing && calc.documents && calc.documents.length > 0" class="bg-white rounded-xl shadow-sm cdv-border p-6 mb-6">
+      <AppCard v-if="!isEditing && calc.documents && calc.documents.length > 0" radius="sm" class="mb-6">
         <h2 class="cdv-section-title mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 cdv-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
           {{ $t('calcDetail.supportingDocs') }} ({{ calc.documents.length }})
@@ -767,7 +766,7 @@ function submitPaymentConfirmation() {
             </a>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Totals -->
       <div class="cdv-totals-section mb-6">
@@ -815,12 +814,11 @@ function submitPaymentConfirmation() {
       <div class="g13-container mb-6">
         <div class="g13-header">
           <h3 class="g13-title">{{ $t('calcDetail.g13Title') }}</h3>
-          <div class="g13-tooltip-wrap">
+          <AppTooltip :text="$t('calcDetail.g13Tooltip')">
             <svg class="w-4 h-4 cdv-text-light cursor-help" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div class="g13-tooltip">{{ $t('calcDetail.g13Tooltip') }}</div>
-          </div>
+          </AppTooltip>
         </div>
         <div class="g13-cards">
           <div class="g13-card">
@@ -844,18 +842,9 @@ function submitPaymentConfirmation() {
         </div>
       </div>
 
-      <!-- Parent rejection banner (for copies of rejected calculations) -->
-      <div v-if="parentCalc" class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
-        <div class="flex items-start gap-4">
-          <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 cdv-emoji-icon">
-            &#x26A0;&#xFE0F;
-          </div>
-          <div>
-            <h3 class="cdv-text-18 font-semibold text-amber-800 mb-1">{{ $t('calcDetail.repeatCalc', { number: parentCalc.number }) }}</h3>
-            <p v-if="parentCalc.rejectionReason" class="text-amber-700 cdv-text-16">{{ $t('calcDetail.rejectionReason') }}: {{ parentCalc.rejectionReason }}</p>
-          </div>
-        </div>
-      </div>
+      <AppAlert v-if="parentCalc" variant="warning" :title="$t('calcDetail.repeatCalc', { number: parentCalc.number })" class="mb-6">
+        <span v-if="parentCalc.rejectionReason">{{ $t('calcDetail.rejectionReason') }}: {{ parentCalc.rejectionReason }}</span>
+      </AppAlert>
 
       <!-- Rejection Comment -->
       <div v-if="calc.status === 'rejected' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
@@ -870,10 +859,10 @@ function submitPaymentConfirmation() {
               <span v-if="calc.rejectedAt"> &middot; {{ calc.rejectedAt }}</span>
             </p>
             <p class="cdv-text-18 text-red-700 mb-4">{{ calc.rejectionReason }}</p>
-            <button v-if="!isEditing" @click="startEditing" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg cdv-text-16 font-medium hover:bg-amber-600 transition-colors">
+            <AppButton v-if="!isEditing" variant="warning" @click="startEditing">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               {{ $t('calcDetail.fix') }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -887,10 +876,10 @@ function submitPaymentConfirmation() {
           <div class="flex-1">
             <h3 class="cdv-text-18 font-semibold text-red-800 mb-1">{{ $t('calcDetail.paymentRejected') }}</h3>
             <p class="cdv-text-18 text-red-700">{{ calc.paymentRejectionReason }}</p>
-            <button @click="openPayment" class="mt-3 inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white rounded-lg cdv-text-16 font-medium hover:bg-amber-600 transition-colors">
+            <AppButton variant="warning" class="mt-3" @click="openPayment">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
               {{ $t('calcDetail.confirmPaymentAgain') }}
-            </button>
+            </AppButton>
           </div>
         </div>
       </div>
@@ -933,14 +922,14 @@ function submitPaymentConfirmation() {
               </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-3">
-              <button @click="openPayment" class="cdv-btn-pay">
+              <AppButton variant="success" @click="openPayment">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 {{ $t('calcDetail.pay') }}
-              </button>
-              <button @click="mockAction(t('calcDetail.downloadingInvoice'))" class="cdv-btn-invoice">
+              </AppButton>
+              <AppButton variant="outline" @click="mockAction(t('calcDetail.downloadingInvoice'))">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 {{ $t('calcDetail.downloadInvoice') }}
-              </button>
+              </AppButton>
             </div>
           </div>
         </div>
@@ -995,116 +984,115 @@ function submitPaymentConfirmation() {
       <div class="cdv-action-bar sticky bottom-0 bg-white -mx-4 lg:-mx-8 px-4 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
         <!-- Edit mode buttons -->
         <template v-if="isEditing">
-          <button @click="cancelEditing" class="btn-action btn-action-ghost cdv-text-16">
+          <AppButton variant="outline" @click="cancelEditing">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             {{ $t('common.cancel') }}
-          </button>
+          </AppButton>
           <div class="flex flex-wrap items-center gap-2">
-            <button @click="saveAsDraft" class="btn-action btn-action-secondary cdv-text-16">
+            <AppButton variant="outline" @click="saveAsDraft">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
               {{ calc?.status === 'draft' ? $t('common.saveDraft') : $t('common.saveChanges') }}
-            </button>
-            <button @click="saveAndSubmit" class="btn-action btn-action-primary cdv-text-16" style="background: #10b981; border-color: #10b981;">
+            </AppButton>
+            <AppButton variant="success" @click="saveAndSubmit">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
               {{ calc?.status === 'draft' ? $t('calcDetail.submitForReview') : $t('calcDetail.submitChanges') }}
-            </button>
+            </AppButton>
           </div>
         </template>
 
         <!-- View mode buttons -->
         <template v-else>
-          <button @click="goBack" class="btn-back">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          <AppButton variant="back" @click="goBack">
             {{ $t('common.back') }}
-          </button>
+          </AppButton>
 
           <div class="flex flex-wrap items-center gap-2">
             <!-- Draft actions -->
             <template v-if="calc.status === 'draft'">
-              <button @click="startEditing" class="btn-action btn-action-primary cdv-text-16">
+              <AppButton variant="primary" bg="#f59e0b" @click="startEditing">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 {{ $t('common.edit') }}
-              </button>
-              <button @click="showDeleteConfirm = true" class="btn-action btn-action-danger cdv-text-16">
+              </AppButton>
+              <AppButton variant="danger" @click="showDeleteConfirm = true">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 {{ $t('common.delete') }}
-              </button>
-              <button @click="calcStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })" class="btn-action btn-action-primary cdv-text-16" style="background: #10b981; border-color: #10b981;">
+              </AppButton>
+              <AppButton variant="success" @click="calcStore.submitForReview(calc.id); toastStore.show({ type: 'success', title: t('calcDetail.calcSubmitted') })">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
                 {{ $t('calcDetail.submitForReview') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- under_review actions -->
             <template v-if="calc.status === 'under_review'">
-              <button @click="handleDownloadPdf()" class="btn-pdf">
+              <AppButton variant="danger" @click="handleDownloadPdf()">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ $t('common.downloadPdf') }}
-              </button>
-              <button @click="downloadExcel" class="btn-excel">
+              </AppButton>
+              <AppButton variant="success" @click="downloadExcel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 {{ $t('common.downloadExcel') }}
-              </button>
-              <button @click="mockAction(t('calcDetail.recallingCalc'))" class="btn-action btn-action-warning cdv-text-16">
+              </AppButton>
+              <AppButton variant="warning" @click="mockAction(t('calcDetail.recallingCalc'))">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                 {{ $t('calcDetail.recallCalc') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- revision actions -->
             <template v-if="calc.status === 'revision'">
-              <button @click="startEditing" class="btn-action btn-action-primary cdv-text-16" style="background: #f59e0b; border-color: #f59e0b;">
+              <AppButton variant="warning" @click="startEditing">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 {{ $t('calcDetail.editCalc') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- fee_paid / penalty_paid / completed status labels -->
             <template v-if="calc.status === 'fee_paid' || calc.status === 'penalty_paid'">
-              <button @click="goToPaymentPage" class="btn-action btn-action-primary cdv-text-16" style="background: #2563eb; border-color: #2563eb;">
+              <AppButton variant="primary" bg="#2563eb" @click="goToPaymentPage">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 {{ $t('workflow.goToPayment') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- approved actions -->
             <template v-if="calc.status === 'approved'">
-              <button @click="goToPaymentPage" class="btn-action btn-action-primary cdv-text-16" style="background: #10b981; border-color: #10b981;">
+              <AppButton variant="success" @click="goToPaymentPage">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 {{ $t('calcDetail.pay') }}
-              </button>
-              <button @click="handleDownloadPdf()" class="btn-pdf">
+              </AppButton>
+              <AppButton variant="danger" @click="handleDownloadPdf()">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ $t('common.downloadPdf') }}
-              </button>
-              <button @click="downloadExcel" class="btn-excel">
+              </AppButton>
+              <AppButton variant="success" @click="downloadExcel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 {{ $t('common.downloadExcel') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- rejected actions -->
             <template v-if="calc.status === 'rejected'">
-              <button @click="startEditing" class="btn-action cdv-text-16" style="background:#f59e0b; color:#fff; border:1px solid #f59e0b;">
+              <AppButton variant="warning" @click="startEditing">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                 {{ $t('calcDetail.fix') }}
-              </button>
+              </AppButton>
             </template>
 
             <!-- paid / payment_pending -->
             <template v-if="calc.status === 'paid' || calc.status === 'payment_pending'">
-              <button @click="handleDownloadPdf()" class="btn-pdf">
+              <AppButton variant="danger" @click="handleDownloadPdf()">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 {{ $t('common.downloadPdf') }}
-              </button>
-              <button @click="downloadExcel" class="btn-excel">
+              </AppButton>
+              <AppButton variant="success" @click="downloadExcel">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                 {{ $t('common.downloadExcel') }}
-              </button>
-              <button @click="handlePrint()" class="btn-print">
+              </AppButton>
+              <AppButton variant="primary" bg="#2563eb" @click="handlePrint()">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 {{ $t('common.print') }}
-              </button>
+              </AppButton>
             </template>
           </div>
         </template>
@@ -1118,9 +1106,9 @@ function submitPaymentConfirmation() {
         <div class="pay-modal">
           <div class="pay-modal__header">
             <h2 class="cdv-modal-title">{{ $t('calcDetail.paymentModalTitle', { number: calc?.number }) }}</h2>
-            <button @click="closePayment" class="pay-modal__close">
+            <AppButton variant="icon-only" size="sm" @click="closePayment">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+            </AppButton>
           </div>
 
           <div class="pay-modal__amount">
@@ -1159,23 +1147,44 @@ function submitPaymentConfirmation() {
 
             <div class="space-y-4 mt-5">
               <div>
-                <label class="pay-label">{{ $t('calcDetail.paymentOrderNum') }} *</label>
-                <input v-model="paymentForm.paymentOrderNumber" type="text" :placeholder="$t('calcDetail.paymentOrderPlaceholder')" class="pay-input" />
+                <AppInput
+                  v-model="paymentForm.paymentOrderNumber"
+                  :label="$t('calcDetail.paymentOrderNum') + ' *'"
+                  :placeholder="$t('calcDetail.paymentOrderPlaceholder')"
+                  size="sm"
+                />
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="pay-label">{{ $t('calcDetail.paymentDateLabel') }} *</label>
-                  <input v-model="paymentForm.paymentDate" type="text" :placeholder="$t('calcDetail.datePlaceholder')" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
+                  <AppInput
+                    v-model="paymentForm.paymentDate"
+                    type="date"
+                    :label="$t('calcDetail.paymentDateLabel') + ' *'"
+                    :placeholder="$t('calcDetail.datePlaceholder')"
+                    min="2020-01-01"
+                    :max="`${new Date().getFullYear() + 1}-12-31`"
+                    size="sm"
+                  />
                 </div>
                 <div>
-                  <label class="pay-label">{{ $t('calcDetail.payerBank') }} *</label>
-                  <input v-model="paymentForm.payerBank" type="text" :placeholder="$t('calcDetail.payerBankPlaceholder')" class="pay-input" />
+                  <AppInput
+                    v-model="paymentForm.payerBank"
+                    :label="$t('calcDetail.payerBank') + ' *'"
+                    :placeholder="$t('calcDetail.payerBankPlaceholder')"
+                    size="sm"
+                  />
                 </div>
               </div>
               <div>
-                <label class="pay-label">{{ $t('calcDetail.transferAmountLabel') }} *</label>
-                <input v-model="paymentForm.transferAmount" @input="validatePaymentAmount" type="number" :placeholder="String(calc?.totalAmount || '')" class="pay-input" :class="{ 'pay-input--error': paymentAmountError }" />
-                <p v-if="paymentAmountError" class="cdv-text-14 text-red-600 mt-1">{{ paymentAmountError }}</p>
+                <AppInput
+                  v-model="paymentForm.transferAmount"
+                  type="number"
+                  :label="$t('calcDetail.transferAmountLabel') + ' *'"
+                  :placeholder="String(calc?.totalAmount || '')"
+                  :error="paymentAmountError || ''"
+                  @update:modelValue="validatePaymentAmount"
+                  size="sm"
+                />
               </div>
               <div>
                 <label class="pay-label">{{ $t('calcDetail.paymentScanLabel') }} *</label>
@@ -1202,22 +1211,28 @@ function submitPaymentConfirmation() {
                     </div>
                     <span class="cdv-text-16 cdv-text-dark font-medium truncate">{{ paymentFile.name }}</span>
                   </div>
-                  <button @click="paymentFile = null" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0">
+                  <AppButton variant="icon-danger" size="sm" @click="paymentFile = null">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                  </button>
+                  </AppButton>
                 </div>
               </div>
               <div>
-                <label class="pay-label">{{ $t('calcDetail.comment') }}</label>
-                <textarea v-model="paymentForm.comment" rows="2" :placeholder="$t('calcDetail.optional')" class="pay-input"></textarea>
+                <AppInput
+                  v-model="paymentForm.comment"
+                  type="textarea"
+                  :rows="2"
+                  :label="$t('calcDetail.comment')"
+                  :placeholder="$t('calcDetail.optional')"
+                  size="sm"
+                />
               </div>
             </div>
 
             <div class="flex justify-end gap-3 mt-6 pt-5 cdv-border-top">
-              <button @click="closePayment" class="cdv-btn-cancel">{{ $t('common.cancel') }}</button>
-              <button @click="submitPaymentConfirmation" :disabled="!canSubmitPayment" class="cdv-btn-submit">
+              <AppButton variant="outline" @click="closePayment">{{ $t('common.cancel') }}</AppButton>
+              <AppButton variant="success" :disabled="!canSubmitPayment" @click="submitPaymentConfirmation">
                 {{ $t('calcDetail.submitForReview') }}
-              </button>
+              </AppButton>
             </div>
           </div>
 
@@ -1269,76 +1284,6 @@ function submitPaymentConfirmation() {
   overflow: hidden;
 }
 
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: transparent;
-  transition: all 0.15s;
-}
-.btn-back:hover {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #9ca3af;
-}
-.btn-pdf,
-.btn-print {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-pdf {
-  background: #DC2626;
-}
-.btn-pdf:hover {
-  background: #B91C1C;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-}
-
-.btn-excel {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  background: #059669;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.btn-excel:hover {
-  background: #047857;
-  box-shadow: 0 3px 10px rgba(5,150,105,0.3);
-}
-
-.btn-print {
-  background: #2563EB;
-}
-.btn-print:hover {
-  background: #1D4ED8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
 
 /* Графа 13 styles */
 .g13-container {
@@ -1357,31 +1302,6 @@ function submitPaymentConfirmation() {
   font-size: 16px;
   font-weight: 600;
   color: #475569;
-}
-.g13-tooltip-wrap {
-  position: relative;
-}
-.g13-tooltip-wrap:hover .g13-tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-.g13-tooltip {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(100% + 8px);
-  width: 320px;
-  padding: 10px 14px;
-  background: #1e293b;
-  color: #f1f5f9;
-  font-size: 16px;
-  line-height: 1.5;
-  border-radius: 8px;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.15s;
-  z-index: 50;
-  pointer-events: none;
 }
 .g13-cards {
   display: flex;
@@ -1609,17 +1529,6 @@ function submitPaymentConfirmation() {
   font-size: 14px;
   color: #94a3b8;
 }
-.doc-file-row__delete {
-  flex-shrink: 0;
-  color: #EF4444;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.doc-file-row__delete:hover {
-  background: #FEE2E2;
-}
 .doc-file-row__download {
   flex-shrink: 0;
   color: #3B82F6;
@@ -1698,16 +1607,6 @@ function submitPaymentConfirmation() {
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid #E2E8F0;
-}
-.pay-modal__close {
-  color: #94A3B8;
-  padding: 4px;
-  border-radius: 8px;
-  transition: all 0.15s;
-}
-.pay-modal__close:hover {
-  background: #F1F5F9;
-  color: #475569;
 }
 .pay-modal__amount {
   padding: 16px 24px;
@@ -2012,63 +1911,5 @@ function submitPaymentConfirmation() {
 .cdv-action-bar {
   border-top: 1px solid #e2e8f0;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
-}
-.cdv-btn-pay {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: #10b981;
-  color: white;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  transition: background-color 0.15s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.cdv-btn-pay:hover {
-  background-color: #059669;
-}
-.cdv-btn-invoice {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border: 1px solid #86efac;
-  color: #166534;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  transition: background-color 0.15s;
-}
-.cdv-btn-invoice:hover {
-  background-color: #f0fdf4;
-}
-.cdv-btn-cancel {
-  padding: 10px 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  color: #64748b;
-  font-size: 16px;
-  transition: background-color 0.15s;
-}
-.cdv-btn-cancel:hover {
-  background-color: #f8fafc;
-}
-.cdv-btn-submit {
-  padding: 10px 24px;
-  background-color: #10b981;
-  color: white;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 16px;
-  transition: background-color 0.15s;
-}
-.cdv-btn-submit:hover {
-  background-color: #059669;
-}
-.cdv-btn-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>

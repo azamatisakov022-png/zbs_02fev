@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton } from '@/components/ui'
 import type { CalculatorProductItem, PayerType } from '@/types/calculator'
 import type { ProductSubgroupDTO } from '@/types/product-group'
 import ProductGroupSelector from '@/components/ProductGroupSelector.vue'
@@ -80,11 +81,14 @@ const remaining = () => getRemaining(props.item)
   <div class="cf-card">
     <div class="flex items-center justify-between mb-4">
       <span class="pic-text font-semibold text-slate-800">{{ $t('businessCalc.positionN', { n: index + 1 }) }}</span>
-      <button v-if="canRemove" @click="emit('remove', item.id)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors" :title="$t('businessCalc.deletePosition')">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
+      <AppButton
+        v-if="canRemove"
+        variant="icon-danger"
+        size="sm"
+        @click="emit('remove', item.id)"
+        :title="$t('businessCalc.deletePosition')"
+        :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16&quot; /></svg>'"
+      />
     </div>
 
     <div class="cf-info">
@@ -114,38 +118,42 @@ const remaining = () => getRemaining(props.item)
     <div class="cf-data" v-if="item.group">
       <div class="cf-data__header">{{ $t('businessCalc.calcDataHeader') }}</div>
 
-      <div class="cf-data__fields">
+      <div class="cf-data__grid">
+        <label class="cf-data__label">{{ $t('businessCalc.volumeLabel') }}</label>
+        <label class="cf-data__label">{{ $t('businessCalc.transferredLabel') }}</label>
+        <label class="cf-data__label">{{ $t('businessCalc.exportedLabel') }}</label>
+
         <div class="cf-data__field">
           <AppInput
-            :label="$t('businessCalc.volumeLabel')"
             type="number"
             :modelValue="item.volume"
             @update:modelValue="(v: string | number) => { item.volume = String(v); onVolumeInput() }"
             placeholder="0.00"
             :hint="$t('businessCalc.volumeHint')"
             :error="validationErrors[`product_${index}_volume`] || (formSubmitted && formErrors[`product_${index}_volume`] ? formErrors[`product_${index}_volume`] : '')"
+            hide-label
           />
         </div>
         <div class="cf-data__field">
           <AppInput
-            :label="$t('businessCalc.transferredLabel')"
             type="number"
             :modelValue="item.transferredToRecycling"
             @update:modelValue="(v: string | number) => { item.transferredToRecycling = String(v); onTransferredInput() }"
             placeholder="0.00"
             :hint="$t('businessCalc.transferredHint')"
             :error="volumeError() || (formSubmitted && formErrors[`product_${index}_transferred`] ? formErrors[`product_${index}_transferred`] : '')"
+            hide-label
           />
         </div>
         <div class="cf-data__field">
           <AppInput
-            :label="$t('businessCalc.exportedLabel')"
             type="number"
             :modelValue="item.exportedFromKR"
             @update:modelValue="(v: string | number) => { item.exportedFromKR = String(v); onExportedInput() }"
             placeholder="0.00"
             :hint="$t('businessCalc.exportedHint')"
             :error="volumeError() || (formSubmitted && formErrors[`product_${index}_exported`] ? formErrors[`product_${index}_exported`] : '')"
+            hide-label
           />
         </div>
       </div>
@@ -173,9 +181,13 @@ const remaining = () => getRemaining(props.item)
             <span class="fc-card__title">{{ item.recycledFile.name }}</span>
             <span class="fc-card__desc fc-card__desc--green">{{ $t('businessCalc.uploaded') }}</span>
           </div>
-          <button @click="removeRecycledFile" class="fc-card__remove" :title="$t('businessCalc.deleteFile')">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+          <AppButton
+            variant="icon-danger"
+            size="sm"
+            @click="removeRecycledFile"
+            :title="$t('businessCalc.deleteFile')"
+            :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+          />
         </div>
 
         <input :id="'exported-file-' + item.id" type="file" class="hidden" @change="handleExportedFileSelect($event)" />
@@ -200,9 +212,13 @@ const remaining = () => getRemaining(props.item)
             <span class="fc-card__title">{{ item.exportedFile.name }}</span>
             <span class="fc-card__desc fc-card__desc--green">{{ $t('businessCalc.uploaded') }}</span>
           </div>
-          <button @click="removeExportedFile" class="fc-card__remove" :title="$t('businessCalc.deleteFile')">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+          <AppButton
+            variant="icon-danger"
+            size="sm"
+            @click="removeExportedFile"
+            :title="$t('businessCalc.deleteFile')"
+            :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'"
+          />
         </div>
       </div>
 
@@ -343,13 +359,7 @@ const remaining = () => getRemaining(props.item)
 .fc-card:hover .fc-card__btn { background: #3B82F6; color: white; }
 .fc-card--warn .fc-card__btn { background: #FEF3C7; color: var(--color-calc-accent-dark); }
 .fc-card--warn:hover .fc-card__btn { background: var(--color-calc-accent); color: white; }
-.fc-card__remove {
-  display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px; border: none;
-  background: #FEE2E2; color: #EF4444; cursor: pointer;
-  transition: all 0.2s ease; flex-shrink: 0;
-}
-.fc-card__remove:hover { background: #EF4444; color: white; }
+
 
 .cf-card {
   background: white;
@@ -369,8 +379,19 @@ const remaining = () => getRemaining(props.item)
   font-size: 18px; font-weight: 700; color: var(--color-calc-accent);
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
 }
-.cf-data__fields { display: flex; gap: 16px; }
-.cf-data__field { flex: 1; min-width: 0; }
+.cf-data__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 16px;
+}
+.cf-data__label {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  align-self: end;
+  line-height: 1.3;
+}
+.cf-data__field { min-width: 0; }
 .cf-data__field :deep(.app-input__field) {
   padding: 12px 16px;
   font-size: 20px;
@@ -426,7 +447,13 @@ const remaining = () => getRemaining(props.item)
 .cf-data__summary-value { font-weight: 800; font-size: 24px; color: var(--color-calc-accent); }
 
 @media (max-width: 640px) {
-  .cf-data__fields { flex-direction: column; }
+  .cf-data__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px 0;
+  }
+  .cf-data__label { margin-top: 12px; }
+  .cf-data__label:first-child { margin-top: 0; }
   .cf-data__computed { grid-template-columns: repeat(2, 1fr); }
   .cf-data__summary { flex-direction: column; align-items: flex-start; }
   .fc-card { min-width: 0; padding: 12px 14px; gap: 10px; }
