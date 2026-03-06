@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
   background: var(--bg-field);
   border-radius: var(--radius-lg);
   padding: 12px 30px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: var(--font-medium);
   color: var(--text-main);
   cursor: pointer;
@@ -302,7 +302,7 @@ onBeforeUnmount(() => {
   width: 100%;
   background: var(--bg-field);
   border-radius: var(--radius-md);
-  padding: 16px 20px;
+  padding:  16px;
   font-size: 20px;
   font-weight: var(--font-regular);
   color: var(--text-main);
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
   padding: 5px 8px;
   border: 1px solid #CBD5E1;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 16px;
   background: #fff;
   color: #1e293b;
   cursor: pointer;
@@ -368,7 +368,7 @@ onBeforeUnmount(() => {
 .app-datepicker--sm.app-datepicker--default .app-datepicker-trigger,
 .app-datepicker--sm.app-datepicker--form .app-datepicker-trigger {
   padding: 8px 14px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .app-datepicker--disabled {
@@ -387,7 +387,7 @@ onBeforeUnmount(() => {
 
 .app-datepicker-error {
   margin-top: 6px;
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 600;
   color: #ef4444;
   display: flex;
@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 280px;
+  min-width: 320px;
   background: var(--white);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
@@ -447,7 +447,7 @@ onBeforeUnmount(() => {
 }
 
 .datepicker-month-year {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--text-main);
 }
@@ -456,8 +456,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 6px;
   cursor: pointer;
   color: var(--text-main);
@@ -477,7 +477,7 @@ onBeforeUnmount(() => {
 }
 
 .datepicker-weekday {
-  font-size: 11px;
+  font-size: 17px;
   font-weight: 600;
   color: #94a3b8;
   text-align: center;
@@ -495,11 +495,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   margin: 0 auto;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 19px;
   font-weight: var(--font-medium);
   color: var(--text-main);
   cursor: pointer;
@@ -549,16 +549,16 @@ onBeforeUnmount(() => {
 @media (max-width: 1024px) {
   .app-datepicker--default .app-datepicker-trigger {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .app-datepicker--form .app-datepicker-trigger {
     padding: 12px 16px;
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .app-datepicker-label {
-    font-size: 18px;
+    font-size: 15px;
   }
 }
 
@@ -571,13 +571,13 @@ onBeforeUnmount(() => {
     width: 100%;
     justify-content: space-between;
     padding: 10px 16px;
-    font-size: 16px;
+    font-size: 15px;
     border-radius: var(--radius-md);
   }
 
   .app-datepicker--form .app-datepicker-trigger {
     padding: 10px 14px;
-    font-size: 18px;
+    font-size: 15px;
     border-radius: var(--radius-sm);
   }
 
@@ -586,11 +586,11 @@ onBeforeUnmount(() => {
   }
 
   .app-datepicker-label {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .app-datepicker-dropdown {
-    min-width: 260px;
+    min-width: 300px;
   }
 }
 </style>
