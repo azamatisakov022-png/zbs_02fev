@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { AppButton, AppCard } from '../../components/ui'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -106,12 +107,12 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               {{ period.name }}
             </button>
           </div>
-          <button @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeAnalytics.exportNotReady') })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <AppButton variant="export" @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeAnalytics.exportNotReady') })">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {{ $t('common.export') }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -141,10 +142,8 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Chart Area -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.dynamics') }}</h3>
+        <AppCard class="lg:col-span-2" radius="sm" :title="$t('employeeAnalytics.dynamics')">
+          <template #header-actions>
             <div class="flex items-center gap-4 text-sm">
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-full bg-sky-500"></div>
@@ -155,9 +154,8 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
                 <span class="text-gray-600">{{ $t('employeeAnalytics.reports') }}</span>
               </div>
             </div>
-          </div>
+          </template>
 
-          <!-- Simple Bar Chart -->
           <div class="h-64 flex items-end gap-2">
             <div
               v-for="data in monthlyData"
@@ -179,13 +177,9 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               <span class="text-xs text-gray-500">{{ data.month }}</span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Waste by Category -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-6">{{ $t('employeeAnalytics.wasteStructure') }}</h3>
-
-          <!-- Donut chart placeholder -->
+        <AppCard radius="sm" :title="$t('employeeAnalytics.wasteStructure')">
           <div class="relative w-40 h-40 mx-auto mb-6">
             <svg class="w-full h-full transform -rotate-90">
               <circle cx="80" cy="80" r="60" stroke="#e5e7eb" stroke-width="20" fill="none" />
@@ -224,15 +218,11 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Regional Performance -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.regionMetrics') }}</h3>
-          </div>
+        <AppCard radius="sm" padding="none" :title="$t('employeeAnalytics.regionMetrics')" :headerBorder="true">
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50 border-b border-gray-200">
@@ -266,13 +256,9 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </tbody>
             </table>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Top Companies -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="font-semibold text-gray-900">{{ $t('employeeAnalytics.topPayers') }}</h3>
-          </div>
+        <AppCard radius="sm" padding="none" :title="$t('employeeAnalytics.topPayers')" :headerBorder="true">
           <div class="p-4">
             <div class="space-y-4">
               <div
@@ -297,12 +283,10 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
-      <!-- Compliance Overview -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="font-semibold text-gray-900 mb-6">{{ $t('employeeAnalytics.recyclingCompliance') }}</h3>
+      <AppCard radius="sm" :title="$t('employeeAnalytics.recyclingCompliance')">
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div class="text-center p-4 bg-gray-50 rounded-xl">
             <p class="text-sm text-gray-500 mb-2">{{ $t('employeeAnalytics.plastic') }}</p>
@@ -371,7 +355,7 @@ const maxMonthlyValue = Math.max(...monthlyData.value.map(d => d.declarations))
             <p class="text-xs text-gray-500 mt-2">{{ $t('employeeAnalytics.norm') }}:50%</p>
           </div>
         </div>
-      </div>
+      </AppCard>
     </div>
   </DashboardLayout>
 </template>

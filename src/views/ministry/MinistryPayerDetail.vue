@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import {
   payerStore,
@@ -176,30 +177,23 @@ function docTypeLabel(type: string): string {
     <!-- ==================== NOT FOUND STATE ==================== -->
     <div v-if="!payer" class="text-center py-20">
       <p class="text-xl text-gray-500 mb-4">{{ $t('ministryPayerDetail.notFound') }}</p>
-      <button
-        @click="router.push('/ministry/payers')"
-        class="btn-back"
-      >
+      <AppButton variant="back" @click="router.push('/ministry/payers')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         {{ $t('ministryPayerDetail.back') }}
-      </button>
+      </AppButton>
     </div>
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <template v-else>
       <!-- Back button -->
       <div class="mb-6">
-        <button
-          @click="router.push('/ministry/payers')"
-          class="btn-back"
-        >
+        <AppButton variant="back" @click="router.push('/ministry/payers')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           {{ $t('ministryPayerDetail.back') }}
-        </button>
+        </AppButton>
       </div>
 
-      <!-- ==================== HEADER CARD ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <!-- Avatar -->
           <div
@@ -233,11 +227,9 @@ function docTypeLabel(type: string): string {
             </span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- ==================== BLOCK 1: General Info ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.generalInfo') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryPayerDetail.generalInfo')">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
           <!-- Left column -->
           <div class="flex justify-between py-2 border-b border-gray-100">
@@ -311,7 +303,7 @@ function docTypeLabel(type: string): string {
             <span v-else class="text-sm text-gray-400">&mdash;</span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 2: Financial Summary ==================== -->
       <div class="mb-6">
@@ -372,9 +364,7 @@ function docTypeLabel(type: string): string {
         </div>
       </div>
 
-      <!-- ==================== BLOCK 3: Declarations History ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.declarationsHistory') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryPayerDetail.declarationsHistory')">
         <div v-if="payer.declarations.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
@@ -407,29 +397,19 @@ function docTypeLabel(type: string): string {
 
           <!-- Pagination -->
           <div v-if="totalDeclarationPages > 1" class="flex items-center justify-center gap-2 mt-4">
-            <button
-              @click="declarationsPage--"
-              :disabled="declarationsPage <= 1"
-              class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
+            <AppButton variant="secondary" size="sm" :disabled="declarationsPage <= 1" @click="declarationsPage--">
               {{ $t('ministryPayerDetail.paginationBack') }}
-            </button>
+            </AppButton>
             <span class="text-sm text-gray-500">{{ $t('ministryPayerDetail.paginationPage') }} {{ declarationsPage }} {{ $t('ministryPayerDetail.paginationOf') }} {{ totalDeclarationPages }}</span>
-            <button
-              @click="declarationsPage++"
-              :disabled="declarationsPage >= totalDeclarationPages"
-              class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
+            <AppButton variant="secondary" size="sm" :disabled="declarationsPage >= totalDeclarationPages" @click="declarationsPage++">
               {{ $t('ministryPayerDetail.paginationNext') }}
-            </button>
+            </AppButton>
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ministryPayerDetail.noDeclarations') }}</p>
-      </div>
+      </AppCard>
 
-      <!-- ==================== BLOCK 4: Payments History ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.paymentsHistory') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryPayerDetail.paymentsHistory')">
         <div v-if="payer.payments.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
@@ -457,11 +437,9 @@ function docTypeLabel(type: string): string {
           </table>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ministryPayerDetail.noPayments') }}</p>
-      </div>
+      </AppCard>
 
-      <!-- ==================== BLOCK 5: Audit Log ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.auditHistory') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryPayerDetail.auditHistory')">
         <div v-if="payer.auditLog.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
@@ -491,11 +469,9 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ministryPayerDetail.noAuditRecords') }}</p>
-      </div>
+      </AppCard>
 
-      <!-- ==================== BLOCK 6: Documents ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.documents') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryPayerDetail.documents')">
         <div v-if="payer.documents.length > 0" class="space-y-2 mb-4">
           <div
             v-for="doc in payer.documents"
@@ -535,70 +511,49 @@ function docTypeLabel(type: string): string {
         <p v-else class="text-sm text-gray-400 text-center py-4 mb-4">{{ $t('ministryPayerDetail.noDocuments') }}</p>
 
         <!-- Attach button -->
-        <button
-          @click="openUploadModal"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors"
-        >
+        <AppButton variant="outline" @click="openUploadModal">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
           {{ $t('ministryPayerDetail.attachDocument') }}
-        </button>
-      </div>
+        </AppButton>
+      </AppCard>
 
-      <!-- ==================== Upload Modal ==================== -->
-      <Teleport to="body">
-        <div v-if="showUploadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="fixed inset-0 bg-black/40" @click="closeUploadModal"></div>
-          <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryPayerDetail.uploadModalTitle') }}</h3>
+      <AppModal :visible="showUploadModal" :title="$t('ministryPayerDetail.uploadModalTitle')" size="md" @close="closeUploadModal">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryPayerDetail.docNameLabel') }}</label>
+            <input
+              v-model="uploadDocName"
+              type="text"
+              :placeholder="$t('ministryPayerDetail.docNamePlaceholder')"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
 
-            <!-- Document name -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryPayerDetail.docNameLabel') }}</label>
-              <input
-                v-model="uploadDocName"
-                type="text"
-                :placeholder="$t('ministryPayerDetail.docNamePlaceholder')"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
-
-            <!-- File input -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryPayerDetail.fileLabel') }}</label>
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                @change="onFileSelected"
-                class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100 file:cursor-pointer cursor-pointer"
-              />
-              <p v-if="uploadFile" class="text-xs text-gray-500 mt-1">{{ uploadFile.name }} ({{ formatFileSize(uploadFile.size) }})</p>
-              <p v-if="uploadError" class="text-xs text-red-500 mt-1">{{ uploadError }}</p>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex justify-end gap-3">
-              <button
-                @click="closeUploadModal"
-                class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                {{ $t('ministryPayerDetail.cancel') }}
-              </button>
-              <button
-                @click="submitUpload"
-                :disabled="!uploadDocName.trim() || !uploadFile"
-                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {{ $t('ministryPayerDetail.upload') }}
-              </button>
-            </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryPayerDetail.fileLabel') }}</label>
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              @change="onFileSelected"
+              class="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100 file:cursor-pointer cursor-pointer"
+            />
+            <p v-if="uploadFile" class="text-xs text-gray-500 mt-1">{{ uploadFile.name }} ({{ formatFileSize(uploadFile.size) }})</p>
+            <p v-if="uploadError" class="text-xs text-red-500 mt-1">{{ uploadError }}</p>
           </div>
         </div>
-      </Teleport>
+        <template #footer>
+          <AppButton variant="secondary" @click="closeUploadModal">
+            {{ $t('ministryPayerDetail.cancel') }}
+          </AppButton>
+          <AppButton variant="primary" :disabled="!uploadDocName.trim() || !uploadFile" @click="submitUpload">
+            {{ $t('ministryPayerDetail.upload') }}
+          </AppButton>
+        </template>
+      </AppModal>
 
-      <!-- ==================== BLOCK 7: Comments ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <div class="mb-4">
           <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
             <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -618,13 +573,9 @@ function docTypeLabel(type: string): string {
             :placeholder="$t('ministryPayerDetail.addCommentPlaceholder')"
           ></textarea>
           <div class="flex justify-end mt-2">
-            <button
-              @click="addComment"
-              :disabled="!newCommentText.trim()"
-              class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
+            <AppButton variant="primary" :disabled="!newCommentText.trim()" @click="addComment">
               {{ $t('ministryPayerDetail.addCommentBtn') }}
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -648,7 +599,7 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-4">{{ $t('ministryPayerDetail.noComments') }}</p>
-      </div>
+      </AppCard>
     </template>
   </DashboardLayout>
 </template>

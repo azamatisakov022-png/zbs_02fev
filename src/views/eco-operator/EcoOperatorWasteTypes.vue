@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -291,7 +292,7 @@ const openDetails = (wt: WasteType) => {
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <AppCard padding="sm" radius="sm">
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1">
             <div class="relative">
@@ -322,7 +323,7 @@ const openDetails = (wt: WasteType) => {
             </button>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Waste Types Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -381,124 +382,102 @@ const openDetails = (wt: WasteType) => {
       </div>
 
       <!-- Empty state -->
-      <div v-if="filteredWasteTypes.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+      <AppCard v-if="filteredWasteTypes.length === 0" padding="lg" radius="sm" class="text-center">
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('ecoWasteTypes.notFound') }}</h3>
         <p class="text-gray-500">{{ $t('ecoWasteTypes.tryChangeSearch') }}</p>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Details Modal -->
-    <Teleport to="body">
-      <div v-if="showDetailsModal && selectedWasteType" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoWasteTypes.wasteTypeInfo') }}</h3>
-            <button @click="showDetailsModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <AppModal :visible="showDetailsModal && !!selectedWasteType" :title="$t('ecoWasteTypes.wasteTypeInfo')" size="lg" @close="showDetailsModal = false">
+      <template v-if="selectedWasteType">
+        <div class="space-y-6">
+          <div class="flex items-start gap-4">
+            <div class="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center text-3xl">
+              {{ selectedWasteType.icon }}
+            </div>
+            <div>
+              <span class="text-sm font-mono text-teal-600 bg-teal-50 px-2 py-1 rounded">{{ selectedWasteType.code }}</span>
+              <h4 class="text-xl font-bold text-gray-900 mt-1">{{ selectedWasteType.name }}</h4>
+              <p class="text-gray-500">{{ selectedWasteType.categoryName }}</p>
+            </div>
           </div>
-          <div class="p-6 space-y-6">
-            <!-- Header -->
-            <div class="flex items-start gap-4">
-              <div class="w-16 h-16 bg-teal-100 rounded-xl flex items-center justify-center text-3xl">
-                {{ selectedWasteType.icon }}
-              </div>
-              <div>
-                <span class="text-sm font-mono text-teal-600 bg-teal-50 px-2 py-1 rounded">{{ selectedWasteType.code }}</span>
-                <h4 class="text-xl font-bold text-gray-900 mt-1">{{ selectedWasteType.name }}</h4>
-                <p class="text-gray-500">{{ selectedWasteType.categoryName }}</p>
-              </div>
-            </div>
 
-            <!-- Description -->
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-1">{{ $t('ecoWasteTypes.description') }}</h5>
-              <p class="text-gray-900">{{ selectedWasteType.description }}</p>
-            </div>
+          <div>
+            <h5 class="text-sm font-medium text-gray-500 mb-1">{{ $t('ecoWasteTypes.description') }}</h5>
+            <p class="text-gray-900">{{ selectedWasteType.description }}</p>
+          </div>
 
-            <!-- Stats grid -->
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.hazardClass') }}</p>
-                <span :class="['px-2 py-1 rounded-full text-sm font-medium mt-1 inline-block', getHazardClass(selectedWasteType.hazardClass).color]">
-                  {{ getHazardClass(selectedWasteType.hazardClass).label }}
-                </span>
-              </div>
-              <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.receptionPrice') }}</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.pricePerTon) }} {{ $t('ecoWasteTypes.somPerTon') }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.acceptedPerYear') }}</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.acceptedVolume) }} {{ $t('ecoWasteTypes.tons') }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-xl p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.processedLabel') }}</p>
-                <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.processedVolume) }} {{ $t('ecoWasteTypes.tons') }}</p>
-              </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-gray-50 rounded-xl p-4">
+              <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.hazardClass') }}</p>
+              <span :class="['px-2 py-1 rounded-full text-sm font-medium mt-1 inline-block', getHazardClass(selectedWasteType.hazardClass).color]">
+                {{ getHazardClass(selectedWasteType.hazardClass).label }}
+              </span>
             </div>
-
-            <!-- Processing progress -->
-            <div>
-              <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-500">{{ $t('ecoWasteTypes.processingPercent') }}</span>
-                <span class="font-medium text-teal-600">{{ Math.round((selectedWasteType.processedVolume / selectedWasteType.acceptedVolume) * 100) }}%</span>
-              </div>
-              <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  class="h-full rounded-full"
-                  style="background: linear-gradient(90deg, #0D9488, #2DD4BF);"
-                  :style="{ width: `${(selectedWasteType.processedVolume / selectedWasteType.acceptedVolume) * 100}%` }"
-                ></div>
-              </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.receptionPrice') }}</p>
+              <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.pricePerTon) }} {{ $t('ecoWasteTypes.somPerTon') }}</p>
             </div>
-
-            <!-- Processing methods -->
-            <div>
-              <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('ecoWasteTypes.processingMethods') }}</h5>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="method in selectedWasteType.processingMethods"
-                  :key="method"
-                  class="px-3 py-1.5 bg-teal-100 text-teal-700 rounded-lg text-sm font-medium"
-                >
-                  {{ method }}
-                </span>
-              </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.acceptedPerYear') }}</p>
+              <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.acceptedVolume) }} {{ $t('ecoWasteTypes.tons') }}</p>
             </div>
-
-            <!-- Status -->
-            <div class="p-4 rounded-xl" :class="selectedWasteType.isActive ? 'bg-teal-50 border border-teal-200' : 'bg-gray-50 border border-gray-200'">
-              <div class="flex items-center gap-3">
-                <svg v-if="selectedWasteType.isActive" class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <svg v-else class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-                <span :class="selectedWasteType.isActive ? 'text-teal-700' : 'text-gray-600'">
-                  {{ selectedWasteType.isActive ? $t('ecoWasteTypes.activeReception') : $t('ecoWasteTypes.receptionSuspended') }}
-                </span>
-              </div>
+            <div class="bg-gray-50 rounded-xl p-4">
+              <p class="text-sm text-gray-500">{{ $t('ecoWasteTypes.processedLabel') }}</p>
+              <p class="text-xl font-bold text-gray-900">{{ formatNumber(selectedWasteType.processedVolume) }} {{ $t('ecoWasteTypes.tons') }}</p>
             </div>
+          </div>
 
-            <!-- Actions -->
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <button class="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">
-                {{ $t('common.edit') }}
-              </button>
-              <button @click="showDetailsModal = false" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                {{ $t('common.close') }}
-              </button>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray-500">{{ $t('ecoWasteTypes.processingPercent') }}</span>
+              <span class="font-medium text-teal-600">{{ Math.round((selectedWasteType.processedVolume / selectedWasteType.acceptedVolume) * 100) }}%</span>
+            </div>
+            <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full"
+                style="background: linear-gradient(90deg, #0D9488, #2DD4BF);"
+                :style="{ width: `${(selectedWasteType.processedVolume / selectedWasteType.acceptedVolume) * 100}%` }"
+              ></div>
+            </div>
+          </div>
+
+          <div>
+            <h5 class="text-sm font-medium text-gray-500 mb-3">{{ $t('ecoWasteTypes.processingMethods') }}</h5>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="method in selectedWasteType.processingMethods"
+                :key="method"
+                class="px-3 py-1.5 bg-teal-100 text-teal-700 rounded-lg text-sm font-medium"
+              >
+                {{ method }}
+              </span>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl" :class="selectedWasteType.isActive ? 'bg-teal-50 border border-teal-200' : 'bg-gray-50 border border-gray-200'">
+            <div class="flex items-center gap-3">
+              <svg v-if="selectedWasteType.isActive" class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <svg v-else class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <span :class="selectedWasteType.isActive ? 'text-teal-700' : 'text-gray-600'">
+                {{ selectedWasteType.isActive ? $t('ecoWasteTypes.activeReception') : $t('ecoWasteTypes.receptionSuspended') }}
+              </span>
             </div>
           </div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="primary" bg="#0D9488" :label="$t('common.edit')" full-width />
+        <AppButton variant="secondary" :label="$t('common.close')" full-width @click="showDetailsModal = false" />
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

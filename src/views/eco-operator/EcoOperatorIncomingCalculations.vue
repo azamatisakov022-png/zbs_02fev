@@ -8,7 +8,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { useCalculationStore } from '../../stores/calculations'
 import type { Calculation } from '@/types/calculation'
 import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppTabs, AppAlert, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
 import { calculatePenalty, getOverdueDays } from '../../utils/penalty'
@@ -23,6 +23,11 @@ const calcStore = useCalculationStore()
 
 // Tabs
 const activeTab = ref<'calculations' | 'payments'>('calculations')
+
+const tabItems = computed(() => [
+  { key: 'calculations', label: t('ecoIncomingCalcs.tabCalculations'), count: pendingCount.value > 0 ? pendingCount.value : undefined },
+  { key: 'payments', label: t('ecoIncomingCalcs.tabPayments'), count: paymentPendingCount.value > 0 ? paymentPendingCount.value : undefined },
+])
 
 // ========================
 // CALCULATIONS TAB
@@ -318,52 +323,21 @@ const resetPaymentFilters = () => {
       </div>
     </div>
 
-    <!-- Yellow Alert Banner -->
-    <div v-if="pendingCount > 0 || paymentPendingCount > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingCalcs.attentionRequired') }}</p>
-        <p class="text-xs text-yellow-700">
-          <span v-if="pendingCount > 0">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingCalcs.newCalcSingular') : $t('ecoIncomingCalcs.newCalcPlural') }} {{ $t('ecoIncomingCalcs.onReview') }}</span>
-          <span v-if="pendingCount > 0 && paymentPendingCount > 0"> · </span>
-          <span v-if="paymentPendingCount > 0">{{ paymentPendingCount }} {{ paymentPendingCount === 1 ? $t('ecoIncomingCalcs.paymentSingular') : $t('ecoIncomingCalcs.paymentPlural') }} {{ $t('ecoIncomingCalcs.onConfirmation') }}</span>
-        </p>
-      </div>
-    </div>
+    <AppAlert v-if="pendingCount > 0 || paymentPendingCount > 0" variant="warning" :title="$t('ecoIncomingCalcs.attentionRequired')" :icon="'<svg width=&quot;20&quot; height=&quot;20&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9&quot; /></svg>'" class="mb-6">
+      <span v-if="pendingCount > 0">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingCalcs.newCalcSingular') : $t('ecoIncomingCalcs.newCalcPlural') }} {{ $t('ecoIncomingCalcs.onReview') }}</span>
+      <span v-if="pendingCount > 0 && paymentPendingCount > 0"> · </span>
+      <span v-if="paymentPendingCount > 0">{{ paymentPendingCount }} {{ paymentPendingCount === 1 ? $t('ecoIncomingCalcs.paymentSingular') : $t('ecoIncomingCalcs.paymentPlural') }} {{ $t('ecoIncomingCalcs.onConfirmation') }}</span>
+    </AppAlert>
 
-    <!-- Tabs -->
-    <div class="flex gap-1 mb-6 bg-[#f1f5f9] rounded-xl p-1">
-      <button
-        @click="activeTab = 'calculations'"
-        :class="[
-          'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
-          activeTab === 'calculations' ? 'bg-white text-[#1e293b] shadow-sm' : 'text-[#64748b] hover:text-[#1e293b]'
-        ]"
-      >
-        {{ $t('ecoIncomingCalcs.tabCalculations') }}
-        <span v-if="pendingCount > 0" class="ml-1.5 px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">{{ pendingCount }}</span>
-      </button>
-      <button
-        @click="activeTab = 'payments'"
-        :class="[
-          'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
-          activeTab === 'payments' ? 'bg-white text-[#1e293b] shadow-sm' : 'text-[#64748b] hover:text-[#1e293b]'
-        ]"
-      >
-        {{ $t('ecoIncomingCalcs.tabPayments') }}
-        <span v-if="paymentPendingCount > 0" class="ml-1.5 px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs">{{ paymentPendingCount }}</span>
-      </button>
+    <div class="mb-6">
+      <AppTabs v-model="activeTab" :tabs="tabItems" size="sm" />
     </div>
 
     <!-- CALCULATIONS TAB -->
     <template v-if="activeTab === 'calculations'">
 
       <!-- Filters -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard padding="sm" class="mb-6">
         <div class="flex flex-wrap gap-4">
           <input
             v-model="searchQuery"
@@ -396,7 +370,7 @@ const resetPaymentFilters = () => {
             <option value="2026">2026</option>
           </select>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Table -->
       <DataTable :columns="columns" :data="filteredCalculations" :actions="true">
@@ -463,7 +437,7 @@ const resetPaymentFilters = () => {
     <template v-if="activeTab === 'payments'">
 
       <!-- Filters -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard padding="sm" class="mb-6">
         <div class="flex flex-wrap gap-4">
           <input
             v-model="paymentSearchQuery"
@@ -472,7 +446,7 @@ const resetPaymentFilters = () => {
             class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
           />
         </div>
-      </div>
+      </AppCard>
 
       <!-- Table -->
       <DataTable :columns="paymentColumns" :data="filteredPayments" :actions="true">
@@ -566,11 +540,11 @@ const resetPaymentFilters = () => {
             </div>
             <div class="flex items-center gap-3">
               <AppBadge :variant="getStatusBadgeVariant(selectedCalculation.status)">{{ $t(statusI18nKey[selectedCalculation.status] || selectedCalculation.status) }}</AppBadge>
-              <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
+              <AppButton variant="icon-only" size="sm" @click="closeDetail">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </AppButton>
             </div>
           </div>
 
@@ -690,16 +664,14 @@ const resetPaymentFilters = () => {
             </div>
 
             <!-- Rejection reason if rejected -->
-            <div v-if="selectedCalculation.status === 'rejected' && selectedCalculation.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingCalcs.calcRejectionReason') }}</p>
-              <p class="text-sm text-red-700">{{ selectedCalculation.rejectionReason }}</p>
-            </div>
+            <AppAlert v-if="selectedCalculation.status === 'rejected' && selectedCalculation.rejectionReason" variant="error" :title="$t('ecoIncomingCalcs.calcRejectionReason')">
+              {{ selectedCalculation.rejectionReason }}
+            </AppAlert>
 
             <!-- Payment rejection reason -->
-            <div v-if="selectedCalculation.status === 'payment_rejected' && selectedCalculation.paymentRejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingCalcs.paymentRejectionReason') }}</p>
-              <p class="text-sm text-red-700">{{ selectedCalculation.paymentRejectionReason }}</p>
-            </div>
+            <AppAlert v-if="selectedCalculation.status === 'payment_rejected' && selectedCalculation.paymentRejectionReason" variant="error" :title="$t('ecoIncomingCalcs.paymentRejectionReason')">
+              {{ selectedCalculation.paymentRejectionReason }}
+            </AppAlert>
 
             <!-- Reject Calculation Form -->
             <div v-if="showRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-4">

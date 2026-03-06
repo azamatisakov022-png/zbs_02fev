@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { AppButton, AppInput, AppModal, AppCard } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import {
@@ -179,10 +180,10 @@ const guideActions = computed(() => [
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-1">{{ $t('ministryCollection.title') }}</h1>
           <p class="text-[#64748b] text-sm">{{ $t('ministryCollection.subtitle') }}</p>
         </div>
-        <button @click="openAdd" class="inline-flex items-center gap-2 px-4 py-2 bg-[#10b981] text-white text-sm font-medium rounded-lg hover:bg-[#059669] transition-colors">
+        <AppButton variant="primary" @click="openAdd">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
           {{ $t('ministryCollection.addBtn') }}
-        </button>
+        </AppButton>
       </div>
 
       <SectionGuide
@@ -229,11 +230,14 @@ const guideActions = computed(() => [
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
+      <AppCard radius="sm" padding="sm">
         <div class="flex flex-wrap gap-3">
-          <div class="relative flex-1 min-w-[200px]">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input v-model="searchQuery" type="text" :placeholder="$t('ministryCollection.searchPlaceholder')" class="w-full pl-9 pr-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+          <div class="flex-1 min-w-[200px]">
+            <AppInput v-model="searchQuery" :placeholder="$t('ministryCollection.searchPlaceholder')" size="sm" hide-label>
+              <template #prefix>
+                <svg class="w-4 h-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </template>
+            </AppInput>
           </div>
           <select v-model="filterRegion" class="px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white">
             <option value="">{{ $t('ministryCollection.allRegions') }}</option>
@@ -249,9 +253,9 @@ const guideActions = computed(() => [
             <option value="">{{ $t('ministryCollection.allWasteTypes') }}</option>
             <option v-for="wt in wasteTypeOptions" :key="wt" :value="wt">{{ wt }}</option>
           </select>
-          <button v-if="isFiltersActive" @click="resetAllFilters" class="px-3 py-2 text-sm text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors">{{ $t('ministryCollection.resetFilters') }}</button>
+          <AppButton v-if="isFiltersActive" variant="ghost" size="sm" @click="resetAllFilters">{{ $t('ministryCollection.resetFilters') }}</AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Table -->
       <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] overflow-hidden">
@@ -289,12 +293,12 @@ const guideActions = computed(() => [
                 </td>
                 <td class="px-4 py-3">
                   <div class="flex items-center justify-end gap-1">
-                    <button @click="openEdit(point)" class="p-1.5 text-[#64748b] hover:text-[#f59e0b] hover:bg-yellow-50 rounded-lg transition-colors" :title="$t('ministryCollection.editTooltip')">
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(point)" :title="$t('ministryCollection.editTooltip')">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </button>
-                    <button @click="confirmDelete(point.id)" class="p-1.5 text-[#64748b] hover:text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors" :title="$t('ministryCollection.deleteTooltip')">
+                    </AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="confirmDelete(point.id)" :title="$t('ministryCollection.deleteTooltip')">
                       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
+                    </AppButton>
                   </div>
                 </td>
               </tr>
@@ -304,25 +308,16 @@ const guideActions = computed(() => [
         <div v-if="filteredPoints.length === 0" class="text-center py-12 text-gray-500">
           <p class="text-lg font-medium">{{ $t('ministryCollection.noPoints') }}</p>
           <p class="text-sm mt-1">{{ $t('ministryCollection.noPointsHint') }}</p>
-          <button v-if="isFiltersActive" @click="resetAllFilters" class="mt-4 px-4 py-2 text-sm text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors">{{ $t('ministryCollection.resetFiltersBtn') }}</button>
+          <AppButton v-if="isFiltersActive" variant="ghost" size="sm" class="mt-4" @click="resetAllFilters">{{ $t('ministryCollection.resetFiltersBtn') }}</AppButton>
         </div>
       </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <Teleport to="body">
-      <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="cancelModal">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-[#1e293b]">{{ isEditing ? $t('ministryCollection.editModalTitle') : $t('ministryCollection.addModalTitle') }}</h3>
-            <button @click="cancelModal" class="text-[#94a3b8] hover:text-[#64748b] transition-colors">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-5">
+    <AppModal :visible="showModal" :title="isEditing ? $t('ministryCollection.editModalTitle') : $t('ministryCollection.addModalTitle')" size="lg" @close="cancelModal">
+      <div class="space-y-5">
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelName') }} <span class="text-red-500">*</span></label>
-              <input v-model="form.name" type="text" :placeholder="$t('ministryCollection.namePlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+              <AppInput v-model="form.name" :label="$t('ministryCollection.labelName')" :placeholder="$t('ministryCollection.namePlaceholder')" required size="sm" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -333,44 +328,38 @@ const guideActions = computed(() => [
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelDistrict') }}</label>
-                <input v-model="form.district" type="text" :placeholder="$t('ministryCollection.districtPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+                <AppInput v-model="form.district" :label="$t('ministryCollection.labelDistrict')" :placeholder="$t('ministryCollection.districtPlaceholder')" size="sm" />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelAddress') }}</label>
-              <input v-model="form.address" type="text" :placeholder="$t('ministryCollection.addressPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+              <AppInput v-model="form.address" :label="$t('ministryCollection.labelAddress')" :placeholder="$t('ministryCollection.addressPlaceholder')" size="sm" />
             </div>
             <!-- Coordinates -->
             <div>
               <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelCoordinates') }}</label>
               <div class="flex items-end gap-3">
                 <div class="flex-1 grid grid-cols-2 gap-3">
-                  <input v-model.number="form.lat" type="number" step="0.0001" :placeholder="$t('ministryCollection.latPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-                  <input v-model.number="form.lng" type="number" step="0.0001" :placeholder="$t('ministryCollection.lngPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+                  <AppInput v-model.number="form.lat" type="number" :step="0.0001" :placeholder="$t('ministryCollection.latPlaceholder')" size="sm" hide-label />
+                  <AppInput v-model.number="form.lng" type="number" :step="0.0001" :placeholder="$t('ministryCollection.lngPlaceholder')" size="sm" hide-label />
                 </div>
-                <button @click="pickerVisible = true" type="button" class="px-3 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap">
+                <AppButton variant="outline" size="sm" @click="pickerVisible = true">
                   {{ $t('ministryCollection.pickOnMap') }}
-                </button>
+                </AppButton>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelOrganization') }}</label>
-              <input v-model="form.organization" type="text" :placeholder="$t('ministryCollection.orgPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+              <AppInput v-model="form.organization" :label="$t('ministryCollection.labelOrganization')" :placeholder="$t('ministryCollection.orgPlaceholder')" size="sm" />
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelWorkingHours') }}</label>
-                <input v-model="form.workingHours" type="text" placeholder="09:00-18:00" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+                <AppInput v-model="form.workingHours" :label="$t('ministryCollection.labelWorkingHours')" placeholder="09:00-18:00" size="sm" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelPhone') }}</label>
-                <input v-model="form.phone" type="text" placeholder="+996 555 ..." class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+                <AppInput v-model="form.phone" :label="$t('ministryCollection.labelPhone')" type="tel" placeholder="+996 555 ..." size="sm" />
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelEmail') }}</label>
-              <input v-model="form.email" type="email" placeholder="info@example.kg" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+              <AppInput v-model="form.email" :label="$t('ministryCollection.labelEmail')" type="email" placeholder="info@example.kg" size="sm" />
             </div>
             <!-- Waste Types -->
             <div>
@@ -389,34 +378,28 @@ const guideActions = computed(() => [
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryCollection.labelNotes') }}</label>
-              <textarea v-model="form.notes" rows="2" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"></textarea>
+              <AppInput v-model="form.notes" :label="$t('ministryCollection.labelNotes')" type="textarea" :rows="2" size="sm" />
             </div>
-          </div>
-          <div class="px-6 py-4 border-t border-[#e2e8f0] flex items-center justify-end gap-3">
-            <button @click="cancelModal" class="px-4 py-2 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors">{{ $t('ministryCollection.cancelBtn') }}</button>
-            <button @click="savePoint" :disabled="!form.name.trim()" :class="['px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors', form.name.trim() ? 'bg-[#2563eb] hover:bg-[#1d4ed8]' : 'bg-[#94a3b8] cursor-not-allowed']">{{ isEditing ? $t('ministryCollection.saveBtn') : $t('ministryCollection.addBtn') }}</button>
-          </div>
-        </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="cancelModal">{{ $t('ministryCollection.cancelBtn') }}</AppButton>
+        <AppButton variant="primary" :disabled="!form.name.trim()" @click="savePoint">{{ isEditing ? $t('ministryCollection.saveBtn') : $t('ministryCollection.addBtn') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Delete Confirm -->
-    <Teleport to="body">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
-          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('ministryCollection.deleteConfirmTitle') }}</h3>
-          <p class="text-gray-600 mb-6">{{ $t('ministryCollection.deleteConfirmText') }}</p>
-          <div class="flex gap-3 justify-center">
-            <button @click="showDeleteConfirm = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('ministryCollection.cancelBtn') }}</button>
-            <button @click="doDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">{{ $t('ministryCollection.deleteBtn') }}</button>
-          </div>
+    <AppModal :visible="showDeleteConfirm" :title="$t('ministryCollection.deleteConfirmTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
         </div>
+        <p class="text-gray-600">{{ $t('ministryCollection.deleteConfirmText') }}</p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteConfirm = false">{{ $t('ministryCollection.cancelBtn') }}</AppButton>
+        <AppButton variant="danger" @click="doDelete">{{ $t('ministryCollection.deleteBtn') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Map Picker -->
     <MapCoordinatePicker

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { AppBadge } from '../../components/ui'
+import { AppBadge, AppTabs, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -37,9 +37,9 @@ type TabId = 'norms' | 'licenses'
 
 const activeTab = ref<TabId>('norms')
 
-const tabs = computed<{ id: TabId; label: string }[]>(() => [
-  { id: 'norms', label: t('employeeCompliance.tabNorms') },
-  { id: 'licenses', label: t('employeeCompliance.tabLicenses') },
+const tabItems = computed(() => [
+  { key: 'norms', label: t('employeeCompliance.tabNorms') },
+  { key: 'licenses', label: t('employeeCompliance.tabLicenses') },
 ])
 
 // ========== HELPER ==========
@@ -167,10 +167,8 @@ const summaryStats = computed(() => {
         storageKey="employee-compliance"
       />
 
-      <!-- Summary Stat Cards -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Norms not fulfilled -->
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <AppCard radius="sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-500">{{ $t('employeeCompliance.normsNotFulfilled') }}</p>
@@ -183,10 +181,9 @@ const summaryStats = computed(() => {
             </div>
           </div>
           <p class="text-xs text-gray-400 mt-2">{{ $t('employeeCompliance.outOfControlled', { count: normsData.length }) }}</p>
-        </div>
+        </AppCard>
 
-        <!-- Licenses expiring -->
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <AppCard radius="sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-500">{{ $t('employeeCompliance.licensesExpiring') }}</p>
@@ -199,27 +196,10 @@ const summaryStats = computed(() => {
             </div>
           </div>
           <p class="text-xs text-gray-400 mt-2">{{ $t('employeeCompliance.licensesExpiringOrExpired') }}</p>
-        </div>
+        </AppCard>
       </div>
 
-      <!-- Tab Navigation -->
-      <div class="border-b border-gray-200">
-        <nav class="flex space-x-8" aria-label="Tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="[
-              'py-3 px-1 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-              activeTab === tab.id
-                ? 'border-[#0e888d] text-[#0e888d]'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
-      </div>
+      <AppTabs v-model="activeTab" :tabs="tabItems" variant="underline" activeColor="#0e888d" activeTextColor="#0e888d" />
 
       <!-- ========== TAB 1: RECYCLING NORMS ========== -->
       <div v-if="activeTab === 'norms'" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

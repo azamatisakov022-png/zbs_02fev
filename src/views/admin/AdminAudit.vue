@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { AppButton } from '../../components/ui'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { roleTitle, menuItems } = useAdminMenu()
@@ -349,7 +349,7 @@ const exportAuditLog = () => {
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+      <AppCard radius="sm">
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
           <!-- Date Range -->
           <div>
@@ -427,10 +427,10 @@ const exportAuditLog = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Audit Log Table -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <AppCard padding="none" radius="sm">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50 border-b border-gray-200">
@@ -514,127 +514,89 @@ const exportAuditLog = () => {
             {{ $t('audit.showingRecords', { start: paginationStart, end: paginationEnd, total: filteredLog.length }) }}
           </p>
           <div class="flex items-center gap-2">
-            <button
-              @click="prevPage"
-              :disabled="currentPage === 1"
-              :class="[
-                'px-3 py-1 border rounded-lg text-sm font-medium transition-colors',
-                currentPage === 1
-                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-              ]"
-            >
+            <AppButton variant="secondary" size="sm" @click="prevPage" :disabled="currentPage === 1">
               {{ $t('audit.prev') }}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-for="page in pageNumbers"
               :key="page"
+              :variant="page === currentPage ? 'primary' : 'secondary'"
+              size="sm"
               @click="goToPage(page)"
-              :class="[
-                'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
-                page === currentPage
-                  ? 'bg-[#0e888d] text-white'
-                  : 'border border-gray-300 text-gray-600 hover:bg-gray-50'
-              ]"
             >
               {{ page }}
-            </button>
-            <button
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-              :class="[
-                'px-3 py-1 border rounded-lg text-sm font-medium transition-colors',
-                currentPage === totalPages
-                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-              ]"
-            >
+            </AppButton>
+            <AppButton variant="secondary" size="sm" @click="nextPage" :disabled="currentPage === totalPages">
               {{ $t('audit.next') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Detail Modal -->
-    <Teleport to="body">
-      <div v-if="showDetailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-          <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <h3 class="text-xl font-bold text-gray-900">{{ $t('audit.entryDetails') }}</h3>
-              <button @click="showDetailModal = false" class="p-2 text-gray-400 hover:text-gray-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div v-if="selectedEntry" class="p-6 space-y-4 overflow-y-auto max-h-[calc(90vh-130px)]">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.entryId') }}</label>
-                <p class="font-mono text-gray-900">#{{ selectedEntry.id }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.dateTime') }}</label>
-                <p class="text-gray-900">{{ selectedEntry.timestamp }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.user') }}</label>
-                <p class="text-gray-900">{{ selectedEntry.user }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.role') }}</label>
-                <span :class="['text-xs px-2 py-1 rounded', getRoleColor(selectedEntry.userRole)]">
-                  {{ getRoleLabel(selectedEntry.userRole) }}
-                </span>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.ipAddress') }}</label>
-                <p class="font-mono text-gray-900">{{ selectedEntry.ipAddress }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.statusLabel') }}</label>
-                <span :class="['inline-flex items-center gap-1 text-sm px-2 py-1 rounded', getStatusColor(selectedEntry.status)]">
-                  {{ getStatusIcon(selectedEntry.status) }}
-                  {{ $t(selectedEntry.status === 'success' ? 'audit.statusSuccess' : selectedEntry.status === 'warning' ? 'audit.statusWarning' : 'audit.statusError') }}
-                </span>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.actionType') }}</label>
-                <span :class="['text-xs px-2 py-1 rounded-full font-medium', getActionTypeColor(selectedEntry.actionType)]">
-                  {{ getActionTypeLabel(selectedEntry.actionType) }}
-                </span>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.action') }}</label>
-                <p class="text-gray-900">{{ selectedEntry.action }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.object') }}</label>
-                <p class="text-gray-900">{{ selectedEntry.entity }}</p>
-              </div>
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('audit.objectId') }}</label>
-                <p class="font-mono text-[#0e888d]">{{ selectedEntry.entityId }}</p>
-              </div>
-            </div>
-
-            <div>
-              <label class="text-sm text-gray-500">{{ $t('audit.detailedInfo') }}</label>
-              <p class="text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{{ selectedEntry.details }}</p>
-            </div>
-          </div>
-
-          <div class="p-6 border-t border-gray-200 flex justify-end">
-            <AppButton variant="primary" @click="showDetailModal = false">
-              {{ $t('audit.close') }}
             </AppButton>
           </div>
         </div>
+      </AppCard>
+    </div>
+
+    <!-- Detail Modal -->
+    <AppModal :visible="showDetailModal" :title="$t('audit.entryDetails')" size="lg" @close="showDetailModal = false">
+      <div v-if="selectedEntry" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.entryId') }}</label>
+            <p class="font-mono text-gray-900">#{{ selectedEntry.id }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.dateTime') }}</label>
+            <p class="text-gray-900">{{ selectedEntry.timestamp }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.user') }}</label>
+            <p class="text-gray-900">{{ selectedEntry.user }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.role') }}</label>
+            <span :class="['text-xs px-2 py-1 rounded', getRoleColor(selectedEntry.userRole)]">
+              {{ getRoleLabel(selectedEntry.userRole) }}
+            </span>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.ipAddress') }}</label>
+            <p class="font-mono text-gray-900">{{ selectedEntry.ipAddress }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.statusLabel') }}</label>
+            <span :class="['inline-flex items-center gap-1 text-sm px-2 py-1 rounded', getStatusColor(selectedEntry.status)]">
+              {{ getStatusIcon(selectedEntry.status) }}
+              {{ $t(selectedEntry.status === 'success' ? 'audit.statusSuccess' : selectedEntry.status === 'warning' ? 'audit.statusWarning' : 'audit.statusError') }}
+            </span>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.actionType') }}</label>
+            <span :class="['text-xs px-2 py-1 rounded-full font-medium', getActionTypeColor(selectedEntry.actionType)]">
+              {{ getActionTypeLabel(selectedEntry.actionType) }}
+            </span>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.action') }}</label>
+            <p class="text-gray-900">{{ selectedEntry.action }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.object') }}</label>
+            <p class="text-gray-900">{{ selectedEntry.entity }}</p>
+          </div>
+          <div>
+            <label class="text-sm text-gray-500">{{ $t('audit.objectId') }}</label>
+            <p class="font-mono text-[#0e888d]">{{ selectedEntry.entityId }}</p>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-sm text-gray-500">{{ $t('audit.detailedInfo') }}</label>
+          <p class="text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{{ selectedEntry.details }}</p>
+        </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="primary" @click="showDetailModal = false">
+          {{ $t('audit.close') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

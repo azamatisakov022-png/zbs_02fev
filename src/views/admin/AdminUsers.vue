@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppModal } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { UserStatus } from '../../constants/statuses'
 import { useAdminMenu } from '../../composables/useRoleMenu'
@@ -177,11 +177,11 @@ function closeModal() {
   activeModal.value = 'none'
 }
 
-function handleOverlayClick(e: MouseEvent) {
-  if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
-    closeModal()
-  }
-}
+const addUserModalTitle = computed(() => {
+  if (addUserStep.value === 'confirm') return t('adminUsers.confirmTitle')
+  if (addUserStep.value === 'success') return t('adminUsers.userAdded')
+  return t('adminUsers.addUserTitle')
+})
 
 // --- View user ---
 function openViewUser(user: User) {
@@ -471,12 +471,7 @@ const resetUserFilters = () => {
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e5e7eb] mb-6">
       <div class="flex flex-wrap gap-4">
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="$t('adminUsers.searchPlaceholder')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]"
-        />
+        <AppInput v-model="searchQuery" :placeholder="$t('adminUsers.searchPlaceholder')" borderColor="#e5e7eb" focusColor="#0e888d" :hideLabel="true" class="flex-1 min-w-[200px]" />
         <select v-model="filterRole" class="px-4 py-2 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#0e888d]">
           <option value="">{{ $t('adminUsers.allRoles') }}</option>
           <option v-for="r in roleOptions" :key="r" :value="r">{{ r }}</option>
@@ -549,587 +544,428 @@ const resetUserFilters = () => {
       </template>
     </DataTable>
 
-    <!-- ==================== MODALS ==================== -->
-    <Teleport to="body">
-      <!-- ===== VIEW USER ===== -->
-      <div
-        v-if="activeModal === 'viewUser' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.viewModalTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-
-          <div class="p-6 space-y-6">
-            <!-- User info -->
-            <div class="bg-[#f8fafc] rounded-xl p-5">
-              <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 rounded-full bg-[#0e888d] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                  {{ selectedUser.name.split(' ').slice(0, 2).map((n: string) => n[0]).join('') }}
-                </div>
-                <div>
-                  <p class="text-lg font-bold text-[#415861]">{{ selectedUser.name }}</p>
-                  <p class="text-sm text-[#64748b]">{{ selectedUser.organization }}</p>
-                </div>
+    <AppModal :visible="activeModal === 'viewUser' && !!selectedUser" :title="$t('adminUsers.viewModalTitle')" size="lg" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="space-y-6">
+          <div class="bg-[#f8fafc] rounded-xl p-5">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-14 h-14 rounded-full bg-[#0e888d] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                {{ selectedUser.name.split(' ').slice(0, 2).map((n: string) => n[0]).join('') }}
               </div>
-              <div class="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelRole') }}</p>
-                  <p class="font-medium text-[#415861]">{{ selectedUser.role }}</p>
-                </div>
-                <div>
-                  <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelStatus') }}</p>
-                  <AppBadge :variant="getStatusBadgeVariant(selectedUser.status)">{{ selectedUser.status }}</AppBadge>
-                </div>
-                <div>
-                  <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelRegisteredAt') }}</p>
-                  <p class="font-medium text-[#415861]">{{ selectedUser.registeredAt }}</p>
-                </div>
-                <div>
-                  <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelEmail') }}</p>
-                  <p class="font-medium text-[#415861]">{{ selectedUser.email }}</p>
-                </div>
-                <div>
-                  <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelPhone') }}</p>
-                  <p class="font-medium text-[#415861]">{{ selectedUser.phone }}</p>
-                </div>
+              <div>
+                <p class="text-lg font-bold text-[#415861]">{{ selectedUser.name }}</p>
+                <p class="text-sm text-[#64748b]">{{ selectedUser.organization }}</p>
               </div>
             </div>
-
-            <!-- Role history -->
-            <div>
-              <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">{{ $t('adminUsers.roleHistoryTitle') }}</h4>
-              <div v-if="selectedUser.roleHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="bg-[#f8fafc]">
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryDate') }}</th>
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryChange') }}</th>
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryChangedBy') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(entry, i) in selectedUser.roleHistory" :key="i" class="border-t border-[#f1f5f9]">
-                      <td class="px-4 py-2.5 text-[#415861] whitespace-nowrap">{{ entry.date }}</td>
-                      <td class="px-4 py-2.5 text-[#415861]">{{ entry.oldRole }} &rarr; {{ entry.newRole }}</td>
-                      <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelRole') }}</p>
+                <p class="font-medium text-[#415861]">{{ selectedUser.role }}</p>
               </div>
-              <p v-else class="text-sm text-[#94a3b8]">{{ $t('adminUsers.noRecords') }}</p>
-            </div>
-
-            <!-- Status history -->
-            <div>
-              <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">{{ $t('adminUsers.statusHistoryTitle') }}</h4>
-              <div v-if="selectedUser.statusHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="bg-[#f8fafc]">
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryDate') }}</th>
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryAction') }}</th>
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryBy') }}</th>
-                      <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryReason') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(entry, i) in selectedUser.statusHistory" :key="i" class="border-t border-[#f1f5f9]">
-                      <td class="px-4 py-2.5 text-[#415861] whitespace-nowrap">{{ entry.date }}</td>
-                      <td class="px-4 py-2.5">
-                        <AppBadge :variant="getStatusBadgeVariant(entry.action)">{{ entry.action }}</AppBadge>
-                      </td>
-                      <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
-                      <td class="px-4 py-2.5 text-[#64748b]">{{ entry.reason || '—' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div>
+                <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelStatus') }}</p>
+                <AppBadge :variant="getStatusBadgeVariant(selectedUser.status)">{{ selectedUser.status }}</AppBadge>
               </div>
-              <p v-else class="text-sm text-[#94a3b8]">{{ $t('adminUsers.noRecords') }}</p>
+              <div>
+                <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelRegisteredAt') }}</p>
+                <p class="font-medium text-[#415861]">{{ selectedUser.registeredAt }}</p>
+              </div>
+              <div>
+                <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelEmail') }}</p>
+                <p class="font-medium text-[#415861]">{{ selectedUser.email }}</p>
+              </div>
+              <div>
+                <p class="text-[#94a3b8] mb-0.5">{{ $t('adminUsers.labelPhone') }}</p>
+                <p class="font-medium text-[#415861]">{{ selectedUser.phone }}</p>
+              </div>
             </div>
           </div>
 
-          <div class="flex justify-end p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="primary" @click="closeModal">
-              {{ $t('adminUsers.closeBtn') }}
-            </AppButton>
+          <div>
+            <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">{{ $t('adminUsers.roleHistoryTitle') }}</h4>
+            <div v-if="selectedUser.roleHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-[#f8fafc]">
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryDate') }}</th>
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryChange') }}</th>
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.roleHistoryChangedBy') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, i) in selectedUser.roleHistory" :key="i" class="border-t border-[#f1f5f9]">
+                    <td class="px-4 py-2.5 text-[#415861] whitespace-nowrap">{{ entry.date }}</td>
+                    <td class="px-4 py-2.5 text-[#415861]">{{ entry.oldRole }} &rarr; {{ entry.newRole }}</td>
+                    <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="text-sm text-[#94a3b8]">{{ $t('adminUsers.noRecords') }}</p>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-semibold text-[#415861] uppercase tracking-wide mb-3">{{ $t('adminUsers.statusHistoryTitle') }}</h4>
+            <div v-if="selectedUser.statusHistory.length" class="border border-[#e5e7eb] rounded-xl overflow-hidden overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-[#f8fafc]">
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryDate') }}</th>
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryAction') }}</th>
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryBy') }}</th>
+                    <th class="px-4 py-2.5 text-left font-medium text-[#64748b]">{{ $t('adminUsers.statusHistoryReason') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, i) in selectedUser.statusHistory" :key="i" class="border-t border-[#f1f5f9]">
+                    <td class="px-4 py-2.5 text-[#415861] whitespace-nowrap">{{ entry.date }}</td>
+                    <td class="px-4 py-2.5">
+                      <AppBadge :variant="getStatusBadgeVariant(entry.action)">{{ entry.action }}</AppBadge>
+                    </td>
+                    <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
+                    <td class="px-4 py-2.5 text-[#64748b]">{{ entry.reason || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p v-else class="text-sm text-[#94a3b8]">{{ $t('adminUsers.noRecords') }}</p>
           </div>
         </div>
-      </div>
+      </template>
+      <template #footer>
+        <AppButton variant="primary" @click="closeModal">
+          {{ $t('adminUsers.closeBtn') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
-      <!-- ===== CHANGE ROLE ===== -->
-      <div
-        v-if="activeModal === 'changeRole' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.changeRoleTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+    <AppModal :visible="activeModal === 'changeRole' && !!selectedUser" :title="$t('adminUsers.changeRoleTitle')" size="md" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="space-y-4">
+          <p class="text-sm text-[#415861]">{{ $t('adminUsers.userLabel') }} <span class="font-semibold">{{ selectedUser.name }}</span></p>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.currentRole') }}</label>
+            <div class="w-full px-4 py-2.5 bg-[#f8fafc] border border-[#e5e7eb] rounded-xl text-[#94a3b8]">{{ selectedUser.role }}</div>
           </div>
-          <div class="p-6 space-y-4">
-            <p class="text-sm text-[#415861]">{{ $t('adminUsers.userLabel') }} <span class="font-semibold">{{ selectedUser.name }}</span></p>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.newRole') }} <span class="text-red-500">*</span></label>
+            <select v-model="changeRoleForm.newRole" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
+              <option value="" disabled>{{ $t('adminUsers.selectRole') }}</option>
+              <option v-for="r in roleOptions" :key="r" :value="r" :disabled="r === selectedUser.role">{{ r }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.changeReason') }} <span class="text-red-500">*</span></label>
+            <textarea
+              v-model="changeRoleForm.reason"
+              rows="3"
+              :placeholder="$t('adminUsers.changeReasonPlaceholder')"
+              class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none"
+            ></textarea>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">
+            {{ $t('adminUsers.cancelBtn') }}
+          </AppButton>
+          <AppButton
+            variant="primary"
+            :disabled="!changeRoleForm.newRole || !changeRoleForm.reason.trim()"
+            @click="submitChangeRole"
+          >
+            {{ $t('adminUsers.saveBtn') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
+    <AppModal :visible="activeModal === 'blockUser' && !!selectedUser" :title="$t('adminUsers.blockTitle')" size="md" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="space-y-4">
+          <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <p class="text-sm text-[#415861]">{{ $t('adminUsers.blockConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-2">{{ $t('adminUsers.blockTypeLabel') }}</label>
+            <div class="space-y-2">
+              <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer select-none transition-colors"
+                :class="blockForm.blockType === 'temporary' ? 'border-[#F59E0B] bg-orange-50/50' : 'border-[#e5e7eb] hover:bg-[#f8fafc]'"
+              >
+                <input v-model="blockForm.blockType" type="radio" value="temporary" class="mt-0.5 w-4 h-4 text-[#F59E0B] focus:ring-[#F59E0B]" />
+                <div>
+                  <p class="text-sm font-medium text-[#415861]">{{ $t('adminUsers.tempBlock') }}</p>
+                  <p class="text-xs text-[#94a3b8] mt-0.5">{{ $t('adminUsers.tempBlockDesc') }}</p>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer select-none transition-colors"
+                :class="blockForm.blockType === 'permanent' ? 'border-[#EF4444] bg-red-50/50' : 'border-[#e5e7eb] hover:bg-[#f8fafc]'"
+              >
+                <input v-model="blockForm.blockType" type="radio" value="permanent" class="mt-0.5 w-4 h-4 text-[#EF4444] focus:ring-[#EF4444]" />
+                <div>
+                  <p class="text-sm font-medium text-[#415861]">{{ $t('adminUsers.permBlock') }}</p>
+                  <p class="text-xs text-[#94a3b8] mt-0.5">{{ $t('adminUsers.permBlockDesc') }}</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div v-if="blockForm.blockType === 'temporary'">
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.blockDuration') }} <span class="text-red-500">*</span></label>
+            <select v-model="blockForm.duration" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
+              <option value="" disabled>{{ $t('adminUsers.selectDuration') }}</option>
+              <option v-for="d in blockDurations" :key="d" :value="d">{{ d }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.blockReason') }} <span class="text-red-500">*</span></label>
+            <select v-model="blockForm.reason" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
+              <option value="" disabled>{{ $t('adminUsers.selectReason') }}</option>
+              <option v-for="r in blockReasons" :key="r" :value="r">{{ r }}</option>
+            </select>
+          </div>
+          <div v-if="blockForm.reason === $t('adminUsers.blockReasonOther')">
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.customReasonLabel') }} <span class="text-red-500">*</span></label>
+            <textarea
+              v-model="blockForm.customReason"
+              rows="2"
+              :placeholder="$t('adminUsers.customReasonPlaceholder')"
+              class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none"
+            ></textarea>
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">
+            {{ $t('adminUsers.cancelBtn') }}
+          </AppButton>
+          <AppButton
+            :variant="blockForm.blockType === 'permanent' ? 'danger' : 'warning'"
+            :disabled="!isBlockFormValid"
+            @click="submitBlockUser"
+          >
+            {{ blockForm.blockType === 'permanent' ? $t('adminUsers.permBlock') : $t('adminUsers.tempBlock') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
+    <AppModal :visible="activeModal === 'unblockUser' && !!selectedUser" :title="$t('adminUsers.unblockTitle')" size="md" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p class="text-sm text-[#415861]">{{ $t('adminUsers.unblockConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
+          <p class="text-xs text-[#64748b] mt-1">{{ $t('adminUsers.unblockHint') }}</p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">
+            {{ $t('adminUsers.cancelBtn') }}
+          </AppButton>
+          <AppButton variant="primary" @click="submitUnblockUser">
+            {{ $t('adminUsers.unblockBtn') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
+    <AppModal :visible="activeModal === 'restoreUser' && !!selectedUser" :title="$t('adminUsers.restoreTitle')" size="md" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <p class="text-sm text-[#415861]">{{ $t('adminUsers.restoreConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
+          <p class="text-xs text-[#64748b] mt-1">{{ $t('adminUsers.restoreHint') }}</p>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">
+            {{ $t('adminUsers.cancelBtn') }}
+          </AppButton>
+          <AppButton variant="primary" @click="submitRestoreUser">
+            {{ $t('adminUsers.restoreBtn') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
+    <AppModal :visible="activeModal === 'deleteUser' && !!selectedUser" :title="$t('adminUsers.deleteTitle')" size="md" @close="closeModal">
+      <template v-if="selectedUser">
+        <div class="space-y-4">
+          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-[#EF4444] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+              <div>
+                <p class="font-semibold text-[#415861] mb-1">{{ $t('adminUsers.deleteConfirm', { name: selectedUser.name }) }}</p>
+                <p class="text-sm text-[#64748b]">{{ $t('adminUsers.deleteWarning') }}</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.deleteInputLabel') }} <span class="font-mono font-bold text-[#EF4444]">{{ $t('adminUsers.deleteKeyword') }}</span></label>
+            <input
+              v-model="deleteConfirmText"
+              type="text"
+              :placeholder="$t('adminUsers.deleteKeyword')"
+              class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#EF4444]"
+            />
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">
+            {{ $t('adminUsers.cancelBtn') }}
+          </AppButton>
+          <AppButton
+            variant="danger"
+            :disabled="deleteConfirmText !== $t('adminUsers.deleteKeyword')"
+            @click="submitDeleteUser"
+          >
+            {{ $t('adminUsers.deleteForever') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
+    <AppModal :visible="activeModal === 'addUser'" :title="addUserModalTitle" size="md" @close="closeModal">
+      <Transition name="modal-scale" mode="out-in">
+        <div v-if="addUserStep === 'form'" key="form">
+          <p class="text-sm text-[#64748b] mb-4">{{ $t('adminUsers.addUserSubtitle') }}</p>
+          <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.currentRole') }}</label>
-              <div class="w-full px-4 py-2.5 bg-[#f8fafc] border border-[#e5e7eb] rounded-xl text-[#94a3b8]">{{ selectedUser.role }}</div>
+              <AppInput v-model="addUserForm.lastName" @blur="validateAddField('lastName')" :label="$t('adminUsers.lastName')" :placeholder="$t('adminUsers.lastNamePlaceholder')" :error="addUserErrors.lastName" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.newRole') }} <span class="text-red-500">*</span></label>
-              <select v-model="changeRoleForm.newRole" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
+              <AppInput v-model="addUserForm.firstName" @blur="validateAddField('firstName')" :label="$t('adminUsers.firstName')" :placeholder="$t('adminUsers.firstNamePlaceholder')" :error="addUserErrors.firstName" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
+            </div>
+            <div>
+              <AppInput v-model="addUserForm.middleName" :label="$t('adminUsers.middleName')" :placeholder="$t('adminUsers.middleNamePlaceholder')" labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
+            </div>
+            <div>
+              <AppInput v-model="addUserForm.organization" @blur="validateAddField('organization')" :label="$t('adminUsers.organization')" :placeholder="$t('adminUsers.organizationPlaceholder')" :error="addUserErrors.organization" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.roleLabelField') }} <span class="text-red-500">*</span></label>
+              <select v-model="addUserForm.role" @change="validateAddField('role')"
+                :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors appearance-none bg-white', addUserErrors.role ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]', !addUserForm.role ? 'text-[#9ca3af]' : 'text-[#415861]']"
+              >
                 <option value="" disabled>{{ $t('adminUsers.selectRole') }}</option>
-                <option v-for="r in roleOptions" :key="r" :value="r" :disabled="r === selectedUser.role">{{ r }}</option>
+                <option v-for="r in roleOptions" :key="r" :value="r">{{ r }}</option>
               </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.changeReason') }} <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="changeRoleForm.reason"
-                rows="3"
-                :placeholder="$t('adminUsers.changeReasonPlaceholder')"
-                class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none"
-              ></textarea>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="secondary" @click="closeModal">
-              {{ $t('adminUsers.cancelBtn') }}
-            </AppButton>
-            <button
-              @click="submitChangeRole"
-              :disabled="!changeRoleForm.newRole || !changeRoleForm.reason.trim()"
-              :class="[
-                'px-5 py-2.5 rounded-xl font-medium transition-colors',
-                changeRoleForm.newRole && changeRoleForm.reason.trim()
-                  ? 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-                  : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed'
-              ]"
-            >
-              {{ $t('adminUsers.saveBtn') }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== BLOCK USER ===== -->
-      <div
-        v-if="activeModal === 'blockUser' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.blockTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div class="bg-orange-50 border border-orange-200 rounded-xl p-4">
-              <p class="text-sm text-[#415861]">{{ $t('adminUsers.blockConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
-            </div>
-
-            <!-- Block type -->
-            <div>
-              <label class="block text-sm font-medium text-[#415861] mb-2">{{ $t('adminUsers.blockTypeLabel') }}</label>
-              <div class="space-y-2">
-                <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer select-none transition-colors"
-                  :class="blockForm.blockType === 'temporary' ? 'border-[#F59E0B] bg-orange-50/50' : 'border-[#e5e7eb] hover:bg-[#f8fafc]'"
-                >
-                  <input v-model="blockForm.blockType" type="radio" value="temporary" class="mt-0.5 w-4 h-4 text-[#F59E0B] focus:ring-[#F59E0B]" />
-                  <div>
-                    <p class="text-sm font-medium text-[#415861]">{{ $t('adminUsers.tempBlock') }}</p>
-                    <p class="text-xs text-[#94a3b8] mt-0.5">{{ $t('adminUsers.tempBlockDesc') }}</p>
-                  </div>
-                </label>
-                <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer select-none transition-colors"
-                  :class="blockForm.blockType === 'permanent' ? 'border-[#EF4444] bg-red-50/50' : 'border-[#e5e7eb] hover:bg-[#f8fafc]'"
-                >
-                  <input v-model="blockForm.blockType" type="radio" value="permanent" class="mt-0.5 w-4 h-4 text-[#EF4444] focus:ring-[#EF4444]" />
-                  <div>
-                    <p class="text-sm font-medium text-[#415861]">{{ $t('adminUsers.permBlock') }}</p>
-                    <p class="text-xs text-[#94a3b8] mt-0.5">{{ $t('adminUsers.permBlockDesc') }}</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Duration (only for temporary) -->
-            <div v-if="blockForm.blockType === 'temporary'">
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.blockDuration') }} <span class="text-red-500">*</span></label>
-              <select v-model="blockForm.duration" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
-                <option value="" disabled>{{ $t('adminUsers.selectDuration') }}</option>
-                <option v-for="d in blockDurations" :key="d" :value="d">{{ d }}</option>
-              </select>
-            </div>
-
-            <!-- Reason -->
-            <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.blockReason') }} <span class="text-red-500">*</span></label>
-              <select v-model="blockForm.reason" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d]">
-                <option value="" disabled>{{ $t('adminUsers.selectReason') }}</option>
-                <option v-for="r in blockReasons" :key="r" :value="r">{{ r }}</option>
-              </select>
-            </div>
-            <div v-if="blockForm.reason === $t('adminUsers.blockReasonOther')">
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.customReasonLabel') }} <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="blockForm.customReason"
-                rows="2"
-                :placeholder="$t('adminUsers.customReasonPlaceholder')"
-                class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none"
-              ></textarea>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="secondary" @click="closeModal">
-              {{ $t('adminUsers.cancelBtn') }}
-            </AppButton>
-            <button
-              @click="submitBlockUser"
-              :disabled="!isBlockFormValid"
-              :class="[
-                'px-5 py-2.5 rounded-xl font-medium transition-colors',
-                isBlockFormValid
-                  ? blockForm.blockType === 'permanent' ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]' : 'bg-[#F59E0B] text-white hover:bg-[#D97706]'
-                  : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed'
-              ]"
-            >
-              {{ blockForm.blockType === 'permanent' ? $t('adminUsers.permBlock') : $t('adminUsers.tempBlock') }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== UNBLOCK USER ===== -->
-      <div
-        v-if="activeModal === 'unblockUser' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.unblockTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <div class="p-6">
-            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p class="text-sm text-[#415861]">{{ $t('adminUsers.unblockConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
-              <p class="text-xs text-[#64748b] mt-1">{{ $t('adminUsers.unblockHint') }}</p>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="secondary" @click="closeModal">
-              {{ $t('adminUsers.cancelBtn') }}
-            </AppButton>
-            <AppButton variant="primary" @click="submitUnblockUser">
-              {{ $t('adminUsers.unblockBtn') }}
-            </AppButton>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== RESTORE USER ===== -->
-      <div
-        v-if="activeModal === 'restoreUser' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.restoreTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <div class="p-6">
-            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p class="text-sm text-[#415861]">{{ $t('adminUsers.restoreConfirm') }} <span class="font-semibold">{{ selectedUser.name }}</span>?</p>
-              <p class="text-xs text-[#64748b] mt-1">{{ $t('adminUsers.restoreHint') }}</p>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="secondary" @click="closeModal">
-              {{ $t('adminUsers.cancelBtn') }}
-            </AppButton>
-            <AppButton variant="primary" @click="submitRestoreUser">
-              {{ $t('adminUsers.restoreBtn') }}
-            </AppButton>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== DELETE USER ===== -->
-      <div
-        v-if="activeModal === 'deleteUser' && selectedUser"
-        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-        @click="handleOverlayClick"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-            <h3 class="text-xl font-bold text-[#EF4444]">{{ $t('adminUsers.deleteTitle') }}</h3>
-            <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div class="flex items-start gap-3">
-                <svg class="w-6 h-6 text-[#EF4444] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-                <div>
-                  <p class="font-semibold text-[#415861] mb-1">{{ $t('adminUsers.deleteConfirm', { name: selectedUser.name }) }}</p>
-                  <p class="text-sm text-[#64748b]">{{ $t('adminUsers.deleteWarning') }}</p>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.deleteInputLabel') }} <span class="font-mono font-bold text-[#EF4444]">{{ $t('adminUsers.deleteKeyword') }}</span></label>
-              <input
-                v-model="deleteConfirmText"
-                type="text"
-                :placeholder="$t('adminUsers.deleteKeyword')"
-                class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#EF4444]"
-              />
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-            <AppButton variant="secondary" @click="closeModal">
-              {{ $t('adminUsers.cancelBtn') }}
-            </AppButton>
-            <button
-              @click="submitDeleteUser"
-              :disabled="deleteConfirmText !== $t('adminUsers.deleteKeyword')"
-              :class="[
-                'px-5 py-2.5 rounded-xl font-medium transition-colors',
-                deleteConfirmText === $t('adminUsers.deleteKeyword')
-                  ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
-                  : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed'
-              ]"
-            >
-              {{ $t('adminUsers.deleteForever') }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== ADD USER (3-step wizard) ===== -->
-      <Transition name="modal-fade">
-        <div
-          v-if="activeModal === 'addUser'"
-          class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-          style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-          @click="handleOverlayClick"
-        >
-          <Transition name="modal-scale" mode="out-in">
-            <!-- STEP 1: Form -->
-            <div v-if="addUserStep === 'form'" key="form" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-                <div>
-                  <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.addUserTitle') }}</h3>
-                  <p class="text-sm text-[#64748b] mt-1">{{ $t('adminUsers.addUserSubtitle') }}</p>
-                </div>
-                <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <div class="p-6 space-y-4">
-                <!-- Фамилия -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.lastName') }} <span class="text-red-500">*</span></label>
-                  <input v-model="addUserForm.lastName" @blur="validateAddField('lastName')" type="text" :placeholder="$t('adminUsers.lastNamePlaceholder')"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', addUserErrors.lastName ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]']"
-                  />
-                  <p v-if="addUserErrors.lastName" class="mt-1 text-xs text-red-500">{{ addUserErrors.lastName }}</p>
-                </div>
-                <!-- Имя -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.firstName') }} <span class="text-red-500">*</span></label>
-                  <input v-model="addUserForm.firstName" @blur="validateAddField('firstName')" type="text" :placeholder="$t('adminUsers.firstNamePlaceholder')"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', addUserErrors.firstName ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]']"
-                  />
-                  <p v-if="addUserErrors.firstName" class="mt-1 text-xs text-red-500">{{ addUserErrors.firstName }}</p>
-                </div>
-                <!-- Отчество -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.middleName') }}</label>
-                  <input v-model="addUserForm.middleName" type="text" :placeholder="$t('adminUsers.middleNamePlaceholder')" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#0e888d] transition-colors" />
-                </div>
-                <!-- Организация -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.organization') }} <span class="text-red-500">*</span></label>
-                  <input v-model="addUserForm.organization" @blur="validateAddField('organization')" type="text" :placeholder="$t('adminUsers.organizationPlaceholder')"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', addUserErrors.organization ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]']"
-                  />
-                  <p v-if="addUserErrors.organization" class="mt-1 text-xs text-red-500">{{ addUserErrors.organization }}</p>
-                </div>
-                <!-- Роль -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.roleLabelField') }} <span class="text-red-500">*</span></label>
-                  <select v-model="addUserForm.role" @change="validateAddField('role')"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors appearance-none bg-white', addUserErrors.role ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]', !addUserForm.role ? 'text-[#9ca3af]' : 'text-[#415861]']"
-                  >
-                    <option value="" disabled>{{ $t('adminUsers.selectRole') }}</option>
-                    <option v-for="r in roleOptions" :key="r" :value="r">{{ r }}</option>
-                  </select>
-                  <p v-if="addUserErrors.role" class="mt-1 text-xs text-red-500">{{ addUserErrors.role }}</p>
-                  <Transition name="role-hint">
-                    <div v-if="selectedAddRoleInfo" class="mt-3 p-3 rounded-xl border border-[#e5e7eb] bg-[#f8fafc]">
-                      <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.rolePermissionsTitle') }}</p>
-                      <div class="space-y-1">
-                        <div v-for="perm in selectedAddRoleInfo.permissions" :key="perm" class="flex items-start gap-2 text-sm text-[#415861]">
-                          <svg class="w-4 h-4 text-[#0e888d] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                          {{ perm }}
-                        </div>
-                        <div v-for="restr in selectedAddRoleInfo.restrictions" :key="restr" class="flex items-start gap-2 text-sm text-[#94a3b8]">
-                          <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                          {{ restr }}
-                        </div>
-                      </div>
-                    </div>
-                  </Transition>
-                </div>
-                <!-- Email -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.emailLabel') }} <span class="text-red-500">*</span></label>
-                  <input v-model="addUserForm.email" @blur="validateAddField('email')" type="email" placeholder="example@mail.kg"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', addUserErrors.email ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]']"
-                  />
-                  <p v-if="addUserErrors.email" class="mt-1 text-xs text-red-500">{{ addUserErrors.email }}</p>
-                </div>
-                <!-- Телефон -->
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminUsers.phoneLabel') }} <span class="text-red-500">*</span></label>
-                  <input v-model="addUserForm.phone" @blur="validateAddField('phone')" type="tel" placeholder="+996 XXX XXX XXX"
-                    :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', addUserErrors.phone ? 'border-red-400 focus:border-red-500 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#0e888d]']"
-                  />
-                  <p v-if="addUserErrors.phone" class="mt-1 text-xs text-red-500">{{ addUserErrors.phone }}</p>
-                </div>
-              </div>
-              <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-                <AppButton variant="secondary" @click="closeModal">{{ $t('adminUsers.cancelBtn') }}</AppButton>
-                <button @click="goToAddConfirm" :disabled="!isAddFormValid"
-                  :class="['px-5 py-2.5 rounded-xl font-medium transition-colors', isAddFormValid ? 'bg-[#0e888d] text-white hover:bg-[#0a6d71]' : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed']"
-                >{{ $t('adminUsers.nextBtn') }}</button>
-              </div>
-            </div>
-
-            <!-- STEP 2: Confirmation -->
-            <div v-else-if="addUserStep === 'confirm'" key="confirm" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-                <div>
-                  <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminUsers.confirmTitle') }}</h3>
-                  <p class="text-sm text-[#64748b] mt-1">{{ $t('adminUsers.confirmSubtitle') }}</p>
-                </div>
-                <button @click="closeModal" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-              <div class="p-6 space-y-4">
-                <div class="bg-[#f8fafc] rounded-xl p-4 space-y-3">
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="w-12 h-12 rounded-full bg-[#0e888d] flex items-center justify-center text-white text-lg font-bold">
-                      {{ addUserForm.lastName.charAt(0).toUpperCase() }}{{ addUserForm.firstName.charAt(0).toUpperCase() }}
-                    </div>
-                    <div>
-                      <p class="font-semibold text-[#415861]">{{ addUserForm.lastName }} {{ addUserForm.firstName }} {{ addUserForm.middleName }}</p>
-                      <p class="text-sm text-[#64748b]">{{ addUserForm.organization }}</p>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-3 text-sm">
-                    <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmEmailLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.email }}</p></div>
-                    <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmPhoneLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.phone }}</p></div>
-                    <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmRoleLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.role }}</p></div>
-                    <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmStatusLabel') }}</p><AppBadge variant="warning">{{ $t('adminUsers.awaitingConfirmation') }}</AppBadge></div>
-                  </div>
-                </div>
-                <div v-if="selectedAddRoleInfo" class="rounded-xl border-2 border-[#0e888d]/20 bg-[#e8f5f5]/30 p-4">
-                  <div class="flex items-center gap-2 mb-3">
-                    <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    <p class="font-semibold text-[#0e888d]">{{ $t('adminUsers.assignedRole', { role: selectedAddRoleInfo.label }) }}</p>
-                  </div>
-                  <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.permissionsLabel') }}</p>
-                  <div class="space-y-1.5 mb-3">
+              <p v-if="addUserErrors.role" class="mt-1 text-xs text-red-500">{{ addUserErrors.role }}</p>
+              <Transition name="role-hint">
+                <div v-if="selectedAddRoleInfo" class="mt-3 p-3 rounded-xl border border-[#e5e7eb] bg-[#f8fafc]">
+                  <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.rolePermissionsTitle') }}</p>
+                  <div class="space-y-1">
                     <div v-for="perm in selectedAddRoleInfo.permissions" :key="perm" class="flex items-start gap-2 text-sm text-[#415861]">
                       <svg class="w-4 h-4 text-[#0e888d] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                       {{ perm }}
                     </div>
-                  </div>
-                  <template v-if="selectedAddRoleInfo.restrictions.length">
-                    <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.restrictionsLabel') }}</p>
-                    <div class="space-y-1.5">
-                      <div v-for="restr in selectedAddRoleInfo.restrictions" :key="restr" class="flex items-start gap-2 text-sm text-[#94a3b8]">
-                        <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        {{ restr }}
-                      </div>
+                    <div v-for="restr in selectedAddRoleInfo.restrictions" :key="restr" class="flex items-start gap-2 text-sm text-[#94a3b8]">
+                      <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      {{ restr }}
                     </div>
-                  </template>
+                  </div>
                 </div>
-              </div>
-              <div class="flex items-center justify-between p-6 border-t border-[#f1f5f9]">
-                <button @click="goBackToAddForm" class="flex items-center gap-1.5 px-4 py-2.5 text-[#64748b] hover:text-[#415861] font-medium transition-colors">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                  {{ $t('adminUsers.backBtn') }}
-                </button>
-                <AppButton variant="primary" @click="submitAddUser">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  {{ $t('adminUsers.confirmAndAdd') }}
-                </AppButton>
-              </div>
+              </Transition>
             </div>
+            <div>
+              <AppInput v-model="addUserForm.email" @blur="validateAddField('email')" type="email" :label="$t('adminUsers.emailLabel')" placeholder="example@mail.kg" :error="addUserErrors.email" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
+            </div>
+            <div>
+              <AppInput v-model="addUserForm.phone" @blur="validateAddField('phone')" type="tel" :label="$t('adminUsers.phoneLabel')" placeholder="+996 XXX XXX XXX" :error="addUserErrors.phone" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#0e888d" />
+            </div>
+          </div>
+        </div>
 
-            <!-- STEP 3: Success -->
-            <div v-else-if="addUserStep === 'success'" key="success" class="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center">
-              <div class="p-8">
-                <div class="w-16 h-16 rounded-full bg-[#e8f5f5] flex items-center justify-center mx-auto mb-4">
-                  <svg class="w-8 h-8 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        <div v-else-if="addUserStep === 'confirm'" key="confirm">
+          <p class="text-sm text-[#64748b] mb-4">{{ $t('adminUsers.confirmSubtitle') }}</p>
+          <div class="space-y-4">
+            <div class="bg-[#f8fafc] rounded-xl p-4 space-y-3">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-[#0e888d] flex items-center justify-center text-white text-lg font-bold">
+                  {{ addUserForm.lastName.charAt(0).toUpperCase() }}{{ addUserForm.firstName.charAt(0).toUpperCase() }}
                 </div>
-                <h3 class="text-xl font-bold text-[#415861] mb-2">{{ $t('adminUsers.userAdded') }}</h3>
-                <p class="text-[#64748b] mb-1">
-                  <span class="font-medium text-[#415861]">{{ addUserForm.lastName }} {{ addUserForm.firstName }}</span>
-                  {{ $t('adminUsers.userAddedSuccess') }}
-                </p>
-                <p class="text-sm text-[#94a3b8]">
-                  {{ $t('adminUsers.userAddedRoleStatus', { role: addUserForm.role }) }}
-                </p>
+                <div>
+                  <p class="font-semibold text-[#415861]">{{ addUserForm.lastName }} {{ addUserForm.firstName }} {{ addUserForm.middleName }}</p>
+                  <p class="text-sm text-[#64748b]">{{ addUserForm.organization }}</p>
+                </div>
               </div>
-              <div class="px-8 pb-8">
-                <AppButton variant="primary" class="w-full" @click="closeModal">
-                  {{ $t('adminUsers.closeBtn') }}
-                </AppButton>
+              <div class="grid grid-cols-2 gap-3 text-sm">
+                <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmEmailLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.email }}</p></div>
+                <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmPhoneLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.phone }}</p></div>
+                <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmRoleLabel') }}</p><p class="text-[#415861] font-medium">{{ addUserForm.role }}</p></div>
+                <div><p class="text-[#94a3b8]">{{ $t('adminUsers.confirmStatusLabel') }}</p><AppBadge variant="warning">{{ $t('adminUsers.awaitingConfirmation') }}</AppBadge></div>
               </div>
             </div>
-          </Transition>
+            <div v-if="selectedAddRoleInfo" class="rounded-xl border-2 border-[#0e888d]/20 bg-[#e8f5f5]/30 p-4">
+              <div class="flex items-center gap-2 mb-3">
+                <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <p class="font-semibold text-[#0e888d]">{{ $t('adminUsers.assignedRole', { role: selectedAddRoleInfo.label }) }}</p>
+              </div>
+              <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.permissionsLabel') }}</p>
+              <div class="space-y-1.5 mb-3">
+                <div v-for="perm in selectedAddRoleInfo.permissions" :key="perm" class="flex items-start gap-2 text-sm text-[#415861]">
+                  <svg class="w-4 h-4 text-[#0e888d] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                  {{ perm }}
+                </div>
+              </div>
+              <template v-if="selectedAddRoleInfo.restrictions.length">
+                <p class="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-2">{{ $t('adminUsers.restrictionsLabel') }}</p>
+                <div class="space-y-1.5">
+                  <div v-for="restr in selectedAddRoleInfo.restrictions" :key="restr" class="flex items-start gap-2 text-sm text-[#94a3b8]">
+                    <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    {{ restr }}
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="addUserStep === 'success'" key="success" class="text-center">
+          <div class="w-16 h-16 rounded-full bg-[#e8f5f5] flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          </div>
+          <p class="text-[#64748b] mb-1">
+            <span class="font-medium text-[#415861]">{{ addUserForm.lastName }} {{ addUserForm.firstName }}</span>
+            {{ $t('adminUsers.userAddedSuccess') }}
+          </p>
+          <p class="text-sm text-[#94a3b8]">
+            {{ $t('adminUsers.userAddedRoleStatus', { role: addUserForm.role }) }}
+          </p>
         </div>
       </Transition>
-    </Teleport>
+      <template #footer>
+        <div v-if="addUserStep === 'form'" class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeModal">{{ $t('adminUsers.cancelBtn') }}</AppButton>
+          <AppButton variant="primary" :disabled="!isAddFormValid" @click="goToAddConfirm">{{ $t('adminUsers.nextBtn') }}</AppButton>
+        </div>
+        <div v-else-if="addUserStep === 'confirm'" class="flex items-center justify-between">
+          <AppButton variant="back" @click="goBackToAddForm">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            {{ $t('adminUsers.backBtn') }}
+          </AppButton>
+          <AppButton variant="primary" @click="submitAddUser">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            {{ $t('adminUsers.confirmAndAdd') }}
+          </AppButton>
+        </div>
+        <div v-else-if="addUserStep === 'success'">
+          <AppButton variant="primary" class="w-full" @click="closeModal">
+            {{ $t('adminUsers.closeBtn') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 
 <style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
 .modal-scale-enter-active {
   transition: all 0.25s ease-out;
 }

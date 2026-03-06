@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppAlert, AppModal, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
@@ -300,26 +301,18 @@ const executeRestore = () => {
           <h1 class="text-2xl font-bold text-gray-900">{{ $t('adminSettings.pageTitle') }}</h1>
           <p class="text-gray-600 mt-1">{{ $t('adminSettings.pageSubtitle') }}</p>
         </div>
-        <button
-          @click="saveSettings"
-          :disabled="isSaving"
-          class="px-6 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
-          <svg v-if="isSaving" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <AppButton variant="primary" :loading="isSaving" :disabled="isSaving" @click="saveSettings">
+          <svg v-if="!isSaving" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           {{ isSaving ? $t('adminSettings.saving') : $t('adminSettings.saveChanges') }}
-        </button>
+        </AppButton>
       </div>
 
       <div class="flex gap-6">
         <!-- Tabs Sidebar -->
         <div class="w-64 flex-shrink-0">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+          <AppCard padding="sm" radius="sm">
             <button
               v-for="tab in tabs"
               :key="tab.id"
@@ -334,13 +327,13 @@ const executeRestore = () => {
               <span class="text-xl">{{ tab.icon }}</span>
               <span class="font-medium">{{ tab.label }}</span>
             </button>
-          </div>
+          </AppCard>
         </div>
 
         <!-- Content -->
         <div class="flex-1">
           <!-- General Settings -->
-          <div v-if="activeTab === 'general'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <AppCard v-if="activeTab === 'general'" radius="sm">
             <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.general.title') }}</h2>
 
             <div class="space-y-6">
@@ -451,10 +444,10 @@ const executeRestore = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
 
           <!-- Security Settings -->
-          <div v-if="activeTab === 'security'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <AppCard v-if="activeTab === 'security'" radius="sm">
             <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.security.title') }}</h2>
 
             <div class="space-y-6">
@@ -553,11 +546,11 @@ const executeRestore = () => {
                 <p class="text-xs text-gray-500 mt-1">{{ $t('adminSettings.security.ipWhitelistHint') }}</p>
               </div>
             </div>
-          </div>
+          </AppCard>
 
           <!-- Email Settings -->
           <div v-if="activeTab === 'email'" class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.email.smtpTitle') }}</h2>
 
               <div class="space-y-6">
@@ -627,17 +620,14 @@ const executeRestore = () => {
                     />
                     <span class="text-gray-700">{{ $t('adminSettings.email.useTLS') }}</span>
                   </label>
-                  <button
-                    @click="testEmailConnection"
-                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                  >
+                  <AppButton variant="secondary" size="sm" @click="testEmailConnection">
                     {{ $t('adminSettings.email.testEmail') }}
-                  </button>
+                  </AppButton>
                 </div>
               </div>
-            </div>
+            </AppCard>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.email.notificationsTitle') }}</h2>
 
               <div class="grid grid-cols-2 gap-4">
@@ -706,11 +696,11 @@ const executeRestore = () => {
                   <span class="text-gray-700">{{ $t('adminSettings.email.weeklyReport') }}</span>
                 </label>
               </div>
-            </div>
+            </AppCard>
           </div>
 
           <!-- Integrations -->
-          <div v-if="activeTab === 'integrations'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <AppCard v-if="activeTab === 'integrations'" radius="sm">
             <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.integrations.title') }}</h2>
 
             <div class="space-y-4">
@@ -733,28 +723,25 @@ const executeRestore = () => {
                   <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(integration.status)]">
                     {{ integration.status === 'active' ? $t('adminSettings.integrations.statusActive') : $t('adminSettings.integrations.statusInactive') }}
                   </span>
-                  <button @click="openIntegrationModal(integration)" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors">
+                  <AppButton variant="secondary" size="sm" @click="openIntegrationModal(integration)">
                     {{ $t('adminSettings.integrations.configure') }}
-                  </button>
+                  </AppButton>
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
 
           <!-- Backup -->
           <div v-if="activeTab === 'backup'" class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <div class="flex items-center justify-between mb-6">
                 <h2 class="text-lg font-bold text-gray-900">{{ $t('adminSettings.backup.title') }}</h2>
-                <button
-                  @click="createBackup"
-                  class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors flex items-center gap-2"
-                >
+                <AppButton variant="primary" @click="createBackup">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
                   {{ $t('adminSettings.backup.createBackup') }}
-                </button>
+                </AppButton>
               </div>
 
               <div class="space-y-6">
@@ -827,9 +814,9 @@ const executeRestore = () => {
                   </label>
                 </div>
               </div>
-            </div>
+            </AppCard>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('adminSettings.backup.recentTitle') }}</h2>
 
               <div class="overflow-x-auto">
@@ -857,28 +844,28 @@ const executeRestore = () => {
                     </td>
                     <td class="px-4 py-3 text-center">
                       <div class="flex items-center justify-center gap-2">
-                        <button @click="downloadBackup(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" :title="$t('adminSettings.backup.download')">
+                        <AppButton variant="icon-only" size="sm" @click="downloadBackup(backup)" :title="$t('adminSettings.backup.download')">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                           </svg>
-                        </button>
-                        <button @click="openRestoreConfirm(backup)" class="p-1 text-gray-400 hover:text-rose-600 transition-colors" :title="$t('adminSettings.backup.restore')">
+                        </AppButton>
+                        <AppButton variant="icon-only" size="sm" @click="openRestoreConfirm(backup)" :title="$t('adminSettings.backup.restore')">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                        </button>
+                        </AppButton>
                       </div>
                     </td>
                   </tr>
                 </tbody>
               </table>
               </div>
-            </div>
+            </AppCard>
           </div>
 
           <!-- Maintenance -->
           <div v-if="activeTab === 'maintenance'" class="space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.maintenance.title') }}</h2>
 
               <div class="space-y-6">
@@ -940,9 +927,9 @@ const executeRestore = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </AppCard>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <AppCard radius="sm">
               <h2 class="text-lg font-bold text-gray-900 mb-6">{{ $t('adminSettings.maintenance.systemInfoTitle') }}</h2>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -985,277 +972,195 @@ const executeRestore = () => {
               </div>
 
               <div class="mt-6 flex gap-3">
-                <button @click="openClearCache" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <AppButton variant="secondary" @click="openClearCache">
                   {{ $t('adminSettings.maintenance.clearCache') }}
-                </button>
-                <button @click="openRestartQueues" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                </AppButton>
+                <AppButton variant="secondary" @click="openRestartQueues">
                   {{ $t('adminSettings.maintenance.restartQueues') }}
-                </button>
-                <button @click="checkUpdates" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                </AppButton>
+                <AppButton variant="secondary" @click="checkUpdates">
                   {{ $t('adminSettings.maintenance.checkUpdates') }}
-                </button>
+                </AppButton>
               </div>
-            </div>
+            </AppCard>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Integration Configure Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showIntegrationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
-            <div class="p-6 border-b border-gray-200">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.integrations.modalTitle') }}</h3>
-                <button @click="showIntegrationModal = false" class="p-2 text-gray-400 hover:text-gray-600">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div v-if="selectedIntegration" class="p-6 space-y-5">
-              <div class="p-4 bg-gray-50 rounded-xl">
-                <h4 class="font-semibold text-gray-900">{{ selectedIntegration.name }}</h4>
-                <p class="text-sm text-gray-500 mt-1">{{ selectedIntegration.description }}</p>
-              </div>
-
-              <div class="flex items-center justify-between">
-                <span class="text-gray-700 font-medium">{{ $t('adminSettings.integrations.connectionStatus') }}</span>
-                <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(selectedIntegration.status)]">
-                  {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.statusActive') : $t('adminSettings.integrations.statusInactive') }}
-                </span>
-              </div>
-
-              <div>
-                <label class="text-sm text-gray-500">{{ $t('adminSettings.integrations.lastSyncLabel') }}</label>
-                <p class="font-medium text-gray-900">{{ selectedIntegration.lastSync }}</p>
-              </div>
-
-              <div class="flex gap-3">
-                <button
-                  @click="toggleIntegrationStatus"
-                  :disabled="integrationSaving"
-                  :class="[
-                    'flex-1 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50',
-                    selectedIntegration.status === 'active'
-                      ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                      : 'bg-green-50 text-green-700 hover:bg-green-100'
-                  ]"
-                >
-                  {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.disable') : $t('adminSettings.integrations.enable') }}
-                </button>
-                <button
-                  @click="syncIntegration"
-                  :disabled="integrationSaving || selectedIntegration.status !== 'active'"
-                  class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <svg v-if="integrationSaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {{ $t('adminSettings.integrations.sync') }}
-                </button>
-              </div>
-            </div>
-
-            <div class="p-6 border-t border-gray-200 flex justify-end">
-              <button @click="showIntegrationModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                {{ $t('adminSettings.maintenance.close') }}
-              </button>
-            </div>
-          </div>
+    <AppModal :visible="showIntegrationModal" :title="$t('adminSettings.integrations.modalTitle')" size="md" @close="showIntegrationModal = false">
+      <div v-if="selectedIntegration" class="space-y-5">
+        <div class="p-4 bg-gray-50 rounded-xl">
+          <h4 class="font-semibold text-gray-900">{{ selectedIntegration.name }}</h4>
+          <p class="text-sm text-gray-500 mt-1">{{ selectedIntegration.description }}</p>
         </div>
-      </Transition>
-    </Teleport>
+
+        <div class="flex items-center justify-between">
+          <span class="text-gray-700 font-medium">{{ $t('adminSettings.integrations.connectionStatus') }}</span>
+          <span :class="['px-3 py-1 rounded-full text-sm font-medium', getIntegrationStatusColor(selectedIntegration.status)]">
+            {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.statusActive') : $t('adminSettings.integrations.statusInactive') }}
+          </span>
+        </div>
+
+        <div>
+          <label class="text-sm text-gray-500">{{ $t('adminSettings.integrations.lastSyncLabel') }}</label>
+          <p class="font-medium text-gray-900">{{ selectedIntegration.lastSync }}</p>
+        </div>
+
+        <div class="flex gap-3">
+          <AppButton
+            :variant="selectedIntegration.status === 'active' ? 'danger' : 'success'"
+            class="flex-1"
+            :disabled="integrationSaving"
+            @click="toggleIntegrationStatus"
+          >
+            {{ selectedIntegration.status === 'active' ? $t('adminSettings.integrations.disable') : $t('adminSettings.integrations.enable') }}
+          </AppButton>
+          <AppButton
+            variant="primary"
+            class="flex-1"
+            :disabled="integrationSaving || selectedIntegration.status !== 'active'"
+            :loading="integrationSaving"
+            @click="syncIntegration"
+          >
+            {{ $t('adminSettings.integrations.sync') }}
+          </AppButton>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="showIntegrationModal = false">
+          {{ $t('adminSettings.maintenance.close') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Confirm Action Modal (Cache / Queues) -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showConfirmModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div class="p-6 border-b border-gray-200">
-              <h3 class="text-xl font-bold text-gray-900">{{ confirmTitle }}</h3>
-            </div>
-
-            <div class="p-6">
-              <template v-if="!confirmDone">
-                <p class="text-gray-600">{{ confirmMessage }}</p>
-                <p class="text-sm text-amber-600 mt-3 p-3 bg-amber-50 rounded-lg">{{ $t('adminSettings.maintenance.confirmPrompt') }}</p>
-              </template>
-              <template v-else>
-                <div class="text-center">
-                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p class="text-gray-900 font-medium">{{ confirmResult }}</p>
-                </div>
-              </template>
-            </div>
-
-            <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <template v-if="!confirmDone">
-                <button @click="showConfirmModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  {{ $t('adminSettings.maintenance.cancel') }}
-                </button>
-                <button
-                  @click="executeConfirmAction"
-                  :disabled="confirmProcessing"
-                  class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  <svg v-if="confirmProcessing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {{ confirmProcessing ? $t('adminSettings.maintenance.processing') : $t('adminSettings.maintenance.confirm') }}
-                </button>
-              </template>
-              <template v-else>
-                <button @click="showConfirmModal = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
-                  {{ $t('adminSettings.maintenance.done') }}
-                </button>
-              </template>
-            </div>
+    <AppModal :visible="showConfirmModal" :title="confirmTitle" size="md" @close="showConfirmModal = false">
+      <template v-if="!confirmDone">
+        <p class="text-gray-600">{{ confirmMessage }}</p>
+        <p class="text-sm text-amber-600 mt-3 p-3 bg-amber-50 rounded-lg">{{ $t('adminSettings.maintenance.confirmPrompt') }}</p>
+      </template>
+      <template v-else>
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
+          <p class="text-gray-900 font-medium">{{ confirmResult }}</p>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+      <template #footer>
+        <template v-if="!confirmDone">
+          <AppButton variant="secondary" @click="showConfirmModal = false">
+            {{ $t('adminSettings.maintenance.cancel') }}
+          </AppButton>
+          <AppButton
+            variant="primary"
+            :disabled="confirmProcessing"
+            :loading="confirmProcessing"
+            @click="executeConfirmAction"
+          >
+            {{ confirmProcessing ? $t('adminSettings.maintenance.processing') : $t('adminSettings.maintenance.confirm') }}
+          </AppButton>
+        </template>
+        <template v-else>
+          <AppButton variant="primary" @click="showConfirmModal = false">
+            {{ $t('adminSettings.maintenance.done') }}
+          </AppButton>
+        </template>
+      </template>
+    </AppModal>
 
     <!-- Check Updates Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showUpdateModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div class="p-6 border-b border-gray-200">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.maintenance.checkUpdates') }}</h3>
-                <button @click="showUpdateModal = false" class="p-2 text-gray-400 hover:text-gray-600">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="p-6">
-              <template v-if="updateChecking">
-                <div class="text-center py-8">
-                  <svg class="w-12 h-12 animate-spin text-rose-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <p class="text-gray-600">{{ $t('adminSettings.maintenance.checkingUpdates') }}</p>
-                  <p class="text-sm text-gray-400 mt-1">{{ $t('adminSettings.maintenance.currentVersion') }}: {{ systemInfo.version }}</p>
-                </div>
-              </template>
-              <template v-else-if="updateResult">
-                <template v-if="updateResult.hasUpdate">
-                  <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-4">
-                    <div class="flex items-center gap-2 mb-1">
-                      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span class="font-semibold text-blue-800">{{ $t('adminSettings.maintenance.updateAvailable') }}</span>
-                    </div>
-                    <p class="text-blue-700">{{ $t('adminSettings.maintenance.versionLabel') }} {{ updateResult.version }}</p>
-                  </div>
-                  <h4 class="font-medium text-gray-900 mb-2">{{ $t('adminSettings.maintenance.whatsNew') }}</h4>
-                  <ul class="space-y-2">
-                    <li v-for="(change, idx) in updateResult.changes" :key="idx" class="flex items-start gap-2 text-sm text-gray-600">
-                      <span class="text-green-500 mt-0.5">+</span>
-                      {{ change }}
-                    </li>
-                  </ul>
-                </template>
-                <template v-else>
-                  <div class="text-center py-4">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <p class="font-medium text-gray-900">{{ $t('adminSettings.maintenance.systemUpToDate') }}</p>
-                    <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.maintenance.latestVersion', { version: systemInfo.version }) }}</p>
-                  </div>
-                </template>
-              </template>
-            </div>
-
-            <div class="p-6 border-t border-gray-200 flex justify-end">
-              <button @click="showUpdateModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                {{ $t('adminSettings.maintenance.close') }}
-              </button>
-            </div>
-          </div>
+    <AppModal :visible="showUpdateModal" :title="$t('adminSettings.maintenance.checkUpdates')" size="md" @close="showUpdateModal = false">
+      <template v-if="updateChecking">
+        <div class="text-center py-8">
+          <svg class="w-12 h-12 animate-spin text-rose-600 mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-gray-600">{{ $t('adminSettings.maintenance.checkingUpdates') }}</p>
+          <p class="text-sm text-gray-400 mt-1">{{ $t('adminSettings.maintenance.currentVersion') }}: {{ systemInfo.version }}</p>
         </div>
-      </Transition>
-    </Teleport>
+      </template>
+      <template v-else-if="updateResult">
+        <template v-if="updateResult.hasUpdate">
+          <AppAlert variant="info" :title="$t('adminSettings.maintenance.updateAvailable')" class="mb-4">
+            {{ $t('adminSettings.maintenance.versionLabel') }} {{ updateResult.version }}
+          </AppAlert>
+          <h4 class="font-medium text-gray-900 mb-2">{{ $t('adminSettings.maintenance.whatsNew') }}</h4>
+          <ul class="space-y-2">
+            <li v-for="(change, idx) in updateResult.changes" :key="idx" class="flex items-start gap-2 text-sm text-gray-600">
+              <span class="text-green-500 mt-0.5">+</span>
+              {{ change }}
+            </li>
+          </ul>
+        </template>
+        <template v-else>
+          <div class="text-center py-4">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p class="font-medium text-gray-900">{{ $t('adminSettings.maintenance.systemUpToDate') }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.maintenance.latestVersion', { version: systemInfo.version }) }}</p>
+          </div>
+        </template>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" @click="showUpdateModal = false">
+          {{ $t('adminSettings.maintenance.close') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Restore Backup Confirm Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showRestoreConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => { if (e.target === e.currentTarget) showRestoreConfirm = false }">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div class="p-6 border-b border-gray-200">
-              <h3 class="text-xl font-bold text-gray-900">{{ $t('adminSettings.restoreModal.title') }}</h3>
-            </div>
-
-            <div class="p-6">
-              <template v-if="!restoreDone">
-                <div v-if="restoreTarget" class="p-4 bg-gray-50 rounded-xl mb-4">
-                  <p class="text-sm text-gray-500">{{ $t('adminSettings.restoreModal.backupFrom') }}</p>
-                  <p class="font-medium text-gray-900">{{ restoreTarget.date }}</p>
-                  <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.size') }}: {{ restoreTarget.size }}</p>
-                </div>
-                <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p class="text-sm text-red-700 font-medium">{{ $t('adminSettings.restoreModal.warning') }}</p>
-                </div>
-              </template>
-              <template v-else>
-                <div class="text-center py-4">
-                  <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p class="font-medium text-gray-900">{{ $t('adminSettings.restoreModal.restoreComplete') }}</p>
-                  <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.restoreSuccess', { date: restoreTarget?.date }) }}</p>
-                </div>
-              </template>
-            </div>
-
-            <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-              <template v-if="!restoreDone">
-                <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                  {{ $t('adminSettings.restoreModal.cancel') }}
-                </button>
-                <button
-                  @click="executeRestore"
-                  :disabled="restoring"
-                  class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  <svg v-if="restoring" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {{ restoring ? $t('adminSettings.restoreModal.restoring') : $t('adminSettings.restoreModal.restoreBtn') }}
-                </button>
-              </template>
-              <template v-else>
-                <button @click="showRestoreConfirm = false" class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors">
-                  {{ $t('adminSettings.restoreModal.done') }}
-                </button>
-              </template>
-            </div>
-          </div>
+    <AppModal :visible="showRestoreConfirm" :title="$t('adminSettings.restoreModal.title')" size="md" @close="showRestoreConfirm = false">
+      <template v-if="!restoreDone">
+        <div v-if="restoreTarget" class="p-4 bg-gray-50 rounded-xl mb-4">
+          <p class="text-sm text-gray-500">{{ $t('adminSettings.restoreModal.backupFrom') }}</p>
+          <p class="font-medium text-gray-900">{{ restoreTarget.date }}</p>
+          <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.size') }}: {{ restoreTarget.size }}</p>
         </div>
-      </Transition>
-    </Teleport>
+        <AppAlert variant="error">
+          {{ $t('adminSettings.restoreModal.warning') }}
+        </AppAlert>
+      </template>
+      <template v-else>
+        <div class="text-center py-4">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="font-medium text-gray-900">{{ $t('adminSettings.restoreModal.restoreComplete') }}</p>
+          <p class="text-sm text-gray-500 mt-1">{{ $t('adminSettings.restoreModal.restoreSuccess', { date: restoreTarget?.date }) }}</p>
+        </div>
+      </template>
+      <template #footer>
+        <template v-if="!restoreDone">
+          <AppButton variant="secondary" @click="showRestoreConfirm = false">
+            {{ $t('adminSettings.restoreModal.cancel') }}
+          </AppButton>
+          <AppButton
+            variant="danger"
+            :disabled="restoring"
+            :loading="restoring"
+            @click="executeRestore"
+          >
+            {{ restoring ? $t('adminSettings.restoreModal.restoring') : $t('adminSettings.restoreModal.restoreBtn') }}
+          </AppButton>
+        </template>
+        <template v-else>
+          <AppButton variant="primary" @click="showRestoreConfirm = false">
+            {{ $t('adminSettings.restoreModal.done') }}
+          </AppButton>
+        </template>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 

@@ -5,6 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { recyclerStore } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
+import { AppButton, AppCard } from '../../components/ui'
 
 const { t } = useI18n()
 
@@ -772,50 +773,22 @@ const getCapacityGroupLabel = (value: string) => {
       <!-- Back Button & Edit Button -->
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-4">
-          <button
-            @click="backToList"
-            class="flex items-center gap-3 px-6 py-3 text-gray-700 bg-white border-2 border-gray-400 rounded-xl font-semibold text-base hover:bg-gray-50 hover:border-gray-500 hover:shadow-md transition-all"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            {{ $t('common.back') }}
-          </button>
+          <AppButton variant="back" :label="$t('common.back')" @click="backToList" />
 
-          <button
+          <AppButton
             v-if="!isEditing"
+            variant="primary"
+            bg="#65a30d"
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z&quot; /></svg>'"
+            :label="$t('common.edit')"
             @click="startEditing"
-            class="flex items-center gap-3 px-6 py-3 text-white bg-lime-600 border-2 border-lime-600 rounded-xl font-semibold text-base hover:bg-lime-700 hover:border-lime-700 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-            {{ $t('common.edit') }}
-          </button>
+          />
         </div>
 
         <!-- Save/Cancel Buttons -->
         <div v-if="isEditing" class="flex items-center gap-4">
-          <button
-            @click="cancelEditing"
-            class="flex items-center gap-2 px-6 py-3 text-gray-700 bg-white border-2 border-gray-400 rounded-xl font-semibold text-base hover:bg-gray-50 hover:border-gray-500 hover:shadow-md transition-all"
-          >
-            {{ $t('common.cancel') }}
-          </button>
-          <button
-            @click="saveChanges"
-            :disabled="saving"
-            class="flex items-center gap-3 px-6 py-3 text-white bg-lime-600 border-2 border-lime-600 rounded-xl font-semibold text-base hover:bg-lime-700 hover:border-lime-700 hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
-          >
-            <svg v-if="saving" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            {{ saving ? $t('common.loading') : $t('common.save') }}
-          </button>
+          <AppButton variant="secondary" :label="$t('common.cancel')" @click="cancelEditing" />
+          <AppButton variant="success" :label="saving ? $t('common.loading') : $t('common.save')" :disabled="saving" :loading="saving" @click="saveChanges" />
         </div>
       </div>
 
@@ -847,7 +820,7 @@ const getCapacityGroupLabel = (value: string) => {
       <!-- Company Details Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Main Info -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <AppCard padding="none" radius="sm">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-lime-100 rounded-lg flex items-center justify-center">
@@ -888,10 +861,10 @@ const getCapacityGroupLabel = (value: string) => {
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Addresses -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <AppCard padding="none" radius="sm">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -923,10 +896,10 @@ const getCapacityGroupLabel = (value: string) => {
               <p v-else class="text-gray-900">{{ selectedCompany.actualAddress }}</p>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Contacts -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <AppCard padding="none" radius="sm">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -1000,10 +973,10 @@ const getCapacityGroupLabel = (value: string) => {
               <p v-else class="text-lime-600">{{ selectedCompany.website }}</p>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- License & Registration -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <AppCard padding="none" radius="sm">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -1048,10 +1021,10 @@ const getCapacityGroupLabel = (value: string) => {
               </span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Recycler Capacities (only for recycler type) -->
-        <div v-if="selectedCompany.type === 'recycler' && matchedRecycler" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden col-span-1 lg:col-span-2">
+        <AppCard v-if="selectedCompany.type === 'recycler' && matchedRecycler" padding="none" radius="sm" class="col-span-1 lg:col-span-2">
           <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
@@ -1108,7 +1081,7 @@ const getCapacityGroupLabel = (value: string) => {
               </tbody>
             </table>
           </div>
-        </div>
+        </AppCard>
       </div>
     </div>
   </DashboardLayout>

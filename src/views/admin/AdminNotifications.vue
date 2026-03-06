@@ -2,6 +2,7 @@
 import { ref, computed, reactive, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -452,15 +453,12 @@ const showPreview = ref(false)
           <h1 class="text-2xl font-bold text-[#415861]">{{ $t('adminNotifications.pageTitle') }}</h1>
           <p class="text-[#64748b] mt-1">{{ $t('adminNotifications.pageSubtitle') }}</p>
         </div>
-        <button
-          @click="openCreateModal"
-          class="px-5 py-2.5 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0b7276] transition-colors flex items-center gap-2 shadow-sm"
-        >
+        <AppButton variant="primary" @click="openCreateModal">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           {{ $t('adminNotifications.createTemplate') }}
-        </button>
+        </AppButton>
       </div>
 
       <!-- Stats Cards -->
@@ -572,7 +570,7 @@ const showPreview = ref(false)
       </div>
 
       <!-- Templates Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
+      <AppCard padding="none" :noBorder="false">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-[#f8fafc] border-b border-[#e2e8f0]">
@@ -669,33 +667,36 @@ const showPreview = ref(false)
                 <!-- Actions -->
                 <td class="px-4 py-4">
                   <div class="flex items-center justify-center gap-1">
-                    <button
+                    <AppButton
+                      variant="icon-only"
+                      size="sm"
                       @click="openEditModal(template)"
-                      class="p-2 text-[#64748b] hover:text-[#0e888d] hover:bg-[#0e888d]/5 rounded-lg transition-colors"
                       :title="$t('adminNotifications.editTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                    </button>
-                    <button
+                    </AppButton>
+                    <AppButton
+                      variant="icon-only"
+                      size="sm"
                       @click="duplicateTemplate(template)"
-                      class="p-2 text-[#64748b] hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       :title="$t('adminNotifications.duplicateTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                    </button>
-                    <button
+                    </AppButton>
+                    <AppButton
+                      variant="icon-danger"
+                      size="sm"
                       @click="openDeleteModal(template)"
-                      class="p-2 text-[#64748b] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       :title="$t('adminNotifications.deleteTooltip')"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                    </button>
+                    </AppButton>
                   </div>
                 </td>
               </tr>
@@ -718,7 +719,7 @@ const showPreview = ref(false)
             {{ $t('adminNotifications.shownOf', { filtered: filteredTemplates.length, total: templates.length }) }}
           </p>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Create / Edit Template Modal -->
@@ -735,11 +736,11 @@ const showPreview = ref(false)
                   </h3>
                   <p class="text-sm text-[#64748b] mt-1">{{ $t('adminNotifications.fillTemplateParams') }}</p>
                 </div>
-                <button @click="showModal = false" class="p-2 text-[#64748b] hover:text-[#415861] rounded-lg hover:bg-gray-100 transition-colors">
+                <AppButton variant="icon-only" size="sm" @click="showModal = false">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                </AppButton>
               </div>
             </div>
 
@@ -922,33 +923,27 @@ const showPreview = ref(false)
 
             <!-- Modal Footer -->
             <div class="p-6 border-t border-[#e2e8f0] flex items-center justify-between flex-shrink-0 bg-[#f8fafc]">
-              <button
-                @click="showModal = false"
-                class="px-5 py-2.5 bg-white border border-[#e2e8f0] text-[#415861] rounded-xl font-medium hover:bg-gray-50 transition-colors"
-              >
+              <AppButton variant="secondary" @click="showModal = false">
                 {{ $t('adminNotifications.cancel') }}
-              </button>
+              </AppButton>
               <div class="flex items-center gap-3">
-                <button
-                  @click="showPreview = !showPreview"
-                  class="px-5 py-2.5 bg-white border border-[#e2e8f0] text-[#415861] rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
+                <AppButton variant="outline" @click="showPreview = !showPreview">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                   {{ $t('adminNotifications.preview') }}
-                </button>
-                <button
-                  @click="saveTemplate"
+                </AppButton>
+                <AppButton
+                  variant="primary"
                   :disabled="!formData.name || !formData.body || formData.recipients.length === 0"
-                  class="px-6 py-2.5 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0b7276] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                  @click="saveTemplate"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                   {{ isEditing ? $t('adminNotifications.saveChanges') : $t('adminNotifications.createTemplate') }}
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>
@@ -957,64 +952,45 @@ const showPreview = ref(false)
     </Teleport>
 
     <!-- Delete Confirmation Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="handleOverlay">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div class="p-6 border-b border-[#e2e8f0]">
-              <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminNotifications.deleteTemplateTitle') }}</h3>
-            </div>
-
-            <div class="p-6">
-              <div v-if="deleteTarget" class="space-y-4">
-                <div class="flex items-center gap-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="text-sm text-red-800 font-medium">{{ $t('adminNotifications.deleteConfirmText') }}</p>
-                    <p class="text-xs text-red-600 mt-1">{{ $t('adminNotifications.deleteIrreversible') }}</p>
-                  </div>
-                </div>
-
-                <div class="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
-                  <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.templateLabel') }}</p>
-                  <p class="font-semibold text-[#415861]">{{ deleteTarget.name }}</p>
-                  <div class="flex items-center gap-2 mt-2">
-                    <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', getTypeColor(deleteTarget.type)]">
-                      {{ getTypeLabel(deleteTarget.type) }}
-                    </span>
-                    <span class="text-xs text-[#64748b]">
-                      {{ deleteTarget.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="p-6 border-t border-[#e2e8f0] flex justify-end gap-3">
-              <button
-                @click="showDeleteModal = false"
-                class="px-5 py-2.5 bg-white border border-[#e2e8f0] text-[#415861] rounded-xl font-medium hover:bg-gray-50 transition-colors"
-              >
-                {{ $t('adminNotifications.cancel') }}
-              </button>
-              <button
-                @click="confirmDelete"
-                class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                {{ $t('adminNotifications.delete') }}
-              </button>
-            </div>
+    <AppModal :visible="showDeleteModal" :title="$t('adminNotifications.deleteTemplateTitle')" size="md" @close="showDeleteModal = false">
+      <div v-if="deleteTarget" class="space-y-4">
+        <div class="flex items-center gap-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm text-red-800 font-medium">{{ $t('adminNotifications.deleteConfirmText') }}</p>
+            <p class="text-xs text-red-600 mt-1">{{ $t('adminNotifications.deleteIrreversible') }}</p>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <div class="p-4 bg-[#f8fafc] rounded-xl border border-[#e2e8f0]">
+          <p class="text-sm text-[#64748b]">{{ $t('adminNotifications.templateLabel') }}</p>
+          <p class="font-semibold text-[#415861]">{{ deleteTarget.name }}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', getTypeColor(deleteTarget.type)]">
+              {{ getTypeLabel(deleteTarget.type) }}
+            </span>
+            <span class="text-xs text-[#64748b]">
+              {{ deleteTarget.active ? $t('adminNotifications.statusActive') : $t('adminNotifications.statusInactive') }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="showDeleteModal = false">
+          {{ $t('adminNotifications.cancel') }}
+        </AppButton>
+        <AppButton variant="danger" @click="confirmDelete">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          {{ $t('adminNotifications.delete') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 

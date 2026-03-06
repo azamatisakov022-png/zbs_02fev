@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
@@ -432,15 +432,15 @@ const goBack = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <button
+          <AppButton
             v-if="activeReport"
+            variant="back"
             @click="goBack"
-            class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-          </button>
+          </AppButton>
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
               {{ activeReport === 'summary' ? $t('employeeReports.summaryTitle') :
@@ -575,36 +575,23 @@ const goBack = () => {
       <!-- ========== ОТЧЁТ 1: СВОДНЫЙ ДЛЯ РУКОВОДСТВА ========== -->
       <template v-if="activeReport === 'summary'">
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
+        <AppCard radius="sm" :title="$t('employeeReports.reportParams')">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="summaryFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+              <AppInput v-model="summaryFilters.dateFrom" type="date" :label="$t('common.period')" focusColor="#9333ea" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="summaryFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+              <AppInput v-model="summaryFilters.dateTo" type="date" :label="$t('common.period')" focusColor="#9333ea" />
             </div>
             <div class="flex items-end">
-              <button
-                @click="generateReport"
-                :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <AppButton variant="primary" fullWidth bg="#9333ea" :disabled="isGenerating" :loading="isGenerating" @click="generateReport">
                 {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Results -->
         <div v-if="reportGenerated" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
               {{ $t('employeeReports.summaryForPeriod') }}: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
@@ -654,16 +641,13 @@ const goBack = () => {
       <!-- ========== ОТЧЁТ 2: СОСТОЯНИЕ ПОЛИГОНОВ ========== -->
       <template v-if="activeReport === 'landfills'">
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
+        <AppCard radius="sm" :title="$t('employeeReports.reportParams')">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="landfillsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
+              <AppInput v-model="landfillsFilters.dateFrom" type="date" :label="$t('common.period')" focusColor="#7c3aed" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="landfillsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
+              <AppInput v-model="landfillsFilters.dateTo" type="date" :label="$t('common.period')" focusColor="#7c3aed" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -680,24 +664,14 @@ const goBack = () => {
               </select>
             </div>
             <div class="flex items-end">
-              <button
-                @click="generateReport"
-                :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-violet-600 text-white rounded-lg font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <AppButton variant="primary" fullWidth bg="#7c3aed" :disabled="isGenerating" :loading="isGenerating" @click="generateReport">
                 {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Results -->
         <div v-if="reportGenerated" class="space-y-6">
-          <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <p class="text-sm text-gray-500">{{ $t('employeeReports.totalObjects') }}</p>
@@ -802,16 +776,13 @@ const goBack = () => {
       <!-- ========== ОТЧЁТ 3: ЛИЦЕНЗИИ ========== -->
       <template v-if="activeReport === 'licenses'">
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
+        <AppCard radius="sm" :title="$t('employeeReports.reportParams')">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="licensesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <AppInput v-model="licensesFilters.dateFrom" type="date" :label="$t('common.period')" focusColor="#2563eb" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="licensesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <AppInput v-model="licensesFilters.dateTo" type="date" :label="$t('common.period')" focusColor="#2563eb" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -830,24 +801,14 @@ const goBack = () => {
               </select>
             </div>
             <div class="flex items-end">
-              <button
-                @click="generateReport"
-                :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <AppButton variant="primary" fullWidth :disabled="isGenerating" :loading="isGenerating" @click="generateReport">
                 {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Results -->
         <div v-if="reportGenerated" class="space-y-6">
-          <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <p class="text-sm text-gray-500">{{ $t('employeeReports.totalLicenses') }}</p>
@@ -935,16 +896,13 @@ const goBack = () => {
       <!-- ========== ОТЧЁТ 4: ВЫПОЛНЕНИЕ НОРМАТИВОВ ========== -->
       <template v-if="activeReport === 'normatives'">
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
+        <AppCard radius="sm" :title="$t('employeeReports.reportParams')">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="normativesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+              <AppInput v-model="normativesFilters.dateFrom" type="date" :label="$t('common.period')" focusColor="#10b981" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="normativesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+              <AppInput v-model="normativesFilters.dateTo" type="date" :label="$t('common.period')" focusColor="#10b981" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -953,24 +911,14 @@ const goBack = () => {
               </select>
             </div>
             <div class="flex items-end">
-              <button
-                @click="generateReport"
-                :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <AppButton variant="primary" fullWidth bg="#059669" :disabled="isGenerating" :loading="isGenerating" @click="generateReport">
                 {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Results -->
         <div v-if="reportGenerated" class="space-y-6">
-          <!-- Summary cards -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
               <p class="text-sm text-gray-500">{{ $t('employeeReports.wasteTypes') }}</p>
@@ -1056,36 +1004,23 @@ const goBack = () => {
       <!-- ========== ОТЧЁТ 5: ПО РЕГИОНАМ ========== -->
       <template v-if="activeReport === 'regions'">
         <!-- Filters -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeReports.reportParams') }}</h3>
+        <AppCard radius="sm" :title="$t('employeeReports.reportParams')">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="regionsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <AppInput v-model="regionsFilters.dateFrom" type="date" :label="$t('common.period')" focusColor="#4f46e5" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="regionsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <AppInput v-model="regionsFilters.dateTo" type="date" :label="$t('common.period')" focusColor="#4f46e5" />
             </div>
             <div class="flex items-end">
-              <button
-                @click="generateReport"
-                :disabled="isGenerating"
-                class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <svg v-if="isGenerating" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <AppButton variant="primary" fullWidth bg="#4f46e5" :disabled="isGenerating" :loading="isGenerating" @click="generateReport">
                 {{ isGenerating ? $t('common.generating') : $t('common.generate') }}
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Results -->
         <div v-if="reportGenerated" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
               {{ $t('employeeReports.distributionBy') }} <span class="font-semibold">{{ regionsData.length }}</span> {{ $t('employeeReports.regionsCount') }}

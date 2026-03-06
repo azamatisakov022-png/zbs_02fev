@@ -4,22 +4,24 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { ReportStatus } from '../../constants/statuses'
-import { reportStore } from '../../stores/reports'
+import { useReportStore } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { AppButton, AppAlert } from '../../components/ui'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const reportStore = useReportStore()
 
 const report = computed(() => {
   const id = Number(route.params.id)
-  return reportStore.state.reports.find(r => r.id === id) || null
+  return reportStore.reports.find(r => r.id === id) || null
 })
 
 const getStatusClass = (status: string) => {
@@ -149,19 +151,12 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
       <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('ecoReportDetail.notFound') }}</h2>
       <p class="text-[#64748b] mb-6">{{ $t('ecoReportDetail.notFoundDesc') }}</p>
-      <button @click="goBack" class="btn-back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        {{ $t('common.back') }}
-      </button>
+      <AppButton variant="back" :label="$t('common.back')" @click="goBack" />
     </div>
 
     <template v-else>
       <div ref="printAreaRef">
-      <!-- Back link -->
-      <button @click="goBack" class="btn-back mb-4">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        {{ $t('common.back') }}
-      </button>
+      <AppButton variant="back" :label="$t('common.back')" @click="goBack" class="mb-4" />
 
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -188,15 +183,9 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       </div>
 
       <!-- Rejection reason -->
-      <div v-if="report.status === 'rejected' && report.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <div>
-          <p class="font-medium text-red-800">{{ $t('ecoReportDetail.rejectionReason') }}</p>
-          <p class="text-sm text-red-700 mt-1">{{ report.rejectionReason }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="report.status === 'rejected' && report.rejectionReason" variant="error" :title="$t('ecoReportDetail.rejectionReason')" class="mb-6">
+        {{ report.rejectionReason }}
+      </AppAlert>
 
       <!-- Section 1: General info -->
       <div class="rd-section mb-6">
@@ -407,16 +396,8 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
           class="w-full px-4 py-3 border border-red-200 rounded-lg focus:outline-none focus:border-red-400 text-sm"
         ></textarea>
         <div class="flex justify-end gap-3 mt-3">
-          <button @click="showRejectForm = false" class="px-4 py-2 text-[#64748b] hover:bg-white rounded-lg text-sm">
-            {{ $t('common.cancel') }}
-          </button>
-          <button
-            @click="rejectReport"
-            :disabled="!rejectionReason.trim()"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ $t('common.confirm') }}
-          </button>
+          <AppButton variant="secondary" :label="$t('common.cancel')" @click="showRejectForm = false" />
+          <AppButton variant="danger" :label="$t('common.confirm')" :disabled="!rejectionReason.trim()" @click="rejectReport" />
         </div>
       </div>
 
@@ -424,43 +405,16 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
       <div class="flex flex-wrap items-center gap-3">
         <!-- Review actions for pending reports -->
         <template v-if="report.status === 'under_review' && !showRejectForm">
-          <button
-            @click="approveReport"
-            class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-full bg-[#10b981] text-white hover:bg-[#059669] transition-colors shadow-sm"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            {{ $t('ecoReportDetail.acceptReport') }}
-          </button>
-          <button
-            @click="showRejectForm = true"
-            class="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-full border border-red-300 text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            {{ $t('ecoReportDetail.reject') }}
-          </button>
+          <AppButton variant="success" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M5 13l4 4L19 7&quot; /></svg>'" :label="$t('ecoReportDetail.acceptReport')" @click="approveReport" />
+          <AppButton variant="danger" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'" :label="$t('ecoReportDetail.reject')" @click="showRejectForm = true" />
           <div class="w-px h-6 bg-[#e2e8f0] mx-1"></div>
         </template>
 
-        <button
-          @click="downloadExcel"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#059669] text-white hover:bg-[#047857] transition-colors shadow-sm"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-          {{ $t('ecoReportDetail.downloadExcel') }}
-        </button>
-        <button
-          @click="downloadPdf"
-          class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full bg-[#8B5CF6] text-white hover:bg-[#7C3AED] transition-colors shadow-sm"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          {{ $t('ecoReportDetail.downloadPdf') }}
-        </button>
+        <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'" :label="$t('ecoReportDetail.downloadExcel')" @click="downloadExcel" />
+        <AppButton variant="export" size="sm" bg="#8B5CF6" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('ecoReportDetail.downloadPdf')" @click="downloadPdf" />
       </div>
       <div style="border-top: 1px solid #e5e7eb; margin-top: 16px; padding-top: 16px;">
-        <button @click="goBack" class="btn-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          {{ $t('common.back') }}
-        </button>
+        <AppButton variant="back" :label="$t('common.back')" @click="goBack" />
       </div>
       </div>
     </template>

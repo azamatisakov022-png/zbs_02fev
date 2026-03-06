@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { AppBadge } from '../../components/ui'
+import { AppBadge, AppButton, AppInput, AppTabs, AppCard } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { productGroups } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
@@ -23,10 +23,10 @@ onMounted(async () => {
 
 // ─── Tabs ───
 const activeTab = ref<'summary' | 'recycling' | 'regional'>('summary')
-const tabs = computed(() => [
-  { key: 'summary' as const, label: t('ministryAnalytics.tabSummary') },
-  { key: 'recycling' as const, label: t('ministryAnalytics.tabRecycling') },
-  { key: 'regional' as const, label: t('ministryAnalytics.tabRegional') },
+const tabItems = computed(() => [
+  { key: 'summary', label: t('ministryAnalytics.tabSummary') },
+  { key: 'recycling', label: t('ministryAnalytics.tabRecycling') },
+  { key: 'regional', label: t('ministryAnalytics.tabRegional') },
 ])
 
 // ─── Filters ───
@@ -289,7 +289,7 @@ const periodButtons = computed(() => [
     />
 
     <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <AppCard padding="sm" class="mb-6">
       <div class="flex flex-wrap items-center gap-3">
         <!-- Period -->
         <div class="flex items-center gap-1 bg-[#f8fafc] rounded-xl p-1">
@@ -302,31 +302,24 @@ const periodButtons = computed(() => [
         </div>
         <!-- Custom dates -->
         <template v-if="periodMode === 'custom'">
-          <input type="date" v-model="customFrom" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
+          <AppInput v-model="customFrom" type="date" size="sm" hide-label />
           <span class="text-xs text-[#94a3b8]">—</span>
-          <input type="date" v-model="customTo" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
+          <AppInput v-model="customTo" type="date" size="sm" hide-label />
         </template>
         <!-- Region -->
         <select v-model="regionFilter" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]">
           <option v-for="r in regions" :key="r.value" :value="r.value">{{ r.label }}</option>
         </select>
         <!-- Export -->
-        <button @click="exportReport" class="ml-auto flex items-center gap-1.5 px-4 py-1.5 bg-[#10b981] text-white rounded-lg text-xs font-medium hover:bg-[#059669] transition-colors">
+        <AppButton variant="export" size="sm" class="ml-auto" @click="exportReport">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {{ $t('ministryAnalytics.exportReport') }}
-        </button>
+        </AppButton>
       </div>
-    </div>
+    </AppCard>
 
-    <!-- Tabs -->
-    <div class="flex gap-1 bg-[#f8fafc] rounded-xl p-1 mb-6 border border-[#e2e8f0]">
-      <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key"
-        :class="['flex-1 py-2.5 rounded-lg text-sm font-medium transition-all',
-          activeTab === tab.key
-            ? 'bg-white text-[#1e293b] shadow-sm'
-            : 'text-[#64748b] hover:text-[#1e293b]']">
-        {{ tab.label }}
-      </button>
+    <div class="mb-6">
+      <AppTabs v-model="activeTab" :tabs="tabItems" size="sm" />
     </div>
 
     <template v-if="isLoading">
@@ -387,8 +380,7 @@ const periodButtons = computed(() => [
         <!-- Charts Row 1 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <!-- Horizontal Bar: Recycling capacity by region -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.recyclingCapacity') }}</h3>
+          <AppCard :title="$t('ministryAnalytics.recyclingCapacity')">
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => b.recyclers - a.recyclers)" :key="'rec-'+r.key" class="flex items-center gap-3">
                 <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -399,11 +391,10 @@ const periodButtons = computed(() => [
                 <span class="text-xs font-semibold text-[#1e293b] w-6 text-right">{{ r.recyclers }}</span>
               </div>
             </div>
-          </div>
+          </AppCard>
 
           <!-- Landfill status -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.landfillStatus') }}</h3>
+          <AppCard :title="$t('ministryAnalytics.landfillStatus')">
             <div class="space-y-5">
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -445,14 +436,13 @@ const periodButtons = computed(() => [
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
         </div>
 
         <!-- Charts Row 2 -->
         <div class="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <!-- Donut: Dump liquidation status -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.dumpLiquidationStatus') }}</h3>
+          <AppCard :title="$t('ministryAnalytics.dumpLiquidationStatus')">
             <div class="flex items-center gap-6">
               <div class="relative flex-shrink-0">
                 <svg viewBox="0 0 200 200" width="180" height="180">
@@ -471,7 +461,7 @@ const periodButtons = computed(() => [
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
         </div>
       </template>
 
@@ -498,7 +488,7 @@ const periodButtons = computed(() => [
         </div>
 
         <!-- Normative fulfillment table -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
+        <AppCard class="mb-6">
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.normFulfillmentByCategory') }} ({{ normYear }})</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
@@ -540,11 +530,10 @@ const periodButtons = computed(() => [
               </tbody>
             </table>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Area chart: Recycling dynamics -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.recyclingDynamics') }}</h3>
+        <AppCard :title="$t('ministryAnalytics.recyclingDynamics')">
           <svg viewBox="0 0 600 240" class="w-full" preserveAspectRatio="xMidYMid meet">
             <!-- Grid -->
             <line v-for="i in 5" :key="'rgl'+i" x1="40" x2="580" :y1="10 + (i-1)*45" :y2="10 + (i-1)*45" stroke="#f1f5f9" stroke-width="1" />
@@ -562,14 +551,13 @@ const periodButtons = computed(() => [
             <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-6 h-0.5 bg-[#94a3b8] inline-block" style="border-top:1.5px dashed #94a3b8"></span>{{ $t('ministryAnalytics.legendPlan') }}</span>
             <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#d1fae5] border border-[#22C55E]"></span>{{ $t('ministryAnalytics.legendFact') }}</span>
           </div>
-        </div>
+        </AppCard>
       </template>
 
       <!-- ═══════════ TAB 3: REGIONAL STATISTICS ═══════════ -->
       <template v-if="activeTab === 'regional'">
         <!-- Region infrastructure overview -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.infrastructureByRegions') }}</h3>
+        <AppCard class="mb-6" :title="$t('ministryAnalytics.infrastructureByRegions')">
           <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
             <button v-for="r in regionData" :key="r.key"
               @click="regionFilter = regionFilter === r.key ? 'all' : r.key"
@@ -584,11 +572,10 @@ const periodButtons = computed(() => [
               <p class="text-[10px] text-[#64748b]">{{ r.recyclers + r.landfills }} {{ $t('ministryAnalytics.objectsCount') }}</p>
             </button>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Sortable region table -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
-          <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.detailedRegionStats') }}</h3>
+        <AppCard class="mb-6" :title="$t('ministryAnalytics.detailedRegionStats')">
           <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse">
               <thead>
@@ -634,13 +621,12 @@ const periodButtons = computed(() => [
               </tfoot>
             </table>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Two charts: waste distribution + infrastructure -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Stacked bar: Waste by region -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.wasteDistribution') }}</h3>
+          <AppCard :title="$t('ministryAnalytics.wasteDistribution')">
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => b.wasteVolume - a.wasteVolume)" :key="'waste-'+r.key" class="flex items-center gap-3">
                 <span class="text-xs text-[#64748b] w-20 truncate flex-shrink-0">{{ r.shortName }}</span>
@@ -651,11 +637,10 @@ const periodButtons = computed(() => [
                 <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ fmt(r.wasteVolume) }} {{ $t('ministryAnalytics.tonsUnit') }}</span>
               </div>
             </div>
-          </div>
+          </AppCard>
 
           <!-- Grouped bar: Infrastructure -->
-          <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
-            <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ministryAnalytics.infrastructureByRegions') }}</h3>
+          <AppCard :title="$t('ministryAnalytics.infrastructureByRegions')">
             <div class="space-y-2.5">
               <div v-for="r in [...regionData].sort((a,b) => (b.recyclers+b.landfills) - (a.recyclers+a.landfills))" :key="'infra-'+r.key"
                 class="flex items-center gap-3">
@@ -675,7 +660,7 @@ const periodButtons = computed(() => [
               <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>{{ $t('ministryAnalytics.legendLandfills') }}</span>
               <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>{{ $t('ministryAnalytics.legendDumps') }}</span>
             </div>
-          </div>
+          </AppCard>
         </div>
       </template>
     </template>

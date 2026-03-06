@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
+import { AppCard } from '../../components/ui'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
@@ -119,13 +120,15 @@ const alertConfig = {
     <!-- Two-column: Audit Log & Pending Items -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <!-- LEFT: Audit Log -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-        <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.recentActions') }}</h2>
-          <router-link to="/admin/audit" class="text-[#0e888d] text-sm font-medium hover:underline">
-            {{ $t('adminDashboard.allRecords') }} &rarr;
-          </router-link>
-        </div>
+      <AppCard padding="none" :headerBorder="true" title="">
+        <template #header>
+          <div class="px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.recentActions') }}</h2>
+            <router-link to="/admin/audit" class="text-[#0e888d] text-sm font-medium hover:underline">
+              {{ $t('adminDashboard.allRecords') }} &rarr;
+            </router-link>
+          </div>
+        </template>
         <div class="divide-y divide-[#f1f5f9]">
           <div
             v-for="(entry, idx) in auditLog"
@@ -147,13 +150,10 @@ const alertConfig = {
             </span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- RIGHT: Pending Items -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-        <div class="px-6 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.requiresAttention') }}</h2>
-        </div>
+      <AppCard padding="none" :headerBorder="true" :title="$t('adminDashboard.requiresAttention')">
         <div class="p-4 space-y-3">
           <router-link
             v-for="item in pendingItems"
@@ -172,7 +172,7 @@ const alertConfig = {
             </span>
           </router-link>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Quick Actions -->
@@ -209,10 +209,7 @@ const alertConfig = {
     </div>
 
     <!-- System Alerts -->
-    <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-      <div class="px-6 py-4 border-b border-[#e2e8f0]">
-        <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('adminDashboard.systemNotifications') }}</h2>
-      </div>
+    <AppCard padding="none" :headerBorder="true" :title="$t('adminDashboard.systemNotifications')">
       <div class="p-4 space-y-3">
         <div
           v-for="(alert, idx) in systemAlerts"
@@ -227,6 +224,6 @@ const alertConfig = {
           <span :class="['text-sm font-medium', alertConfig[alert.type].text]">{{ alert.message }}</span>
         </div>
       </div>
-    </div>
+    </AppCard>
   </DashboardLayout>
 </template>

@@ -6,7 +6,7 @@ import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { recyclerStore, type Recycler, type RecyclerStatus, type RecyclerCapacity } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
@@ -268,30 +268,23 @@ const resetAllFilters = () => {
       </div>
     </div>
 
-    <!-- Add Form -->
-    <div v-if="showAddForm" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
-      <h2 class="text-lg font-semibold text-[#1e293b] mb-6">{{ isEditing ? $t('employeeRecyclers.editRecycler') : $t('employeeRecyclers.addRecycler') }}</h2>
+    <AppCard v-if="showAddForm" class="mb-6" :title="isEditing ? $t('employeeRecyclers.editRecycler') : $t('employeeRecyclers.addRecycler')">
       <div class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.name') }} *</label>
-            <input v-model="newRecycler.name" type="text" :placeholder="$t('employeeRecyclers.namePlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.name" :label="$t('employeeRecyclers.name') + ' *'" :placeholder="$t('employeeRecyclers.namePlaceholder')" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.inn') }} *</label>
-            <input v-model="newRecycler.inn" type="text" placeholder="01234567890123" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.inn" :label="$t('employeeRecyclers.inn') + ' *'" placeholder="01234567890123" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseNumber') }}</label>
-            <input v-model="newRecycler.licenseNumber" type="text" :placeholder="$t('employeeRecyclers.licenseNumPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.licenseNumber" :label="$t('employeeRecyclers.licenseNumber')" :placeholder="$t('employeeRecyclers.licenseNumPlaceholder')" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseDate') }}</label>
-            <input v-model="newRecycler.licenseDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.licenseDate" :label="$t('employeeRecyclers.licenseDate')" placeholder="01.01.2024" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.licenseExpiry') }}</label>
-            <input v-model="newRecycler.licenseExpiry" type="text" placeholder="01.01.2029" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.licenseExpiry" :label="$t('employeeRecyclers.licenseExpiry')" placeholder="01.01.2029" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
             <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('common.status') }}</label>
@@ -310,34 +303,29 @@ const resetAllFilters = () => {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="sm:col-span-2 lg:col-span-1">
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.legalAddress') }}</label>
-            <input v-model="newRecycler.address" type="text" :placeholder="$t('employeeRecyclers.addressPlaceholder')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.address" :label="$t('employeeRecyclers.legalAddress')" :placeholder="$t('employeeRecyclers.addressPlaceholder')" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.phone') }}</label>
-            <input v-model="newRecycler.contactPhone" type="text" placeholder="+996 555 ..." class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.contactPhone" :label="$t('employeeRecyclers.phone')" placeholder="+996 555 ..." size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.email') }}</label>
-            <input v-model="newRecycler.contactEmail" type="text" placeholder="info@company.kg" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.contactEmail" :label="$t('employeeRecyclers.email')" placeholder="info@company.kg" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
         </div>
 
         <!-- Coordinates -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.latitude') }}</label>
-            <input :value="newRecycler.coordinates?.lat || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lat = v } }" type="number" step="0.0001" placeholder="42.8746" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput :modelValue="String(newRecycler.coordinates?.lat || '')" @update:modelValue="(val: string) => { const v = parseFloat(val); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lat = v } }" type="number" step="0.0001" :label="$t('employeeRecyclers.latitude')" placeholder="42.8746" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('employeeRecyclers.longitude') }}</label>
-            <input :value="newRecycler.coordinates?.lng || ''" @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lng = v } }" type="number" step="0.0001" placeholder="74.5698" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput :modelValue="String(newRecycler.coordinates?.lng || '')" @update:modelValue="(val: string) => { const v = parseFloat(val); if (!isNaN(v)) { if (!newRecycler.coordinates) newRecycler.coordinates = { lat: 0, lng: 0 }; newRecycler.coordinates.lng = v } }" type="number" step="0.0001" :label="$t('employeeRecyclers.longitude')" placeholder="74.5698" size="sm" borderColor="#e2e8f0" focusColor="#2563eb" labelColor="#1e293b" />
           </div>
           <div class="flex items-end">
-            <button type="button" @click="pickerCoords = newRecycler.coordinates; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2">
+            <AppButton variant="outline" @click="pickerCoords = newRecycler.coordinates; showCoordPicker = true">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               {{ $t('employeeRecyclers.pickOnMap') }}
-            </button>
+            </AppButton>
           </div>
         </div>
 
@@ -369,25 +357,33 @@ const resetAllFilters = () => {
               <p class="text-xs font-medium text-[#1e293b] mb-2">{{ getGroupShortLabel(wt) }}</p>
               <div class="flex gap-2">
                 <div class="flex-1">
-                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">{{ $t('employeeRecyclers.capacity') }}</label>
-                  <input
+                  <AppInput
                     type="number"
                     min="0"
-                    :value="getCapacityValue(wt, 'capacityTons')"
-                    @input="setCapacityValue(wt, 'capacityTons', ($event.target as HTMLInputElement).value)"
+                    :modelValue="String(getCapacityValue(wt, 'capacityTons'))"
+                    @update:modelValue="(val: string) => setCapacityValue(wt, 'capacityTons', val)"
                     placeholder="0"
-                    class="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                    :label="$t('employeeRecyclers.capacity')"
+                    size="sm"
+                    borderColor="#e2e8f0"
+                    focusColor="#2563eb"
+                    labelSize="10px"
+                    labelColor="#94a3b8"
                   />
                 </div>
                 <div class="flex-1">
-                  <label class="block text-[10px] text-[#94a3b8] mb-0.5">{{ $t('employeeRecyclers.currentLoad') }}</label>
-                  <input
+                  <AppInput
                     type="number"
                     min="0"
-                    :value="getCapacityValue(wt, 'currentLoadTons')"
-                    @input="setCapacityValue(wt, 'currentLoadTons', ($event.target as HTMLInputElement).value)"
+                    :modelValue="String(getCapacityValue(wt, 'currentLoadTons'))"
+                    @update:modelValue="(val: string) => setCapacityValue(wt, 'currentLoadTons', val)"
                     placeholder="0"
-                    class="w-full px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                    :label="$t('employeeRecyclers.currentLoad')"
+                    size="sm"
+                    borderColor="#e2e8f0"
+                    focusColor="#2563eb"
+                    labelSize="10px"
+                    labelColor="#94a3b8"
                   />
                 </div>
               </div>
@@ -408,16 +404,17 @@ const resetAllFilters = () => {
           </AppButton>
         </div>
       </div>
-    </div>
+    </AppCard>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <AppCard class="mb-6" padding="sm">
       <div class="flex flex-wrap gap-4">
-        <input
+        <AppInput
           v-model="searchQuery"
-          type="text"
           :placeholder="$t('common.search')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+          hideLabel
+          borderColor="#e2e8f0"
+          focusColor="#2563eb"
+          class="flex-1 min-w-[200px]"
         />
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('employeeRecyclers.allStatuses') }}</option>
@@ -432,7 +429,7 @@ const resetAllFilters = () => {
           </option>
         </select>
       </div>
-    </div>
+    </AppCard>
 
     <!-- Table -->
     <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
@@ -511,22 +508,18 @@ const resetAllFilters = () => {
                     </svg>
                     {{ $t('common.edit') }}
                   </AppButton>
-                  <button
+                  <AppButton
                     v-if="recycler.status !== 'revoked'"
+                    :variant="recycler.status === 'active' ? 'warning' : 'success'"
+                    size="sm"
                     @click="handleToggleStatus(recycler)"
-                    :class="[
-                      'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors shadow-sm',
-                      recycler.status === 'active'
-                        ? 'bg-[#F59E0B] hover:bg-[#D97706]'
-                        : 'bg-[#10B981] hover:bg-[#059669]'
-                    ]"
                   >
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path v-if="recycler.status === 'active'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     </svg>
                     {{ recycler.status === 'active' ? $t('employeeRecyclers.suspend') : $t('employeeRecyclers.activate') }}
-                  </button>
+                  </AppButton>
                 </div>
               </td>
             </tr>

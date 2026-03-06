@@ -3,6 +3,7 @@ import { ref, computed, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { AppButton, AppInput, AppCard } from '../../components/ui'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
@@ -558,24 +559,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
           <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.paymentsSubtitle') }}</p>
         </div>
         <div class="flex gap-2">
-          <button
-            @click="exportFullAnalytics('excel')"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {{ $t('common.downloadReportExcel') }}
-          </button>
-          <button
-            @click="exportFullAnalytics('pdf')"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            {{ $t('common.downloadReportPdf') }}
-          </button>
+          <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('common.downloadReportExcel')" @click="exportFullAnalytics('excel')" />
+          <AppButton variant="export" size="sm" bg="#dc2626" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z&quot; /></svg>'" :label="$t('common.downloadReportPdf')" @click="exportFullAnalytics('pdf')" />
         </div>
       </div>
 
@@ -653,7 +638,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
       <!-- Charts Row -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Bar Chart: Monthly Payments with amounts -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <AppCard radius="sm">
           <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoPayments.monthlyPayments2025') }}</h3>
           <div class="flex items-end gap-2 h-56 pt-6">
             <div v-for="m in monthlyData" :key="m.month" class="flex-1 flex flex-col items-center">
@@ -678,10 +663,10 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
           <div class="mt-6 pt-4 border-t border-gray-100 text-center">
             <span class="text-lg font-bold text-lime-600">{{ $t('ecoPayments.yearTotal') }}: {{ formatNumber(yearTotal) }} {{ $t('ecoPayments.som') }}</span>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Pie Chart: Paid vs Debt with total inside -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <AppCard radius="sm">
           <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoPayments.paidVsDebtRatio') }}</h3>
           <div class="flex items-center justify-center h-48">
             <div class="relative w-44 h-44">
@@ -719,7 +704,7 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               <span class="font-bold text-red-600">{{ formatNumber(summaryStats.totalDebt) }} {{ $t('ecoPayments.som') }}</span>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Payments Block -->
@@ -743,24 +728,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               </span>
             </h3>
             <div class="flex gap-2">
-              <button
-                @click="exportPaymentsReport('excel')"
-                class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                {{ $t('common.excel') }}
-              </button>
-              <button
-                @click="exportPaymentsReport('pdf')"
-                class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                {{ $t('common.pdf') }}
-              </button>
+              <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('common.excel')" @click="exportPaymentsReport('excel')" />
+              <AppButton variant="export" size="sm" bg="#dc2626" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z&quot; /></svg>'" :label="$t('common.pdf')" @click="exportPaymentsReport('pdf')" />
             </div>
           </div>
         </div>
@@ -769,22 +738,10 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
         <div class="p-4 border-b border-gray-200 bg-gray-50">
           <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.searchByCompany') }}</label>
-              <input
-                v-model="paymentsFilters.search"
-                type="text"
-                :placeholder="$t('ecoPayments.enterCompanyName')"
-                class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
+              <AppInput v-model="paymentsFilters.search" :label="$t('ecoPayments.searchByCompany')" :placeholder="$t('ecoPayments.enterCompanyName')" size="sm" focusColor="#84cc16" labelSize="12px" />
             </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
-              <input v-model="paymentsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
-              <input v-model="paymentsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
-            </div>
+            <AppInput v-model="paymentsFilters.dateFrom" type="date" :label="$t('ecoPayments.periodFrom')" size="sm" focusColor="#84cc16" labelSize="12px" />
+            <AppInput v-model="paymentsFilters.dateTo" type="date" :label="$t('ecoPayments.periodTo')" size="sm" focusColor="#84cc16" labelSize="12px" />
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.productGroupLabel') }}</label>
               <select v-model="paymentsFilters.groupNumber" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500">
@@ -852,24 +809,8 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
               {{ $t('ecoPayments.debtsTitle') }}
             </h3>
             <div class="flex gap-2">
-              <button
-                @click="exportDebtsReport('excel')"
-                class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                {{ $t('common.excel') }}
-              </button>
-              <button
-                @click="exportDebtsReport('pdf')"
-                class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                {{ $t('common.pdf') }}
-              </button>
+              <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('common.excel')" @click="exportDebtsReport('excel')" />
+              <AppButton variant="export" size="sm" bg="#dc2626" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z&quot; /></svg>'" :label="$t('common.pdf')" @click="exportDebtsReport('pdf')" />
             </div>
           </div>
         </div>
@@ -878,25 +819,12 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
         <div class="p-4 border-b border-gray-200 bg-gray-50">
           <div class="flex flex-wrap gap-4">
             <div class="flex-1 min-w-[200px]">
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.searchByCompany') }}</label>
-              <input
-                v-model="debtsFilters.search"
-                type="text"
-                :placeholder="$t('ecoPayments.enterCompanyName')"
-                class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
+              <AppInput v-model="debtsFilters.search" :label="$t('ecoPayments.searchByCompany')" :placeholder="$t('ecoPayments.enterCompanyName')" size="sm" focusColor="#84cc16" labelSize="12px" />
             </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
-              <input v-model="debtsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
-              <input v-model="debtsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.minDebtAmount') }}</label>
-              <input v-model.number="debtsFilters.minDebt" type="number" placeholder="0" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500 w-40" />
+            <AppInput v-model="debtsFilters.dateFrom" type="date" :label="$t('ecoPayments.periodFrom')" size="sm" focusColor="#84cc16" labelSize="12px" />
+            <AppInput v-model="debtsFilters.dateTo" type="date" :label="$t('ecoPayments.periodTo')" size="sm" focusColor="#84cc16" labelSize="12px" />
+            <div class="w-40">
+              <AppInput v-model="debtsFilters.minDebt" type="number" :label="$t('ecoPayments.minDebtAmount')" placeholder="0" size="sm" focusColor="#84cc16" labelSize="12px" />
             </div>
           </div>
         </div>

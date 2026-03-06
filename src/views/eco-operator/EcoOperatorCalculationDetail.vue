@@ -19,6 +19,7 @@ import { formatNum } from '../../utils/formatNumber'
 import { calculatePenalty, getOverdueDays, PENALTY_DAILY_RATE } from '../../utils/penalty'
 import { PAYMENT_ACCOUNTS } from '../../config/payment-accounts'
 import PenaltyInfo from '../../components/PenaltyInfo.vue'
+import { AppButton, AppModal, AppAlert, AppCard } from '../../components/ui'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -227,10 +228,7 @@ const downloadExcel = () => {
     <!-- Not Found -->
     <div v-if="!calc" class="text-center py-16">
       <p class="text-lg text-[#64748b] mb-4">{{ $t('ecoCalcDetail.notFound') }}</p>
-      <button @click="goBack" class="btn-back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        {{ $t('common.back') }}
-      </button>
+      <AppButton variant="back" :label="$t('common.back')" @click="goBack" />
     </div>
 
     <template v-else>
@@ -243,27 +241,16 @@ const downloadExcel = () => {
           </div>
           <p class="text-[#64748b]">{{ $t('ecoCalcDetail.submissionDate') }} {{ calc.date }}</p>
         </div>
-        <button @click="goBack" class="btn-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          {{ $t('common.back') }}
-        </button>
+        <AppButton variant="back" :label="$t('common.back')" @click="goBack" />
       </div>
 
       <!-- Rejection reason block -->
-      <div v-if="calc.status === 'rejected' && calc.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
-          </div>
-          <div>
-            <p class="font-medium text-red-800 mb-1">{{ $t('ecoCalcDetail.rejectionReason') }}</p>
-            <p class="text-sm text-red-700">{{ calc.rejectionReason }}</p>
-          </div>
-        </div>
-      </div>
+      <AppAlert v-if="calc.status === 'rejected' && calc.rejectionReason" variant="error" :title="$t('ecoCalcDetail.rejectionReason')" class="mb-6">
+        {{ calc.rejectionReason }}
+      </AppAlert>
 
       <!-- Payer Data -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoCalcDetail.payerData') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
@@ -291,7 +278,7 @@ const downloadExcel = () => {
             <p class="font-medium text-[#1e293b] mt-0.5">{{ calc.dueDate }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Timeline -->
       <CalculationTimeline v-if="calc" :status="calc.status" :dates="timelineDates" />
@@ -342,7 +329,7 @@ const downloadExcel = () => {
       </div>
 
       <!-- Attached Documents -->
-      <div v-if="calc.attachedFiles && calc.attachedFiles.length > 0" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard v-if="calc.attachedFiles && calc.attachedFiles.length > 0" class="mb-6">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoCalcDetail.attachedDocuments') }}</h2>
         <div class="space-y-2">
           <button
@@ -357,7 +344,7 @@ const downloadExcel = () => {
             <span class="text-sm font-medium text-[#2563eb] hover:underline">{{ file }}</span>
           </button>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Totals -->
       <div class="bg-gradient-to-r from-[#0e888d]/10 to-[#0e888d]/5 rounded-2xl p-6 border border-[#0e888d]/20 mb-6">
@@ -452,191 +439,116 @@ const downloadExcel = () => {
       <AuditLog v-if="calc.history && calc.history.length > 0" :entries="calc.history" viewerRole="operator" :compact="true" class="mb-6" />
 
       <!-- Fee Payment Confirmation (when receipt uploaded) -->
-      <div v-if="calc.feePayment && calc.status !== 'completed' && !calc.feeConfirmedAt" class="bg-white rounded-2xl border border-blue-200 p-6 mb-6">
+      <AppCard v-if="calc.feePayment && calc.status !== 'completed' && !calc.feeConfirmedAt" borderColor="#bfdbfe" class="mb-6">
         <h3 class="text-base font-semibold text-[#1e293b] mb-3">{{ $t('workflow.confirmFeePayment') }}</h3>
         <div class="flex items-center gap-3 mb-4 p-3 bg-blue-50 rounded-lg">
           <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           <span class="text-sm font-medium text-blue-800">{{ calc.feePayment.fileName }}</span>
         </div>
         <div class="flex gap-3">
-          <button @click="confirmFee" class="px-5 py-2.5 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669]">
-            {{ $t('workflow.confirmFeePayment') }}
-          </button>
+          <AppButton variant="success" :label="$t('workflow.confirmFeePayment')" @click="confirmFee" />
         </div>
-      </div>
+      </AppCard>
 
       <!-- Penalty Payment Confirmation (when receipt uploaded) -->
-      <div v-if="calc.penaltyPayment && calc.status === 'fee_paid' && !calc.penaltyConfirmedAt" class="bg-white rounded-2xl border border-red-200 p-6 mb-6">
+      <AppCard v-if="calc.penaltyPayment && calc.status === 'fee_paid' && !calc.penaltyConfirmedAt" borderColor="#fecaca" class="mb-6">
         <h3 class="text-base font-semibold text-[#1e293b] mb-3">{{ $t('workflow.confirmPenaltyPayment') }}</h3>
         <div class="flex items-center gap-3 mb-4 p-3 bg-red-50 rounded-lg">
           <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           <span class="text-sm font-medium text-red-800">{{ calc.penaltyPayment.fileName }}</span>
         </div>
         <div class="flex gap-3">
-          <button @click="confirmPenalty" class="px-5 py-2.5 bg-[#dc2626] text-white rounded-lg text-sm font-medium hover:bg-[#b91c1c]">
-            {{ $t('workflow.confirmPenaltyPayment') }}
-          </button>
+          <AppButton variant="danger" :label="$t('workflow.confirmPenaltyPayment')" @click="confirmPenalty" />
         </div>
-      </div>
+      </AppCard>
 
       <!-- Sticky Action Bar -->
       <div class="sticky bottom-0 bg-white border-t border-[#e2e8f0] -mx-6 lg:-mx-8 px-6 lg:px-8 py-4 flex items-center justify-between gap-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
-        <button @click="goBack" class="btn-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          {{ $t('common.back') }}
-        </button>
-                <button @click="downloadExcel" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  {{ $t('ecoCalcDetail.downloadExcel') }}
-                </button>
+        <AppButton variant="back" :label="$t('common.back')" @click="goBack" />
+                <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'" :label="$t('ecoCalcDetail.downloadExcel')" @click="downloadExcel" />
 
         <!-- Take assignment (submitted/under_review) -->
         <div v-if="calc.status === 'under_review' && !calc.assignedTo" class="flex items-center gap-3">
-          <button @click="assignToMe" class="flex items-center gap-2 px-5 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            {{ $t('workflow.assignToMe') }}
-          </button>
+          <AppButton variant="primary" bg="#2563eb" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z&quot; /></svg>'" :label="$t('workflow.assignToMe')" @click="assignToMe" />
         </div>
 
         <!-- In review actions (assigned to me) -->
         <div v-if="calc.status === 'in_review'" class="flex items-center gap-3">
-          <button @click="unassignCalc" class="flex items-center gap-2 px-4 py-2.5 border border-[#e2e8f0] text-[#64748b] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm">
-            {{ $t('workflow.returnToQueue') }}
-          </button>
-          <button @click="openRevisionModal" class="flex items-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-600 rounded-lg font-medium hover:bg-amber-50 transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            {{ $t('workflow.sendToRevision') }}
-          </button>
-          <button @click="openRejectModal" class="flex items-center gap-2 px-4 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            {{ $t('ecoCalcDetail.reject') }}
-          </button>
-          <button @click="openApproveModal" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            {{ $t('ecoCalcDetail.acceptCalc') }}
-          </button>
+          <AppButton variant="secondary" :label="$t('workflow.returnToQueue')" @click="unassignCalc" />
+          <AppButton variant="warning" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z&quot;/></svg>'" :label="$t('workflow.sendToRevision')" @click="openRevisionModal" />
+          <AppButton variant="danger" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'" :label="$t('ecoCalcDetail.reject')" @click="openRejectModal" />
+          <AppButton variant="success" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M5 13l4 4L19 7&quot; /></svg>'" :label="$t('ecoCalcDetail.acceptCalc')" @click="openApproveModal" />
         </div>
 
         <!-- Legacy under_review with assignment -->
         <div v-if="calc.status === 'under_review' && calc.assignedTo" class="flex items-center gap-3">
-          <button @click="openRejectModal" class="flex items-center gap-2 px-5 py-2.5 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            {{ $t('ecoCalcDetail.reject') }}
-          </button>
-          <button @click="openApproveModal" class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] text-white rounded-lg font-medium hover:bg-[#059669] transition-colors text-sm">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            {{ $t('ecoCalcDetail.acceptCalc') }}
-          </button>
+          <AppButton variant="danger" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M6 18L18 6M6 6l12 12&quot; /></svg>'" :label="$t('ecoCalcDetail.reject')" @click="openRejectModal" />
+          <AppButton variant="success" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M5 13l4 4L19 7&quot; /></svg>'" :label="$t('ecoCalcDetail.acceptCalc')" @click="openApproveModal" />
         </div>
       </div>
     </template>
 
     <!-- Reject Modal -->
-    <Teleport to="body">
-      <div v-if="showRejectModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showRejectModal = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.rejectCalcTitle') }}</h3>
-            <p class="text-sm text-[#64748b] mt-1">{{ $t('ecoCalcDetail.rejectCalcSubtitle', { number: calc?.number }) }}</p>
-          </div>
-          <div class="p-6">
-            <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoCalcDetail.rejectionReasonLabel') }} <span class="text-[#EF4444]">*</span></label>
-            <textarea
-              v-model="rejectionReason"
-              rows="4"
-              :placeholder="$t('ecoCalcDetail.rejectionPlaceholder')"
-              class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-red-400 text-sm resize-none"
-            ></textarea>
-            <p class="text-xs text-[#94a3b8] mt-1">{{ $t('ecoCalcDetail.rejectionMinChars', { count: rejectionReason.length }) }}</p>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button @click="showRejectModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-              {{ $t('common.cancel') }}
-            </button>
-            <button
-              @click="rejectCalc"
-              :disabled="rejectionReason.trim().length < 10"
-              class="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ $t('ecoCalcDetail.reject') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal :visible="showRejectModal" :title="$t('ecoCalcDetail.rejectCalcTitle')" size="md" @close="showRejectModal = false">
+      <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoCalcDetail.rejectCalcSubtitle', { number: calc?.number }) }}</p>
+      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoCalcDetail.rejectionReasonLabel') }} <span class="text-[#EF4444]">*</span></label>
+      <textarea
+        v-model="rejectionReason"
+        rows="4"
+        :placeholder="$t('ecoCalcDetail.rejectionPlaceholder')"
+        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-red-400 text-sm resize-none"
+      ></textarea>
+      <p class="text-xs text-[#94a3b8] mt-1">{{ $t('ecoCalcDetail.rejectionMinChars', { count: rejectionReason.length }) }}</p>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showRejectModal = false" />
+        <AppButton variant="danger" :label="$t('ecoCalcDetail.reject')" :disabled="rejectionReason.trim().length < 10" @click="rejectCalc" />
+      </template>
+    </AppModal>
 
     <!-- Revision Modal -->
-    <Teleport to="body">
-      <div v-if="showRevisionModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showRevisionModal = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('workflow.sendRevisionTitle') }}</h3>
-            <p class="text-sm text-[#64748b] mt-1">{{ $t('workflow.sendRevisionSubtitle', { number: calc?.number }) }}</p>
-          </div>
-          <div class="p-6">
-            <label class="block text-sm font-medium text-[#1e293b] mb-2">
-              {{ $t('workflow.revisionComment') }} <span class="text-[#EF4444]">*</span>
-            </label>
-            <textarea
-              v-model="revisionComment"
-              rows="4"
-              :placeholder="$t('workflow.revisionCommentPlaceholder')"
-              class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-amber-400 text-sm resize-none"
-            ></textarea>
-            <p class="text-xs text-[#94a3b8] mt-1">{{ revisionComment.length }} / 10+</p>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button @click="showRevisionModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-              {{ $t('common.cancel') }}
-            </button>
-            <button
-              @click="sendToRevision"
-              :disabled="revisionComment.trim().length < 10"
-              class="px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{ $t('workflow.sendToRevision') }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal :visible="showRevisionModal" :title="$t('workflow.sendRevisionTitle')" size="md" @close="showRevisionModal = false">
+      <p class="text-sm text-[#64748b] mb-4">{{ $t('workflow.sendRevisionSubtitle', { number: calc?.number }) }}</p>
+      <label class="block text-sm font-medium text-[#1e293b] mb-2">
+        {{ $t('workflow.revisionComment') }} <span class="text-[#EF4444]">*</span>
+      </label>
+      <textarea
+        v-model="revisionComment"
+        rows="4"
+        :placeholder="$t('workflow.revisionCommentPlaceholder')"
+        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-amber-400 text-sm resize-none"
+      ></textarea>
+      <p class="text-xs text-[#94a3b8] mt-1">{{ revisionComment.length }} / 10+</p>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showRevisionModal = false" />
+        <AppButton variant="warning" :label="$t('workflow.sendToRevision')" :disabled="revisionComment.trim().length < 10" @click="sendToRevision" />
+      </template>
+    </AppModal>
 
     <!-- Approve Modal -->
-    <Teleport to="body">
-      <div v-if="showApproveModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" @click.self="showApproveModal = false">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h3 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.approveModalTitle') }}</h3>
-            <p class="text-sm text-[#64748b] mt-1">{{ calc?.number }}</p>
-          </div>
-          <div class="p-6 space-y-3">
-            <div class="flex justify-between text-sm">
-              <span class="text-[#64748b]">{{ $t('ecoCalcDetail.approveModalFee') }}</span>
-              <span class="font-semibold text-[#1e293b]">{{ formatNum(calc?.totalAmount || 0, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
-            </div>
-            <div v-if="penaltyData" class="flex justify-between text-sm">
-              <span class="text-[#ef4444]">{{ $t('ecoCalcDetail.approveModalPenalty', { days: penaltyData.overdueDays }) }}</span>
-              <span class="font-semibold text-[#ef4444]">{{ formatNum(penaltyData.totalPenalty, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
-            </div>
-            <div class="border-t border-[#e2e8f0] pt-3">
-              <div class="flex justify-between">
-                <span class="font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.approveModalTotal') }}</span>
-                <span class="font-bold text-lg text-[#1e293b]">{{ formatNum(penaltyData ? penaltyData.totalToPay : (calc?.totalAmount || 0), 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
-              </div>
-            </div>
-            <p class="text-xs text-[#94a3b8] mt-2">{{ $t('ecoCalcDetail.approveModalCharge') }}</p>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <button @click="showApproveModal = false" class="px-5 py-2.5 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-gray-50 text-sm font-medium">
-              {{ $t('common.cancel') }}
-            </button>
-            <button @click="approveCalc" class="px-5 py-2.5 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669]">
-              {{ $t('ecoCalcDetail.approveAndCharge') }}
-            </button>
+    <AppModal :visible="showApproveModal" :title="$t('ecoCalcDetail.approveModalTitle')" size="md" @close="showApproveModal = false">
+      <p class="text-sm text-[#64748b] mb-4">{{ calc?.number }}</p>
+      <div class="space-y-3">
+        <div class="flex justify-between text-sm">
+          <span class="text-[#64748b]">{{ $t('ecoCalcDetail.approveModalFee') }}</span>
+          <span class="font-semibold text-[#1e293b]">{{ formatNum(calc?.totalAmount || 0, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+        </div>
+        <div v-if="penaltyData" class="flex justify-between text-sm">
+          <span class="text-[#ef4444]">{{ $t('ecoCalcDetail.approveModalPenalty', { days: penaltyData.overdueDays }) }}</span>
+          <span class="font-semibold text-[#ef4444]">{{ formatNum(penaltyData.totalPenalty, 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
+        </div>
+        <div class="border-t border-[#e2e8f0] pt-3">
+          <div class="flex justify-between">
+            <span class="font-bold text-[#1e293b]">{{ $t('ecoCalcDetail.approveModalTotal') }}</span>
+            <span class="font-bold text-lg text-[#1e293b]">{{ formatNum(penaltyData ? penaltyData.totalToPay : (calc?.totalAmount || 0), 0) }} {{ $t('ecoCalcDetail.unitSom') }}</span>
           </div>
         </div>
+        <p class="text-xs text-[#94a3b8] mt-2">{{ $t('ecoCalcDetail.approveModalCharge') }}</p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showApproveModal = false" />
+        <AppButton variant="success" :label="$t('ecoCalcDetail.approveAndCharge')" @click="approveCalc" />
+      </template>
+    </AppModal>
 
     <!-- Toast -->
     <Teleport to="body">

@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import {
   landfillStore,
@@ -330,15 +331,12 @@ const guideActions = computed(() => [
           </div>
 
           <!-- Add button -->
-          <button
-            @click="showAddModal = true"
-            class="inline-flex items-center gap-2 px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors"
-          >
+          <AppButton variant="primary" @click="showAddModal = true">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             {{ $t('ministryLandfills.addLandfill') }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -413,7 +411,7 @@ const guideActions = computed(() => [
       </div>
 
       <!-- ==================== FILTERS ==================== -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
+      <AppCard radius="sm" padding="sm">
         <div class="flex flex-wrap gap-3">
           <div class="relative flex-1 min-w-[200px]">
             <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -457,15 +455,16 @@ const guideActions = computed(() => [
             <option value="recultivation">{{ $t('ministryLandfills.statusRecultivation') }}</option>
           </select>
 
-          <button
+          <AppButton
             v-if="isFiltersActive"
+            variant="ghost"
+            size="sm"
             @click="resetAllFilters"
-            class="px-3 py-2 text-sm text-[#ef4444] hover:bg-red-50 rounded-lg transition-colors"
           >
             {{ $t('ministryLandfills.resetFilters') }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== LIST MODE ==================== -->
       <template v-if="viewMode === 'list'">
@@ -563,13 +562,15 @@ const guideActions = computed(() => [
           </svg>
           <p class="text-lg font-medium">{{ $t('ministryLandfills.noLandfills') }}</p>
           <p class="text-sm mt-1">{{ $t('ministryLandfills.noLandfillsHint') }}</p>
-          <button
+          <AppButton
             v-if="isFiltersActive"
+            variant="ghost"
+            size="sm"
+            class="mt-4"
             @click="resetAllFilters"
-            class="mt-4 px-4 py-2 text-sm text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors"
           >
             {{ $t('ministryLandfills.resetFiltersBtn') }}
-          </button>
+          </AppButton>
         </div>
       </template>
 
@@ -654,210 +655,166 @@ const guideActions = computed(() => [
       </template>
     </div>
 
-    <!-- ==================== ADD MODAL ==================== -->
-    <Teleport to="body">
-      <div
-        v-if="showAddModal"
-        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-        @click.self="cancelAdd"
-      >
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <!-- Modal header -->
-          <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-[#1e293b]">{{ $t('ministryLandfills.addModalTitle') }}</h3>
-            <button
-              @click="cancelAdd"
-              class="text-[#94a3b8] hover:text-[#64748b] transition-colors"
-            >
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <AppModal :visible="showAddModal" :title="$t('ministryLandfills.addModalTitle')" size="lg" @close="cancelAdd">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-[#1e293b] mb-1">
+            {{ $t('ministryLandfills.labelName') }} <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="newLandfill.name"
+            type="text"
+            :placeholder="$t('ministryLandfills.namePlaceholder')"
+            class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+          />
+        </div>
 
-          <!-- Modal body -->
-          <div class="p-6 space-y-5">
-            <!-- Name -->
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                {{ $t('ministryLandfills.labelName') }} <span class="text-red-500">*</span>
-              </label>
+        <div>
+          <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelType') }}</label>
+          <select
+            v-model="newLandfill.type"
+            class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
+          >
+            <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
+            <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
+            <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              {{ $t('ministryLandfills.labelRegion') }} <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="newLandfill.region"
+              type="text"
+              :placeholder="$t('ministryLandfills.regionPlaceholder')"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelDistrict') }}</label>
+            <input
+              v-model="newLandfill.district"
+              type="text"
+              :placeholder="$t('ministryLandfills.districtPlaceholder')"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelSettlement') }}</label>
+            <input
+              v-model="newLandfill.settlement"
+              type="text"
+              :placeholder="$t('ministryLandfills.settlementPlaceholder')"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOperator') }}</label>
+          <input
+            v-model="newLandfill.operator"
+            type="text"
+            :placeholder="$t('ministryLandfills.operatorPlaceholder')"
+            class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              {{ $t('ministryLandfills.labelDesignCapacity') }}
+            </label>
+            <input
+              v-model.number="newLandfill.designCapacity"
+              type="number"
+              min="0"
+              placeholder="5000"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              {{ $t('ministryLandfills.labelCurrentVolume') }}
+            </label>
+            <input
+              v-model.number="newLandfill.currentVolume"
+              type="number"
+              min="0"
+              placeholder="0"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOpenYear') }}</label>
+            <input
+              v-model.number="newLandfill.openYear"
+              type="number"
+              min="1950"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              {{ $t('ministryLandfills.labelExpiryYear') }}
+            </label>
+            <input
+              v-model.number="newLandfill.expiryYear"
+              type="number"
+              min="2024"
+              max="2100"
+              class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelCoordinates') }}</label>
+          <div class="flex items-end gap-3">
+            <div class="flex-1">
               <input
-                v-model="newLandfill.name"
-                type="text"
-                :placeholder="$t('ministryLandfills.namePlaceholder')"
+                v-model.number="newLandfill.lat"
+                type="number"
+                step="0.0001"
+                :placeholder="$t('ministryLandfills.latPlaceholder')"
                 class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
               />
             </div>
-
-            <!-- Type -->
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelType') }}</label>
-              <select
-                v-model="newLandfill.type"
-                class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm bg-white"
-              >
-                <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
-                <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
-                <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
-              </select>
-            </div>
-
-            <!-- Location row -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  {{ $t('ministryLandfills.labelRegion') }} <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="newLandfill.region"
-                  type="text"
-                  :placeholder="$t('ministryLandfills.regionPlaceholder')"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelDistrict') }}</label>
-                <input
-                  v-model="newLandfill.district"
-                  type="text"
-                  :placeholder="$t('ministryLandfills.districtPlaceholder')"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelSettlement') }}</label>
-                <input
-                  v-model="newLandfill.settlement"
-                  type="text"
-                  :placeholder="$t('ministryLandfills.settlementPlaceholder')"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-            </div>
-
-            <!-- Operator -->
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOperator') }}</label>
+            <div class="flex-1">
               <input
-                v-model="newLandfill.operator"
-                type="text"
-                :placeholder="$t('ministryLandfills.operatorPlaceholder')"
+                v-model.number="newLandfill.lng"
+                type="number"
+                step="0.0001"
+                :placeholder="$t('ministryLandfills.lngPlaceholder')"
                 class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
               />
             </div>
-
-            <!-- Capacity row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  {{ $t('ministryLandfills.labelDesignCapacity') }}
-                </label>
-                <input
-                  v-model.number="newLandfill.designCapacity"
-                  type="number"
-                  min="0"
-                  placeholder="5000"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  {{ $t('ministryLandfills.labelCurrentVolume') }}
-                </label>
-                <input
-                  v-model.number="newLandfill.currentVolume"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-            </div>
-
-            <!-- Year row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOpenYear') }}</label>
-                <input
-                  v-model.number="newLandfill.openYear"
-                  type="number"
-                  min="1950"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
-                  {{ $t('ministryLandfills.labelExpiryYear') }}
-                </label>
-                <input
-                  v-model.number="newLandfill.expiryYear"
-                  type="number"
-                  min="2024"
-                  max="2100"
-                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                />
-              </div>
-            </div>
-
-            <!-- Coordinates -->
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelCoordinates') }}</label>
-              <div class="flex items-end gap-3">
-                <div class="flex-1">
-                  <input
-                    v-model.number="newLandfill.lat"
-                    type="number"
-                    step="0.0001"
-                    :placeholder="$t('ministryLandfills.latPlaceholder')"
-                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                  />
-                </div>
-                <div class="flex-1">
-                  <input
-                    v-model.number="newLandfill.lng"
-                    type="number"
-                    step="0.0001"
-                    :placeholder="$t('ministryLandfills.lngPlaceholder')"
-                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-                  />
-                </div>
-                <button
-                  type="button"
-                  @click="pickerCoords = (newLandfill.lat && newLandfill.lng) ? { lat: newLandfill.lat, lng: newLandfill.lng } : null; showCoordPicker = true"
-                  class="px-4 py-2 text-sm font-medium text-[#2563eb] border border-[#2563eb] rounded-lg hover:bg-[#2563eb]/5 transition-colors flex items-center gap-2 whitespace-nowrap"
-                >
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  {{ $t('ministryLandfills.pickOnMap') }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Modal footer -->
-          <div class="px-6 py-4 border-t border-[#e2e8f0] flex items-center justify-end gap-3">
-            <button
-              @click="cancelAdd"
-              class="px-4 py-2 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
+            <AppButton
+              variant="outline"
+              size="sm"
+              @click="pickerCoords = (newLandfill.lat && newLandfill.lng) ? { lat: newLandfill.lat, lng: newLandfill.lng } : null; showCoordPicker = true"
             >
-              {{ $t('ministryLandfills.cancelBtn') }}
-            </button>
-            <button
-              @click="saveLandfill"
-              :disabled="!isFormValid"
-              :class="[
-                'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors',
-                isFormValid
-                  ? 'bg-[#2563eb] hover:bg-[#1d4ed8]'
-                  : 'bg-[#94a3b8] cursor-not-allowed',
-              ]"
-            >
-              {{ $t('ministryLandfills.saveBtn') }}
-            </button>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              {{ $t('ministryLandfills.pickOnMap') }}
+            </AppButton>
           </div>
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="cancelAdd">
+          {{ $t('ministryLandfills.cancelBtn') }}
+        </AppButton>
+        <AppButton variant="primary" :disabled="!isFormValid" @click="saveLandfill">
+          {{ $t('ministryLandfills.saveBtn') }}
+        </AppButton>
+      </template>
+    </AppModal>
     <MapCoordinatePicker
       :visible="showCoordPicker"
       :modelValue="pickerCoords"

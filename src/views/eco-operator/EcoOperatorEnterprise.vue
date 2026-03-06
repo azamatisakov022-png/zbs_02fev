@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppCard } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -34,26 +35,18 @@ const enterpriseData = ref({
   >
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <h2 class="text-2xl font-bold text-[#415861]">{{ $t('pages.ecoOperator.enterpriseTitle') }}</h2>
-      <button
+      <AppButton
+        :variant="isEditing ? 'success' : 'primary'"
+        :bg="isEditing ? undefined : '#0e888d'"
+        :icon="isEditing
+          ? '<svg class=\'w-5 h-5\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M5 13l4 4L19 7\' /></svg>'
+          : '<svg class=\'w-5 h-5\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z\' /></svg>'"
+        :label="isEditing ? $t('common.save') : $t('common.edit')"
         @click="isEditing = !isEditing"
-        :class="[
-          'flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-colors',
-          isEditing
-            ? 'bg-green-500 text-white hover:bg-green-600'
-            : 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-        ]"
-      >
-        <svg v-if="!isEditing" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-        </svg>
-        {{ isEditing ? $t('common.save') : $t('common.edit') }}
-      </button>
+      />
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-[#e5e7eb] overflow-hidden">
+    <AppCard padding="none" noBorder>
       <!-- Header -->
       <div class="bg-gradient-to-r from-[#0e888d] to-[#0a6d71] p-6 text-white">
         <div class="flex items-center gap-4">
@@ -218,6 +211,6 @@ const enterpriseData = ref({
           </div>
         </div>
       </div>
-    </div>
+    </AppCard>
   </DashboardLayout>
 </template>

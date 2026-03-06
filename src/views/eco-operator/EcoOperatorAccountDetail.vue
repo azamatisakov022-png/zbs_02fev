@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { useAccountStore } from '../../stores/account'
 import type { CompanyAccount, AccountTransaction } from '@/types/account'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -151,7 +151,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
           {{ $t('common.back') }}
         </router-link>
       </div>
-      <div class="bg-white rounded-2xl p-8 shadow-sm border border-[#e2e8f0] text-center">
+      <AppCard padding="lg" class="text-center">
         <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -165,7 +165,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
         >
           {{ $t('ecoAccountDetail.backToList') }}
         </router-link>
-      </div>
+      </AppCard>
     </template>
 
     <template v-if="!isLoading && !accountNotFound && account">
@@ -188,8 +188,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
         <p class="text-[#64748b]">{{ $t('ecoAccountDetail.subtitle') }}</p>
       </div>
 
-      <!-- Company Info Card -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div class="flex items-center gap-4">
             <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -206,7 +205,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             <AppBadge :variant="getStatusBadgeVariant(account.status)">{{ $t(statusI18nKey[account.status] || account.status) }}</AppBadge>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Balance Card -->
       <div
@@ -260,7 +259,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
       </div>
 
       <!-- Filter Bar -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard padding="sm" class="mb-6">
         <div class="flex flex-wrap items-end gap-4">
           <div class="flex flex-col">
             <label class="text-xs font-medium text-[#64748b] mb-1">{{ $t('ecoAccountDetail.dateFrom') }}</label>
@@ -292,15 +291,15 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
               <option value="refund">{{ $t('ecoAccountDetail.typeRefund') }}</option>
             </select>
           </div>
-          <button
+          <AppButton
             v-if="isFiltersActive"
+            variant="outline"
+            size="sm"
+            :label="$t('common.reset')"
             @click="resetFilters"
-            class="px-4 py-2 text-sm text-[#64748b] hover:text-[#1e293b] border border-[#e2e8f0] rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {{ $t('common.reset') }}
-          </button>
+          />
         </div>
-      </div>
+      </AppCard>
 
       <!-- Transaction History Header -->
       <div class="mb-4">
@@ -385,13 +384,14 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             <h3 class="text-lg font-semibold text-[#1e293b] mb-1">{{ $t('ecoAccountDetail.noOperations') }}</h3>
             <p v-if="isFiltersActive" class="text-sm text-[#64748b] mb-4">{{ $t('ecoAccountDetail.noOperationsFiltered') }}</p>
             <p v-else class="text-sm text-[#64748b]">{{ $t('ecoAccountDetail.noOperationsYet') }}</p>
-            <button
+            <AppButton
               v-if="isFiltersActive"
+              variant="outline"
+              size="sm"
+              :label="$t('empty.resetFilters')"
+              class="mt-2"
               @click="resetFilters"
-              class="mt-2 px-4 py-2 text-sm font-medium text-[#2563eb] hover:text-[#1d4ed8] border border-[#2563eb] rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              {{ $t('empty.resetFilters') }}
-            </button>
+            />
           </div>
         </template>
       </DataTable>

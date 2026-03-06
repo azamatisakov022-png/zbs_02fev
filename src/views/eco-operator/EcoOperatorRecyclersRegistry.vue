@@ -7,7 +7,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { recyclerStore, type Recycler, type RecyclerStatus } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
 import { generatedSubgroups } from '../../data/product-subgroups-generated'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -351,30 +351,15 @@ const resetAllFilters = () => {
     </div>
 
     <!-- Add Form -->
-    <div v-if="showAddForm" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6 mb-6">
+    <AppCard v-if="showAddForm" class="mb-6">
       <h2 class="text-lg font-semibold text-[#1e293b] mb-6">{{ $t('ecoRecyclersRegistry.addRecyclerTitle') }}</h2>
       <div class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelName') }}</label>
-            <input v-model="newRecycler.name" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderName')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelInn') }}</label>
-            <input v-model="newRecycler.inn" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderInn')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelLicenseNumber') }}</label>
-            <input v-model="newRecycler.licenseNumber" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderLicense')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelLicenseDate') }}</label>
-            <input v-model="newRecycler.licenseDate" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderLicenseDate')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelLicenseExpiry') }}</label>
-            <input v-model="newRecycler.licenseExpiry" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderLicenseExpiry')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
+          <AppInput v-model="newRecycler.name" :label="$t('ecoRecyclersRegistry.labelName')" :placeholder="$t('ecoRecyclersRegistry.placeholderName')" size="sm" />
+          <AppInput v-model="newRecycler.inn" :label="$t('ecoRecyclersRegistry.labelInn')" :placeholder="$t('ecoRecyclersRegistry.placeholderInn')" size="sm" />
+          <AppInput v-model="newRecycler.licenseNumber" :label="$t('ecoRecyclersRegistry.labelLicenseNumber')" :placeholder="$t('ecoRecyclersRegistry.placeholderLicense')" size="sm" />
+          <AppInput v-model="newRecycler.licenseDate" :label="$t('ecoRecyclersRegistry.labelLicenseDate')" :placeholder="$t('ecoRecyclersRegistry.placeholderLicenseDate')" size="sm" />
+          <AppInput v-model="newRecycler.licenseExpiry" :label="$t('ecoRecyclersRegistry.labelLicenseExpiry')" :placeholder="$t('ecoRecyclersRegistry.placeholderLicenseExpiry')" size="sm" />
           <div>
             <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelStatus') }}</label>
             <div class="flex items-center gap-4 mt-2">
@@ -392,32 +377,24 @@ const resetAllFilters = () => {
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div class="sm:col-span-2 lg:col-span-1">
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelAddress') }}</label>
-            <input v-model="newRecycler.address" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderAddress')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
+            <AppInput v-model="newRecycler.address" :label="$t('ecoRecyclersRegistry.labelAddress')" :placeholder="$t('ecoRecyclersRegistry.placeholderAddress')" size="sm" />
           </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelPhone') }}</label>
-            <input v-model="newRecycler.contactPhone" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderPhone')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ecoRecyclersRegistry.labelEmail') }}</label>
-            <input v-model="newRecycler.contactEmail" type="text" :placeholder="$t('ecoRecyclersRegistry.placeholderEmail')" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm" />
-          </div>
+          <AppInput v-model="newRecycler.contactPhone" :label="$t('ecoRecyclersRegistry.labelPhone')" :placeholder="$t('ecoRecyclersRegistry.placeholderPhone')" size="sm" />
+          <AppInput v-model="newRecycler.contactEmail" :label="$t('ecoRecyclersRegistry.labelEmail')" :placeholder="$t('ecoRecyclersRegistry.placeholderEmail')" size="sm" />
         </div>
 
         <!-- Мощности переработки - dynamic table -->
         <div>
           <div class="flex items-center justify-between mb-2">
             <label class="block text-sm font-medium text-[#1e293b]">{{ $t('ecoRecyclersRegistry.capacitiesLabel') }}</label>
-            <button
+            <AppButton
+              variant="outline"
+              size="sm"
+              color="#2563eb"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'"
+              :label="$t('ecoRecyclersRegistry.addCapacity')"
               @click="addCapacityRow"
-              class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-[#2563eb] bg-[#eff6ff] border border-[#2563eb] rounded-lg hover:bg-[#dbeafe] transition-colors"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {{ $t('ecoRecyclersRegistry.addCapacity') }}
-            </button>
+            />
           </div>
 
           <div v-if="capacityRows.length > 0" class="overflow-x-auto border border-[#e2e8f0] rounded-lg">
@@ -500,23 +477,24 @@ const resetAllFilters = () => {
                           <span :class="row.technologies.includes(opt) ? 'text-[#1e293b] font-medium' : 'text-[#4b5563]'">{{ opt }}</span>
                         </label>
                       </div>
-                      <input
+                      <AppInput
                         v-if="row.technologies.includes(t('ecoRecyclersRegistry.techOther'))"
                         v-model="row.customTechnology"
-                        type="text"
                         :placeholder="$t('ecoRecyclersRegistry.placeholderCustomTech')"
-                        class="w-full mt-1 px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                        size="sm"
+                        hideLabel
                         @click.stop
                       />
                     </div>
                   </td>
                   <td class="px-3 py-2">
-                    <input
-                      v-model.number="row.capacityTons"
+                    <AppInput
+                      v-model="row.capacityTons"
                       type="number"
                       min="0"
                       placeholder="0"
-                      class="w-full min-w-[100px] px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb]"
+                      size="sm"
+                      hideLabel
                     />
                   </td>
                   <td class="px-3 py-2">
@@ -574,16 +552,14 @@ const resetAllFilters = () => {
           </AppButton>
         </div>
       </div>
-    </div>
+    </AppCard>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <AppCard padding="sm" class="mb-6">
       <div class="flex flex-wrap gap-4">
-        <input
+        <AppInput
           v-model="searchQuery"
-          type="text"
           :placeholder="$t('ecoRecyclersRegistry.searchPlaceholder')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+          hideLabel
         />
         <select v-model="filterStatus" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('ecoRecyclersRegistry.allStatuses') }}</option>
@@ -598,7 +574,7 @@ const resetAllFilters = () => {
           </option>
         </select>
       </div>
-    </div>
+    </AppCard>
 
     <!-- Table -->
     <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">

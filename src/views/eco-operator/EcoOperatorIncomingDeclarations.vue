@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { declarationStore } from '../../stores/declarations'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppAlert, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { DeclStatus, statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -161,17 +161,9 @@ const formatBalance = (value: number) => {
     </div>
 
     <!-- Yellow Alert Banner -->
-    <div v-if="pendingCount > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingDecls.attentionRequired') }}</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingDecls.declAwaitsSingular') : $t('ecoIncomingDecls.declAwaitsPlural') }} {{ $t('ecoIncomingDecls.reviewCheckDecide') }}</p>
-      </div>
-    </div>
+    <AppAlert v-if="pendingCount > 0" variant="warning" :title="$t('ecoIncomingDecls.attentionRequired')" :icon="'<svg width=&quot;20&quot; height=&quot;20&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9&quot; /></svg>'" class="mb-6">
+      {{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingDecls.declAwaitsSingular') : $t('ecoIncomingDecls.declAwaitsPlural') }} {{ $t('ecoIncomingDecls.reviewCheckDecide') }}
+    </AppAlert>
 
     <template v-if="isLoading">
       <div class="mb-6"><SkeletonLoader variant="card" /></div>
@@ -180,7 +172,7 @@ const formatBalance = (value: number) => {
 
     <template v-if="!isLoading">
       <!-- Filters -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard padding="sm" class="mb-6">
         <div class="flex flex-wrap gap-4">
           <input
             v-model="searchQuery"
@@ -205,7 +197,7 @@ const formatBalance = (value: number) => {
             <option value="2030">2030</option>
           </select>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Search no results state -->
       <div v-if="isFilteredEmpty" class="mb-6">

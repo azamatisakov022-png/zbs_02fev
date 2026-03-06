@@ -3,7 +3,7 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppModal } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { UserStatus } from '../../constants/statuses'
 import { useAdminMenu } from '../../composables/useRoleMenu'
@@ -180,9 +180,6 @@ function deleteOrganization() {
   deletingOrg.value = null
 }
 
-function handleOverlay(e: MouseEvent, close: () => void) {
-  if ((e.target as HTMLElement).classList.contains('modal-overlay')) close()
-}
 </script>
 
 <template>
@@ -228,12 +225,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
       <div class="flex flex-wrap gap-4">
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="$t('adminOrgs.searchPlaceholder')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
-        />
+        <AppInput v-model="searchQuery" :placeholder="$t('adminOrgs.searchPlaceholder')" borderColor="#e2e8f0" focusColor="#2563eb" :hideLabel="true" class="flex-1 min-w-[200px]" />
         <select v-model="filterType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('adminOrgs.allTypes') }}</option>
           <option value="Плательщик">{{ $t('adminOrgs.typePayer') }}</option>
@@ -289,154 +281,102 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       </template>
     </DataTable>
 
-    <!-- ===== ADD/EDIT MODAL ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showFormModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showFormModal = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-              <div>
-                <h3 class="text-xl font-bold text-[#1e293b]">{{ isEditing ? $t('adminOrgs.editTitle') : $t('adminOrgs.addTitle') }}</h3>
-                <p class="text-sm text-[#64748b] mt-1">{{ isEditing ? $t('adminOrgs.editSubtitle') : $t('adminOrgs.addSubtitle') }}</p>
-              </div>
-              <button @click="showFormModal = false" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div class="p-6 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelName') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.name" type="text" placeholder='ОсОО "Название"' :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.name ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                <p v-if="errors.name" class="mt-1 text-xs text-red-500">{{ errors.name }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelInn') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.inn" type="text" placeholder="01234567891234" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors font-mono', errors.inn ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                <p v-if="errors.inn" class="mt-1 text-xs text-red-500">{{ errors.inn }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelAddress') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.address" type="text" placeholder="г. Бишкек, ул. Чуй, 100" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.address ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                <p v-if="errors.address" class="mt-1 text-xs text-red-500">{{ errors.address }}</p>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelOrgType') }} <span class="text-red-500">*</span></label>
-                  <select v-model="form.type" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.type ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]', !form.type ? 'text-[#9ca3af]' : '']">
-                    <option value="" disabled>{{ $t('adminOrgs.selectType') }}</option>
-                    <option value="Плательщик">{{ $t('adminOrgs.typePayer') }}</option>
-                    <option value="Эко Оператор">{{ $t('adminOrgs.typeEcoOperator') }}</option>
-                  </select>
-                  <p v-if="errors.type" class="mt-1 text-xs text-red-500">{{ errors.type }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelRegion') }}</label>
-                  <select v-model="form.region" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#2563eb]">
-                    <option value="">{{ $t('adminOrgs.selectRegion') }}</option>
-                    <option value="г. Бишкек">г. Бишкек</option>
-                    <option value="Чуйская обл.">Чуйская обл.</option>
-                    <option value="г. Ош">г. Ош</option>
-                    <option value="Иссык-Кульская обл.">Иссык-Кульская обл.</option>
-                    <option value="Нарынская обл.">Нарынская обл.</option>
-                    <option value="Джалал-Абадская обл.">Джалал-Абадская обл.</option>
-                    <option value="Таласская обл.">Таласская обл.</option>
-                    <option value="Баткенская обл.">Баткенская обл.</option>
-                    <option value="Ошская обл.">Ошская обл.</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelContactPerson') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.contactPerson" type="text" placeholder="ФИО" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.contactPerson ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                <p v-if="errors.contactPerson" class="mt-1 text-xs text-red-500">{{ errors.contactPerson }}</p>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelPhone') }} <span class="text-red-500">*</span></label>
-                  <input v-model="form.phone" type="tel" placeholder="+996 XXX XXX XXX" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.phone ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                  <p v-if="errors.phone" class="mt-1 text-xs text-red-500">{{ errors.phone }}</p>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelEmail') }} <span class="text-red-500">*</span></label>
-                  <input v-model="form.email" type="email" placeholder="org@mail.kg" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.email ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]']" />
-                  <p v-if="errors.email" class="mt-1 text-xs text-red-500">{{ errors.email }}</p>
-                </div>
-              </div>
-            </div>
-            <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-              <AppButton variant="secondary" @click="showFormModal = false">{{ $t('adminOrgs.cancel') }}</AppButton>
-              <AppButton variant="primary" @click="saveOrganization">{{ isEditing ? $t('adminOrgs.save') : $t('adminOrgs.add') }}</AppButton>
-            </div>
+    <AppModal :visible="showFormModal" :title="isEditing ? $t('adminOrgs.editTitle') : $t('adminOrgs.addTitle')" size="md" @close="showFormModal = false">
+      <p class="text-sm text-[#64748b] -mt-2 mb-4">{{ isEditing ? $t('adminOrgs.editSubtitle') : $t('adminOrgs.addSubtitle') }}</p>
+      <div class="space-y-4">
+        <div>
+          <AppInput v-model="form.name" :label="$t('adminOrgs.labelName')" placeholder='ОсОО "Название"' :error="errors.name" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+        </div>
+        <div>
+          <AppInput v-model="form.inn" :label="$t('adminOrgs.labelInn')" placeholder="01234567891234" :error="errors.inn" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+        </div>
+        <div>
+          <AppInput v-model="form.address" :label="$t('adminOrgs.labelAddress')" placeholder="г. Бишкек, ул. Чуй, 100" :error="errors.address" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelOrgType') }} <span class="text-red-500">*</span></label>
+            <select v-model="form.type" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors', errors.type ? 'border-red-400 bg-red-50/50' : 'border-[#e5e7eb] focus:border-[#2563eb]', !form.type ? 'text-[#9ca3af]' : '']">
+              <option value="" disabled>{{ $t('adminOrgs.selectType') }}</option>
+              <option value="Плательщик">{{ $t('adminOrgs.typePayer') }}</option>
+              <option value="Эко Оператор">{{ $t('adminOrgs.typeEcoOperator') }}</option>
+            </select>
+            <p v-if="errors.type" class="mt-1 text-xs text-red-500">{{ errors.type }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">{{ $t('adminOrgs.labelRegion') }}</label>
+            <select v-model="form.region" class="w-full px-4 py-2.5 border border-[#e5e7eb] rounded-xl focus:outline-none focus:border-[#2563eb]">
+              <option value="">{{ $t('adminOrgs.selectRegion') }}</option>
+              <option value="г. Бишкек">г. Бишкек</option>
+              <option value="Чуйская обл.">Чуйская обл.</option>
+              <option value="г. Ош">г. Ош</option>
+              <option value="Иссык-Кульская обл.">Иссык-Кульская обл.</option>
+              <option value="Нарынская обл.">Нарынская обл.</option>
+              <option value="Джалал-Абадская обл.">Джалал-Абадская обл.</option>
+              <option value="Таласская обл.">Таласская обл.</option>
+              <option value="Баткенская обл.">Баткенская обл.</option>
+              <option value="Ошская обл.">Ошская обл.</option>
+            </select>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+        <div>
+          <AppInput v-model="form.contactPerson" :label="$t('adminOrgs.labelContactPerson')" placeholder="ФИО" :error="errors.contactPerson" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <AppInput v-model="form.phone" type="tel" :label="$t('adminOrgs.labelPhone')" placeholder="+996 XXX XXX XXX" :error="errors.phone" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+          </div>
+          <div>
+            <AppInput v-model="form.email" type="email" :label="$t('adminOrgs.labelEmail')" placeholder="org@mail.kg" :error="errors.email" required labelColor="#415861" borderColor="#e5e7eb" focusColor="#2563eb" />
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="showFormModal = false">{{ $t('adminOrgs.cancel') }}</AppButton>
+        <AppButton variant="primary" @click="saveOrganization">{{ isEditing ? $t('adminOrgs.save') : $t('adminOrgs.add') }}</AppButton>
+      </template>
+    </AppModal>
 
-    <!-- ===== VIEW MODAL ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showViewModal && viewingOrg" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showViewModal = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-              <h3 class="text-xl font-bold text-[#1e293b]">{{ $t('adminOrgs.orgCard') }}</h3>
-              <button @click="showViewModal = false" class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div class="p-6 space-y-4">
-              <div class="flex items-center gap-4 mb-2">
-                <div class="w-14 h-14 rounded-xl bg-[#2563eb] flex items-center justify-center text-white text-xl font-bold">{{ viewingOrg.name.charAt(0) }}</div>
-                <div>
-                  <p class="font-bold text-lg text-[#1e293b]">{{ viewingOrg.name }}</p>
-                  <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(viewingOrg.type)]">{{ viewingOrg.type }}</span>
-                  <AppBadge :variant="getStatusBadgeVariant(viewingOrg.status)" class="ml-2">{{ $t('status.' + viewingOrg.status) }}</AppBadge>
-                </div>
-              </div>
-              <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelInnView') }}</p><p class="text-[#1e293b] font-mono font-medium">{{ viewingOrg.inn }}</p></div>
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelRegionView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.region }}</p></div>
-                <div class="col-span-2"><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelAddressView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.address }}</p></div>
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelContactPersonView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.contactPerson }}</p></div>
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelRegisteredAtView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.registeredAt }}</p></div>
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelPhoneView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.phone }}</p></div>
-                <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelEmailView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.email }}</p></div>
-              </div>
-            </div>
-            <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-              <AppButton variant="outline" @click="showViewModal = false; openEditModal(viewingOrg!)">{{ $t('adminOrgs.btnEditView') }}</AppButton>
-              <AppButton variant="primary" @click="showViewModal = false">{{ $t('adminOrgs.btnClose') }}</AppButton>
-            </div>
+    <AppModal :visible="showViewModal && !!viewingOrg" :title="$t('adminOrgs.orgCard')" size="md" @close="showViewModal = false">
+      <template v-if="viewingOrg">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-14 h-14 rounded-xl bg-[#2563eb] flex items-center justify-center text-white text-xl font-bold">{{ viewingOrg.name.charAt(0) }}</div>
+          <div>
+            <p class="font-bold text-lg text-[#1e293b]">{{ viewingOrg.name }}</p>
+            <span :class="['px-3 py-1 rounded-full text-xs font-medium', getTypeClass(viewingOrg.type)]">{{ viewingOrg.type }}</span>
+            <AppBadge :variant="getStatusBadgeVariant(viewingOrg.status)" class="ml-2">{{ $t('status.' + viewingOrg.status) }}</AppBadge>
           </div>
         </div>
-      </Transition>
-    </Teleport>
+        <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-3 text-sm">
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelInnView') }}</p><p class="text-[#1e293b] font-mono font-medium">{{ viewingOrg.inn }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelRegionView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.region }}</p></div>
+          <div class="col-span-2"><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelAddressView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.address }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelContactPersonView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.contactPerson }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelRegisteredAtView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.registeredAt }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelPhoneView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.phone }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminOrgs.labelEmailView') }}</p><p class="text-[#1e293b] font-medium">{{ viewingOrg.email }}</p></div>
+        </div>
+      </template>
+      <template #footer>
+        <AppButton variant="outline" @click="showViewModal = false; openEditModal(viewingOrg!)">{{ $t('adminOrgs.btnEditView') }}</AppButton>
+        <AppButton variant="primary" @click="showViewModal = false">{{ $t('adminOrgs.btnClose') }}</AppButton>
+      </template>
+    </AppModal>
 
-    <!-- ===== DELETE CONFIRM ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showDeleteConfirm && deletingOrg" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showDeleteConfirm = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center">
-            <div class="p-8">
-              <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('adminOrgs.deleteTitle') }}</h3>
-              <p class="text-[#64748b]">{{ $t('adminOrgs.deleteConfirmText') }} <span class="font-medium text-[#1e293b]">{{ deletingOrg.name }}</span>{{ $t('adminOrgs.deleteIrreversible') }}</p>
-            </div>
-            <div class="flex items-center justify-center gap-3 px-8 pb-8">
-              <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminOrgs.cancel') }}</AppButton>
-              <AppButton variant="danger" class="flex-1" @click="deleteOrganization">{{ $t('adminOrgs.btnDelete') }}</AppButton>
-            </div>
-          </div>
+    <AppModal :visible="showDeleteConfirm && !!deletingOrg" :title="$t('adminOrgs.deleteTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
         </div>
-      </Transition>
-    </Teleport>
+        <p class="text-[#64748b]" v-if="deletingOrg">{{ $t('adminOrgs.deleteConfirmText') }} <span class="font-medium text-[#1e293b]">{{ deletingOrg.name }}</span>{{ $t('adminOrgs.deleteIrreversible') }}</p>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminOrgs.cancel') }}</AppButton>
+        <AppButton variant="danger" class="flex-1" @click="deleteOrganization">{{ $t('adminOrgs.btnDelete') }}</AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 
-<style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-</style>
