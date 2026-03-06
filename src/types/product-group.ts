@@ -11,6 +11,33 @@ export interface ProductGroupDTO {
   subgroupCount?: number
   subgroups?: ProductSubgroupDTO[]
   recyclingStandard: number
+  norms?: ProductGroupNormDTO[]
+}
+
+export interface ProductGroupNormDTO {
+  year: number
+  normPercent: number
+  resolutionNumber: string
+}
+
+export interface NormTableRow {
+  id: number
+  category: string
+  rates: Record<number, number>
+}
+
+export interface FeeRateItem {
+  id: number
+  name: string
+  rate: number
+  unit: string
+  effectiveDate: string
+}
+
+export interface FeeRateGroup {
+  groupLetter: string
+  groupTitle: string
+  items: FeeRateItem[]
 }
 
 export interface ProductSubgroupDTO {

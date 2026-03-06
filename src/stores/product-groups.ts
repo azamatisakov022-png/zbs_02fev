@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/api/client'
-import type { ProductGroupDTO, ProductSubgroupDTO } from '@/types/product-group'
+import type { ProductGroupDTO, ProductSubgroupDTO, ProductGroupNormDTO, NormTableRow, FeeRateGroup } from '@/types/product-group'
 
 export const useProductGroupStore = defineStore('productGroups', {
   state: () => ({
@@ -66,6 +66,50 @@ export const useProductGroupStore = defineStore('productGroups', {
         return group?.type === 'packaging'
       }
     },
+
+    normYears(state): number[] {
+      const allYears = new Set<number>()
+      for (const group of state.groups) {
+        for (const norm of group.norms ?? []) {
+          allYears.add(norm.year)
+        }
+      }
+      return Array.from(allYears).sort()
+    },
+
+    normsTableData(state): NormTableRow[] {
+      return state.groups.map(g => ({
+        id: g.groupNumber,
+        category: g.name,
+        rates: (g.norms ?? []).reduce((acc, n) => {
+          acc[n.year] = n.normPercent
+          return acc
+        }, {} as Record<number, number>),
+      }))
+    },
+
+    feeRateGroups(state): FeeRateGroup[] {
+      const SECTION_ORDER = ['А', 'Б', 'В', 'Г', 'Д', 'Е']
+      const grouped: Record<string, FeeRateGroup> = {}
+      for (const g of state.groups) {
+        const letter = g.sectionLetter
+        if (!grouped[letter]) {
+          grouped[letter] = {
+            groupLetter: letter,
+            groupTitle: g.sectionName,
+            items: [],
+          }
+        }
+        grouped[letter].items.push({
+          id: g.groupNumber,
+          name: g.name,
+          rate: g.currentRate,
+          unit: g.unit || 'сом/тонна',
+          effectiveDate: '01.01.2025',
+        })
+      }
+      return SECTION_ORDER.filter(l => grouped[l]).map(l => grouped[l])
+    },
   },
 
   actions: {
@@ -90,6 +134,25 @@ export const useProductGroupStore = defineStore('productGroups', {
         this.currentGroup = data
       } catch (e: any) {
         this.error = e.message || 'Failed to fetch product group'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchAllGroupsWithNorms() {
+      this.loading = true
+      this.error = null
+      try {
+        const { data: groups } = await api.get<ProductGroupDTO[]>('/public/product-groups')
+        const details = await Promise.all(
+          groups.map(g =>
+            api.get<ProductGroupDTO>(`/public/product-groups/${g.groupNumber}`)
+              .then(res => res.data)
+          )
+        )
+        this.groups = details
+      } catch (e: any) {
+        this.error = e.message || 'Failed to fetch product groups with norms'
       } finally {
         this.loading = false
       }
