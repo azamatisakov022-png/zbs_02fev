@@ -1329,6 +1329,21 @@
     "rejected": "Отчёт четке кагылды",
     "returnedForRevision": "Оңдоого кайтарылды"
   },
+  "reportToast": {
+    "createSuccess": "Отчёт ийгиликтүү түзүлдү",
+    "createError": "Отчёт түзүүдө ката кетти",
+    "submitSuccess": "Отчёт кароого жөнөтүлдү",
+    "submitError": "Отчёт жөнөтүүдө ката кетти",
+    "approveSuccess": "Отчёт кабыл алынды",
+    "approveError": "Отчёт кабыл алууда ката кетти",
+    "rejectSuccess": "Отчёт четке кагылды",
+    "rejectError": "Отчёт четке кагууда ката кетти",
+    "returnSuccess": "Отчёт оңдоого кайтарылды",
+    "returnError": "Отчёт кайтарууда ката кетти"
+  },
+  "reportHistory": {
+    "title": "Тарых"
+  },
   "calculatorPage": {
     "title": "Утилдик жыйымдын калькулятору (ӨКЖ)",
     "subtitle": "КР ӨМнүн №730 токтомуна ылайык утилдик жыйымдын алдын ала эсеби",
@@ -2438,6 +2453,8 @@
     "tons": "т",
     "tonsPerYear": "т/жыл",
     "historyTitle": "Отчёттордун тарыхы",
+    "historySubtitle": "Утилизация боюнча бардык отчёттор",
+    "newReportBtn": "Жаңы отчёт",
     "colNumber": "Номер",
     "colPeriod": "Мезгил",
     "colDate": "Берилген күнү",

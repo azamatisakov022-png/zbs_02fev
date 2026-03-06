@@ -1000,7 +1000,9 @@
     "landfillCard": "Полигондун картасы",
     "ministryAnalytics": "Аналитика",
     "ministryCollectionPoints": "Кабыл алуу пункттары",
-    "payerCard": "Төлөөчүнүн картасы"
+    "payerCard": "Төлөөчүнүн картасы",
+    "createReport": "Отчёт түзүү",
+    "createDeclaration": "Декларация түзүү"
   },
   "accountStore": {
     "chargeDescription": "Утилдик жыйымды эсептөө",
