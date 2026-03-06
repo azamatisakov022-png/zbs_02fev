@@ -160,6 +160,15 @@ public class DeclarationService {
                 .toList();
     }
 
+    /**
+     * Cross-reference declaration volumes with customs (ГТС КР) import data.
+     */
+    public CustomsVolumeVerificationResponse verifyDeclarationVolumes(Long id) {
+        Declaration decl = findById(id);
+        return customsServicePort.verifyDeclaredVolumes(
+                decl.getCompany().getInn(), decl.getYear(), 1);
+    }
+
     private Declaration findById(Long id) {
         return declarationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Декларация с ID " + id + " не найдена"));
