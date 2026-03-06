@@ -10,6 +10,7 @@ import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.event.CalculationStatusEvent;
 import kg.eco.operator.service.CalculationService;
+import kg.eco.operator.service.FileStorageService;
 import kg.eco.operator.util.CalculationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +45,7 @@ public class CalculationServiceImpl implements CalculationService {
     private final DocumentRepository documentRepository;
     private final AuditLogRepository auditLogRepository;
     private final CalculationMapper calculationMapper;
+    private final FileStorageService fileStorageService;
     private final ApplicationEventPublisher eventPublisher;
 
     // ─── LIST ───
@@ -297,9 +299,9 @@ public class CalculationServiceImpl implements CalculationService {
         payment.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
         payment.setStatus(PaymentConfirmationStatus.PENDING);
 
-        // TODO: upload document to MinIO and set documentUrl
         if (document != null && !document.isEmpty()) {
-            payment.setDocumentUrl("/documents/payments/" + payment.getPaymentNumber());
+            String objectKey = fileStorageService.upload(document, "payments/" + payment.getPaymentNumber());
+            payment.setDocumentUrl(objectKey);
         }
 
         paymentRepository.save(payment);
@@ -432,7 +434,19 @@ public class CalculationServiceImpl implements CalculationService {
     public void updateDocuments(Long id, String inn, MultipartFile[] files) {
         Calculation calc = findById(id);
         assertOwner(calc, inn);
-        // TODO: implement MinIO upload
+        if (files != null) {
+            for (MultipartFile file : files) {
+                String objectKey = fileStorageService.upload(file, "calculations/" + id);
+                Document doc = new Document();
+                doc.setName(file.getOriginalFilename());
+                doc.setUrl(objectKey);
+                doc.setSize(file.getSize());
+                doc.setEntityType("calculation");
+                doc.setEntityId(id);
+                doc.setType(DocumentType.OTHER);
+                documentRepository.save(doc);
+            }
+        }
     }
 
     // ─── COUNTS ───
