@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppBadge } from '@/components/ui'
+import { AppButton, AppBadge } from '@/components/ui'
 
 defineProps<{
   reportNumber: string
@@ -45,21 +45,8 @@ defineEmits<{
     </p>
 
     <div class="flex flex-col sm:flex-row justify-center gap-4">
-      <button @click="$emit('print')" class="rs-btn-outline flex items-center justify-center gap-2 px-6 py-3 rounded-xl transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        {{ $t('businessReports.downloadPdf') }}
-      </button>
-      <button
-        @click="$emit('backToList')"
-        class="rs-btn-primary flex items-center justify-center gap-2 px-6 py-3 text-white rounded-xl font-medium transition-colors"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-        {{ $t('businessReports.returnToList') }}
-      </button>
+      <AppButton variant="outline" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('businessReports.downloadPdf')" @click="$emit('print')" />
+      <AppButton variant="success" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 6h16M4 10h16M4 14h16M4 18h16&quot; /></svg>'" :label="$t('businessReports.returnToList')" @click="$emit('backToList')" />
     </div>
   </div>
 </template>
@@ -98,18 +85,5 @@ defineEmits<{
 }
 .rs-message {
   color: #64748b;
-}
-.rs-btn-outline {
-  border: 1px solid #e2e8f0;
-  color: #1e293b;
-}
-.rs-btn-outline:hover {
-  background: #f8fafc;
-}
-.rs-btn-primary {
-  background: #10b981;
-}
-.rs-btn-primary:hover {
-  background: #059669;
 }
 </style>

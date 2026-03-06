@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { validators, scrollToFirstError } from '../../utils/validators'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppCard } from '../../components/ui'
 import { useCalculationStore } from '../../stores/calculations'
 import { CalcStatus } from '../../constants/statuses'
 import { calculatePaymentDeadline, getRemainingDays, formatDateRu, formatDateShort } from '../../utils/dateUtils'
@@ -558,20 +559,22 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
 
     <div class="max-w-6xl mx-auto">
       <div class="mb-6">
-        <button @click="backToList" class="bcv-back-btn flex items-center gap-2 mb-4">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          {{ $t('businessCalc.backToList') }}
-        </button>
+        <AppButton
+          variant="back"
+          @click="backToList"
+          class="mb-4"
+          :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M10 19l-7-7m0 0l7-7m-7 7h18&quot; /></svg>'"
+          :label="$t('businessCalc.backToList')"
+        />
         <div class="flex items-center justify-between gap-4">
           <h1 class="bcv-title text-2xl lg:text-3xl font-bold">{{ $t('businessCalc.pageTitle') }}</h1>
-          <button @click="showInstruction = true" class="bcv-instruction-btn flex items-center gap-2 px-4 py-2 rounded-xl transition-colors text-base font-medium flex-shrink-0">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {{ $t('businessCalc.instructionBtn') }}
-          </button>
+          <AppButton
+            variant="ghost"
+            @click="showInstruction = true"
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z&quot; /></svg>'"
+            :label="$t('businessCalc.instructionBtn')"
+            color="#2D8B4E"
+          />
         </div>
       </div>
 
@@ -581,7 +584,7 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
         @go-to-step="goToStep"
       />
 
-      <div class="bcv-card">
+      <AppCard padding="none">
         <StepPeriod
           v-if="currentStep === 1"
           :payerType="payerType"
@@ -662,7 +665,7 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
           @save-draft="saveDraft"
           @submit="submitForReview"
         />
-      </div>
+      </AppCard>
     </div>
 
     <InstructionDrawer v-model="showInstruction" :title="$t('businessCalc.instructionDrawerTitle')" :contentHtml="instructionCalculationHtml" />
@@ -680,31 +683,12 @@ const handleCopyRequisites = (type: 'utilization_fee' | 'penalty') => {
 </template>
 
 <style scoped>
-.bcv-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
-}
 .bcv-notification {
   z-index: 200;
-}
-.bcv-back-btn {
-  color: #64748b;
-}
-.bcv-back-btn:hover {
-  color: #1e293b;
 }
 .bcv-title {
   color: #1e293b;
 }
-.bcv-instruction-btn {
-  color: #2D8B4E;
-}
-.bcv-instruction-btn:hover {
-  background: #ecfdf5;
-}
-
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }

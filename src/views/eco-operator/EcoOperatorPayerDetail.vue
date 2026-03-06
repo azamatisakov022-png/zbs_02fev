@@ -22,6 +22,7 @@ import {
   paymentStatusColors,
   type Payer,
 } from '../../stores/payers'
+import { AppButton, AppInput, AppModal, AppCard } from '../../components/ui'
 import PenaltyCalculator from '../../components/penalty/PenaltyCalculator.vue'
 import type { PenaltyExemption, PenaltyExemptionReason } from '../../utils/penalty'
 import { isExemptFromPenalty } from '../../utils/penalty'
@@ -189,30 +190,28 @@ function docTypeLabel(type: string): string {
     <!-- ==================== NOT FOUND STATE ==================== -->
     <div v-if="!payer" class="text-center py-20">
       <p class="text-xl text-gray-500 mb-4">{{ $t('ecoPayerDetail.payerNotFound') }}</p>
-      <button
+      <AppButton
+        variant="back"
+        :icon="'<svg width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M19 12H5\'/><path d=\'M12 19l-7-7 7-7\'/></svg>'"
+        :label="$t('common.back')"
         @click="router.push('/eco-operator/payers')"
-        class="btn-back"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        {{ $t('common.back') }}
-      </button>
+      />
     </div>
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <template v-else>
       <!-- Back button -->
       <div class="mb-6">
-        <button
+        <AppButton
+          variant="back"
+          :icon="'<svg width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M19 12H5\'/><path d=\'M12 19l-7-7 7-7\'/></svg>'"
+          :label="$t('common.back')"
           @click="router.push('/eco-operator/payers')"
-          class="btn-back"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          {{ $t('common.back') }}
-        </button>
+        />
       </div>
 
       <!-- ==================== HEADER CARD ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <!-- Avatar -->
           <div
@@ -246,10 +245,10 @@ function docTypeLabel(type: string): string {
             </span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 1: General Info ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.generalInfo') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
           <!-- Left column -->
@@ -324,7 +323,7 @@ function docTypeLabel(type: string): string {
             <span v-else class="text-sm text-gray-400">&mdash;</span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 2: Financial Summary ==================== -->
       <div class="mb-6">
@@ -417,61 +416,41 @@ function docTypeLabel(type: string): string {
               </button>
             </div>
           </template>
-          <button
+          <AppButton
             v-if="!isPenaltyExempt"
+            variant="outline"
+            size="sm"
+            :icon="'<svg class=\'w-3.5 h-3.5\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M12 4v16m8-8H4\' /></svg>'"
+            :label="$t('penalty.exemptionGrant')"
             @click="openExemptionModal"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-50 transition-colors"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-            {{ $t('penalty.exemptionGrant') }}
-          </button>
+          />
         </div>
       </div>
 
       <!-- Exemption modal -->
-      <Teleport to="body">
-        <div v-if="showExemptionModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showExemptionModal = false">
-          <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">{{ $t('penalty.exemptionGrant') }}</h3>
-
-            <div class="space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionReason') }}</label>
-                <select v-model="exemptionForm.reason" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
-                  <option v-for="r in exemptionReasons" :key="r.value" :value="r.value">{{ $t(r.labelKey) }}</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionDocument') }}</label>
-                <input v-model="exemptionForm.documentNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionDate') }}</label>
-                <input v-model="exemptionForm.date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionNotes') }}</label>
-                <textarea v-model="exemptionForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"></textarea>
-              </div>
-            </div>
-
-            <div class="flex justify-end gap-3 mt-6">
-              <button @click="showExemptionModal = false" class="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                {{ $t('common.cancel') }}
-              </button>
-              <button @click="grantExemption" :disabled="!exemptionForm.documentNumber.trim() || !exemptionForm.date" class="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                {{ $t('penalty.exemptionGrant') }}
-              </button>
-            </div>
+      <AppModal :visible="showExemptionModal" :title="$t('penalty.exemptionGrant')" size="md" @close="showExemptionModal = false">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionReason') }}</label>
+            <select v-model="exemptionForm.reason" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+              <option v-for="r in exemptionReasons" :key="r.value" :value="r.value">{{ $t(r.labelKey) }}</option>
+            </select>
           </div>
+
+          <AppInput v-model="exemptionForm.documentNumber" :label="$t('penalty.exemptionDocument')" focusColor="#0D9488" />
+
+          <AppInput v-model="exemptionForm.date" type="date" :label="$t('penalty.exemptionDate')" focusColor="#0D9488" />
+
+          <AppInput v-model="exemptionForm.notes" type="textarea" :rows="2" :label="$t('penalty.exemptionNotes')" focusColor="#0D9488" />
         </div>
-      </Teleport>
+        <template #footer>
+          <AppButton variant="secondary" :label="$t('common.cancel')" @click="showExemptionModal = false" />
+          <AppButton variant="primary" bg="#0D9488" :label="$t('penalty.exemptionGrant')" :disabled="!exemptionForm.documentNumber.trim() || !exemptionForm.date" @click="grantExemption" />
+        </template>
+      </AppModal>
 
       <!-- ==================== BLOCK 3: Declarations History ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.declarationsHistory') }}</h2>
         <div v-if="payer.declarations.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
@@ -523,10 +502,10 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noDeclarations') }}</p>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 4: Payments History ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.paymentsHistory') }}</h2>
         <div v-if="payer.payments.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
@@ -555,10 +534,10 @@ function docTypeLabel(type: string): string {
           </table>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noPayments') }}</p>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 5: Audit Log ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.changeHistory') }}</h2>
         <div v-if="payer.auditLog.length > 0" class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
@@ -589,10 +568,10 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noRecords') }}</p>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 6: Documents ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.documents') }}</h2>
         <div v-if="payer.documents.length > 0" class="space-y-2 mb-4">
           <div
@@ -631,10 +610,10 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-4 mb-4">{{ $t('ecoPayerDetail.noDocuments') }}</p>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 7: Comments ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <AppCard radius="sm" :shadow="false" class="mb-6">
         <div class="mb-4">
           <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
             <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -654,13 +633,13 @@ function docTypeLabel(type: string): string {
             :placeholder="$t('ecoPayerDetail.addCommentPlaceholder')"
           ></textarea>
           <div class="flex justify-end mt-2">
-            <button
-              @click="addComment"
+            <AppButton
+              variant="success"
+              size="sm"
+              :label="$t('ecoPayerDetail.addComment')"
               :disabled="!newCommentText.trim()"
-              class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {{ $t('ecoPayerDetail.addComment') }}
-            </button>
+              @click="addComment"
+            />
           </div>
         </div>
 
@@ -684,7 +663,7 @@ function docTypeLabel(type: string): string {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-4">{{ $t('ecoPayerDetail.noComments') }}</p>
-      </div>
+      </AppCard>
     </template>
   </DashboardLayout>
 </template>

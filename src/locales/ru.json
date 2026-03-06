@@ -1000,7 +1000,9 @@
     "landfillCard": "Карточка полигона",
     "ministryAnalytics": "Аналитика",
     "ministryCollectionPoints": "Пункты приёма",
-    "payerCard": "Карточка плательщика"
+    "payerCard": "Карточка плательщика",
+    "createReport": "Создать отчёт",
+    "createDeclaration": "Создать декларацию"
   },
   "accountStore": {
     "chargeDescription": "Начисление утилизационного сбора",

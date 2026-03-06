@@ -7,7 +7,7 @@ import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { refundStore, type Refund } from '../../stores/refunds'
 import { RefundStatus, statusI18nKey } from '../../constants/statuses'
 import { productGroups, getSubgroupLabel } from '../../data/product-groups'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppModal, AppAlert, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
@@ -90,28 +90,21 @@ const confirmReject = () => {
 
     <template v-if="!isLoading && refund">
       <!-- Success notification -->
-      <div v-if="successMessage" class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-        <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p class="text-sm font-medium text-green-800">{{ successMessage }}</p>
-      </div>
+      <AppAlert v-if="successMessage" variant="success" class="mb-6">
+        {{ successMessage }}
+      </AppAlert>
 
       <!-- Back button -->
-      <button
+      <AppButton
+        variant="back"
+        :icon="'<svg class=\'w-5 h-5\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M10 19l-7-7m0 0l7-7m-7 7h18\' /></svg>'"
+        :label="$t('common.back')"
+        class="mb-6"
         @click="router.push('/eco-operator/refunds')"
-        class="inline-flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-6 transition-colors"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        <span class="text-sm font-medium">{{ $t('common.back') }}</span>
-      </button>
+      />
 
       <!-- Header -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-3 mb-1">
@@ -121,10 +114,10 @@ const confirmReject = () => {
             <p class="text-[#64748b]">{{ $t('ecoRefundDetail.fromDate') }} {{ refund.date }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Payer data -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.payerData') }}</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
@@ -136,10 +129,10 @@ const confirmReject = () => {
             <p class="font-medium text-[#1e293b] mt-1">{{ refund.inn }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Linked calculation -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.linkedCalculation') }}</h3>
         <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0] flex items-center gap-3">
           <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -152,10 +145,10 @@ const confirmReject = () => {
             <p class="font-mono font-medium text-[#2563eb]">{{ refund.calculationNumber }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Items table -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.exportedGoods') }}</h3>
         <div class="overflow-x-auto border border-[#e2e8f0] rounded-xl">
           <table class="w-full text-sm border-collapse">
@@ -187,10 +180,10 @@ const confirmReject = () => {
             </tfoot>
           </table>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Attached documents -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="font-semibold text-[#1e293b] mb-4 text-lg">{{ $t('ecoRefundDetail.attachedDocuments', { count: refund.documents.length }) }}</h3>
         <div v-if="refund.documents.length > 0" class="space-y-2">
           <div v-for="(doc, idx) in refund.documents" :key="idx" class="flex items-center gap-3 bg-[#f8fafc] rounded-lg px-4 py-3 border border-[#e2e8f0]">
@@ -206,33 +199,23 @@ const confirmReject = () => {
           </div>
         </div>
         <div v-else class="text-sm text-[#64748b]">{{ $t('ecoRefundDetail.noDocuments') }}</div>
-      </div>
+      </AppCard>
 
       <!-- Total refund amount -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-[#1e293b] text-lg">{{ $t('ecoRefundDetail.totalRefund') }}</h3>
           <p class="text-3xl font-bold text-[#10b981]">{{ refund.totalRefund.toLocaleString() }} {{ $t('ecoRefundDetail.som') }}</p>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Rejection reason block -->
-      <div v-if="refund.status === 'rejected' && refund.rejectionReason" class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-semibold text-red-800 mb-1">{{ $t('ecoRefundDetail.rejectionReason') }}</p>
-            <p class="text-sm text-red-700">{{ refund.rejectionReason }}</p>
-          </div>
-        </div>
-      </div>
+      <AppAlert v-if="refund.status === 'rejected' && refund.rejectionReason" variant="error" :title="$t('ecoRefundDetail.rejectionReason')" class="mb-6">
+        {{ refund.rejectionReason }}
+      </AppAlert>
 
       <!-- Action buttons -->
-      <div v-if="canTakeAction" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard v-if="canTakeAction" class="mb-6">
         <div class="flex flex-wrap justify-end gap-3">
           <AppButton variant="danger" @click="openRejectModal">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -247,12 +230,12 @@ const confirmReject = () => {
             {{ $t('ecoRefundDetail.approveRefund') }}
           </AppButton>
         </div>
-      </div>
+      </AppCard>
     </template>
 
     <!-- Not found state -->
     <template v-if="!isLoading && !refund">
-      <div class="bg-white rounded-2xl p-12 shadow-sm border border-[#e2e8f0] text-center">
+      <AppCard padding="lg" class="text-center">
         <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -260,50 +243,35 @@ const confirmReject = () => {
         </div>
         <h2 class="text-xl font-bold text-[#1e293b] mb-2">{{ $t('ecoRefundDetail.notFound') }}</h2>
         <p class="text-[#64748b] mb-6">{{ $t('ecoRefundDetail.notFoundDesc') }}</p>
-        <button
+        <AppButton
+          variant="primary"
+          :label="$t('ecoRefundDetail.backToList')"
           @click="router.push('/eco-operator/refunds')"
-          class="px-5 py-2.5 bg-[#2563eb] text-white rounded-lg font-medium hover:bg-[#1d4ed8] transition-colors"
-        >
-          {{ $t('ecoRefundDetail.backToList') }}
-        </button>
-      </div>
+        />
+      </AppCard>
     </template>
 
     <!-- Rejection modal -->
-    <Teleport to="body">
-      <div v-if="showRejectModal" class="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center" @click.self="closeRejectModal">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4">
-          <div class="flex items-center justify-between p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoRefundDetail.rejectModalTitle') }}</h2>
-            <button @click="closeRejectModal" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6">
-            <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoRefundDetail.rejectModalDesc') }} <span class="font-medium text-[#1e293b]">{{ refund?.number }}</span></p>
-            <textarea
-              v-model="rejectionReason"
-              rows="4"
-              :placeholder="$t('ecoRefundDetail.rejectPlaceholder')"
-              class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#ef4444] text-sm resize-none"
-            ></textarea>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="closeRejectModal">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <AppButton
-              variant="danger"
-              @click="confirmReject"
-              :disabled="!rejectionReason.trim()"
-            >
-              {{ $t('common.confirm') }}
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal :visible="showRejectModal" :title="$t('ecoRefundDetail.rejectModalTitle')" size="md" @close="closeRejectModal">
+      <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoRefundDetail.rejectModalDesc') }} <span class="font-medium text-[#1e293b]">{{ refund?.number }}</span></p>
+      <textarea
+        v-model="rejectionReason"
+        rows="4"
+        :placeholder="$t('ecoRefundDetail.rejectPlaceholder')"
+        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#ef4444] text-sm resize-none"
+      ></textarea>
+      <template #footer>
+        <AppButton variant="secondary" @click="closeRejectModal">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton
+          variant="danger"
+          @click="confirmReject"
+          :disabled="!rejectionReason.trim()"
+        >
+          {{ $t('common.confirm') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

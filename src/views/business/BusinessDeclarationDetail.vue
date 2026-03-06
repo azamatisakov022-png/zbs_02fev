@@ -6,7 +6,7 @@ import { useAccountStore } from '../../stores/account'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppCard, AppAlert } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
@@ -112,10 +112,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
       <h2 class="bdd-text-24 font-bold bdd-text-dark mb-2">{{ $t('businessDeclDetail.notFound') }}</h2>
       <p class="bdd-text-muted mb-6">{{ $t('businessDeclDetail.notFoundDesc') }}</p>
-      <button @click="goBack" class="btn-back">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        {{ $t('common.back') }}
-      </button>
+      <AppButton variant="back" :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><path d=&quot;M19 12H5&quot;/><path d=&quot;M12 19l-7-7 7-7&quot;/></svg>'" :label="$t('common.back')" @click="goBack" />
     </div>
 
     <!-- Main content -->
@@ -135,20 +132,14 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
 
       <!-- Status banners -->
-      <div
+      <AppAlert
         v-if="declaration.status === 'approved'"
-        class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+        variant="success"
+        :title="$t('businessDeclDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer })"
+        class="mb-6"
       >
-        <div class="bdd-status-icon-success w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <div>
-          <p class="bdd-text-16 font-semibold text-green-900">{{ $t('businessDeclDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer }) }}</p>
-          <p v-if="declaration.reviewComment" class="bdd-text-14 text-green-700 mt-1">{{ declaration.reviewComment }}</p>
-        </div>
-      </div>
+        <span v-if="declaration.reviewComment">{{ declaration.reviewComment }}</span>
+      </AppAlert>
 
       <div
         v-if="declaration.status === 'rejected'"
@@ -194,20 +185,14 @@ const previewDoc = ref<PreviewDocument | null>(null)
         </div>
       </div>
 
-      <div
+      <AppAlert
         v-if="declaration.status === 'under_review'"
-        class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+        variant="info"
+        :title="$t('businessDeclDetail.underReviewBanner')"
+        class="mb-6"
       >
-        <div class="bdd-status-icon-info w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="bdd-text-16 font-semibold text-blue-900">{{ $t('businessDeclDetail.underReviewBanner') }}</p>
-          <p class="bdd-text-14 text-blue-700 mt-1">{{ $t('businessDeclDetail.underReviewBannerDesc') }}</p>
-        </div>
-      </div>
+        {{ $t('businessDeclDetail.underReviewBannerDesc') }}
+      </AppAlert>
 
       <!-- BLOCK 1 - Данные плательщика -->
       <div class="bdd-section bdd-section--muted">
@@ -245,7 +230,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
       </div>
 
       <!-- BLOCK 2 - Сводные данные декларации -->
-      <div class="bdd-card">
+      <AppCard radius="sm" class="mb-6">
         <h2 class="bdd-section-title mb-4">{{ $t('businessDeclDetail.summaryData') }}</h2>
 
         <!-- KPI Cards -->
@@ -405,10 +390,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
             </table>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 3 - Документы -->
-      <div class="bdd-card">
+      <AppCard radius="sm" class="mb-6">
         <h2 class="bdd-section-title mb-4">{{ $t('businessDeclDetail.documents') }}</h2>
         <template v-if="declaration.documents.length > 0">
           <div class="space-y-3">
@@ -427,14 +412,8 @@ const previewDoc = ref<PreviewDocument | null>(null)
                 <p class="bdd-text-14 bdd-text-muted">{{ doc.size }} &middot; {{ doc.source }}</p>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0">
-                <button
-                  class="bdd-link-btn font-medium"
-                  @click="previewDoc = { name: doc.name, size: doc.size, source: doc.source }"
-                >{{ $t('businessDeclDetail.preview') }}</button>
-                <button
-                  class="bdd-link-btn font-medium"
-                  @click="toastStore.show({ type: 'info', title: $t('businessDeclDetail.toastDownloadTitle'), message: $t('businessDeclDetail.toastDownloadMessage') })"
-                >{{ $t('businessDeclDetail.download') }}</button>
+                <AppButton variant="ghost" size="sm" :label="$t('businessDeclDetail.preview')" @click="previewDoc = { name: doc.name, size: doc.size, source: doc.source }" />
+                <AppButton variant="ghost" size="sm" :label="$t('businessDeclDetail.download')" @click="toastStore.show({ type: 'info', title: $t('businessDeclDetail.toastDownloadTitle'), message: $t('businessDeclDetail.toastDownloadMessage') })" />
               </div>
             </div>
           </div>
@@ -442,10 +421,10 @@ const previewDoc = ref<PreviewDocument | null>(null)
         <template v-else>
           <p class="bdd-text-16 bdd-text-muted">{{ $t('businessDeclDetail.noDocuments') }}</p>
         </template>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 4 - История -->
-      <div class="bdd-card">
+      <AppCard radius="sm" class="mb-6">
         <h2 class="bdd-section-title mb-4">{{ $t('businessDeclDetail.reviewHistory') }}</h2>
         <div class="space-y-0">
           <div
@@ -469,7 +448,7 @@ const previewDoc = ref<PreviewDocument | null>(null)
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Action buttons at bottom -->
       <div v-if="declaration.status === 'approved'" class="flex flex-wrap items-center gap-3 mb-4">
@@ -508,39 +487,12 @@ const previewDoc = ref<PreviewDocument | null>(null)
 @media (min-width: 1024px) {
   .bdd-page-title { font-size: 34px; }
 }
-.bdd-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
-  padding: 20px;
-  margin-bottom: 24px;
-}
 .bdd-section--muted {
   background: #f8fafc;
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
   border: 1px solid #e2e8f0;
-}
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #6b7280;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: transparent;
-  transition: all 0.15s;
-}
-.btn-back:hover {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #9ca3af;
 }
 .bdd-text-14 {
   font-size: 14px;
@@ -630,13 +582,6 @@ const previewDoc = ref<PreviewDocument | null>(null)
 .bdd-doc-row {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-}
-.bdd-link-btn {
-  font-size: 16px;
-  color: #2563eb;
-}
-.bdd-link-btn:hover {
-  color: #1d4ed8;
 }
 .bdd-timeline-line {
   background: #e2e8f0;

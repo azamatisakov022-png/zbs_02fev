@@ -12,7 +12,7 @@ import DeclSuccess from './components/DeclSuccess.vue'
 import type { SelectOption } from '@/types/select'
 import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '@/data/product-groups'
 import { useCalculationStore } from '@/stores/calculations'
-import { reportStore } from '@/stores/reports'
+import { useReportStore } from '@/stores/reports'
 import { declarationStore } from '@/stores/declarations'
 import { useBusinessMenu } from '@/composables/useRoleMenu'
 import { notificationStore } from '@/stores/notifications'
@@ -24,10 +24,11 @@ const router = useRouter()
 const { t } = useI18n()
 const calcStore = useCalculationStore()
 const accountStore = useAccountStore()
+const reportStore = useReportStore()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 onMounted(async () => {
-  await accountStore.fetchAll()
+  await Promise.all([accountStore.fetchAll(), accountStore.fetchDashboard()])
 })
 
 const currentStep = ref(1)
@@ -42,15 +43,16 @@ const steps = computed(() => [
 
 const reportingYear = ref('2026')
 
+const cp = computed(() => accountStore.dashboard?.companyProfile)
 const companyData = computed(() => ({
-  name: accountStore.myAccount?.company || '',
-  fullName: accountStore.myAccount?.company || '',
-  inn: accountStore.myAccount?.inn || '',
-  okpo: '',
-  registrationNumber: '',
+  name: cp.value?.companyName || accountStore.myAccount?.company || '',
+  fullName: cp.value?.fullName || accountStore.myAccount?.company || '',
+  inn: cp.value?.inn || accountStore.myAccount?.inn || '',
+  okpo: cp.value?.okpo || '',
+  registrationNumber: cp.value?.registrationNumber || '',
   registrationDate: '',
-  legalAddress: '',
-  actualAddress: '',
+  legalAddress: cp.value?.legalAddress || '',
+  actualAddress: cp.value?.actualAddress || '',
 }))
 
 const yearCalculations = computed(() => {
@@ -110,7 +112,7 @@ const totalPaid = computed(() =>
 const totalDebt = computed(() => totalAmount.value - totalPaid.value)
 
 const yearReports = computed(() => {
-  return reportStore.state.reports.filter(r =>
+  return reportStore.reports.filter(r =>
     r.company === companyData.value.name &&
     r.year === reportingYear.value &&
     r.status === ReportStatus.APPROVED
@@ -179,12 +181,12 @@ const submittedDeclaration = ref({ number: '', date: '' })
 
 const buildDeclPayload = () => ({
   company: companyData.value.name,
-  opf: 'ОсОО',
+  opf: cp.value?.legalForm || '',
   inn: companyData.value.inn,
   address: companyData.value.legalAddress,
-  contactPerson: 'Абдыкеримов К.Б.',
-  phone: '+996 555 12-34-56',
-  email: 'info@techprom.kg',
+  contactPerson: cp.value?.contactPersonFullName || '',
+  phone: cp.value?.contactPersonPhone || cp.value?.phone || '',
+  email: cp.value?.contactPersonEmail || cp.value?.email || '',
   reportingYear: reportingYear.value,
   calculationCount: yearCalculations.value.length,
   totalCharged: totalAmount.value,
@@ -250,12 +252,12 @@ const printPage = async () => {
     <template v-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="bdc-back-link mb-4">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            {{ $t('businessDecl.backToList') }}
-          </button>
+          <AppButton
+            variant="back"
+            class="mb-4"
+            @click="backToList"
+            :label="$t('businessDecl.backToList')"
+          />
           <h1 class="bdc-page-title">{{ $t('businessDecl.wizardTitle') }}</h1>
         </div>
 
@@ -338,17 +340,15 @@ const printPage = async () => {
                 {{ $t('businessDecl.saveDraft') }}
               </AppButton>
 
-              <button
+              <AppButton
                 v-if="currentStep < 3"
+                variant="primary"
                 @click="nextStep"
                 :disabled="currentStep === 1 && !canProceedStep1"
-                class="bdc-next-btn"
-              >
-                {{ $t('businessDecl.next') }}
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 5l7 7-7 7&quot; /></svg>'"
+                icon-position="right"
+                :label="$t('businessDecl.next')"
+              />
 
               <AppButton
                 v-if="currentStep === 3"
@@ -394,16 +394,6 @@ const printPage = async () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
 }
-.bdc-back-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #1e293b;
-  transition: color 0.15s;
-}
-.bdc-back-link:hover {
-  color: #2563eb;
-}
 .bdc-footer {
   padding: 16px 24px;
   background-color: #f8fafc;
@@ -428,24 +418,5 @@ const printPage = async () => {
   .bdc-footer {
     padding: 16px 32px;
   }
-}
-.bdc-next-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 24px;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: background-color 0.15s;
-}
-.bdc-next-btn:hover {
-  background-color: #1d4ed8;
-}
-.bdc-next-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>

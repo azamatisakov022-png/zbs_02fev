@@ -8,7 +8,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppCard, AppInput, AppAlert, AppPageHeader, AppCtaBanner, AppStatCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
@@ -141,19 +141,14 @@ const formatCardNumber = (value: string) => {
   return groups ? groups.join(' ') : cleaned
 }
 
-const handleCardInput = (e: Event) => {
-  const input = e.target as HTMLInputElement
-  const cleaned = input.value.replace(/\D/g, '').slice(0, 16)
-  cardNumber.value = cleaned
-  input.value = formatCardNumber(cleaned)
+const handleCardInput = (val: string) => {
+  cardNumber.value = val.replace(/\D/g, '').slice(0, 16)
 }
 
-const handleExpiryInput = (e: Event) => {
-  const input = e.target as HTMLInputElement
-  let value = input.value.replace(/\D/g, '').slice(0, 4)
+const handleExpiryInput = (val: string) => {
+  let value = val.replace(/\D/g, '').slice(0, 4)
   if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2)
   cardExpiry.value = value
-  input.value = value
 }
 
 // History table
@@ -208,31 +203,18 @@ const goToCalculation = (calcId: number) => {
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="companyData.name" :menuItems="menuItems">
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
-      <div class="content__header mb-6">
-        <h1 class="bpay-page-title text-2xl lg:text-3xl font-bold mb-2">{{ $t('businessPayments.pageTitle') }}</h1>
-        <p class="bpay-muted">{{ $t('businessPayments.pageSubtitle') }}</p>
-      </div>
+      <AppPageHeader :title="$t('businessPayments.pageTitle')" :subtitle="$t('businessPayments.pageSubtitle')" />
 
-      <!-- CTA Banner -->
-      <div class="bpay-cta-banner">
-        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-        <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
-          <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-            <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <div class="flex-1">
-            <h2 class="text-xl lg:text-2xl font-bold mb-2">{{ $t('businessPayments.ctaTitle') }}</h2>
-            <p class="text-white/80 text-sm lg:text-base">{{ $t('businessPayments.ctaDesc') }}</p>
-          </div>
-          <button @click="startWizard" :disabled="!hasPendingPayments" class="bpay-cta-btn flex items-center justify-center gap-2 bg-white px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-purple-50 transition-colors shadow-lg flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            {{ $t('businessPayments.payNow') }}
-          </button>
-        </div>
-      </div>
+      <AppCtaBanner :title="$t('businessPayments.ctaTitle')" :description="$t('businessPayments.ctaDesc')" color="purple" class="mb-6">
+        <template #icon>
+          <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </template>
+        <template #action>
+          <AppButton variant="secondary" bg="white" color="#7c3aed" font-size="16px" @click="startWizard" :disabled="!hasPendingPayments" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z&quot; /></svg>'" :label="$t('businessPayments.payNow')" />
+        </template>
+      </AppCtaBanner>
 
       <!-- Pending Alert -->
       <div v-if="hasPendingPayments" class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
@@ -247,17 +229,9 @@ const goToCalculation = (calcId: number) => {
           <button @click="startWizard" class="text-amber-600 hover:text-amber-700 font-medium text-sm">{{ $t('businessPayments.payArrow') }}</button>
         </div>
       </div>
-      <div v-else class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-        <div class="flex items-start gap-3">
-          <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div>
-            <p class="bpay-dark font-medium">{{ $t('businessPayments.allPaid') }}</p>
-            <p class="bpay-muted text-sm">{{ $t('businessPayments.noDebt') }}</p>
-          </div>
-        </div>
-      </div>
+      <AppAlert v-else variant="success" :title="$t('businessPayments.allPaid')" class="mb-6">
+        {{ $t('businessPayments.noDebt') }}
+      </AppAlert>
 
       <template v-if="isLoading">
         <div class="mb-6"><SkeletonLoader variant="card" /></div>
@@ -267,26 +241,14 @@ const goToCalculation = (calcId: number) => {
       <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
-          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.totalPayments') }}</p>
-          <p class="bpay-dark text-2xl font-bold">16</p>
-        </div>
-        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
-          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.paidForYear') }}</p>
-          <p class="bpay-value-green text-2xl font-bold">161 050 {{ $t('businessPayments.som') }}</p>
-        </div>
-        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
-          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.toPay') }}</p>
-          <p class="bpay-value-amber text-2xl font-bold">{{ formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0)) }}</p>
-        </div>
-        <div class="bpay-stat-card bg-white rounded-xl p-4 shadow-sm">
-          <p class="bpay-stat-label text-sm mb-1">{{ $t('businessPayments.lastPayment') }}</p>
-          <p class="bpay-value-purple text-2xl font-bold">18.01.2025</p>
-        </div>
+        <AppStatCard :label="$t('businessPayments.totalPayments')" value="16" />
+        <AppStatCard :label="$t('businessPayments.paidForYear')" :value="'161 050 ' + $t('businessPayments.som')" color="green" />
+        <AppStatCard :label="$t('businessPayments.toPay')" :value="formatAmount(pendingPayments.reduce((s, p) => s + p.amount, 0))" color="amber" />
+        <AppStatCard :label="$t('businessPayments.lastPayment')" value="18.01.2025" color="purple" />
       </div>
 
       <!-- Payment Methods -->
-      <div class="bpay-card">
+      <AppCard class="mb-6">
         <h3 class="bpay-dark font-semibold mb-4 flex items-center gap-2">
           <svg class="bpay-icon-purple w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
           {{ $t('businessPayments.paymentMethodsTitle') }}
@@ -305,7 +267,7 @@ const goToCalculation = (calcId: number) => {
             <div><p class="bpay-dark font-medium text-sm">{{ $t('businessPayments.methodBank') }}</p><p class="bpay-muted text-xs">{{ $t('businessPayments.byRequisites') }}</p></div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- History -->
       <div class="mb-4"><h2 class="bpay-dark text-lg font-semibold mb-4">{{ $t('businessPayments.paymentHistory') }}</h2></div>
@@ -340,15 +302,17 @@ const goToCalculation = (calcId: number) => {
     <template v-else-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="bpay-back-btn flex items-center gap-2 mb-4">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            {{ $t('businessPayments.backToList') }}
-          </button>
+          <AppButton
+            variant="back"
+            class="mb-4"
+            @click="backToList"
+            :label="$t('businessPayments.backToList')"
+          />
           <h1 class="bpay-dark text-2xl lg:text-3xl font-bold">{{ $t('businessPayments.wizardTitle') }}</h1>
         </div>
 
         <!-- Progress -->
-        <div class="bpay-card">
+        <AppCard class="mb-6">
           <div class="flex items-center justify-between">
             <template v-for="(step, index) in steps" :key="step.number">
               <button @click="goToStep(step.number)" :class="['flex items-center gap-2 lg:gap-3', step.number <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed']">
@@ -361,10 +325,10 @@ const goToCalculation = (calcId: number) => {
               <div v-if="index < steps.length - 1" :class="['flex-1 h-1 mx-2 lg:mx-4 rounded-full', currentStep > step.number ? 'bpay-progress-filled' : 'bpay-progress-empty']"></div>
             </template>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Steps -->
-        <div class="bpay-card bpay-card--flush">
+        <AppCard padding="none" class="overflow-hidden mb-6">
           <!-- Step 1 -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
             <h2 class="bpay-dark text-xl font-semibold mb-6">{{ $t('businessPayments.selectBills') }}</h2>
@@ -445,20 +409,40 @@ const goToCalculation = (calcId: number) => {
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
-                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.cardNumber') }}</label>
-                  <input type="text" :value="formatCardNumber(cardNumber)" @input="handleCardInput" placeholder="0000 0000 0000 0000" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
+                  <AppInput
+                    :label="$t('businessPayments.cardNumber')"
+                    :modelValue="formatCardNumber(cardNumber)"
+                    @update:modelValue="handleCardInput"
+                    placeholder="0000 0000 0000 0000"
+                    fontSize="16px"
+                  />
                 </div>
                 <div>
-                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.expiryDate') }}</label>
-                  <input type="text" :value="cardExpiry" @input="handleExpiryInput" placeholder="MM/YY" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
+                  <AppInput
+                    :label="$t('businessPayments.expiryDate')"
+                    :modelValue="cardExpiry"
+                    @update:modelValue="handleExpiryInput"
+                    placeholder="MM/YY"
+                    fontSize="16px"
+                  />
                 </div>
                 <div>
-                  <label class="bpay-label block text-sm font-medium mb-2">CVV</label>
-                  <input type="password" v-model="cardCvv" maxlength="3" placeholder="•••" class="bpay-input w-full px-4 py-3 rounded-xl font-mono" />
+                  <AppInput
+                    label="CVV"
+                    type="password"
+                    v-model="cardCvv"
+                    :maxlength="3"
+                    placeholder="•••"
+                    fontSize="16px"
+                  />
                 </div>
                 <div class="sm:col-span-2">
-                  <label class="bpay-label block text-sm font-medium mb-2">{{ $t('businessPayments.ownerName') }}</label>
-                  <input type="text" v-model="cardHolder" placeholder="IVAN IVANOV" class="bpay-input w-full px-4 py-3 rounded-xl uppercase" />
+                  <AppInput
+                    :label="$t('businessPayments.ownerName')"
+                    v-model="cardHolder"
+                    placeholder="IVAN IVANOV"
+                    fontSize="16px"
+                  />
                 </div>
               </div>
             </div>
@@ -475,10 +459,10 @@ const goToCalculation = (calcId: number) => {
                   <div class="bpay-divider-top pt-2"><span class="bpay-muted">{{ $t('businessPayments.purpose') }}:</span><p class="bpay-dark font-medium mt-1">{{ bankRequisites.purpose }}</p></div>
                 </div>
               </div>
-              <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="bpay-btn-disabled w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl cursor-not-allowed opacity-60">
+              <AppButton disabled variant="outline" :title="$t('businessPayments.receiptDisabledTooltip')" class="w-full opacity-60 cursor-not-allowed">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 {{ $t('businessPayments.downloadReceipt') }}
-              </button>
+              </AppButton>
             </div>
 
             <!-- QR -->
@@ -508,18 +492,18 @@ const goToCalculation = (calcId: number) => {
             </AppButton>
             <div v-else></div>
             <div class="flex flex-col sm:flex-row gap-3">
-              <button v-if="currentStep < 3" @click="nextStep" :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <AppButton v-if="currentStep < 3" variant="primary" bg="#8b5cf6" icon-position="right" @click="nextStep" :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)">
                 {{ $t('businessPayments.next') }}<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-              </button>
+              </AppButton>
               <AppButton v-if="currentStep === 3 && paymentMethod === 'card'" variant="primary" @click="processPayment">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>{{ $t('businessPayments.payBtn') }} {{ formatAmount(totalSelectedAmount) }}
               </AppButton>
-              <button v-if="currentStep === 3 && paymentMethod === 'bank'" @click="backToList" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors">{{ $t('businessPayments.done') }}</button>
+              <AppButton v-if="currentStep === 3 && paymentMethod === 'bank'" variant="primary" bg="#8b5cf6" @click="backToList">{{ $t('businessPayments.done') }}</AppButton>
               <AppButton v-if="currentStep === 3 && paymentMethod === 'qr'" variant="primary" @click="processPayment">{{ $t('businessPayments.iPaid') }}</AppButton>
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
     </template>
 
     <!-- PROCESSING -->
@@ -540,21 +524,21 @@ const goToCalculation = (calcId: number) => {
           <svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
         </div>
         <h1 class="bpay-dark text-2xl lg:text-3xl font-bold mb-4">{{ $t('businessPayments.paymentSuccess') }}</h1>
-        <div class="bpay-card mb-8">
+        <AppCard class="mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.number') }}</p><p class="bpay-value-purple text-lg font-bold font-mono">{{ paymentResult.number }}</p></div>
             <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.sum') }}</p><p class="bpay-dark text-lg font-bold">{{ formatAmount(totalSelectedAmount) }}</p></div>
             <div><p class="bpay-muted text-sm mb-1">{{ $t('businessPayments.date') }}</p><p class="bpay-dark text-lg font-bold">{{ paymentResult.date }} {{ paymentResult.time }}</p></div>
           </div>
-        </div>
+        </AppCard>
         <p class="bpay-muted mb-8">{{ $t('businessPayments.receiptSentToEmail') }}</p>
         <div class="flex flex-col sm:flex-row justify-center gap-4">
-          <button disabled :title="$t('businessPayments.receiptDisabledTooltip')" class="bpay-btn-disabled flex items-center justify-center gap-2 px-6 py-3 rounded-xl cursor-not-allowed opacity-60">
+          <AppButton disabled variant="outline" :title="$t('businessPayments.receiptDisabledTooltip')" class="opacity-60 cursor-not-allowed">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>{{ $t('businessPayments.downloadReceipt') }}
-          </button>
-          <button @click="backToList" class="bpay-btn-primary flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-colors">
+          </AppButton>
+          <AppButton variant="primary" bg="#8b5cf6" @click="backToList">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>{{ $t('businessPayments.toPaymentList') }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </template>
@@ -567,9 +551,9 @@ const goToCalculation = (calcId: number) => {
               <!-- Header -->
               <div class="pd-header">
                 <h2 class="pd-title">{{ $t('businessPayments.paymentNum') }} {{ selectedPayment.number }}</h2>
-                <button class="pd-close" @click="closePaymentDetail">
+                <AppButton variant="icon-only" size="sm" @click="closePaymentDetail">
                   <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                </AppButton>
               </div>
 
               <!-- Info grid -->
@@ -619,11 +603,11 @@ const goToCalculation = (calcId: number) => {
 
               <!-- Footer -->
               <div class="pd-footer">
-                <button class="pd-btn pd-btn--outline" @click="handlePrint()">
+                <AppButton variant="outline" @click="handlePrint()">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                   {{ $t('businessPayments.downloadPdf') }}
-                </button>
-                <button class="pd-btn pd-btn--secondary" @click="closePaymentDetail">{{ $t('businessPayments.close') }}</button>
+                </AppButton>
+                <AppButton variant="outline" @click="closePaymentDetail">{{ $t('businessPayments.close') }}</AppButton>
               </div>
             </div>
           </Transition>
@@ -634,9 +618,6 @@ const goToCalculation = (calcId: number) => {
 </template>
 
 <style scoped>
-.bpay-page-title {
-  color: #1e293b;
-}
 .bpay-dark {
   color: #1e293b;
 }
@@ -663,12 +644,6 @@ const goToCalculation = (calcId: number) => {
 }
 .bpay-cta-btn {
   color: #8b5cf6;
-}
-.bpay-stat-card {
-  border: 1px solid #e2e8f0;
-}
-.bpay-stat-label {
-  color: #64748b;
 }
 .bpay-method-item {
   background: #f8fafc;
@@ -733,17 +708,6 @@ const goToCalculation = (calcId: number) => {
   outline: none;
   border-color: #8b5cf6;
 }
-.bpay-btn-primary {
-  background: #8b5cf6;
-  color: white;
-}
-.bpay-btn-primary:hover {
-  background: #7c3aed;
-}
-.bpay-btn-disabled {
-  border: 1px solid #cbd5e1;
-  color: #94a3b8;
-}
 .bpay-nav-bar {
   background: #f8fafc;
   border-top: 1px solid #e2e8f0;
@@ -756,30 +720,6 @@ const goToCalculation = (calcId: number) => {
 }
 .bpay-file-name {
   color: #374151;
-}
-.bpay-cta-banner {
-  margin-bottom: 24px;
-  background: linear-gradient(to right, #8b5cf6, #7c3aed);
-  border-radius: 16px;
-  padding: 24px 32px;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-@media (min-width: 1024px) {
-  .bpay-cta-banner { padding: 32px; }
-}
-.bpay-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
-  margin-bottom: 24px;
-}
-.bpay-card--flush {
-  padding: 0;
-  overflow: hidden;
 }
 .bpay-summary-card {
   background: linear-gradient(to right, rgba(139,92,246,0.1), rgba(124,58,237,0.1));
@@ -833,23 +773,6 @@ const goToCalculation = (calcId: number) => {
 .pd-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
-}
-.pd-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pd-close:hover {
-  background: #f1f5f9;
   color: #1e293b;
 }
 .pd-grid {
@@ -925,33 +848,6 @@ const goToCalculation = (calcId: number) => {
   justify-content: flex-end;
   padding-top: 16px;
   border-top: 1px solid #e2e8f0;
-}
-.pd-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: none;
-}
-.pd-btn--outline {
-  background: white;
-  border: 1px solid #e2e8f0;
-  color: #374151;
-}
-.pd-btn--outline:hover {
-  background: #f8fafc;
-}
-.pd-btn--secondary {
-  background: #f1f5f9;
-  color: #374151;
-}
-.pd-btn--secondary:hover {
-  background: #e2e8f0;
 }
 
 /* Animations */

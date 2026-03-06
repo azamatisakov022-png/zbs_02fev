@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { LicenseStatus } from '../../constants/statuses'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppTabs, AppModal } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { toastStore } from '../../stores/toast'
 
@@ -18,6 +18,11 @@ const previewDoc = ref<PreviewDocument | null>(null)
 
 // Tab state
 const activeTab = ref<'licenses' | 'documents'>('licenses')
+
+const tabItems = computed(() => [
+  { key: 'licenses', label: t('ecoLicenses.tabLicenses') },
+  { key: 'documents', label: t('ecoLicenses.tabDocuments') },
+])
 
 // Licenses data
 interface License {
@@ -318,33 +323,7 @@ const submitUpload = () => {
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200">
-        <nav class="flex gap-8">
-          <button
-            @click="activeTab = 'licenses'"
-            :class="[
-              'pb-4 px-1 font-medium text-sm border-b-2 transition-colors',
-              activeTab === 'licenses'
-                ? 'border-lime-600 text-lime-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ $t('ecoLicenses.tabLicenses') }}
-          </button>
-          <button
-            @click="activeTab = 'documents'"
-            :class="[
-              'pb-4 px-1 font-medium text-sm border-b-2 transition-colors',
-              activeTab === 'documents'
-                ? 'border-lime-600 text-lime-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ $t('ecoLicenses.tabDocuments') }}
-          </button>
-        </nav>
-      </div>
+      <AppTabs v-model="activeTab" :tabs="tabItems" variant="underline" activeColor="rgb(101, 163, 13)" activeTextColor="rgb(101, 163, 13)" />
 
       <!-- Licenses Tab -->
       <div v-if="activeTab === 'licenses'" class="space-y-4">
@@ -485,18 +464,9 @@ const submitUpload = () => {
     </div>
 
     <!-- License Details Modal -->
-    <Teleport to="body">
-      <div v-if="showLicenseModal && selectedLicense" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.licenseDetails') }}</h3>
-            <button @click="showLicenseModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
+    <AppModal :visible="showLicenseModal && !!selectedLicense" :title="$t('ecoLicenses.licenseDetails')" size="lg" @close="showLicenseModal = false">
+      <template v-if="selectedLicense">
+        <div class="space-y-6">
             <div class="flex items-start gap-4">
               <div class="w-14 h-14 bg-lime-100 rounded-xl flex items-center justify-center">
                 <svg class="w-7 h-7 text-lime-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,94 +516,81 @@ const submitUpload = () => {
               </div>
             </div>
 
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <AppButton variant="primary" class="flex-1" @click="handlePrint">
-                {{ $t('common.download') }} {{ $t('common.pdf') }}
-              </AppButton>
-              <AppButton variant="secondary" class="flex-1" @click="showLicenseModal = false">
-                {{ $t('common.close') }}
-              </AppButton>
-            </div>
-          </div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="primary" class="flex-1" @click="handlePrint">
+          {{ $t('common.download') }} {{ $t('common.pdf') }}
+        </AppButton>
+        <AppButton variant="secondary" class="flex-1" @click="showLicenseModal = false">
+          {{ $t('common.close') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Upload Modal -->
-    <Teleport to="body">
-      <div v-if="showUploadModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.uploadDocument') }}</h3>
-            <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <AppModal :visible="showUploadModal" :title="$t('ecoLicenses.uploadDocument')" size="md" @close="showUploadModal = false">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentName') }}</label>
+          <input
+            v-model="uploadForm.name"
+            type="text"
+            :placeholder="$t('ecoLicenses.enterName')"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentType') }}</label>
+          <select
+            v-model="uploadForm.type"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+          >
+            <option v-for="type in documentTypes" :key="type" :value="type">{{ type }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.expiryDateOptional') }}</label>
+          <input
+            v-model="uploadForm.expiryDate"
+            type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.file') }}</label>
+          <div
+            @drop="handleFileDrop"
+            @dragover.prevent
+            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-lime-500 transition-colors cursor-pointer"
+          >
+            <input type="file" class="hidden" id="file-upload" @change="handleFileSelect" />
+            <label for="file-upload" class="cursor-pointer">
+              <svg class="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentName') }}</label>
-              <input
-                v-model="uploadForm.name"
-                type="text"
-                :placeholder="$t('ecoLicenses.enterName')"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentType') }}</label>
-              <select
-                v-model="uploadForm.type"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              >
-                <option v-for="type in documentTypes" :key="type" :value="type">{{ type }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.expiryDateOptional') }}</label>
-              <input
-                v-model="uploadForm.expiryDate"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.file') }}</label>
-              <div
-                @drop="handleFileDrop"
-                @dragover.prevent
-                class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-lime-500 transition-colors cursor-pointer"
-              >
-                <input type="file" class="hidden" id="file-upload" @change="handleFileSelect" />
-                <label for="file-upload" class="cursor-pointer">
-                  <svg class="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p v-if="uploadForm.files.length === 0" class="text-gray-500">
-                    {{ $t('ecoLicenses.dragFileOr') }} <span class="text-lime-600 font-medium">{{ $t('ecoLicenses.selectFile') }}</span>
-                  </p>
-                  <p v-else class="text-lime-600 font-medium">{{ uploadForm.files[0].name }}</p>
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showUploadModal = false">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <AppButton
-              variant="primary"
-              class="flex-1"
-              @click="submitUpload"
-              :disabled="!uploadForm.name || uploadForm.files.length === 0"
-            >
-              {{ $t('ecoLicenses.upload') }}
-            </AppButton>
+              <p v-if="uploadForm.files.length === 0" class="text-gray-500">
+                {{ $t('ecoLicenses.dragFileOr') }} <span class="text-lime-600 font-medium">{{ $t('ecoLicenses.selectFile') }}</span>
+              </p>
+              <p v-else class="text-lime-600 font-medium">{{ uploadForm.files[0].name }}</p>
+            </label>
           </div>
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showUploadModal = false">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton
+          variant="primary"
+          class="flex-1"
+          @click="submitUpload"
+          :disabled="!uploadForm.name || uploadForm.files.length === 0"
+        >
+          {{ $t('ecoLicenses.upload') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>

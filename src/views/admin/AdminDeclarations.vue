@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppModal } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { DeclStatus } from '../../constants/statuses'
 import { useAdminMenu } from '../../composables/useRoleMenu'
@@ -130,7 +130,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
       <div class="flex flex-wrap gap-4">
-        <input v-model="searchQuery" type="text" :placeholder="$t('adminDecls.searchPlaceholder')" class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]" />
+        <AppInput v-model="searchQuery" :placeholder="$t('adminDecls.searchPlaceholder')" borderColor="#e2e8f0" focusColor="#2563eb" :hideLabel="true" class="flex-1 min-w-[200px]" />
         <select v-model="filterPeriod" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('adminDecls.allPeriods') }}</option>
           <option value="Q4 2025">Q4 2025</option><option value="Q3 2025">Q3 2025</option><option value="Q2 2025">Q2 2025</option><option value="Q1 2025">Q1 2025</option>
@@ -170,59 +170,47 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     </DataTable>
 
     <!-- View Modal -->
-    <Teleport to="body">
-      <div v-if="showViewModal && viewingDecl" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" style="backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showViewModal = false)">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-          <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-              <p class="font-mono text-[#2563eb] font-medium">{{ viewingDecl.number }}</p>
-              <h3 class="text-lg font-bold text-[#1e293b]">{{ viewingDecl.type }}</h3>
-            </div>
-            <button @click="showViewModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6">
-            <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelOrganization') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.company }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelPeriod') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.period }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelSubmittedAt') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.submittedAt }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelStatus') }}</p><AppBadge :variant="getStatusBadgeVariant(viewingDecl.status)">{{ $t('status.' + (viewingDecl.status === 'under_review' ? 'underReview' : viewingDecl.status)) }}</AppBadge></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelFeeAmount') }}</p><p class="text-[#1e293b] font-bold">{{ viewingDecl.amount }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelItems') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.items }}</p></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-            <AppButton v-if="viewingDecl.status === 'under_review'" variant="danger" @click="showViewModal = false; openConfirm(viewingDecl!, 'reject')">{{ $t('adminDecls.btnReject') }}</AppButton>
-            <AppButton v-if="viewingDecl.status === 'under_review'" variant="primary" @click="showViewModal = false; openConfirm(viewingDecl!, 'accept')">{{ $t('adminDecls.btnAccept') }}</AppButton>
-            <AppButton v-else variant="primary" @click="showViewModal = false">{{ $t('adminDecls.btnClose') }}</AppButton>
-          </div>
+    <AppModal :visible="showViewModal && !!viewingDecl" :title="viewingDecl?.type || ''" size="md" @close="showViewModal = false">
+      <template v-if="viewingDecl" #header-extra>
+        <p class="font-mono text-[#2563eb] font-medium">{{ viewingDecl.number }}</p>
+      </template>
+      <template v-if="viewingDecl">
+        <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelOrganization') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.company }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelPeriod') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.period }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelSubmittedAt') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.submittedAt }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelStatus') }}</p><AppBadge :variant="getStatusBadgeVariant(viewingDecl.status)">{{ $t('status.' + (viewingDecl.status === 'under_review' ? 'underReview' : viewingDecl.status)) }}</AppBadge></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelFeeAmount') }}</p><p class="text-[#1e293b] font-bold">{{ viewingDecl.amount }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminDecls.labelItems') }}</p><p class="text-[#1e293b] font-medium">{{ viewingDecl.items }}</p></div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template v-if="viewingDecl" #footer>
+        <AppButton v-if="viewingDecl.status === 'under_review'" variant="danger" @click="showViewModal = false; openConfirm(viewingDecl!, 'reject')">{{ $t('adminDecls.btnReject') }}</AppButton>
+        <AppButton v-if="viewingDecl.status === 'under_review'" variant="primary" @click="showViewModal = false; openConfirm(viewingDecl!, 'accept')">{{ $t('adminDecls.btnAccept') }}</AppButton>
+        <AppButton v-else variant="primary" @click="showViewModal = false">{{ $t('adminDecls.btnClose') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Confirm Accept/Reject Modal -->
-    <Teleport to="body">
-      <div v-if="showConfirmModal && confirmDecl" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" style="backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showConfirmModal = false)">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="p-6 text-center">
-            <div :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4', confirmAction === 'accept' ? 'bg-green-100' : 'bg-red-100']">
-              <svg v-if="confirmAction === 'accept'" class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-              <svg v-else class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </div>
-            <h3 class="text-xl font-bold text-[#1e293b] mb-2">{{ confirmAction === 'accept' ? $t('adminDecls.confirmAcceptTitle') : $t('adminDecls.confirmRejectTitle') }}</h3>
-            <p class="text-[#64748b]"><span class="font-medium text-[#1e293b]">{{ confirmDecl.number }}</span> {{ $t('adminDecls.from') }} {{ confirmDecl.company }}</p>
+    <AppModal :visible="showConfirmModal && !!confirmDecl" :title="confirmAction === 'accept' ? $t('adminDecls.confirmAcceptTitle') : $t('adminDecls.confirmRejectTitle')" size="sm" @close="showConfirmModal = false">
+      <template v-if="confirmDecl">
+        <div class="text-center mb-4">
+          <div :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4', confirmAction === 'accept' ? 'bg-green-100' : 'bg-red-100']">
+            <svg v-if="confirmAction === 'accept'" class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <svg v-else class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </div>
-          <div v-if="confirmAction === 'reject'" class="px-6 pb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminDecls.rejectReasonLabel') }}</label>
-            <textarea v-model="rejectReason" rows="3" :placeholder="$t('adminDecls.rejectReasonPlaceholder')" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"></textarea>
-          </div>
-          <div class="flex items-center justify-center gap-3 px-6 pb-6">
-            <AppButton variant="secondary" class="flex-1" @click="showConfirmModal = false">{{ $t('adminDecls.cancel') }}</AppButton>
-            <button @click="executeAction" :class="['flex-1 px-5 py-2.5 text-white rounded-xl font-medium transition-colors', confirmAction === 'accept' ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-red-500 hover:bg-red-600']">
-              {{ confirmAction === 'accept' ? $t('adminDecls.btnAccept') : $t('adminDecls.btnReject') }}
-            </button>
-          </div>
+          <p class="text-[#64748b]"><span class="font-medium text-[#1e293b]">{{ confirmDecl.number }}</span> {{ $t('adminDecls.from') }} {{ confirmDecl.company }}</p>
         </div>
-      </div>
-    </Teleport>
+        <div v-if="confirmAction === 'reject'">
+          <AppInput v-model="rejectReason" type="textarea" :rows="3" :label="$t('adminDecls.rejectReasonLabel')" :placeholder="$t('adminDecls.rejectReasonPlaceholder')" />
+        </div>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showConfirmModal = false">{{ $t('adminDecls.cancel') }}</AppButton>
+        <AppButton :variant="confirmAction === 'accept' ? 'success' : 'danger'" class="flex-1" @click="executeAction">
+          {{ confirmAction === 'accept' ? $t('adminDecls.btnAccept') : $t('adminDecls.btnReject') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

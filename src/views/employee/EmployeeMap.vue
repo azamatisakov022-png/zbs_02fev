@@ -9,6 +9,7 @@ import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { useI18n } from 'vue-i18n'
 import { toastStore } from '../../stores/toast'
+import { AppButton, AppInput, AppModal, AppCard } from '../../components/ui'
 import { landfillStore, getFillPercent, type Landfill as StoreLandfill } from '../../stores/landfills'
 import { recyclerStore, type Recycler as StoreRecycler } from '../../stores/recyclers'
 import { collectionPointStore, type CollectionPoint } from '../../stores/collectionPoints'
@@ -740,14 +741,14 @@ const countByType = computed(() => ({
           <p class="text-gray-600 mt-1">{{ $t('pages.employee.mapSubtitle') }}</p>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeMap.exportNotReady') })" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <AppButton variant="export" @click="toastStore.show({ type: 'info', title: $t('common.export'), message: $t('employeeMap.exportNotReady') })">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             {{ $t('common.export') }}
-          </button>
-          <button @click="openCreate" class="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700 transition-colors flex items-center gap-2">
+          </AppButton>
+          <AppButton variant="primary" @click="openCreate">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
             {{ getRegistryAddButtonText() }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -759,19 +760,24 @@ const countByType = computed(() => ({
       />
 
       <!-- Horizontal Filter Bar -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <AppCard radius="sm" padding="none">
         <div class="flex items-center gap-3 px-4 py-3 flex-wrap">
           <!-- Search -->
           <div class="relative w-[220px] flex-shrink-0">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input
+            <AppInput
               v-model="mapSearchQuery"
-              type="text"
               :placeholder="$t('employeeMap.searchObject')"
-              class="w-full h-9 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              hideLabel
+              size="sm"
+              bg="#f9fafb"
+              borderColor="#e5e7eb"
               @focus="showMapSearchResults = mapSearchResults.length > 0"
               @blur="setTimeout(() => showMapSearchResults = false, 200)"
-            />
+            >
+              <template #prefix>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </template>
+            </AppInput>
             <div v-if="showMapSearchResults" class="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto z-50">
               <div v-for="result in mapSearchResults" :key="`${result.type}-${result.id}`" @mousedown.prevent="goToMapPoint(result)" class="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0">
                 <div class="flex items-center gap-2">
@@ -809,7 +815,7 @@ const countByType = computed(() => ({
             </button>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Map Section -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -850,7 +856,7 @@ const countByType = computed(() => ({
       </div>
 
       <!-- Registry Tabs -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-2">
+      <AppCard radius="sm" padding="none" class="p-2">
         <div class="flex flex-wrap gap-2">
           <button v-for="reg in registries" :key="reg.id" @click="activeRegistry = reg.id; registrySearchQuery = ''" :class="['px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2', activeRegistry === reg.id ? 'bg-sky-100 text-sky-700' : 'text-gray-600 hover:bg-gray-100']">
             <span>{{ reg.icon }}</span>
@@ -858,15 +864,16 @@ const countByType = computed(() => ({
             <span class="px-1.5 py-0.5 text-xs rounded-full" :class="activeRegistry === reg.id ? 'bg-sky-200' : 'bg-gray-200'">{{ countByType[reg.id] }}</span>
           </button>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Search -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="relative">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input v-model="registrySearchQuery" type="text" :placeholder="$t('common.search')" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-        </div>
-      </div>
+      <AppCard radius="sm" padding="sm">
+        <AppInput v-model="registrySearchQuery" :placeholder="$t('common.search')" hideLabel>
+          <template #prefix>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </template>
+        </AppInput>
+      </AppCard>
 
       <!-- LANDFILLS TABLE -->
       <div v-if="activeRegistry === 'landfills'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -892,9 +899,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>{{ $t('common.edit') }}</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</button>
+                    <AppButton variant="primary" size="sm" @click="openView(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ $t('common.view') }}</AppButton>
+                    <AppButton variant="warning" size="sm" @click="openEdit(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>{{ $t('common.edit') }}</AppButton>
+                    <AppButton variant="danger" size="sm" @click="openDelete(item)"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</AppButton>
                   </div>
                 </td>
               </tr>
@@ -927,9 +934,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
                   </div>
                 </td>
               </tr>
@@ -962,9 +969,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
                   </div>
                 </td>
               </tr>
@@ -997,9 +1004,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <AppButton variant="icon-only" size="sm" @click="openView(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></AppButton>
+                    <AppButton variant="icon-only" size="sm" @click="openEdit(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></AppButton>
+                    <AppButton variant="icon-danger" size="sm" @click="openDelete(item)"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></AppButton>
                   </div>
                 </td>
               </tr>
@@ -1032,9 +1039,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.dumpStatus)]">{{ item.dumpStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">{{ $t('common.delete') }}</button>
+                    <AppButton variant="primary" size="sm" :label="$t('common.view')" @click="openView(item)" />
+                    <AppButton variant="warning" size="sm" :label="$t('common.edit')" @click="openEdit(item)" />
+                    <AppButton variant="danger" size="sm" :label="$t('common.delete')" @click="openDelete(item)" />
                   </div>
                 </td>
               </tr>
@@ -1067,8 +1074,8 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.calcStatus)]">{{ item.calcStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
+                    <AppButton variant="primary" size="sm" :label="$t('common.view')" @click="openView(item)" />
+                    <AppButton variant="warning" size="sm" :label="$t('common.edit')" @click="openEdit(item)" />
                   </div>
                 </td>
               </tr>
@@ -1079,14 +1086,8 @@ const countByType = computed(() => ({
     </div>
 
     <!-- View Modal -->
-    <Teleport to="body">
-      <div v-if="showViewModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-          <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">{{ $t('employeeMap.viewRecord') }}</h3>
-            <button @click="showViewModal = false" class="p-2 text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
+    <AppModal :visible="showViewModal" :title="$t('employeeMap.viewRecord')" size="lg" @close="showViewModal = false">
+      <div>
             <!-- Landfill view -->
             <div v-if="activeRegistry === 'landfills' && selectedLandfill" class="space-y-4">
               <div class="grid grid-cols-2 gap-4">
@@ -1157,75 +1158,69 @@ const countByType = computed(() => ({
                 <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="pt in selectedProducer.packagingTypes" :key="pt" class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">{{ pt }}</span></div></div>
               </div>
             </div>
-          </div>
-          <div class="p-6 border-t border-gray-200 flex justify-end"><button @click="showViewModal = false" class="px-4 py-2 bg-sky-600 text-white rounded-lg font-medium hover:bg-sky-700">{{ $t('common.close') }}</button></div>
-        </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="primary" :label="$t('common.close')" @click="showViewModal = false" />
+      </template>
+    </AppModal>
 
     <!-- Edit Modal -->
-    <Teleport to="body">
-      <div v-if="showEditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-          <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">{{ isCreating ? $t('employeeMap.createRecord') : $t('employeeMap.editRecord') }}</h3>
-            <button @click="showEditModal = false" class="p-2 text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)] space-y-4">
+    <AppModal :visible="showEditModal" :title="isCreating ? $t('employeeMap.createRecord') : $t('employeeMap.editRecord')" size="lg" @close="showEditModal = false">
+      <div class="space-y-4">
             <!-- Landfill form -->
             <template v-if="activeRegistry === 'landfills'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="landfillForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="landfillForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.district') }}</label><input v-model="landfillForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><AppInput v-model="landfillForm.district" :label="$t('employeeMap.district')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.type') }}</label><select v-model="landfillForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusSanctioned')">{{ $t('employeeMap.statusSanctioned') }}</option><option :value="$t('employeeMap.statusUnsanctioned')">{{ $t('employeeMap.statusUnsanctioned') }}</option></select></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="landfillForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option><option :value="$t('employeeMap.statusReconstruction')">{{ $t('employeeMap.statusReconstruction') }}</option><option :value="$t('employeeMap.statusRecultivated')">{{ $t('employeeMap.statusRecultivated') }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.areaHa') }}</label><input v-model.number="landfillForm.area" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.volumeT') }}</label><input v-model.number="landfillForm.volume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="landfillForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="landfillForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="landfillForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(landfillForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.organization') }}</label><input v-model="landfillForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><AppInput v-model="landfillForm.area" type="number" :label="$t('employeeMap.areaHa')" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.volume" type="number" :label="$t('employeeMap.volumeT')" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.gpsLat" :label="$t('employeeMap.gpsLat')" placeholder="42.8746" size="sm" /></div>
+                <div><AppInput v-model="landfillForm.gpsLng" :label="$t('employeeMap.gpsLng')" placeholder="74.5698" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(landfillForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.organization" :label="$t('employeeMap.organization')" size="sm" /></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(landfillForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', landfillForm.wasteTypes.includes(wt) ? 'bg-orange-100 border-orange-300 text-orange-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.notes') }}</label><textarea v-model="landfillForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
+                <div class="col-span-2"><AppInput v-model="landfillForm.notes" type="textarea" :rows="2" :label="$t('employeeMap.notes')" size="sm" /></div>
               </div>
             </template>
             <!-- Reception form -->
             <template v-if="activeRegistry === 'reception'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="receptionForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="receptionForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="receptionForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.district') }}</label><input v-model="receptionForm.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="receptionForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="receptionForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="receptionForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(receptionForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.workingHours') }}</label><input v-model="receptionForm.workingHours" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="09:00-18:00" /></div>
+                <div><AppInput v-model="receptionForm.district" :label="$t('employeeMap.district')" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="receptionForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(receptionForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="receptionForm.workingHours" :label="$t('employeeMap.workingHours')" placeholder="09:00-18:00" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="receptionForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusWorking')">{{ $t('employeeMap.statusWorking') }}</option><option :value="$t('employeeMap.statusTempClosed')">{{ $t('employeeMap.statusTempClosed') }}</option><option :value="$t('employeeMap.statusClosed')">{{ $t('employeeMap.statusClosed') }}</option></select></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="receptionForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="receptionForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.organization') }}</label><input v-model="receptionForm.organization" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div><AppInput v-model="receptionForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="receptionForm.email" type="email" label="Email" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="receptionForm.organization" :label="$t('employeeMap.organization')" size="sm" /></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(receptionForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', receptionForm.wasteTypes.includes(wt) ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
               </div>
             </template>
             <!-- Recycler form -->
             <template v-if="activeRegistry === 'recyclers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="recyclerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="recyclerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="recyclerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="recyclerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="recyclerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="recyclerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="recyclerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(recyclerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.director') }}</label><input v-model="recyclerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.contactPerson') }}</label><input v-model="recyclerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="recyclerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="recyclerForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.activityType') }}</label><input v-model="recyclerForm.activityType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.capacityTonsYear') }}</label><input v-model.number="recyclerForm.capacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.license') }}</label><input v-model="recyclerForm.licenseNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="recyclerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(recyclerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="recyclerForm.director" :label="$t('employeeMap.director')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.contactPerson" :label="$t('employeeMap.contactPerson')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.email" type="email" label="Email" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.activityType" :label="$t('employeeMap.activityType')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.capacity" type="number" :label="$t('employeeMap.capacityTonsYear')" size="sm" /></div>
+                <div><AppInput v-model="recyclerForm.licenseNumber" :label="$t('employeeMap.license')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="recyclerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="wt in wasteTypeOptions" :key="wt" @click="toggleWasteType(recyclerForm, wt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', recyclerForm.wasteTypes.includes(wt) ? 'bg-green-100 border-green-300 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ wt }}</button></div></div>
               </div>
@@ -1233,19 +1228,19 @@ const countByType = computed(() => ({
             <!-- Producer form -->
             <template v-if="activeRegistry === 'producers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="producerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="producerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="producerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="producerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="producerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="producerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="producerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="producerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(producerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.director') }}</label><input v-model="producerForm.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.contactPerson') }}</label><input v-model="producerForm.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="producerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label><input v-model="producerForm.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.productType') }}</label><input v-model="producerForm.productType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.annualVolumeT') }}</label><input v-model.number="producerForm.annualVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="producerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(producerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="producerForm.director" :label="$t('employeeMap.director')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.contactPerson" :label="$t('employeeMap.contactPerson')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.email" type="email" label="Email" size="sm" /></div>
+                <div><AppInput v-model="producerForm.productType" :label="$t('employeeMap.productType')" size="sm" /></div>
+                <div><AppInput v-model="producerForm.annualVolume" type="number" :label="$t('employeeMap.annualVolumeT')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="producerForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusActive')">{{ $t('employeeMap.statusActive') }}</option><option :value="$t('employeeMap.statusOnCheck')">{{ $t('employeeMap.statusOnCheck') }}</option><option :value="$t('employeeMap.statusSuspended')">{{ $t('employeeMap.statusSuspended') }}</option></select></div>
                 <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.packagingTypes') }}</label><div class="flex flex-wrap gap-2"><button v-for="pt in ['ПЭТ-бутылки', 'Стеклянные бутылки', 'Алюминиевые банки', 'Тетрапак', 'Пластиковые контейнеры', 'Пластиковые стаканы', 'Картонная упаковка']" :key="pt" @click="toggleWasteType(producerForm, pt)" :class="['px-3 py-1.5 text-sm rounded-lg border transition-colors', producerForm.packagingTypes.includes(pt) ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100']">{{ pt }}</button></div></div>
               </div>
@@ -1253,23 +1248,23 @@ const countByType = computed(() => ({
             <!-- Dump form -->
             <template v-if="activeRegistry === 'dumps'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="dumpForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="dumpForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="dumpForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.status') }}</label><select v-model="dumpForm.dumpStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option :value="$t('employeeMap.statusDiscovered')">{{ $t('employeeMap.statusDiscovered') }}</option><option :value="$t('employeeMap.statusLiquidating')">{{ $t('employeeMap.statusLiquidating') }}</option><option :value="$t('employeeMap.statusLiquidated')">{{ $t('employeeMap.statusLiquidated') }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.addressLocation') }}</label><input v-model="dumpForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="dumpForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="42.8746" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="dumpForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="74.5698" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(dumpForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.areaHa') }}</label><input v-model.number="dumpForm.area" type="number" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.discoveryDate') }}</label><input v-model="dumpForm.discoveryDate" type="text" placeholder="01.01.2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.notes') }}</label><textarea v-model="dumpForm.notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"></textarea></div>
+                <div class="col-span-2"><AppInput v-model="dumpForm.address" :label="$t('employeeMap.addressLocation')" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.gpsLat" :label="$t('employeeMap.gpsLat')" placeholder="42.8746" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.gpsLng" :label="$t('employeeMap.gpsLng')" placeholder="74.5698" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(dumpForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="dumpForm.area" type="number" step="0.1" :label="$t('employeeMap.areaHa')" size="sm" /></div>
+                <div><AppInput v-model="dumpForm.discoveryDate" :label="$t('employeeMap.discoveryDate')" placeholder="01.01.2024" size="sm" /></div>
+                <div class="col-span-2"><AppInput v-model="dumpForm.notes" type="textarea" :rows="2" :label="$t('employeeMap.notes')" size="sm" /></div>
                 <!-- Photo upload -->
                 <div class="col-span-2">
                   <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('employeeMap.photosMax5') }}</label>
                   <div class="flex flex-wrap gap-3 mb-3">
                     <div v-for="(photo, idx) in dumpPhotos" :key="idx" class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
                       <img :src="photo.data" :alt="photo.name" class="w-full h-full object-cover" />
-                      <button @click="removeDumpPhoto(idx)" class="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">&times;</button>
+                      <AppButton variant="icon-danger" size="sm" class="absolute top-0.5 right-0.5 !w-5 !h-5 !min-w-0 !p-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" @click="removeDumpPhoto(idx)">&times;</AppButton>
                       <p class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5 truncate">{{ photo.size }}</p>
                     </div>
                     <label v-if="dumpPhotos.length < 5" class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition-colors">
@@ -1284,42 +1279,35 @@ const countByType = computed(() => ({
             <!-- Payer form -->
             <template v-if="activeRegistry === 'payers'">
               <div class="grid grid-cols-2 gap-4">
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.name') }} *</label><input v-model="payerForm.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.inn') }}</label><input v-model="payerForm.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="payerForm.name" :label="$t('common.name') + ' *'" size="sm" /></div>
+                <div><AppInput v-model="payerForm.inn" :label="$t('employeeMap.inn')" size="sm" /></div>
                 <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label><select v-model="payerForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"><option value="">{{ $t('employeeMap.select') }}</option><option v-for="r in regions" :key="r" :value="r">{{ r }}</option></select></div>
-                <div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.address') }}</label><input v-model="payerForm.address" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLat') }}</label><input v-model="payerForm.gpsLat" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.gpsLng') }}</label><input v-model="payerForm.gpsLng" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div class="col-span-2"><button type="button" @click="openCoordPicker(payerForm)" class="px-4 py-2 text-sm font-medium text-sky-600 border border-sky-300 rounded-lg hover:bg-sky-50 transition-colors flex items-center gap-2"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{{ $t('employeeMap.pickOnMap') }}</button></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.phone') }}</label><input v-model="payerForm.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('employeeMap.category') }}</label><input v-model="payerForm.category" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" /></div>
+                <div class="col-span-2"><AppInput v-model="payerForm.address" :label="$t('employeeMap.address')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.gpsLat" :label="$t('employeeMap.gpsLat')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.gpsLng" :label="$t('employeeMap.gpsLng')" size="sm" /></div>
+                <div class="col-span-2"><AppButton variant="outline" :label="$t('employeeMap.pickOnMap')" @click="openCoordPicker(payerForm)"><template #icon><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></template></AppButton></div>
+                <div><AppInput v-model="payerForm.phone" :label="$t('employeeMap.phone')" size="sm" /></div>
+                <div><AppInput v-model="payerForm.category" :label="$t('employeeMap.category')" size="sm" /></div>
               </div>
             </template>
-          </div>
-          <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-            <button @click="showEditModal = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('common.cancel') }}</button>
-            <button @click="saveItem" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 font-medium">{{ isCreating ? $t('common.add') : $t('common.save') }}</button>
-          </div>
-        </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showEditModal = false" />
+        <AppButton variant="primary" :label="isCreating ? $t('common.add') : $t('common.save')" @click="saveItem" />
+      </template>
+    </AppModal>
 
     <!-- Delete Confirm Modal -->
-    <Teleport to="body">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-          <div class="text-center">
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $t('employeeMap.deleteRecordTitle') }}</h3>
-            <p class="text-gray-600 mb-6">{{ $t('employeeMap.deleteRecordConfirm', { name: getSelectedItemName() }) }}</p>
-            <div class="flex gap-3 justify-center">
-              <button @click="showDeleteConfirm = false" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">{{ $t('common.cancel') }}</button>
-              <button @click="deleteItem" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">{{ $t('common.delete') }}</button>
-            </div>
-          </div>
-        </div>
+    <AppModal :visible="showDeleteConfirm" :title="$t('employeeMap.deleteRecordTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4"><svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+        <p class="text-gray-600">{{ $t('employeeMap.deleteRecordConfirm', { name: getSelectedItemName() }) }}</p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showDeleteConfirm = false" />
+        <AppButton variant="danger" :label="$t('common.delete')" @click="deleteItem" />
+      </template>
+    </AppModal>
 
     <!-- Success Notification -->
     <Teleport to="body">

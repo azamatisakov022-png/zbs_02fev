@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductGroupStore } from '@/stores/product-groups'
+import AppButton from './ui/AppButton.vue'
 import type { ProductSubgroupDTO } from '@/types/product-group'
 
 const { t } = useI18n()
@@ -186,7 +187,7 @@ watch(isOpen, (val) => {
 
           <div class="spm-footer">
             <span class="spm-footer-count">{{ $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: availableSubgroups.length }) }}</span>
-            <button class="spm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
+            <AppButton variant="secondary" :label="$t('common.cancel')" @click="closeModal" />
           </div>
         </div>
       </div>
@@ -481,23 +482,6 @@ watch(isOpen, (val) => {
   font-size: 16px;
   font-weight: 500;
   color: #1e293b;
-}
-
-.spm-cancel {
-  padding: 10px 24px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  color: #1e293b;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.spm-cancel:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
 }
 
 @media (max-width: 768px) {

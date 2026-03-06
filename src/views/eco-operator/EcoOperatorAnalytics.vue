@@ -12,6 +12,7 @@ import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { AppInput, AppTabs, AppCard } from '../../components/ui'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 const { t } = useI18n()
@@ -20,12 +21,12 @@ const calcStore = useCalculationStore()
 // ─── Tabs ───
 type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
 const activeTab = ref<TabId>('summary')
-const tabs = computed<{ id: TabId; label: string }[]>(() => [
-  { id: 'summary', label: t('ecoAnalytics.tabs.summary') },
-  { id: 'finance', label: t('ecoAnalytics.tabs.finance') },
-  { id: 'products', label: t('ecoAnalytics.tabs.products') },
-  { id: 'regional', label: t('ecoAnalytics.tabs.regional') },
-  { id: 'reports', label: t('ecoAnalytics.tabs.reports') },
+const tabItems = computed(() => [
+  { key: 'summary', label: t('ecoAnalytics.tabs.summary') },
+  { key: 'finance', label: t('ecoAnalytics.tabs.finance') },
+  { key: 'products', label: t('ecoAnalytics.tabs.products') },
+  { key: 'regional', label: t('ecoAnalytics.tabs.regional') },
+  { key: 'reports', label: t('ecoAnalytics.tabs.reports') },
 ])
 
 // ─── Period filter ───
@@ -1155,19 +1156,8 @@ const selectedSummaryRegion = ref('all')
       storageKey="eco-analytics"
     />
 
-    <!-- Tab bar -->
-    <div class="flex gap-1 border-b border-[#e2e8f0] mb-6">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        @click="activeTab = tab.id"
-        :class="[
-          'px-5 py-3 text-sm font-semibold transition-colors relative',
-          activeTab === tab.id
-            ? 'text-[#22C55E] border-b-2 border-[#22C55E] -mb-px'
-            : 'text-[#64748b] hover:text-[#1e293b]'
-        ]"
-      >{{ tab.label }}</button>
+    <div class="mb-6">
+      <AppTabs v-model="activeTab" :tabs="tabItems" variant="underline" activeColor="#22C55E" activeTextColor="#22C55E" />
     </div>
 
     <!-- Shared filters (visible for finance and products tabs) -->
@@ -1191,12 +1181,12 @@ const selectedSummaryRegion = ref('all')
         </div>
         <!-- Custom date pickers -->
         <div v-if="activePeriodMode === 'custom'" class="an-period-custom">
-          <label class="an-period-custom__label">{{ $t('ecoAnalytics.period.from') }}
-            <input type="text" v-model="customFrom" placeholder="DD.MM.YYYY" class="an-period-custom__input" />
-          </label>
-          <label class="an-period-custom__label">{{ $t('ecoAnalytics.period.to') }}
-            <input type="text" v-model="customTo" placeholder="DD.MM.YYYY" class="an-period-custom__input" />
-          </label>
+          <div class="an-period-custom__label">
+            <AppInput v-model="customFrom" :label="$t('ecoAnalytics.period.from')" placeholder="DD.MM.YYYY" size="sm" focusColor="#22C55E" labelSize="13px" />
+          </div>
+          <div class="an-period-custom__label">
+            <AppInput v-model="customTo" :label="$t('ecoAnalytics.period.to')" placeholder="DD.MM.YYYY" size="sm" focusColor="#22C55E" labelSize="13px" />
+          </div>
         </div>
       </div>
 
@@ -1355,7 +1345,7 @@ const selectedSummaryRegion = ref('all')
       <!-- Charts Row 1 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Bar Chart: Monthly collections -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.chartTitle') }}</h3>
           <div class="overflow-x-auto">
             <svg viewBox="0 0 600 260" class="w-full" preserveAspectRatio="xMidYMid meet">
@@ -1372,10 +1362,10 @@ const selectedSummaryRegion = ref('all')
             <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#bbf7d0]"></span>{{ $t('ecoAnalytics.summary.charged') }}</span>
             <span class="flex items-center gap-1.5 text-xs text-[#64748b]"><span class="w-3 h-3 rounded bg-[#22C55E]"></span>{{ $t('ecoAnalytics.summary.collected') }}</span>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Donut: Payer categories -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.payerCategoriesTitle') }}</h3>
           <div class="flex items-center gap-6">
             <div class="relative flex-shrink-0">
@@ -1395,13 +1385,13 @@ const selectedSummaryRegion = ref('all')
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Charts Row 2 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Horizontal bars: Regional collection -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.collectionByRegions') }}</h3>
           <div class="space-y-3">
             <div v-for="r in [...summaryRegionData].sort((a,b) => b.charged - a.charged)" :key="r.key" class="flex items-center gap-3">
@@ -1415,10 +1405,10 @@ const selectedSummaryRegion = ref('all')
               <span class="text-xs font-semibold w-10 text-right" :style="{ color: summaryGetCollectionColor(r.collectionRate) }">{{ r.collectionRate }}%</span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Top debtors -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.summary.top5debtors') }}</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -1446,7 +1436,7 @@ const selectedSummaryRegion = ref('all')
               </tbody>
             </table>
           </div>
-        </div>
+        </AppCard>
       </div>
     </template>
 
@@ -2225,7 +2215,7 @@ const selectedSummaryRegion = ref('all')
     <!-- ═══════════════════════════════════════════ -->
     <template v-if="activeTab === 'regional'">
       <!-- Region map cards -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.collectionMap') }}</h3>
         <div class="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
           <button v-for="r in summaryRegionData" :key="'rmap-'+r.key"
@@ -2247,10 +2237,10 @@ const selectedSummaryRegion = ref('all')
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#d97706"></span>50-70%</span>
           <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full" style="background:#dc2626"></span>&lt;50%</span>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Sortable region table -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard class="mb-6">
         <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.detailedStats') }}</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
@@ -2316,12 +2306,12 @@ const selectedSummaryRegion = ref('all')
             </tfoot>
           </table>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Two charts: waste distribution + infrastructure -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Stacked bar: Waste by region -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.wasteDistribution') }}</h3>
           <div class="space-y-2.5">
             <div v-for="r in [...summaryRegionData].sort((a,b) => b.wasteVolume - a.wasteVolume)" :key="'rwaste-'+r.key" class="flex items-center gap-3">
@@ -2333,10 +2323,10 @@ const selectedSummaryRegion = ref('all')
               <span class="text-xs font-semibold text-[#1e293b] w-14 text-right">{{ summaryFmt(r.wasteVolume) }} {{ $t('ecoAnalytics.tons') }}</span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Grouped bar: Infrastructure -->
-        <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-base font-bold text-[#1e293b] mb-4">{{ $t('ecoAnalytics.regional.infrastructure') }}</h3>
           <div class="space-y-2.5">
             <div v-for="r in [...summaryRegionData].sort((a,b) => (b.recyclers+b.landfills) - (a.recyclers+a.landfills))" :key="'rinfra-'+r.key"
@@ -2357,7 +2347,7 @@ const selectedSummaryRegion = ref('all')
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#3B82F6]"></span>{{ $t('ecoAnalytics.regional.landfillsLegend') }}</span>
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-[#F59E0B]"></span>{{ $t('ecoAnalytics.regional.dumpsLegend') }}</span>
           </div>
-        </div>
+        </AppCard>
       </div>
     </template>
 
@@ -2381,14 +2371,12 @@ const selectedSummaryRegion = ref('all')
         <!-- Period filter for report -->
         <div class="an-report-params">
           <div class="an-report-params__row">
-            <label class="an-report-params__label">
-              {{ $t('ecoAnalytics.period.periodFrom') }}
-              <input type="date" v-model="reportDateFrom" class="an-report-params__input" />
-            </label>
-            <label class="an-report-params__label">
-              {{ $t('ecoAnalytics.period.periodTo') }}
-              <input type="date" v-model="reportDateTo" class="an-report-params__input" />
-            </label>
+            <div class="an-report-params__label">
+              <AppInput v-model="reportDateFrom" type="date" :label="$t('ecoAnalytics.period.periodFrom')" size="sm" focusColor="#22C55E" labelSize="13px" />
+            </div>
+            <div class="an-report-params__label">
+              <AppInput v-model="reportDateTo" type="date" :label="$t('ecoAnalytics.period.periodTo')" size="sm" focusColor="#22C55E" labelSize="13px" />
+            </div>
             <button @click="generateReport" :disabled="isGeneratingReport" class="an-report-generate-btn">
               <template v-if="isGeneratingReport">
                 <span class="an-report-spinner"></span>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { AppPageHeader, AppCard } from '../../components/ui'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
@@ -95,10 +96,7 @@ onMounted(() => {
     :userName="$t('ecoDashboard.userName')"
     :menuItems="menuItems"
   >
-    <div class="content__header mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.ecoOperator.dashboardTitle') }}</h1>
-      <p class="text-[#64748b]">{{ $t('pages.ecoOperator.dashboardSubtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('pages.ecoOperator.dashboardTitle')" :subtitle="$t('pages.ecoOperator.dashboardSubtitle')" />
 
     <SectionGuide
       :title="$t('ecoDashboard.guideTitle')"
@@ -149,7 +147,7 @@ onMounted(() => {
 
       <!-- Quick Actions & Statistics -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoDashboard.quickActions') }}</h3>
           <div class="space-y-3">
             <router-link to="/eco-operator/incoming-declarations" class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors">
@@ -174,9 +172,9 @@ onMounted(() => {
               </div>
             </router-link>
           </div>
-        </div>
+        </AppCard>
 
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+        <AppCard>
           <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoDashboard.recyclingStats') }}</h3>
           <div class="space-y-4">
             <div class="flex items-center justify-between">
@@ -216,17 +214,19 @@ onMounted(() => {
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Recent Declarations Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden mb-8">
-        <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoDashboard.recentDeclarations') }}</h2>
-          <router-link to="/eco-operator/incoming-declarations" class="text-[#2563eb] text-sm font-medium hover:underline">
-            {{ $t('ecoDashboard.allDeclarations') }}
-          </router-link>
-        </div>
+      <AppCard padding="none" :headerBorder="true" title="" class="mb-8">
+        <template #header>
+          <div class="px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoDashboard.recentDeclarations') }}</h2>
+            <router-link to="/eco-operator/incoming-declarations" class="text-[#2563eb] text-sm font-medium hover:underline">
+              {{ $t('ecoDashboard.allDeclarations') }}
+            </router-link>
+          </div>
+        </template>
         <div class="divide-y divide-[#f1f5f9]">
           <div
             v-for="decl in recentDeclarations"
@@ -247,7 +247,7 @@ onMounted(() => {
             </span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
     </template>
   </DashboardLayout>

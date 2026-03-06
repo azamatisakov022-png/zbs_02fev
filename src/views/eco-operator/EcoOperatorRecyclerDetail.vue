@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppCard } from '../../components/ui'
 import { recyclerStore, type Recycler, type RecyclerCapacity, type InspectionStatus, type RecyclerDocument } from '../../stores/recyclers'
 import { productGroups } from '../../data/product-groups'
 import { generatedSubgroups } from '../../data/product-subgroups-generated'
@@ -480,21 +480,16 @@ const goToGisMap = () => {
       </div>
       <h2 class="text-xl font-semibold text-[#1e293b] mb-2">{{ $t('ecoRecyclerDetail.recyclerNotFound') }}</h2>
       <p class="text-[#64748b] mb-6">{{ $t('ecoRecyclerDetail.recyclerNotFoundDesc') }}</p>
-      <button @click="router.push('/eco-operator/recyclers')" class="px-6 py-2.5 bg-[#22C55E] text-white rounded-lg font-medium hover:bg-[#16a34a] transition-colors">
-        {{ $t('ecoRecyclerDetail.backToRegistry') }}
-      </button>
+      <AppButton variant="primary" bg="#22C55E" :label="$t('ecoRecyclerDetail.backToRegistry')" @click="router.push('/eco-operator/recyclers')" />
     </div>
 
     <!-- Main content -->
     <div v-else class="space-y-6">
       <!-- Back button -->
-      <button @click="router.push('/eco-operator/recyclers')" class="flex items-center gap-2 text-[#64748b] hover:text-[#1e293b] mb-6 transition-colors">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        <span class="font-medium">{{ $t('ecoRecyclerDetail.recyclersRegistry') }}</span>
-      </button>
+      <AppButton variant="back" :label="$t('ecoRecyclerDetail.recyclersRegistry')" @click="router.push('/eco-operator/recyclers')" class="mb-6" />
 
       <!-- Header card -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <div class="flex items-start justify-between flex-wrap gap-4">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 bg-[#f0fdf4] rounded-full flex items-center justify-center flex-shrink-0">
@@ -514,10 +509,9 @@ const goToGisMap = () => {
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.registered') }}: {{ recycler.addedDate }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK 1 - Общая информация -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.generalInfo') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
@@ -563,10 +557,9 @@ const goToGisMap = () => {
             <p class="text-xs text-[#64748b]" v-if="recycler.contactPosition">{{ recycler.contactPosition }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK 2 - Лицензия и разрешения -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.licenseAndPermits') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <div class="bg-[#f8fafc] rounded-lg p-3">
@@ -605,10 +598,9 @@ const goToGisMap = () => {
             </li>
           </ul>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK - Экологический паспорт -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.ecoPassportNumber">
+      <AppCard v-if="recycler.ecoPassportNumber">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.ecoPassport') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
@@ -620,8 +612,8 @@ const goToGisMap = () => {
             <p class="text-sm font-medium text-[#1e293b]">{{ recycler.ecoPassportDate }}</p>
           </div>
         </div>
-      </div>
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-else>
+      </AppCard>
+      <AppCard v-else>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.ecoPassport') }}</h2>
         <div class="flex items-center gap-3 p-4 bg-[#fef3c7] rounded-lg border border-[#fbbf24]">
           <svg class="w-5 h-5 text-[#f59e0b] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -629,10 +621,9 @@ const goToGisMap = () => {
           </svg>
           <span class="text-sm text-[#92400e]">{{ $t('ecoRecyclerDetail.ecoPassportNotIssued') }}</span>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK - Производственные данные -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.productionData') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.equipment">
@@ -660,22 +651,21 @@ const goToGisMap = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 3 - Мощности переработки -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.processingCapacities') }}</h2>
-          <button
+          <AppButton
             v-if="!isEditingCapacities"
+            variant="primary"
+            bg="#22C55E"
+            size="sm"
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z&quot; /></svg>'"
+            :label="$t('ecoRecyclerDetail.editCapacities')"
             @click="startEditCapacities"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#22C55E] rounded-lg hover:bg-[#16a34a] transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            {{ $t('ecoRecyclerDetail.editCapacities') }}
-          </button>
+          />
         </div>
 
         <!-- Read-only table (when not editing) -->
@@ -895,36 +885,25 @@ const goToGisMap = () => {
           </div>
 
           <div class="mt-4">
-            <button
+            <AppButton
+              variant="outline"
+              size="sm"
+              color="#22C55E"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'"
+              :label="$t('ecoRecyclerDetail.addCapacity')"
               @click="addEditRow"
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#22C55E] border border-[#22C55E] rounded-lg hover:bg-[#f0fdf4] transition-colors"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {{ $t('ecoRecyclerDetail.addCapacity') }}
-            </button>
+            />
           </div>
 
           <div class="flex items-center gap-3 mt-6 pt-4 border-t border-[#e2e8f0]">
-            <button
-              @click="saveCapacityEdits"
-              class="px-6 py-2.5 text-sm font-medium text-white bg-[#22C55E] rounded-lg hover:bg-[#16a34a] transition-colors"
-            >
-              {{ $t('ecoRecyclerDetail.saveChanges') }}
-            </button>
-            <button
-              @click="cancelEditCapacities"
-              class="px-6 py-2.5 text-sm font-medium text-[#64748b] bg-white border border-[#e2e8f0] rounded-lg hover:bg-[#f8fafc] transition-colors"
-            >
-              {{ $t('common.cancel') }}
-            </button>
+            <AppButton variant="success" :label="$t('ecoRecyclerDetail.saveChanges')" @click="saveCapacityEdits" />
+            <AppButton variant="secondary" :label="$t('common.cancel')" @click="cancelEditCapacities" />
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 3.5 - История изменений мощностей -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="capacityHistory.length > 0">
+      <AppCard v-if="capacityHistory.length > 0">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.capacityChangeHistory') }}</h2>
           <button
@@ -975,10 +954,10 @@ const goToGisMap = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK - Инспекции и проверки -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.inspections') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div class="bg-[#f8fafc] rounded-lg p-3">
@@ -1012,10 +991,10 @@ const goToGisMap = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK - Объёмы переработки -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.processingVolumes') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-[#f0fdf4] rounded-xl p-4 border border-[#bbf7d0]">
@@ -1036,18 +1015,18 @@ const goToGisMap = () => {
             <p class="text-xs text-[#64748b] mt-1">{{ $t('ecoRecyclerDetail.comparedToPreviousYear') }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK - Причина приостановки/исключения -->
-      <div v-if="recycler.suspensionReason" class="bg-white rounded-2xl p-6 shadow-sm border border-[#fecaca]">
+      <AppCard v-if="recycler.suspensionReason" borderColor="#fecaca">
         <h2 class="text-lg font-semibold text-[#ef4444] mb-4">{{ recycler.status === 'revoked' ? $t('ecoRecyclerDetail.revocationReason') : $t('ecoRecyclerDetail.suspensionReason') }}</h2>
         <div class="p-4 bg-[#fef2f2] rounded-lg">
           <p class="text-sm text-[#7f1d1d]">{{ recycler.suspensionReason }}</p>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 4 - Принятые отходы (история) -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.acceptedWasteHistory') }}</h2>
           <div class="flex flex-wrap gap-3">
@@ -1148,10 +1127,10 @@ const goToGisMap = () => {
             &raquo;
           </button>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 5 - Документы -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.documents?.length">
+      <AppCard v-if="recycler.documents?.length">
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.documents') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div
@@ -1195,21 +1174,20 @@ const goToGisMap = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK 6 - География -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]" v-if="recycler.coordinates">
+      <AppCard v-if="recycler.coordinates">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('ecoRecyclerDetail.enterpriseLocation') }}</h2>
-          <button
+          <AppButton
+            variant="primary"
+            bg="#22C55E"
+            size="sm"
+            :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7&quot; /></svg>'"
+            :label="$t('ecoRecyclerDetail.showOnMap')"
             @click="goToGisMap"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#22C55E] rounded-lg hover:bg-[#16a34a] transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            {{ $t('ecoRecyclerDetail.showOnMap') }}
-          </button>
+          />
         </div>
         <div class="rounded-xl overflow-hidden border border-[#e2e8f0]">
           <LMap
@@ -1239,10 +1217,10 @@ const goToGisMap = () => {
           <p class="text-sm text-[#64748b]">{{ recycler.actualAddress || recycler.address }}</p>
           <p class="text-xs text-[#94a3b8] font-mono">{{ recycler.coordinates.lat.toFixed(4) }}, {{ recycler.coordinates.lng.toFixed(4) }}</p>
         </div>
-      </div>
+      </AppCard>
 
       <!-- BLOCK - Дополнительная информация -->
-      <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
+      <AppCard>
         <h2 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('ecoRecyclerDetail.additionalInfo') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="bg-[#f8fafc] rounded-lg p-3">
@@ -1262,7 +1240,7 @@ const goToGisMap = () => {
           <p class="text-sm font-medium text-[#92400e]">{{ $t('ecoRecyclerDetail.notes') }}</p>
           <p class="text-sm text-[#78350f] mt-1">{{ recycler.notes }}</p>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />

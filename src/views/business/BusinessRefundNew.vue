@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppCard, AppAlert } from '../../components/ui'
 import { useCalculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { productGroups, productSubgroups } from '../../data/product-groups'
@@ -186,17 +187,17 @@ const saveDraft = () => {
       <div class="max-w-6xl mx-auto">
         <!-- Back button -->
         <div class="mb-6">
-          <button @click="router.push('/business/refunds')" class="brn-back-btn">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            {{ $t('businessRefundNew.backToApplications') }}
-          </button>
+          <AppButton
+            variant="back"
+            @click="router.push('/business/refunds')"
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M10 19l-7-7m0 0l7-7m-7 7h18&quot; /></svg>'"
+            :label="$t('businessRefundNew.backToApplications')"
+          />
           <h1 class="brn-page-title">{{ $t('businessRefundNew.title') }}</h1>
         </div>
 
         <!-- Step 1: Select paid calculation -->
-        <div class="brn-card">
+        <AppCard class="mb-6">
           <h2 class="brn-step-title font-semibold mb-1 flex items-center gap-2">
             <div class="brn-step-num w-7 h-7 rounded-full text-white flex items-center justify-center text-sm font-bold">1</div>
             {{ $t('businessRefundNew.selectPaidCalc') }}
@@ -212,22 +213,14 @@ const saveDraft = () => {
               @change="onSelectCalculation"
             />
 
-            <div v-if="paidCalculations.length === 0" class="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-              <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <p class="brn-warn-title font-medium text-amber-800">{{ $t('businessRefundNew.noPaidCalcs') }}</p>
-                <p class="brn-warn-desc text-amber-700">{{ $t('businessRefundNew.noPaidCalcsDesc') }}</p>
-              </div>
-            </div>
+            <AppAlert v-if="paidCalculations.length === 0" variant="warning" :title="$t('businessRefundNew.noPaidCalcs')" class="mt-3">
+              {{ $t('businessRefundNew.noPaidCalcsDesc') }}
+            </AppAlert>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Step 2: Refund items table -->
-        <div v-if="selectedCalculation && refundItems.length > 0" class="brn-card brn-card--no-pad">
+        <AppCard v-if="selectedCalculation && refundItems.length > 0" padding="none" class="mb-6">
           <div class="brn-card-header p-5 lg:p-6">
             <h2 class="brn-step-title font-semibold mb-1 flex items-center gap-2">
               <div class="brn-step-num w-7 h-7 rounded-full text-white flex items-center justify-center text-sm font-bold">2</div>
@@ -297,10 +290,10 @@ const saveDraft = () => {
               </tfoot>
             </table>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Step 3: Document upload -->
-        <div v-if="selectedCalculation" class="brn-card">
+        <AppCard v-if="selectedCalculation" class="mb-6">
           <h2 class="brn-step-title font-semibold mb-1 flex items-center gap-2">
             <div class="brn-step-num w-7 h-7 rounded-full text-white flex items-center justify-center text-sm font-bold">3</div>
             {{ $t('businessRefundNew.supportingDocuments') }} <span class="text-red-500">*</span>
@@ -328,11 +321,11 @@ const saveDraft = () => {
                   </svg>
                   <span class="brn-doc-name">{{ doc }}</span>
                 </div>
-                <button @click="removeDocument(idx)" class="brn-doc-remove transition-colors p-1">
+                <AppButton variant="icon-danger" size="sm" @click="removeDocument(idx)">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                </AppButton>
               </div>
             </div>
 
@@ -340,7 +333,7 @@ const saveDraft = () => {
               {{ $t('businessRefundNew.attachAtLeastOne') }}
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Total summary -->
         <div v-if="selectedCalculation && totalRefundAmount > 0" class="brn-summary rounded-2xl p-5 lg:p-6 mb-6">
@@ -358,31 +351,24 @@ const saveDraft = () => {
 
         <!-- Action buttons -->
         <div class="flex flex-col sm:flex-row justify-end gap-3 mb-8">
-          <button
+          <AppButton
+            variant="outline"
             @click="router.push('/business/refunds')"
-            class="brn-btn-secondary flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition-colors"
-          >
-            {{ $t('common.cancel') }}
-          </button>
-          <button
+            :label="$t('common.cancel')"
+          />
+          <AppButton
+            variant="outline"
             @click="saveDraft"
-            class="brn-btn-secondary flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-            </svg>
-            {{ $t('businessRefundNew.saveDraft') }}
-          </button>
-          <button
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4&quot; /></svg>'"
+            :label="$t('businessRefundNew.saveDraft')"
+          />
+          <AppButton
+            variant="success"
             @click="createRefund"
             :disabled="!canSubmit"
-            class="brn-btn-primary flex items-center justify-center gap-2 px-6 py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {{ $t('businessRefundNew.submitApplication') }}
-          </button>
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z&quot; /></svg>'"
+            :label="$t('businessRefundNew.submitApplication')"
+          />
         </div>
       </div>
     </template>
@@ -400,7 +386,7 @@ const saveDraft = () => {
           {{ $t('businessRefundNew.successTitle', { number: createdRefund?.number }) }}
         </h1>
 
-        <div class="brn-card mb-8">
+        <AppCard class="mb-8">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div>
               <p class="brn-step-desc mb-1">{{ $t('businessRefundNew.applicationNumber') }}</p>
@@ -415,22 +401,19 @@ const saveDraft = () => {
               <p class="brn-success-value font-bold brn-text-dark">{{ createdRefund?.date }}</p>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <p class="brn-step-desc mb-8">
           {{ $t('businessRefundNew.successLine1') }}<br />
           {{ $t('businessRefundNew.successLine2') }}
         </p>
 
-        <button
+        <AppButton
+          variant="success"
           @click="router.push('/business/refunds')"
-          class="brn-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 text-white rounded-xl font-medium transition-colors"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-          </svg>
-          {{ $t('businessRefundNew.toApplicationsList') }}
-        </button>
+          :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 6h16M4 10h16M4 14h16M4 18h16&quot; /></svg>'"
+          :label="$t('businessRefundNew.toApplicationsList')"
+        />
       </div>
     </template>
 
@@ -438,16 +421,6 @@ const saveDraft = () => {
 </template>
 
 <style scoped>
-.brn-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  color: #64748b;
-  margin-bottom: 16px;
-  transition: color 0.15s;
-}
-.brn-back-btn:hover { color: #1e293b; }
 .brn-page-title {
   font-size: 28px;
   font-weight: 700;
@@ -455,20 +428,6 @@ const saveDraft = () => {
 }
 @media (min-width: 1024px) {
   .brn-page-title { font-size: 34px; }
-}
-.brn-card {
-  background: white;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
-  margin-bottom: 24px;
-}
-@media (min-width: 1024px) {
-  .brn-card { padding: 24px; }
-}
-.brn-card--no-pad {
-  padding: 0;
 }
 .brn-step-title {
   font-size: 22px;
@@ -480,12 +439,6 @@ const saveDraft = () => {
 .brn-step-desc {
   font-size: 16px;
   color: #64748b;
-}
-.brn-warn-title {
-  font-size: 18px;
-}
-.brn-warn-desc {
-  font-size: 16px;
 }
 .brn-card-header {
   border-bottom: 1px solid #e2e8f0;
@@ -575,12 +528,6 @@ const saveDraft = () => {
   font-size: 16px;
   color: #1e293b;
 }
-.brn-doc-remove {
-  color: #64748b;
-}
-.brn-doc-remove:hover {
-  color: #ef4444;
-}
 .brn-summary {
   background: linear-gradient(to right, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
   border: 1px solid rgba(16, 185, 129, 0.2);
@@ -588,19 +535,6 @@ const saveDraft = () => {
 .brn-summary-total {
   font-size: 34px;
   color: #10b981;
-}
-.brn-btn-secondary {
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-}
-.brn-btn-secondary:hover {
-  background-color: white;
-}
-.brn-btn-primary {
-  background-color: #10b981;
-}
-.brn-btn-primary:hover {
-  background-color: #059669;
 }
 .brn-success-value {
   font-size: 22px;

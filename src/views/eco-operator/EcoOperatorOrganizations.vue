@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppModal, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -459,7 +459,7 @@ const copyLegalToActual = () => {
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+      <AppCard padding="sm" radius="sm">
         <div class="flex flex-wrap gap-4">
           <div class="flex-1 min-w-[200px]">
             <div class="relative">
@@ -487,7 +487,7 @@ const copyLegalToActual = () => {
             <option v-for="s in statuses" :key="s" :value="s">{{ statusLabels[s] || s }}</option>
           </select>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Table -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -572,18 +572,9 @@ const copyLegalToActual = () => {
     </div>
 
     <!-- View Modal -->
-    <Teleport to="body">
-      <div v-if="showViewModal && selectedOrg" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoOrganizations.orgInfo') }}</h3>
-            <button @click="showViewModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
+    <AppModal :visible="showViewModal && !!selectedOrg" :title="$t('ecoOrganizations.orgInfo')" size="xl" @close="showViewModal = false">
+      <template v-if="selectedOrg">
+        <div class="space-y-6">
             <!-- Header info -->
             <div class="flex items-start gap-4">
               <div class="w-16 h-16 bg-sky-100 rounded-xl flex items-center justify-center">
@@ -680,54 +671,35 @@ const copyLegalToActual = () => {
             </div>
 
             <!-- Actions -->
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <AppButton
-                variant="primary"
-                class="flex-1"
-                @click="showViewModal = false; openEdit(selectedOrg)"
-              >
-                {{ $t('common.edit') }}
-              </AppButton>
-              <AppButton
-                variant="secondary"
-                class="flex-1"
-                @click="showViewModal = false"
-              >
-                {{ $t('common.close') }}
-              </AppButton>
-            </div>
-          </div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton
+          variant="primary"
+          class="flex-1"
+          @click="showViewModal = false; openEdit(selectedOrg)"
+        >
+          {{ $t('common.edit') }}
+        </AppButton>
+        <AppButton
+          variant="secondary"
+          class="flex-1"
+          @click="showViewModal = false"
+        >
+          {{ $t('common.close') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Edit/Create Modal -->
-    <Teleport to="body">
-      <div v-if="showEditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
-            <h3 class="text-lg font-semibold text-gray-900">
-              {{ isCreating ? $t('ecoOrganizations.newOrganization') : $t('ecoOrganizations.editOrganization') }}
-            </h3>
-            <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
+    <AppModal :visible="showEditModal" :title="isCreating ? $t('ecoOrganizations.newOrganization') : $t('ecoOrganizations.editOrganization')" size="xl" @close="showEditModal = false">
+      <div class="space-y-6">
             <!-- Basic info -->
             <div>
               <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.basicInfo') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.inn') }} *</label>
-                  <input v-model="formData.inn" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.okpo') }}</label>
-                  <input v-model="formData.okpo" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.inn" :label="$t('ecoOrganizations.inn') + ' *'" required focusColor="#0ea5e9" />
+                <AppInput v-model="formData.okpo" :label="$t('ecoOrganizations.okpo')" focusColor="#0ea5e9" />
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.orgType') }} *</label>
                   <select v-model="formData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
@@ -735,12 +707,10 @@ const copyLegalToActual = () => {
                   </select>
                 </div>
                 <div class="md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.shortName') }} *</label>
-                  <input v-model="formData.shortName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                  <AppInput v-model="formData.shortName" :label="$t('ecoOrganizations.shortName') + ' *'" required focusColor="#0ea5e9" />
                 </div>
                 <div class="md:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.fullName') }} *</label>
-                  <input v-model="formData.fullName" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                  <AppInput v-model="formData.fullName" :label="$t('ecoOrganizations.fullName') + ' *'" required focusColor="#0ea5e9" />
                 </div>
               </div>
             </div>
@@ -749,22 +719,10 @@ const copyLegalToActual = () => {
             <div>
               <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.contactInfo') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.directorFio') }} *</label>
-                  <input v-model="formData.director" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.contactPerson') }}</label>
-                  <input v-model="formData.contactPerson" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.phone') }} *</label>
-                  <input v-model="formData.phone" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.email') }} *</label>
-                  <input v-model="formData.email" type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.director" :label="$t('ecoOrganizations.directorFio') + ' *'" required focusColor="#0ea5e9" />
+                <AppInput v-model="formData.contactPerson" :label="$t('ecoOrganizations.contactPerson')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.phone" :label="$t('ecoOrganizations.phone') + ' *'" required focusColor="#0ea5e9" />
+                <AppInput v-model="formData.email" type="email" :label="$t('ecoOrganizations.email') + ' *'" required focusColor="#0ea5e9" />
               </div>
             </div>
 
@@ -779,18 +737,9 @@ const copyLegalToActual = () => {
                     <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                   </select>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.cityVillage') }}</label>
-                  <input v-model="formData.legalCity" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.street') }}</label>
-                  <input v-model="formData.legalStreet" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.building') }}</label>
-                  <input v-model="formData.legalBuilding" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.legalCity" :label="$t('ecoOrganizations.cityVillage')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.legalStreet" :label="$t('ecoOrganizations.street')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.legalBuilding" :label="$t('ecoOrganizations.building')" focusColor="#0ea5e9" />
               </div>
             </div>
 
@@ -810,18 +759,9 @@ const copyLegalToActual = () => {
                     <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                   </select>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.cityVillage') }}</label>
-                  <input v-model="formData.actualCity" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.street') }}</label>
-                  <input v-model="formData.actualStreet" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.building') }}</label>
-                  <input v-model="formData.actualBuilding" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.actualCity" :label="$t('ecoOrganizations.cityVillage')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.actualStreet" :label="$t('ecoOrganizations.street')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.actualBuilding" :label="$t('ecoOrganizations.building')" focusColor="#0ea5e9" />
               </div>
             </div>
 
@@ -829,14 +769,8 @@ const copyLegalToActual = () => {
             <div>
               <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.gpsCoordinatesForMap') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.latitude') }}</label>
-                  <input v-model="formData.gpsLat" type="text" placeholder="42.8746" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.longitude') }}</label>
-                  <input v-model="formData.gpsLng" type="text" placeholder="74.5698" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.gpsLat" :label="$t('ecoOrganizations.latitude')" placeholder="42.8746" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.gpsLng" :label="$t('ecoOrganizations.longitude')" placeholder="74.5698" focusColor="#0ea5e9" />
               </div>
             </div>
 
@@ -845,17 +779,10 @@ const copyLegalToActual = () => {
               <h4 class="text-sm font-semibold text-gray-700 uppercase mb-4">{{ $t('ecoOrganizations.activityAndLicense') }}</h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.activityType') }}</label>
-                  <input v-model="formData.activityType" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                  <AppInput v-model="formData.activityType" :label="$t('ecoOrganizations.activityType')" focusColor="#0ea5e9" />
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.licenseNumber') }}</label>
-                  <input v-model="formData.licenseNumber" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.licenseExpiry') }}</label>
-                  <input v-model="formData.licenseExpiry" type="text" placeholder="31.12.2025" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
-                </div>
+                <AppInput v-model="formData.licenseNumber" :label="$t('ecoOrganizations.licenseNumber')" focusColor="#0ea5e9" />
+                <AppInput v-model="formData.licenseExpiry" :label="$t('ecoOrganizations.licenseExpiry')" placeholder="31.12.2025" focusColor="#0ea5e9" />
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoOrganizations.regionForFilter') }}</label>
                   <select v-model="formData.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
@@ -873,61 +800,46 @@ const copyLegalToActual = () => {
             </div>
 
             <!-- Actions -->
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <AppButton
-                variant="primary"
-                class="flex-1"
-                @click="saveOrganization"
-              >
-                {{ isCreating ? $t('common.create') : $t('common.save') }}
-              </AppButton>
-              <AppButton
-                variant="secondary"
-                class="flex-1"
-                @click="showEditModal = false"
-              >
-                {{ $t('common.cancel') }}
-              </AppButton>
-            </div>
-          </div>
-        </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton
+          variant="primary"
+          class="flex-1"
+          @click="saveOrganization"
+        >
+          {{ isCreating ? $t('common.create') : $t('common.save') }}
+        </AppButton>
+        <AppButton
+          variant="secondary"
+          class="flex-1"
+          @click="showEditModal = false"
+        >
+          {{ $t('common.cancel') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Delete Confirmation -->
-    <Teleport to="body">
-      <div v-if="showDeleteConfirm && selectedOrg" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-          <div class="text-center">
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $t('ecoOrganizations.deleteOrgTitle') }}</h3>
-            <p class="text-gray-500 mb-6">
-              {{ $t('ecoOrganizations.deleteOrgConfirm') }} <strong>{{ selectedOrg.shortName }}</strong>{{ $t('ecoOrganizations.deleteOrgIrreversible') }}
-            </p>
-            <div class="flex gap-3">
-              <AppButton
-                variant="danger"
-                class="flex-1"
-                @click="deleteOrganization"
-              >
-                {{ $t('common.delete') }}
-              </AppButton>
-              <AppButton
-                variant="secondary"
-                class="flex-1"
-                @click="showDeleteConfirm = false"
-              >
-                {{ $t('common.cancel') }}
-              </AppButton>
-            </div>
-          </div>
+    <AppModal :visible="showDeleteConfirm && !!selectedOrg" :title="$t('ecoOrganizations.deleteOrgTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
         </div>
+        <p v-if="selectedOrg" class="text-gray-500">
+          {{ $t('ecoOrganizations.deleteOrgConfirm') }} <strong>{{ selectedOrg.shortName }}</strong>{{ $t('ecoOrganizations.deleteOrgIrreversible') }}
+        </p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="danger" class="flex-1" @click="deleteOrganization">
+          {{ $t('common.delete') }}
+        </AppButton>
+        <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">
+          {{ $t('common.cancel') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Notification -->
     <Teleport to="body">

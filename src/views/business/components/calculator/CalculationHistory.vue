@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppBadge } from '@/components/ui'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -10,7 +11,8 @@ import { useCalculationStore } from '@/stores/calculations'
 import { useAccountStore } from '@/stores/account'
 import { CalcStatus, statusI18nKey } from '@/constants/statuses'
 import { calculatePenalty, getOverdueDays } from '@/utils/penalty'
-import { getStatusStyle, calcRowClass } from '@/helpers/calculatorHelpers'
+import { calcRowClass } from '@/helpers/calculatorHelpers'
+import { getStatusBadgeVariant } from '@/utils/statusVariant'
 import { formatNum } from '@/utils/formatNumber'
 import { generateCalculationExcel } from '@/utils/excelExport'
 import { toastStore } from '@/stores/toast'
@@ -104,12 +106,13 @@ const rows = computed(() => {
         </div>
         <span v-if="rows.length > 0" class="history-card__count">{{ rows.length }}</span>
       </div>
-      <button @click="emit('new-calc')" class="history-card__new-btn">
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-        {{ $t('businessCalc.newCalcBtn') }}
-      </button>
+      <AppButton
+        variant="primary"
+        bg="#f59e0b"
+        @click="emit('new-calc')"
+        :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'"
+        :label="$t('businessCalc.newCalcBtn')"
+      />
     </div>
 
     <DataTable :columns="columns" :data="rows" :actions="true" :rowClass="calcRowClass" @row-click="onRowClick">
@@ -148,11 +151,11 @@ const rows = computed(() => {
       </template>
       <template #cell-status="{ value, row }">
         <div class="status-cell">
-          <span class="status-badge" :style="getStatusStyle(value)">
+          <AppBadge :variant="getStatusBadgeVariant(value)" size="sm" :uppercase="true">
             <svg v-if="value === 'paid' || value === 'completed'" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
             <svg v-if="value === 'rejected' || value === 'payment_rejected'" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             {{ $t(statusI18nKey[value] || value) }}
-          </span>
+          </AppBadge>
           <div v-if="(value === 'rejected' || value === 'payment_rejected') && row.rejectionReason" class="status-reason">
             {{ row.rejectionReason }}
           </div>
@@ -161,17 +164,24 @@ const rows = computed(() => {
       <template #actions="{ row }">
         <div class="act-wrap" @click.stop>
           <template v-if="row.status === 'draft'">
-            <button @click="calcStore.submitForReview(row.id)" class="act-btn act-btn--filled act-btn--green">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-              {{ $t('businessCalc.sendBtn') }}
-            </button>
+            <AppButton
+              variant="success"
+              size="sm"
+              @click="calcStore.submitForReview(row.id)"
+              :icon="'<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 19l9 2-9-18-9 18 9-2zm0 0v-8&quot; /></svg>'"
+              :label="$t('businessCalc.sendBtn')"
+            />
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--outline">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
               {{ $t('businessCalc.editBtn') }}
             </router-link>
-            <button class="act-icon act-icon--red" :title="$t('businessCalc.deleteBtn')" @click="openDeleteConfirm(row.id, row.number)">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
+            <AppButton
+              variant="icon-danger"
+              size="sm"
+              :title="$t('businessCalc.deleteBtn')"
+              @click="openDeleteConfirm(row.id, row.number)"
+              :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16&quot; /></svg>'"
+            />
           </template>
           <template v-else-if="row.status === 'under_review'">
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
@@ -180,20 +190,31 @@ const rows = computed(() => {
             </router-link>
           </template>
           <template v-else-if="row.status === 'approved'">
-            <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--green']">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payBtn') }} {{ expandedCalcId !== row.id ? formatNum(row.totalAmount, 0) + ' ' + $t('businessCalc.som') : '' }}
-            </button>
+            <AppButton
+              :variant="expandedCalcId === row.id ? 'outline' : 'success'"
+              size="sm"
+              @click="togglePayment(row.id)"
+              :icon="'<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z&quot; /></svg>'"
+              :label="(expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payBtn')) + (expandedCalcId !== row.id ? ' ' + formatNum(row.totalAmount, 0) + ' ' + $t('businessCalc.som') : '')"
+            />
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               {{ $t('businessCalc.viewBtn') }}
             </router-link>
-            <button class="act-icon" :title="$t('businessCalc.downloadPdf')" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            </button>
-            <button class="act-icon" :title="$t('businessCalc.downloadExcel')" @click="downloadExcel(row.id)">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-            </button>
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              :title="$t('businessCalc.downloadPdf')"
+              @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })"
+              :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'"
+            />
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              :title="$t('businessCalc.downloadExcel')"
+              @click="downloadExcel(row.id)"
+              :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+            />
           </template>
           <template v-else-if="row.status === 'submitted' || row.status === 'in_review'">
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
@@ -212,20 +233,23 @@ const rows = computed(() => {
             </router-link>
           </template>
           <template v-else-if="row.status === 'fee_paid'">
-            <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payPenaltyBtn') }}
-            </button>
+            <AppButton
+              :variant="expandedCalcId === row.id ? 'outline' : 'warning'"
+              size="sm"
+              @click="togglePayment(row.id)"
+              :icon="'<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z&quot; /></svg>'"
+              :label="expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.payPenaltyBtn')"
+            />
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               {{ $t('businessCalc.viewBtn') }}
             </router-link>
           </template>
           <template v-else-if="row.status === 'completed'">
-            <span class="closed-badge">
+            <AppBadge variant="success" :uppercase="true">
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
               {{ $t('businessCalc.closedBadge') }}
-            </span>
+            </AppBadge>
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               {{ $t('businessCalc.viewBtn') }}
@@ -236,12 +260,20 @@ const rows = computed(() => {
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               {{ $t('businessCalc.viewBtn') }}
             </router-link>
-            <button class="act-icon" :title="$t('businessCalc.downloadPdf')" @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            </button>
-            <button class="act-icon" :title="$t('businessCalc.downloadExcel')" @click="downloadExcel(row.id)">
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-            </button>
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              :title="$t('businessCalc.downloadPdf')"
+              @click="router.push({ path: '/business/calculations/' + row.id, query: { from: 'calculations', print: 'true' } })"
+              :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'"
+            />
+            <AppButton
+              variant="icon-only"
+              size="sm"
+              :title="$t('businessCalc.downloadExcel')"
+              @click="downloadExcel(row.id)"
+              :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+            />
           </template>
           <template v-else-if="row.status === 'rejected'">
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations', edit: 'true' } }" class="act-btn act-btn--filled act-btn--orange">
@@ -260,10 +292,13 @@ const rows = computed(() => {
             </router-link>
           </template>
           <template v-else-if="row.status === 'payment_rejected'">
-            <button @click="togglePayment(row.id)" :class="['act-btn act-btn--filled', expandedCalcId === row.id ? 'act-btn--gray' : 'act-btn--orange']">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-              {{ expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.confirmPayment') }}
-            </button>
+            <AppButton
+              :variant="expandedCalcId === row.id ? 'outline' : 'warning'"
+              size="sm"
+              @click="togglePayment(row.id)"
+              :icon="'<svg width=&quot;14&quot; height=&quot;14&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z&quot; /></svg>'"
+              :label="expandedCalcId === row.id ? $t('paymentPanel.close') : $t('businessCalc.confirmPayment')"
+            />
             <router-link :to="{ path: '/business/calculations/' + row.id, query: { from: 'calculations' } }" class="act-btn act-btn--outline">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               {{ $t('businessCalc.viewBtn') }}
@@ -360,28 +395,6 @@ const rows = computed(() => {
   box-shadow: 0 2px 6px rgba(37,99,235,0.3);
 }
 
-.history-card__new-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 22px;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(245,158,11,0.2);
-}
-
-.history-card__new-btn:hover {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
-  transform: translateY(-1px);
-}
 
 .history-card :deep(.dash-card) {
   border: none;
@@ -468,27 +481,6 @@ const rows = computed(() => {
   text-decoration: none;
   transition: all 0.2s ease;
 }
-.act-btn--filled {
-  color: white;
-  border: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-.act-btn--green {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-}
-.act-btn--green:hover {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  box-shadow: 0 4px 12px rgba(34,197,94,0.35);
-  transform: translateY(-1px);
-}
-.act-btn--orange {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-.act-btn--orange:hover {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  box-shadow: 0 4px 12px rgba(245,158,11,0.35);
-  transform: translateY(-1px);
-}
 .act-btn--outline {
   background: #fff;
   color: #475569;
@@ -499,75 +491,12 @@ const rows = computed(() => {
   border-color: #94a3b8;
   color: #1e293b;
 }
-.act-btn--gray {
-  background: #64748b !important;
-  color: #fff !important;
-}
-.act-btn--gray:hover {
-  background: #475569 !important;
-}
 
-.act-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.act-icon:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #1e293b;
-  transform: translateY(-1px);
-}
-.act-icon--red {
-  color: #dc2626;
-  border-color: #fecaca;
-}
-.act-icon--red:hover {
-  background: #fef2f2;
-  border-color: #f87171;
-  color: #991b1b;
-}
-
-.closed-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
 
 .status-cell {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border-radius: 20px;
-  padding: 5px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  width: fit-content;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .status-reason {

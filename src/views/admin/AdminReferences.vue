@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppModal } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { UTILIZATION_RATES_2025 } from '../../data/rates'
 
@@ -380,12 +381,6 @@ function submitAddRecord() {
   }, 800)
 }
 
-function handleOverlayClick(e: MouseEvent) {
-  if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
-    closeAddModal()
-  }
-}
-
 // --- Card color accents ---
 const cardAccents: Record<string, string> = {
   waste: 'border-l-red-500',
@@ -517,15 +512,12 @@ const cardIconBg: Record<string, string> = {
                   />
                 </div>
                 <!-- Add button -->
-                <button
-                  @click.stop="openAddModal"
-                  class="flex items-center gap-2 bg-[#0e888d] text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-[#0a6d71] transition-colors"
-                >
+                <AppButton variant="primary" size="sm" @click.stop="openAddModal">
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
                   {{ $t('adminRefs.addRecord') }}
-                </button>
+                </AppButton>
               </div>
             </div>
           </div>
@@ -672,127 +664,72 @@ const cardIconBg: Record<string, string> = {
       </Transition>
     </div>
 
-    <!-- Add Record Modal -->
-    <Teleport to="body">
-      <Transition name="modal-fade">
-        <div
-          v-if="showAddModal && activeRefType"
-          class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-          style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-          @click="handleOverlayClick"
-        >
-          <Transition name="modal-scale" mode="out-in">
-            <!-- Success state -->
-            <div
-              v-if="addSuccess"
-              key="success"
-              class="bg-white rounded-2xl shadow-2xl w-full max-w-md text-center"
-            >
-              <div class="p-8">
-                <div class="w-16 h-16 rounded-full bg-[#e8f5f5] flex items-center justify-center mx-auto mb-4">
-                  <svg class="w-8 h-8 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 class="text-xl font-bold text-[#415861] mb-2">{{ $t('adminRefs.recordAdded') }}</h3>
-                <p class="text-[#64748b]">
-                  {{ $t('adminRefs.recordAddedTextPre') }}
-                  <span class="font-medium text-[#415861]">"{{ activeRefType.title }}"</span>
-                  {{ $t('adminRefs.recordAddedTextPost') }}
-                </p>
-              </div>
-              <div class="px-8 pb-8">
-                <button
-                  @click="closeAddModal"
-                  class="w-full py-3 bg-[#0e888d] text-white rounded-xl font-medium hover:bg-[#0a6d71] transition-colors"
-                >
-                  {{ $t('adminRefs.close') }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Form state -->
-            <div
-              v-else
-              key="form"
-              class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
-            >
-              <!-- Header -->
-              <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-                <div>
-                  <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminRefs.addRecordModalTitle') }}</h3>
-                  <p class="text-sm text-[#64748b] mt-1">{{ $t('adminRefs.referenceLabel') }} {{ activeRefType.title }}</p>
-                </div>
-                <button
-                  @click="closeAddModal"
-                  class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors"
-                >
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Fields -->
-              <div class="p-6 space-y-4">
-                <div
-                  v-for="(fieldKey, idx) in activeRefType.fieldKeys"
-                  :key="fieldKey"
-                >
-                  <label class="block text-sm font-medium text-[#415861] mb-1.5">
-                    {{ activeRefType.fields[idx] }}
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    v-model="addFormData[fieldKey]"
-                    type="text"
-                    :placeholder="activeRefType.fieldPlaceholders[idx]"
-                    :class="[
-                      'w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors',
-                      addFormErrors[fieldKey]
-                        ? 'border-red-400 focus:border-red-500 bg-red-50/50'
-                        : 'border-[#e5e7eb] focus:border-[#0e888d]'
-                    ]"
-                  />
-                  <p v-if="addFormErrors[fieldKey]" class="mt-1 text-xs text-red-500">
-                    {{ addFormErrors[fieldKey] }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-                <button
-                  @click="closeAddModal"
-                  class="px-5 py-2.5 text-[#64748b] border border-[#e5e7eb] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors"
-                >
-                  {{ $t('adminRefs.cancelBtn') }}
-                </button>
-                <button
-                  @click="submitAddRecord"
-                  :disabled="addSaving"
-                  :class="[
-                    'flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-colors',
-                    addSaving
-                      ? 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed'
-                      : 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-                  ]"
-                >
-                  <svg v-if="addSaving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  {{ addSaving ? $t('adminRefs.saving') : $t('adminRefs.addRecord') }}
-                </button>
-              </div>
-            </div>
-          </Transition>
+    <AppModal
+      :visible="showAddModal && !!activeRefType"
+      :title="addSuccess ? '' : $t('adminRefs.addRecordModalTitle')"
+      size="md"
+      @close="closeAddModal"
+    >
+      <div v-if="addSuccess" class="text-center">
+        <div class="w-16 h-16 rounded-full bg-[#e8f5f5] flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
         </div>
-      </Transition>
-    </Teleport>
+        <h3 class="text-xl font-bold text-[#415861] mb-2">{{ $t('adminRefs.recordAdded') }}</h3>
+        <p class="text-[#64748b]">
+          {{ $t('adminRefs.recordAddedTextPre') }}
+          <span class="font-medium text-[#415861]">"{{ activeRefType?.title }}"</span>
+          {{ $t('adminRefs.recordAddedTextPost') }}
+        </p>
+      </div>
+
+      <div v-else-if="activeRefType" class="space-y-4">
+        <p class="text-sm text-[#64748b]">{{ $t('adminRefs.referenceLabel') }} {{ activeRefType.title }}</p>
+        <div
+          v-for="(fieldKey, idx) in activeRefType.fieldKeys"
+          :key="fieldKey"
+        >
+          <label class="block text-sm font-medium text-[#415861] mb-1.5">
+            {{ activeRefType.fields[idx] }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="addFormData[fieldKey]"
+            type="text"
+            :placeholder="activeRefType.fieldPlaceholders[idx]"
+            :class="[
+              'w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-colors',
+              addFormErrors[fieldKey]
+                ? 'border-red-400 focus:border-red-500 bg-red-50/50'
+                : 'border-[#e5e7eb] focus:border-[#0e888d]'
+            ]"
+          />
+          <p v-if="addFormErrors[fieldKey]" class="mt-1 text-xs text-red-500">
+            {{ addFormErrors[fieldKey] }}
+          </p>
+        </div>
+      </div>
+
+      <template #footer>
+        <div v-if="addSuccess">
+          <AppButton variant="primary" fullWidth @click="closeAddModal">
+            {{ $t('adminRefs.close') }}
+          </AppButton>
+        </div>
+        <div v-else class="flex items-center justify-end gap-3">
+          <AppButton variant="secondary" @click="closeAddModal">
+            {{ $t('adminRefs.cancelBtn') }}
+          </AppButton>
+          <AppButton variant="primary" :loading="addSaving" :disabled="addSaving" @click="submitAddRecord">
+            <svg v-if="!addSaving" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            {{ addSaving ? $t('adminRefs.saving') : $t('adminRefs.addRecord') }}
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 
@@ -818,29 +755,5 @@ const cardIconBg: Record<string, string> = {
   opacity: 0;
   transform: translateY(-12px);
   max-height: 0;
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-}
-
-.modal-scale-enter-active {
-  transition: all 0.25s ease-out;
-}
-.modal-scale-leave-active {
-  transition: all 0.15s ease-in;
-}
-.modal-scale-enter-from {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
-}
-.modal-scale-leave-to {
-  opacity: 0;
-  transform: scale(0.97) translateY(-5px);
 }
 </style>

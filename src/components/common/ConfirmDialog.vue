@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, computed, onMounted, onUnmounted, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from '../ui/AppButton.vue'
 
 interface Props {
   visible: boolean
@@ -138,16 +139,12 @@ watch(() => props.visible, async (val) => {
 
             <!-- Buttons -->
             <div class="cd-buttons">
-              <button class="cd-btn cd-btn--cancel" @click="emit('cancel')">{{ displayCancelText }}</button>
-              <button
-                :class="[
-                  'cd-btn cd-btn--confirm',
-                  confirmColor === 'green' ? 'cd-btn--green' : '',
-                  confirmColor === 'red' ? 'cd-btn--red' : '',
-                  confirmColor === 'orange' ? 'cd-btn--orange' : '',
-                ]"
+              <AppButton variant="secondary" :label="displayCancelText" @click="emit('cancel')" />
+              <AppButton
+                :variant="confirmColor === 'red' ? 'danger' : confirmColor === 'orange' ? 'warning' : 'success'"
+                :label="displayConfirmText"
                 @click="emit('confirm')"
-              >{{ displayConfirmText }}</button>
+              />
             </div>
           </div>
         </Transition>
@@ -230,45 +227,6 @@ watch(() => props.visible, async (val) => {
   display: flex;
   gap: 12px;
   justify-content: center;
-}
-.cd-btn {
-  padding: 10px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: none;
-  outline: none;
-}
-.cd-btn--cancel {
-  background: transparent;
-  border: 1px solid #d1d5db;
-  color: #374151;
-}
-.cd-btn--cancel:hover {
-  background: #f3f4f6;
-}
-.cd-btn--confirm {
-  color: white;
-}
-.cd-btn--green {
-  background: #10b981;
-}
-.cd-btn--green:hover {
-  background: #059669;
-}
-.cd-btn--red {
-  background: #ef4444;
-}
-.cd-btn--red:hover {
-  background: #dc2626;
-}
-.cd-btn--orange {
-  background: #f59e0b;
-}
-.cd-btn--orange:hover {
-  background: #d97706;
 }
 
 /* Animations */

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { analyticsStore } from '../../stores/analytics'
 
@@ -204,12 +205,12 @@ const exportReport = () => {
             <option value="quarter">{{ $t('analyticsPage.quarter') }}</option>
             <option value="year">{{ $t('analyticsPage.year') }}</option>
           </select>
-          <button @click="exportReport" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <AppButton variant="secondary" @click="exportReport">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {{ $t('analyticsPage.exportReport') }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
@@ -235,7 +236,7 @@ const exportReport = () => {
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Revenue Chart -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <AppCard class="lg:col-span-2" radius="sm">
           <div class="flex items-center justify-between mb-6">
             <h3 class="font-semibold text-gray-900">{{ $t('analyticsPage.monthlyDynamics') }}</h3>
             <div class="flex items-center gap-4 text-sm">
@@ -265,10 +266,10 @@ const exportReport = () => {
               <span class="text-xs text-gray-500">{{ data.month }}</span>
             </div>
           </div>
-        </div>
+        </AppCard>
 
         <!-- Category Breakdown -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <AppCard radius="sm">
           <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.categoryBreakdown') }}</h3>
           <div class="space-y-4">
             <div v-for="cat in categoryData" :key="cat.category">
@@ -281,7 +282,7 @@ const exportReport = () => {
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -320,7 +321,7 @@ const exportReport = () => {
         </div>
 
         <!-- System Stats -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <AppCard radius="sm">
           <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.systemMetrics') }}</h3>
           <div class="grid grid-cols-2 gap-4">
             <div class="p-4 bg-gray-50 rounded-xl">
@@ -358,11 +359,11 @@ const exportReport = () => {
               </div>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
 
       <!-- Compliance Overview -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <AppCard radius="sm">
         <h3 class="font-semibold text-gray-900 mb-6">{{ $t('analyticsPage.complianceOverview') }}</h3>
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="item in complianceItems" :key="item.label" class="text-center p-4 bg-gray-50 rounded-xl">
@@ -376,7 +377,7 @@ const exportReport = () => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
     </div>
   </DashboardLayout>
 </template>

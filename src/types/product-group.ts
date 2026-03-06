@@ -10,6 +10,7 @@ export interface ProductGroupDTO {
   currentRate: number
   subgroupCount?: number
   subgroups?: ProductSubgroupDTO[]
+  recyclingStandard: number
 }
 
 export interface ProductSubgroupDTO {

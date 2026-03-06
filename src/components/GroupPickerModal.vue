@@ -2,6 +2,7 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductGroupStore } from '@/stores/product-groups'
+import AppButton from './ui/AppButton.vue'
 import type { ProductGroupDTO } from '@/types/product-group'
 
 const { t } = useI18n()
@@ -161,7 +162,7 @@ const getGroupType = (group: ProductGroupDTO) => {
 
           <div class="gpm-footer">
             <span class="gpm-footer-count">{{ $t('groupPicker.ofGroups', { filtered: filteredGroups.length, total: groupStore.groups.length }) }}</span>
-            <button class="gpm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
+            <AppButton variant="secondary" :label="$t('common.cancel')" @click="closeModal" />
           </div>
         </div>
       </div>
@@ -435,23 +436,6 @@ const getGroupType = (group: ProductGroupDTO) => {
   font-size: 16px;
   font-weight: 500;
   color: #1e293b;
-}
-
-.gpm-cancel {
-  padding: 10px 24px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  color: #1e293b;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.gpm-cancel:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
 }
 
 @media (max-width: 768px) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppBadge } from '@/components/ui'
+import { AppButton, AppBadge } from '@/components/ui'
 
 defineProps<{
   submittedDeclaration: { number: string; date: string }
@@ -44,21 +44,18 @@ defineEmits<{
     </p>
 
     <div class="flex flex-col sm:flex-row justify-center gap-4">
-      <button @click="$emit('print')" class="ds-btn-outline">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-        </svg>
-        {{ $t('businessDecl.downloadPdf') }}
-      </button>
-      <button
+      <AppButton
+        variant="outline"
+        @click="$emit('print')"
+        :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'"
+        :label="$t('businessDecl.downloadPdf')"
+      />
+      <AppButton
+        variant="primary"
         @click="$emit('backToList')"
-        class="ds-btn-primary"
-      >
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-        </svg>
-        {{ $t('businessDecl.returnToList') }}
-      </button>
+        :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 6h16M4 10h16M4 14h16M4 18h16&quot; /></svg>'"
+        :label="$t('businessDecl.returnToList')"
+      />
     </div>
   </div>
 </template>
@@ -100,34 +97,5 @@ defineEmits<{
   font-size: 17px;
   font-weight: 500;
   color: #1e293b;
-}
-.ds-btn-outline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  color: #1e293b;
-  transition: background-color 0.15s;
-}
-.ds-btn-outline:hover {
-  background-color: #f8fafc;
-}
-.ds-btn-primary {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background-color: #2563eb;
-  color: white;
-  border-radius: 12px;
-  font-weight: 500;
-  transition: background-color 0.15s;
-}
-.ds-btn-primary:hover {
-  background-color: #1d4ed8;
 }
 </style>

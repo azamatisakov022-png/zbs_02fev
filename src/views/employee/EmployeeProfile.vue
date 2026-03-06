@@ -7,6 +7,7 @@ import SectionGuide from '../../components/common/SectionGuide.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { authStore } from '../../stores/auth'
+import { AppButton, AppInput, AppCard } from '../../components/ui'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -151,47 +152,46 @@ const changePassword = async () => {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Personal Info -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.personalData') }}</h3>
-              <button
+          <AppCard radius="sm" padding="none" :title="$t('employeeProfile.personalData')" :headerBorder="true">
+            <template #header-actions>
+              <AppButton
                 v-if="editingSection !== 'personal'"
+                variant="ghost"
+                size="sm"
                 @click="editingSection = 'personal'"
-                class="text-sky-600 hover:text-sky-700 text-sm font-medium"
               >
                 {{ $t('common.edit') }}
-              </button>
-            </div>
+              </AppButton>
+            </template>
             <div class="p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.lastName') }}</label>
-                  <input
+                  <AppInput
                     v-if="editingSection === 'personal'"
                     v-model="userData.lastName"
-                    type="text"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    hideLabel
+                    labelColor="#6b7280"
                   />
                   <p v-else class="text-gray-900">{{ userData.lastName }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.firstName') }}</label>
-                  <input
+                  <AppInput
                     v-if="editingSection === 'personal'"
                     v-model="userData.firstName"
-                    type="text"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    hideLabel
+                    labelColor="#6b7280"
                   />
                   <p v-else class="text-gray-900">{{ userData.firstName }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.middleName') }}</label>
-                  <input
+                  <AppInput
                     v-if="editingSection === 'personal'"
                     v-model="userData.middleName"
-                    type="text"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    hideLabel
+                    labelColor="#6b7280"
                   />
                   <p v-else class="text-gray-900">{{ userData.middleName }}</p>
                 </div>
@@ -205,21 +205,23 @@ const changePassword = async () => {
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.workPhone') }}</label>
-                  <input
+                  <AppInput
                     v-if="editingSection === 'personal'"
                     v-model="userData.phone"
                     type="tel"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    hideLabel
+                    labelColor="#6b7280"
                   />
                   <p v-else class="text-gray-900">{{ userData.phone }}</p>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.mobilePhone') }}</label>
-                  <input
+                  <AppInput
                     v-if="editingSection === 'personal'"
                     v-model="userData.mobilePhone"
                     type="tel"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                    hideLabel
+                    labelColor="#6b7280"
                   />
                   <p v-else class="text-gray-900">{{ userData.mobilePhone }}</p>
                 </div>
@@ -229,17 +231,13 @@ const changePassword = async () => {
                 </div>
               </div>
               <div v-if="editingSection === 'personal'" class="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                <button @click="editingSection = null" class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">{{ $t('common.cancel') }}</button>
-                <button @click="saveSection" :disabled="saving" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">{{ saving ? $t('common.loading') : $t('common.save') }}</button>
+                <AppButton variant="secondary" @click="editingSection = null">{{ $t('common.cancel') }}</AppButton>
+                <AppButton variant="primary" @click="saveSection" :disabled="saving" :loading="saving">{{ saving ? $t('common.loading') : $t('common.save') }}</AppButton>
               </div>
             </div>
-          </div>
+          </AppCard>
 
-          <!-- Notification Settings -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.notificationSettings') }}</h3>
-            </div>
+          <AppCard radius="sm" padding="none" :title="$t('employeeProfile.notificationSettings')" :headerBorder="true">
             <div class="p-6 space-y-4">
               <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                 <div>
@@ -278,31 +276,24 @@ const changePassword = async () => {
                 </div>
               </label>
             </div>
-          </div>
+          </AppCard>
 
-          <!-- Security -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.security') }}</h3>
-            </div>
+          <AppCard radius="sm" padding="none" :title="$t('employeeProfile.security')" :headerBorder="true">
             <div class="p-6 space-y-6">
               <div>
                 <h4 class="font-medium text-gray-900 mb-4">{{ $t('employeeProfile.changePassword') }}</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.currentPassword') }}</label>
-                    <input v-model="securityData.currentPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                    <AppInput v-model="securityData.currentPassword" type="password" :label="$t('employeeProfile.currentPassword')" placeholder="••••••••" labelColor="#6b7280" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.newPassword') }}</label>
-                    <input v-model="securityData.newPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                    <AppInput v-model="securityData.newPassword" type="password" :label="$t('employeeProfile.newPassword')" placeholder="••••••••" labelColor="#6b7280" />
                   </div>
                   <div>
-                    <label class="block text-sm font-medium text-gray-500 mb-1">{{ $t('employeeProfile.confirmPassword') }}</label>
-                    <input v-model="securityData.confirmPassword" type="password" placeholder="••••••••" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+                    <AppInput v-model="securityData.confirmPassword" type="password" :label="$t('employeeProfile.confirmPassword')" placeholder="••••••••" labelColor="#6b7280" />
                   </div>
                 </div>
-                <button @click="changePassword" :disabled="!securityData.currentPassword || !securityData.newPassword" class="mt-4 px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50">{{ $t('employeeProfile.changePasswordBtn') }}</button>
+                <AppButton variant="primary" class="mt-4" @click="changePassword" :disabled="!securityData.currentPassword || !securityData.newPassword">{{ $t('employeeProfile.changePasswordBtn') }}</AppButton>
               </div>
 
               <div class="pt-6 border-t border-gray-200">
@@ -315,16 +306,11 @@ const changePassword = async () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
         </div>
 
-        <!-- Sidebar -->
         <div class="space-y-6">
-          <!-- Permissions -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.accessRights') }}</h3>
-            </div>
+          <AppCard radius="sm" padding="none" :title="$t('employeeProfile.accessRights')" :headerBorder="true">
             <div class="p-4">
               <div class="space-y-2">
                 <div v-for="perm in permissions" :key="perm.name" class="flex items-center justify-between p-2">
@@ -342,13 +328,9 @@ const changePassword = async () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AppCard>
 
-          <!-- Activity Log -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h3 class="font-semibold text-gray-900">{{ $t('employeeProfile.recentActions') }}</h3>
-            </div>
+          <AppCard radius="sm" padding="none" :title="$t('employeeProfile.recentActions')" :headerBorder="true">
             <div class="p-4">
               <div class="space-y-4">
                 <div v-for="log in activityLog" :key="log.date" class="flex items-start gap-3">
@@ -362,15 +344,13 @@ const changePassword = async () => {
                   </div>
                 </div>
               </div>
-              <button @click="toastStore.show({ type: 'info', title: $t('employeeProfile.toastLogTitle'), message: $t('employeeProfile.toastLogMessage') })" class="w-full mt-4 text-center text-sm text-sky-600 hover:text-sky-700 font-medium">
+              <AppButton variant="ghost" fullWidth class="mt-4" @click="toastStore.show({ type: 'info', title: $t('employeeProfile.toastLogTitle'), message: $t('employeeProfile.toastLogMessage') })">
                 {{ $t('employeeProfile.showAll') }}
-              </button>
+              </AppButton>
             </div>
-          </div>
+          </AppCard>
 
-          <!-- Session Info -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-900 mb-4">{{ $t('employeeProfile.currentSession') }}</h3>
+          <AppCard radius="sm" padding="sm" :title="$t('employeeProfile.currentSession')">
             <div class="space-y-3">
               <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <div class="w-10 h-10 bg-sky-100 rounded-lg flex items-center justify-center">
@@ -384,10 +364,10 @@ const changePassword = async () => {
                 </div>
               </div>
             </div>
-            <button @click="authStore.logout(); router.push('/login')" class="w-full mt-4 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+            <AppButton variant="danger" fullWidth class="mt-4" @click="authStore.logout(); router.push('/login')">
               {{ $t('employeeProfile.logoutBtn') }}
-            </button>
-          </div>
+            </AppButton>
+          </AppCard>
         </div>
       </div>
     </div>

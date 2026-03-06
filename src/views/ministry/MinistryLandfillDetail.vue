@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppInput, AppCard } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { landfillStore, type Landfill } from '../../stores/landfills'
 import BarChart from '../../components/charts/BarChart.vue'
@@ -284,38 +285,33 @@ const coordsText = computed(() => {
     <!-- ==================== NOT FOUND STATE ==================== -->
     <div v-if="!landfill" class="text-center py-20">
       <p class="text-xl text-gray-500 mb-4">{{ $t('ministryLandfillDetail.notFound') }}</p>
-      <button
-        @click="router.push('/ministry/landfills')"
-        class="btn-back"
-      >
+      <AppButton variant="back" @click="router.push('/ministry/landfills')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
         {{ $t('ministryLandfillDetail.backBtn') }}
-      </button>
+      </AppButton>
     </div>
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <template v-else>
       <!-- Header -->
       <div class="mb-6">
-        <button
-          @click="router.push('/ministry/landfills')"
-          class="btn-back"
-        >
+        <AppButton variant="back" @click="router.push('/ministry/landfills')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
           {{ $t('ministryLandfillDetail.backBtn') }}
-        </button>
+        </AppButton>
         <div class="flex flex-wrap items-center gap-3">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{ landfill.name }}</h1>
-          <button
+          <AppButton
             v-if="!isEditing"
+            variant="outline"
+            class="ml-auto"
             @click="startEditing"
-            class="ml-auto inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors"
           >
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             {{ $t('ministryLandfillDetail.editBtn') }}
-          </button>
+          </AppButton>
           <span :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', typeBadgeClass]">
             {{ typeLabels[landfill.type] || landfill.type }}
           </span>
@@ -326,14 +322,12 @@ const coordsText = computed(() => {
       </div>
 
       <!-- ==================== BLOCK 1: General Info ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.generalInfo') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.generalInfo')">
         <!-- Edit mode -->
         <div v-if="isEditing" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelName') }}</label>
-              <input v-model="editData.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model="editData.name" :label="$t('ministryLandfillDetail.labelName')" size="sm" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelType') }}</label>
@@ -352,46 +346,40 @@ const coordsText = computed(() => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelOperator') }}</label>
-              <input v-model="editData.operator" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model="editData.operator" :label="$t('ministryLandfillDetail.labelOperator')" size="sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelRegion') }}</label>
-              <input v-model="editData.region" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model="editData.region" :label="$t('ministryLandfillDetail.labelRegion')" size="sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelDistrict') }}</label>
-              <input v-model="editData.district" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model="editData.district" :label="$t('ministryLandfillDetail.labelDistrict')" size="sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelDesignCapacity') }}</label>
-              <input v-model.number="editData.designCapacity" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model.number="editData.designCapacity" type="number" :label="$t('ministryLandfillDetail.labelDesignCapacity')" size="sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelCurrentVolume') }}</label>
-              <input v-model.number="editData.currentVolume" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model.number="editData.currentVolume" type="number" :label="$t('ministryLandfillDetail.labelCurrentVolume')" size="sm" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelExpiryYear') }}</label>
-              <input v-model.number="editData.expiryYear" type="number" min="2024" max="2100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
+              <AppInput v-model.number="editData.expiryYear" type="number" :min="2024" :max="2100" :label="$t('ministryLandfillDetail.labelExpiryYear')" size="sm" />
             </div>
           </div>
           <!-- Coordinates with map picker -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ministryLandfillDetail.labelCoordinates') }}</label>
             <div class="flex items-center gap-3">
-              <input v-model.number="editData.lat" type="number" step="0.0001" :placeholder="$t('ministryLandfillDetail.latPlaceholder')" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
-              <input v-model.number="editData.lng" type="number" step="0.0001" :placeholder="$t('ministryLandfillDetail.lngPlaceholder')" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm" />
-              <button type="button" @click="pickerCoords = { lat: editData.lat, lng: editData.lng }; showCoordPicker = true" class="px-4 py-2 text-sm font-medium text-teal-700 border border-teal-300 rounded-lg hover:bg-teal-50 transition-colors flex items-center gap-2 whitespace-nowrap">
+              <AppInput v-model.number="editData.lat" type="number" :step="0.0001" :placeholder="$t('ministryLandfillDetail.latPlaceholder')" size="sm" hide-label class="flex-1" />
+              <AppInput v-model.number="editData.lng" type="number" :step="0.0001" :placeholder="$t('ministryLandfillDetail.lngPlaceholder')" size="sm" hide-label class="flex-1" />
+              <AppButton variant="outline" size="sm" @click="pickerCoords = { lat: editData.lat, lng: editData.lng }; showCoordPicker = true">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 {{ $t('ministryLandfillDetail.pickOnMap') }}
-              </button>
+              </AppButton>
             </div>
           </div>
           <!-- Save / Cancel -->
           <div class="flex items-center gap-3 pt-4 border-t border-gray-200">
-            <button @click="saveEditing" class="px-5 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">{{ $t('ministryLandfillDetail.saveBtn') }}</button>
-            <button @click="cancelEditing" class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{{ $t('ministryLandfillDetail.cancelBtn') }}</button>
+            <AppButton variant="primary" @click="saveEditing">{{ $t('ministryLandfillDetail.saveBtn') }}</AppButton>
+            <AppButton variant="secondary" @click="cancelEditing">{{ $t('ministryLandfillDetail.cancelBtn') }}</AppButton>
           </div>
         </div>
 
@@ -476,11 +464,10 @@ const coordsText = computed(() => {
             <span class="text-sm font-medium text-gray-900">{{ landfill.wasteSchedule }}</span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 2: Capacity & Fill Level ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.capacityTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.capacityTitle')">
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
@@ -540,11 +527,10 @@ const coordsText = computed(() => {
         </div>
 
         <BarChart :data="monthlyChartData" :height="220" :title="$t('ministryLandfillDetail.monthlyIntakeChart')" />
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 3: Waste Types Table ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.wasteTypesTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.wasteTypesTitle')">
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-50">
@@ -579,11 +565,10 @@ const coordsText = computed(() => {
             </tbody>
           </table>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 4: Infrastructure ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.infraTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.infraTitle')">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <div v-for="item in infraItems" :key="item.key" class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50">
             <svg v-if="landfill.infrastructure[item.key]" class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -626,11 +611,10 @@ const coordsText = computed(() => {
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipBulldozers') }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 4.5: Morphological Composition ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.morphologyTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.morphologyTitle')">
         <div class="space-y-3">
           <div v-for="item in morphologyItems" :key="item.label">
             <div class="flex items-center justify-between text-sm mb-1">
@@ -642,11 +626,10 @@ const coordsText = computed(() => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 5: Documents & Permits ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.docsTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.docsTitle')">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div class="flex items-center justify-between mb-2">
@@ -689,12 +672,11 @@ const coordsText = computed(() => {
           </div>
         </div>
         <p v-else class="text-sm text-gray-400">{{ $t('ministryLandfillDetail.noDocsAttached') }}</p>
-      </div>
+      </AppCard>
 
       <!-- ==================== BLOCK 6: Location Map ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-900">{{ $t('ministryLandfillDetail.mapTitle') }}</h2>
+      <AppCard radius="sm" :shadow="false" class="mb-6" :title="$t('ministryLandfillDetail.mapTitle')">
+        <template #header-actions>
           <router-link
             :to="{ path: '/registries', query: { lat: String(landfill.lat), lng: String(landfill.lng), zoom: '15' } }"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
@@ -704,7 +686,7 @@ const coordsText = computed(() => {
             </svg>
             {{ $t('ministryLandfillDetail.showOnMap') }}
           </router-link>
-        </div>
+        </template>
         <div class="rounded-xl overflow-hidden border border-gray-200">
           <LMap :center="[landfill.lat, landfill.lng]" :zoom="15" style="height: 300px;" :use-global-leaflet="false">
             <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
@@ -722,7 +704,7 @@ const coordsText = computed(() => {
           <p class="text-sm text-gray-500">{{ landfill.address }}</p>
           <p class="text-xs text-gray-400 font-mono">{{ coordsText }}</p>
         </div>
-      </div>
+      </AppCard>
     </template>
     <MapCoordinatePicker
       :visible="showCoordPicker"

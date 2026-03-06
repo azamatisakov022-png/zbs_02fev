@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onErrorCaptured } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from '../ui/AppButton.vue'
 
 const { t } = useI18n()
 
@@ -27,11 +28,10 @@ const retry = () => {
     </div>
     <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('error.title') }}</h3>
     <p class="text-sm text-[#64748b] text-center max-w-sm mb-5">{{ t('error.description') }}</p>
-    <button
+    <AppButton
+      variant="primary"
+      :label="t('error.retry')"
       @click="retry"
-      class="px-5 py-2.5 bg-[#0e888d] text-white rounded-lg font-medium hover:bg-[#0a6d71] transition-colors text-sm"
-    >
-      {{ t('error.retry') }}
-    </button>
+    />
   </div>
 </template>

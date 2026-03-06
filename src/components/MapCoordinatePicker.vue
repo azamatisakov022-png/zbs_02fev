@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppButton from './ui/AppButton.vue'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
@@ -185,22 +186,19 @@ const cancel = () => {
 
         <!-- Footer -->
         <div class="px-5 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
-          <button
+          <AppButton
+            variant="secondary"
+            :label="$t('common.cancel')"
+            size="sm"
             @click="cancel"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {{ $t('common.cancel') }}
-          </button>
-          <button
-            @click="confirm"
+          />
+          <AppButton
+            variant="primary"
+            :label="$t('common.confirm')"
+            size="sm"
             :disabled="!pickerCoords"
-            :class="[
-              'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors',
-              pickerCoords ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'
-            ]"
-          >
-            {{ $t('common.confirm') }}
-          </button>
+            @click="confirm"
+          />
         </div>
       </div>
     </div>

@@ -6,11 +6,11 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
-import { reportStore, type Report } from '../../stores/reports'
+import { useReportStore, type Report } from '../../stores/reports'
 import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppAlert, AppModal, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { ReportStatus, statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -21,8 +21,8 @@ import { notificationStore } from '../../stores/notifications'
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const reportStore = useReportStore()
 
-// Loading state
 const isLoading = ref(true)
 onMounted(async () => {
   await reportStore.fetchAll()
@@ -45,7 +45,7 @@ const statusFilter = ref('')
 const periodFilter = ref('')
 
 const filteredReports = computed(() => {
-  let list = reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT)
+  let list = reportStore.reports.filter(r => r.status !== ReportStatus.DRAFT)
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(r => r.number.toLowerCase().includes(q) || r.company.toLowerCase().includes(q) || r.inn.includes(q))
@@ -60,10 +60,10 @@ const filteredReports = computed(() => {
 })
 
 // Stats
-const totalCount = computed(() => reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT).length)
-const pendingCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.UNDER_REVIEW).length)
-const approvedCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.APPROVED).length)
-const rejectedCount = computed(() => reportStore.state.reports.filter(r => r.status === ReportStatus.REJECTED).length)
+const totalCount = computed(() => reportStore.reports.filter(r => r.status !== ReportStatus.DRAFT).length)
+const pendingCount = computed(() => reportStore.reports.filter(r => r.status === ReportStatus.UNDER_REVIEW).length)
+const approvedCount = computed(() => reportStore.reports.filter(r => r.status === ReportStatus.APPROVED).length)
+const rejectedCount = computed(() => reportStore.reports.filter(r => r.status === ReportStatus.REJECTED).length)
 
 const getStatusClass = (status: string) => {
   switch (status) {
@@ -92,7 +92,7 @@ const rejectionReason = ref('')
 const showRejectForm = ref(false)
 
 const openDetail = (row: any) => {
-  const report = reportStore.state.reports.find(r => r.id === row.id)
+  const report = reportStore.reports.find(r => r.id === row.id)
   if (report) {
     selectedReport.value = report
     showDetail.value = true
@@ -185,7 +185,7 @@ const downloadReportExcel = () => {
 }
 
 // Empty state helpers
-const allReports = computed(() => reportStore.state.reports.filter(r => r.status !== ReportStatus.DRAFT))
+const allReports = computed(() => reportStore.reports.filter(r => r.status !== ReportStatus.DRAFT))
 const isFiltersActive = computed(() => !!(searchQuery.value || statusFilter.value || periodFilter.value))
 
 const resetFilters = () => {
@@ -267,17 +267,9 @@ const resetFilters = () => {
     </div>
 
     <!-- Yellow Alert Banner -->
-    <div v-if="pendingCount > 0" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-semibold text-yellow-900">{{ $t('ecoIncomingReports.attentionRequired') }}</p>
-        <p class="text-xs text-yellow-700">{{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingReports.newReportSingular') : $t('ecoIncomingReports.newReportPlural') }} {{ $t('ecoIncomingReports.alertCheckAndDecide') }}</p>
-      </div>
-    </div>
+    <AppAlert v-if="pendingCount > 0" variant="warning" :title="$t('ecoIncomingReports.attentionRequired')" :icon="'<svg width=&quot;20&quot; height=&quot;20&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9&quot; /></svg>'" class="mb-6">
+      {{ pendingCount }} {{ pendingCount === 1 ? $t('ecoIncomingReports.newReportSingular') : $t('ecoIncomingReports.newReportPlural') }} {{ $t('ecoIncomingReports.alertCheckAndDecide') }}
+    </AppAlert>
 
     <template v-if="isLoading">
       <div class="mb-6"><SkeletonLoader variant="card" /></div>
@@ -286,7 +278,7 @@ const resetFilters = () => {
 
     <template v-if="!isLoading">
     <!-- Filters -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <AppCard padding="sm" class="mb-6">
       <div class="flex flex-wrap gap-4">
         <input
           v-model="searchQuery"
@@ -308,7 +300,7 @@ const resetFilters = () => {
           <option value="2026">2026</option>
         </select>
       </div>
-    </div>
+    </AppCard>
 
     <!-- Table -->
     <DataTable :columns="columns" :data="filteredReports" :actions="true">
@@ -379,11 +371,11 @@ const resetFilters = () => {
             </div>
             <div class="flex items-center gap-3">
               <AppBadge :variant="getStatusBadgeVariant(selectedReport.status)">{{ $t(statusI18nKey[selectedReport.status] || selectedReport.status) }}</AppBadge>
-              <button @click="closeDetail" class="p-2 text-[#64748b] hover:bg-gray-100 rounded-lg">
+              <AppButton variant="icon-only" size="sm" @click="closeDetail">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </AppButton>
             </div>
           </div>
 
@@ -517,10 +509,9 @@ const resetFilters = () => {
             </div>
 
             <!-- Rejection reason if rejected -->
-            <div v-if="selectedReport.status === 'rejected' && selectedReport.rejectionReason" class="bg-red-50 border border-red-200 rounded-xl p-4">
-              <p class="font-medium text-red-800 mb-1">{{ $t('ecoIncomingReports.rejectionReason') }}</p>
-              <p class="text-sm text-red-700">{{ selectedReport.rejectionReason }}</p>
-            </div>
+            <AppAlert v-if="selectedReport.status === 'rejected' && selectedReport.rejectionReason" variant="error" :title="$t('ecoIncomingReports.rejectionReason')">
+              {{ selectedReport.rejectionReason }}
+            </AppAlert>
 
             <!-- Reject Form -->
             <div v-if="showRejectForm" class="bg-red-50 border border-red-200 rounded-xl p-4">
@@ -548,16 +539,12 @@ const resetFilters = () => {
           </div>
 
           <!-- Review result banner for processed reports -->
-          <div v-if="selectedReport.status === 'approved' && selectedReport.reviewDate" class="mx-6 mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
-            <svg class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            <div>
-              <p class="font-medium text-green-800">{{ $t('ecoIncomingReports.reportApprovedBy', { date: selectedReport.reviewDate, reviewer: selectedReport.reviewer }) }}</p>
-            </div>
-          </div>
-          <div v-if="selectedReport.status === 'revision' && selectedReport.rejectionReason" class="mx-6 mb-4 bg-orange-50 border border-orange-200 rounded-xl p-4">
-            <p class="font-medium text-orange-800 mb-1">{{ $t('ecoIncomingReports.returnedForRevision', { date: selectedReport.reviewDate }) }}</p>
-            <p class="text-sm text-orange-700">{{ selectedReport.rejectionReason }}</p>
-          </div>
+          <AppAlert v-if="selectedReport.status === 'approved' && selectedReport.reviewDate" variant="success" class="mx-6 mb-4">
+            {{ $t('ecoIncomingReports.reportApprovedBy', { date: selectedReport.reviewDate, reviewer: selectedReport.reviewer }) }}
+          </AppAlert>
+          <AppAlert v-if="selectedReport.status === 'revision' && selectedReport.rejectionReason" variant="warning" :title="$t('ecoIncomingReports.returnedForRevision', { date: selectedReport.reviewDate })" bg="#fff7ed" borderColor="#fed7aa" color="#9a3412" class="mx-6 mb-4">
+            {{ selectedReport.rejectionReason }}
+          </AppAlert>
 
           <!-- History log -->
           <div v-if="selectedReport.history && selectedReport.history.length > 0" class="mx-6 mb-4">
@@ -587,18 +574,8 @@ const resetFilters = () => {
               </svg>
               {{ $t('ecoIncomingReports.reject') }}
             </AppButton>
-            <button @click="openReturnModal" class="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-              {{ $t('ecoIncomingReports.forRevision') }}
-            </button>
-            <button @click="openApproveConfirm" class="flex items-center gap-2 px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ $t('ecoIncomingReports.approveReport') }}
-            </button>
+            <AppButton variant="warning" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6&quot; /></svg>'" :label="$t('ecoIncomingReports.forRevision')" @click="openReturnModal" />
+            <AppButton variant="success" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M5 13l4 4L19 7&quot; /></svg>'" :label="$t('ecoIncomingReports.approveReport')" @click="openApproveConfirm" />
           </div>
 
           <!-- Close button for other statuses -->
@@ -610,49 +587,35 @@ const resetFilters = () => {
         </div>
       </div>
     </Teleport>
-    <!-- Approve Confirmation Modal -->
-    <Teleport to="body">
-      <div v-if="showApproveConfirm" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showApproveConfirm = false"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.approveReportQuestion') }}</h3>
-          <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.approveReportConfirm', { number: selectedReport?.number }) }}</p>
-          <textarea
-            v-model="approveComment"
-            rows="3"
-            :placeholder="$t('ecoIncomingReports.commentOptional')"
-            class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#22C55E] focus:ring-2 focus:ring-[#22C55E]/20 resize-none mb-4 text-sm"
-          ></textarea>
-          <div class="flex justify-end gap-3">
-            <button @click="showApproveConfirm = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">{{ $t('common.cancel') }}</button>
-            <button @click="confirmApprove" class="px-4 py-2 bg-[#22C55E] text-white rounded-lg hover:bg-[#16A34A] transition-colors text-sm font-medium">{{ $t('common.confirm') }}</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal :visible="showApproveConfirm" :title="$t('ecoIncomingReports.approveReportQuestion')" size="md" @close="showApproveConfirm = false">
+      <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.approveReportConfirm', { number: selectedReport?.number }) }}</p>
+      <textarea
+        v-model="approveComment"
+        rows="3"
+        :placeholder="$t('ecoIncomingReports.commentOptional')"
+        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#22C55E] focus:ring-2 focus:ring-[#22C55E]/20 resize-none text-sm"
+      ></textarea>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showApproveConfirm = false" />
+        <AppButton variant="success" :label="$t('common.confirm')" @click="confirmApprove" />
+      </template>
+    </AppModal>
 
-    <!-- Return for Revision Modal -->
-    <Teleport to="body">
-      <div v-if="showReturnModal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="showReturnModal = false"></div>
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.returnForRevisionTitle') }}</h3>
-          <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.reportFromCompany', { number: selectedReport?.number, company: selectedReport?.company }) }}</p>
-          <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.specifyWhatToFix') }}</label>
-          <textarea
-            v-model="returnComment"
-            rows="4"
-            :placeholder="$t('ecoIncomingReports.returnPlaceholder')"
-            class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 resize-none mb-1 text-sm"
-          ></textarea>
-          <p class="text-xs text-[#94a3b8] mb-4">{{ $t('ecoIncomingReports.minChars') }}</p>
-          <div class="flex justify-end gap-3">
-            <button @click="showReturnModal = false" class="px-4 py-2 border border-[#e2e8f0] rounded-lg text-[#64748b] hover:bg-[#f8fafc] transition-colors text-sm font-medium">{{ $t('common.cancel') }}</button>
-            <button @click="confirmReturn" :disabled="returnComment.trim().length < 10" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">{{ $t('ecoIncomingReports.returnForRevisionBtn') }}</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <AppModal :visible="showReturnModal" :title="$t('ecoIncomingReports.returnForRevisionTitle')" size="md" @close="showReturnModal = false">
+      <p class="text-sm text-[#64748b] mb-4">{{ $t('ecoIncomingReports.reportFromCompany', { number: selectedReport?.number, company: selectedReport?.company }) }}</p>
+      <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ecoIncomingReports.specifyWhatToFix') }}</label>
+      <textarea
+        v-model="returnComment"
+        rows="4"
+        :placeholder="$t('ecoIncomingReports.returnPlaceholder')"
+        class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 resize-none mb-1 text-sm"
+      ></textarea>
+      <p class="text-xs text-[#94a3b8]">{{ $t('ecoIncomingReports.minChars') }}</p>
+      <template #footer>
+        <AppButton variant="secondary" :label="$t('common.cancel')" @click="showReturnModal = false" />
+        <AppButton variant="warning" :label="$t('ecoIncomingReports.returnForRevisionBtn')" :disabled="returnComment.trim().length < 10" @click="confirmReturn" />
+      </template>
+    </AppModal>
 
     <!-- Toast Notification -->
     <Teleport to="body">

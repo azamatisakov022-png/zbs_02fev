@@ -2,7 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { AppButton } from '../../components/ui'
+import { AppButton, AppInput, AppTabs, AppAlert, AppModal, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { getRatePerKg } from '../../data/rates'
 
@@ -10,6 +10,12 @@ const { t } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
 
 const activeTab = ref('rates')
+
+const tabItems = computed(() => [
+  { key: 'rates', label: t('adminCalcs.tabRates') },
+  { key: 'normatives', label: t('adminCalcs.tabNormatives') },
+  { key: 'formulas', label: t('adminCalcs.tabFormulas') },
+])
 
 interface FeeRate {
   id: number; category: string; subcategory: string; code: string
@@ -176,19 +182,11 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         </AppButton>
       </div>
 
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-        <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-        <div><p class="text-amber-800 font-medium">{{ $t('adminCalcs.warningTitle') }}</p><p class="text-amber-700 text-sm">{{ $t('adminCalcs.warningText') }}</p></div>
-      </div>
+      <AppAlert variant="warning" :title="$t('adminCalcs.warningTitle')">
+        {{ $t('adminCalcs.warningText') }}
+      </AppAlert>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200">
-        <nav class="flex gap-8">
-          <button @click="activeTab = 'rates'" :class="['pb-4 px-1 font-medium text-sm border-b-2 transition-colors', activeTab === 'rates' ? 'border-rose-600 text-rose-600' : 'border-transparent text-gray-500 hover:text-gray-700']">{{ $t('adminCalcs.tabRates') }}</button>
-          <button @click="activeTab = 'normatives'" :class="['pb-4 px-1 font-medium text-sm border-b-2 transition-colors', activeTab === 'normatives' ? 'border-rose-600 text-rose-600' : 'border-transparent text-gray-500 hover:text-gray-700']">{{ $t('adminCalcs.tabNormatives') }}</button>
-          <button @click="activeTab = 'formulas'" :class="['pb-4 px-1 font-medium text-sm border-b-2 transition-colors', activeTab === 'formulas' ? 'border-rose-600 text-rose-600' : 'border-transparent text-gray-500 hover:text-gray-700']">{{ $t('adminCalcs.tabFormulas') }}</button>
-        </nav>
-      </div>
+      <AppTabs v-model="activeTab" :tabs="tabItems" variant="underline" activeColor="rgb(225, 29, 72)" activeTextColor="rgb(225, 29, 72)" />
 
       <!-- Rates Tab -->
       <div v-if="activeTab === 'rates'" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
@@ -232,12 +230,12 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       <!-- Normatives Tab -->
       <div v-if="activeTab === 'normatives'" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="norm in normatives" :key="norm.id" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <AppCard v-for="norm in normatives" :key="norm.id" radius="sm">
             <div class="flex items-center justify-between mb-4">
               <div><h3 class="font-semibold text-gray-900">{{ norm.category }}</h3><p class="text-sm text-gray-500">{{ norm.year }} {{ $t('adminCalcs.year') }}</p></div>
-              <button @click="openNormEdit(norm)" class="p-2 text-gray-400 hover:text-rose-600 transition-colors" :title="$t('adminCalcs.editBtn')">
+              <AppButton variant="icon-only" size="sm" @click="openNormEdit(norm)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              </button>
+              </AppButton>
             </div>
             <div class="space-y-3">
               <div class="flex justify-between text-sm"><span class="text-gray-500">{{ $t('adminCalcs.targetNorm') }}</span><span class="font-semibold text-gray-900">{{ norm.targetPercent }}%</span></div>
@@ -247,13 +245,13 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </div>
               <p class="text-xs text-gray-500 text-center">{{ norm.currentPercent >= norm.targetPercent ? $t('adminCalcs.normMet') : `${$t('adminCalcs.remaining')} ${norm.targetPercent - norm.currentPercent}%` }}</p>
             </div>
-          </div>
+          </AppCard>
         </div>
       </div>
 
       <!-- Formulas Tab -->
       <div v-if="activeTab === 'formulas'" class="space-y-4">
-        <div v-for="formula in formulas" :key="formula.id" class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <AppCard v-for="formula in formulas" :key="formula.id" radius="sm">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="w-10 h-10 bg-rose-100 rounded-lg flex items-center justify-center">
@@ -265,152 +263,117 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               <button @click="toggleFormula(formula)" :class="['relative inline-flex h-6 w-11 items-center rounded-full transition-colors', formula.active ? 'bg-green-500' : 'bg-gray-300']">
                 <span :class="['inline-block h-4 w-4 transform rounded-full bg-white transition-transform', formula.active ? 'translate-x-6' : 'translate-x-1']" />
               </button>
-              <button @click="openFormulaEdit(formula)" class="p-2 text-gray-400 hover:text-rose-600 transition-colors">
+              <AppButton variant="icon-only" size="sm" @click="openFormulaEdit(formula)">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              </button>
+              </AppButton>
             </div>
           </div>
-        </div>
+        </AppCard>
       </div>
     </div>
 
     <!-- ===== EDIT RATE MODAL ===== -->
-    <Teleport to="body">
-      <div v-if="showEditModal && editingRate" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => handleOverlay(e, () => showEditModal = false)">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('adminCalcs.editRateTitle') }}</h3>
-            <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelCode') }}</label><input v-model="editingRate.code" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" readonly /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelRate') }}</label><div class="flex gap-2"><input v-model.number="editingRate.rate" type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" /><input v-model="editingRate.unit" type="text" class="w-28 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly /></div></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelEffectiveFrom') }}</label><input v-model="editingRate.effectiveFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" /></div>
-            <label class="flex items-center gap-2"><input type="checkbox" v-model="editingRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelRateActive') }}</span></label>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showEditModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
-            <AppButton variant="primary" class="flex-1" @click="saveRate">{{ $t('adminCalcs.save') }}</AppButton>
-          </div>
+    <AppModal :visible="showEditModal && !!editingRate" :title="$t('adminCalcs.editRateTitle')" size="md" @close="showEditModal = false">
+      <template v-if="editingRate">
+        <div class="space-y-4">
+          <div><AppInput v-model="editingRate.code" :label="$t('adminCalcs.labelCode')" readonly /></div>
+          <div><div class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelRate') }}</div><div class="flex gap-2"><AppInput v-model.number="editingRate.rate" type="number" :hideLabel="true" class="flex-1" /><AppInput v-model="editingRate.unit" :hideLabel="true" readonly class="w-28" /></div></div>
+          <div><AppInput v-model="editingRate.effectiveFrom" type="date" :label="$t('adminCalcs.labelEffectiveFrom')" /></div>
+          <label class="flex items-center gap-2"><input type="checkbox" v-model="editingRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelRateActive') }}</span></label>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showEditModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" @click="saveRate">{{ $t('adminCalcs.save') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- ===== ADD RATE MODAL ===== -->
-    <Teleport to="body">
-      <div v-if="showAddModal" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => handleOverlay(e, () => showAddModal = false)">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('adminCalcs.addRateTitle') }}</h3>
-            <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+    <AppModal :visible="showAddModal" :title="$t('adminCalcs.addRateTitle')" size="md" @close="showAddModal = false">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelWasteCategory') }} <span class="text-red-500">*</span></label>
+          <select v-model="newRate.category" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.category ? 'border-red-400' : 'border-gray-300']">
+            <option value="" disabled>{{ $t('adminCalcs.selectCategory') }}</option>
+            <option>Упаковка</option><option>Электроника</option><option>Батареи</option><option>Шины</option><option>Масла</option>
+          </select>
+          <p v-if="addErrors.category" class="mt-1 text-xs text-red-500">{{ addErrors.category }}</p>
+        </div>
+        <div>
+          <AppInput v-model="newRate.subcategory" :label="$t('adminCalcs.labelSubcategory')" :placeholder="$t('adminCalcs.placeholderSubcategory')" :error="addErrors.subcategory" required />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <AppInput v-model="newRate.code" :label="$t('adminCalcs.labelCode')" placeholder="УП-ПЭТ" :error="addErrors.code" required />
           </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelWasteCategory') }} <span class="text-red-500">*</span></label>
-              <select v-model="newRate.category" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.category ? 'border-red-400' : 'border-gray-300']">
-                <option value="" disabled>{{ $t('adminCalcs.selectCategory') }}</option>
-                <option>Упаковка</option><option>Электроника</option><option>Батареи</option><option>Шины</option><option>Масла</option>
-              </select>
-              <p v-if="addErrors.category" class="mt-1 text-xs text-red-500">{{ addErrors.category }}</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelSubcategory') }} <span class="text-red-500">*</span></label>
-              <input v-model="newRate.subcategory" type="text" :placeholder="$t('adminCalcs.placeholderSubcategory')" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.subcategory ? 'border-red-400' : 'border-gray-300']" />
-              <p v-if="addErrors.subcategory" class="mt-1 text-xs text-red-500">{{ addErrors.subcategory }}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelCode') }} <span class="text-red-500">*</span></label>
-                <input v-model="newRate.code" type="text" placeholder="УП-ПЭТ" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500 font-mono', addErrors.code ? 'border-red-400' : 'border-gray-300']" />
-                <p v-if="addErrors.code" class="mt-1 text-xs text-red-500">{{ addErrors.code }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelUnit') }}</label>
-                <select v-model="newRate.unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500">
-                  <option>сом/кг</option><option>сом/шт</option><option>сом/л</option><option>сом/т</option>
-                </select>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelRateValue') }} <span class="text-red-500">*</span></label>
-                <input v-model.number="newRate.rate" type="number" min="0" step="0.01" placeholder="0" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.rate ? 'border-red-400' : 'border-gray-300']" />
-                <p v-if="addErrors.rate" class="mt-1 text-xs text-red-500">{{ addErrors.rate }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelStartDate') }} <span class="text-red-500">*</span></label>
-                <input v-model="newRate.effectiveFrom" type="date" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.effectiveFrom ? 'border-red-400' : 'border-gray-300']" />
-                <p v-if="addErrors.effectiveFrom" class="mt-1 text-xs text-red-500">{{ addErrors.effectiveFrom }}</p>
-              </div>
-            </div>
-            <label class="flex items-center gap-2"><input type="checkbox" v-model="newRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelRateActive') }}</span></label>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showAddModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
-            <AppButton variant="primary" class="flex-1" @click="addRate">{{ $t('adminCalcs.btnAdd') }}</AppButton>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelUnit') }}</label>
+            <select v-model="newRate.unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500">
+              <option>сом/кг</option><option>сом/шт</option><option>сом/л</option><option>сом/т</option>
+            </select>
           </div>
         </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <AppInput v-model.number="newRate.rate" type="number" :label="$t('adminCalcs.labelRateValue')" placeholder="0" :min="0" :step="0.01" :error="addErrors.rate" required />
+          </div>
+          <div>
+            <AppInput v-model="newRate.effectiveFrom" type="date" :label="$t('adminCalcs.labelStartDate')" :error="addErrors.effectiveFrom" required />
+          </div>
+        </div>
+        <label class="flex items-center gap-2"><input type="checkbox" v-model="newRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelRateActive') }}</span></label>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showAddModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" @click="addRate">{{ $t('adminCalcs.btnAdd') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- ===== DELETE RATE CONFIRM ===== -->
-    <Teleport to="body">
-      <div v-if="showDeleteConfirm && deletingRate" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => handleOverlay(e, () => showDeleteConfirm = false)">
-        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full text-center p-8">
+    <AppModal :visible="showDeleteConfirm && !!deletingRate" :title="$t('adminCalcs.deleteRateTitle')" size="sm" @close="showDeleteConfirm = false">
+      <template v-if="deletingRate">
+        <div class="text-center">
           <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
             <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </div>
-          <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('adminCalcs.deleteRateTitle') }}</h3>
-          <p class="text-gray-500 text-sm mb-6">{{ deletingRate.code }} — {{ deletingRate.subcategory }} ({{ formatNumber(deletingRate.rate) }} {{ deletingRate.unit }})</p>
-          <div class="flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminCalcs.cancel') }}</AppButton>
-            <AppButton variant="danger" class="flex-1" @click="deleteRate">{{ $t('adminCalcs.btnDelete') }}</AppButton>
-          </div>
+          <p class="text-gray-500 text-sm">{{ deletingRate.code }} — {{ deletingRate.subcategory }} ({{ formatNumber(deletingRate.rate) }} {{ deletingRate.unit }})</p>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminCalcs.cancel') }}</AppButton>
+        <AppButton variant="danger" class="flex-1" @click="deleteRate">{{ $t('adminCalcs.btnDelete') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- ===== EDIT NORMATIVE MODAL ===== -->
-    <Teleport to="body">
-      <div v-if="showNormModal && editingNorm" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => handleOverlay(e, () => showNormModal = false)">
-        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('adminCalcs.editNormTitle') }}</h3>
-            <button @click="showNormModal = false" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelCategory') }}</label><input :value="editingNorm.category" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelYear') }}</label><input v-model.number="editingNorm.year" type="number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelTargetPercent') }}</label><input v-model.number="editingNorm.targetPercent" type="number" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelCurrentPercent') }}</label><input v-model.number="editingNorm.currentPercent" type="number" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" /></div>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showNormModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
-            <AppButton variant="primary" class="flex-1" @click="saveNorm">{{ $t('adminCalcs.save') }}</AppButton>
-          </div>
+    <AppModal :visible="showNormModal && !!editingNorm" :title="$t('adminCalcs.editNormTitle')" size="sm" @close="showNormModal = false">
+      <template v-if="editingNorm">
+        <div class="space-y-4">
+          <div><AppInput :modelValue="editingNorm.category" :label="$t('adminCalcs.labelCategory')" readonly /></div>
+          <div><AppInput v-model.number="editingNorm.year" type="number" :label="$t('adminCalcs.labelYear')" /></div>
+          <div><AppInput v-model.number="editingNorm.targetPercent" type="number" :label="$t('adminCalcs.labelTargetPercent')" :min="0" :max="100" /></div>
+          <div><AppInput v-model.number="editingNorm.currentPercent" type="number" :label="$t('adminCalcs.labelCurrentPercent')" :min="0" :max="100" /></div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showNormModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" @click="saveNorm">{{ $t('adminCalcs.save') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- ===== EDIT FORMULA MODAL ===== -->
-    <Teleport to="body">
-      <div v-if="showFormulaModal && editingFormula" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click="(e: MouseEvent) => handleOverlay(e, () => showFormulaModal = false)">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('adminCalcs.editFormulaTitle') }}</h3>
-            <button @click="showFormulaModal = false" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelName') }}</label><input v-model="editingFormula.name" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" /></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelFormula') }}</label><input v-model="editingFormula.formula" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 font-mono" /></div>
-            <label class="flex items-center gap-2"><input type="checkbox" v-model="editingFormula.active" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelFormulaActive') }}</span></label>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showFormulaModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
-            <AppButton variant="primary" class="flex-1" @click="saveFormula">{{ $t('adminCalcs.save') }}</AppButton>
-          </div>
+    <AppModal :visible="showFormulaModal && !!editingFormula" :title="$t('adminCalcs.editFormulaTitle')" size="md" @close="showFormulaModal = false">
+      <template v-if="editingFormula">
+        <div class="space-y-4">
+          <div><AppInput v-model="editingFormula.name" :label="$t('adminCalcs.labelName')" /></div>
+          <div><AppInput v-model="editingFormula.formula" :label="$t('adminCalcs.labelFormula')" /></div>
+          <label class="flex items-center gap-2"><input type="checkbox" v-model="editingFormula.active" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelFormulaActive') }}</span></label>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showFormulaModal = false">{{ $t('adminCalcs.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" @click="saveFormula">{{ $t('adminCalcs.save') }}</AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

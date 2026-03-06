@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
+import { AppButton } from '@/components/ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import DashboardLayout from '@/components/dashboard/DashboardLayout.vue'
@@ -7,7 +8,7 @@ import type { SelectOption } from '@/types/select'
 import type { ViewMode } from '@/types/report'
 import { productGroups, productSubgroups, type ProductSubgroup } from '@/data/product-groups'
 import { getNormativeForGroup, normativeTiers } from '@/data/recycling-norms'
-import { reportStore, type ProcessingItem, type UploadedFile } from '@/stores/reports'
+import { useReportStore, type ProcessingItem, type UploadedFile } from '@/stores/reports'
 import InstructionDrawer from '@/components/InstructionDrawer.vue'
 import { instructionReportHtml } from '@/data/instructionReport'
 import { recyclerStore } from '@/stores/recyclers'
@@ -38,6 +39,7 @@ const { t } = useI18n()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
 const accountStore = useAccountStore()
+const reportStore = useReportStore()
 
 const isLoading = ref(true)
 onMounted(async () => {
@@ -261,13 +263,13 @@ const wrappedGetItemStatus = (item: ProcessingItem) => {
   return getItemStatus(item, yearNum.value)
 }
 
-const submitReport = () => {
+const submitReport = async () => {
   formSubmitted.value = true
   if (hasErrors.value) {
     scrollToFirstError()
     return
   }
-  const report = reportStore.addReport({
+  const report = await reportStore.addReport({
     company: companyData.value.name,
     inn: companyData.value.inn,
     year: reportingYear.value,
@@ -294,8 +296,8 @@ const submitReport = () => {
   viewMode.value = 'success'
 }
 
-const saveDraft = () => {
-  reportStore.addReport({
+const saveDraft = async () => {
+  await reportStore.addReport({
     company: companyData.value.name,
     inn: companyData.value.inn,
     year: reportingYear.value,
@@ -430,20 +432,21 @@ const handlePrint = () => {
     <template v-if="viewMode === 'wizard'">
       <div class="max-w-6xl mx-auto">
         <div class="mb-6">
-          <button @click="backToList" class="brc-back-btn">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            {{ $t('businessReports.backToList') }}
-          </button>
+          <AppButton
+            variant="back"
+            @click="backToList"
+            :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M10 19l-7-7m0 0l7-7m-7 7h18&quot; /></svg>'"
+            :label="$t('businessReports.backToList')"
+          />
           <div class="flex items-center justify-between gap-4">
             <h1 class="brc-page-title">{{ $t('businessReports.submitReportTitle') }}</h1>
-            <button @click="showInstruction = true" class="brc-instruction-btn">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {{ $t('businessReports.instruction') }}
-            </button>
+            <AppButton
+              variant="ghost"
+              @click="showInstruction = true"
+              :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z&quot; /></svg>'"
+              :label="$t('businessReports.instruction')"
+              color="#2D8B4E"
+            />
           </div>
         </div>
 
@@ -532,43 +535,42 @@ const handlePrint = () => {
 
           <div class="wizard-footer">
             <div>
-              <button
+              <AppButton
                 v-if="currentStep > 1"
-                class="wiz-btn-back"
+                variant="outline"
                 @click="prevStep"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-                {{ $t('businessReports.back') }}
-              </button>
+                :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><path d=&quot;M19 12H5&quot;/><path d=&quot;M12 19l-7-7 7-7&quot;/></svg>'"
+                :label="$t('businessReports.back')"
+              />
             </div>
 
             <div class="wizard-footer__right">
-              <button
+              <AppButton
                 v-if="currentStep === 4"
-                class="wiz-btn-outline"
+                variant="outline"
                 @click="saveDraft"
-              >
-                {{ $t('businessReports.saveDraft') }}
-              </button>
+                :label="$t('businessReports.saveDraft')"
+              />
 
-              <button
+              <AppButton
                 v-if="currentStep < 4"
-                class="wiz-btn-primary"
+                variant="primary"
+                bg="#10b981"
                 :disabled="(currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2)"
                 @click="nextStep"
-              >
-                {{ $t('businessReports.next') }}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-              </button>
+                :label="$t('businessReports.next')"
+                :icon="'<svg width=&quot;16&quot; height=&quot;16&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;><path d=&quot;M5 12h14&quot;/><path d=&quot;M12 5l7 7-7 7&quot;/></svg>'"
+                icon-position="right"
+              />
 
-              <button
+              <AppButton
                 v-if="currentStep === 4"
-                class="wiz-btn-primary"
+                variant="primary"
+                bg="#10b981"
                 :disabled="formSubmitted && hasErrors"
                 @click="submitReport"
-              >
-                {{ $t('businessReports.signAndSubmit') }}
-              </button>
+                :label="$t('businessReports.signAndSubmit')"
+              />
             </div>
           </div>
         </div>
@@ -613,78 +615,12 @@ const handlePrint = () => {
   display: flex;
   gap: 10px;
 }
-.wiz-btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: transparent;
-  color: #6b7280;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.wiz-btn-back:hover {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #9ca3af;
-}
-.wiz-btn-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  background: #fff;
-  color: #374151;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.wiz-btn-outline:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-.wiz-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  background: #10b981;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.wiz-btn-primary:hover {
-  background: #059669;
-}
-.wiz-btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 .brc-card {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
 }
-.brc-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #64748b;
-  margin-bottom: 16px;
-}
-.brc-back-btn:hover { color: #1e293b; }
 .brc-page-title {
   font-size: 28px;
   font-weight: 700;
@@ -693,17 +629,4 @@ const handlePrint = () => {
 @media (min-width: 1024px) {
   .brc-page-title { font-size: 34px; }
 }
-.brc-instruction-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #2D8B4E;
-  padding: 8px 16px;
-  border-radius: 12px;
-  transition: background 0.15s;
-  font-size: 16px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-.brc-instruction-btn:hover { background: #ecfdf5; }
 </style>

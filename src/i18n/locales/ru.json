@@ -379,7 +379,9 @@
     "landfillCard": "Карточка полигона",
     "ministryAnalytics": "Аналитика",
     "ministryCollectionPoints": "Пункты приёма",
-    "payerCard": "Карточка плательщика"
+    "payerCard": "Карточка плательщика",
+    "createReport": "Создать отчёт",
+    "createDeclaration": "Создать декларацию"
   },
   "dashboard": {
     "ecoOperatorName": "ГП Эко Оператор"
@@ -1038,6 +1040,21 @@
     "approved": "Отчёт принят",
     "rejected": "Отчёт отклонён",
     "returnedForRevision": "Возвращён на доработку"
+  },
+  "reportToast": {
+    "createSuccess": "Отчёт успешно создан",
+    "createError": "Ошибка при создании отчёта",
+    "submitSuccess": "Отчёт отправлен на рассмотрение",
+    "submitError": "Ошибка при отправке отчёта",
+    "approveSuccess": "Отчёт принят",
+    "approveError": "Ошибка при принятии отчёта",
+    "rejectSuccess": "Отчёт отклонён",
+    "rejectError": "Ошибка при отклонении отчёта",
+    "returnSuccess": "Отчёт возвращён на доработку",
+    "returnError": "Ошибка при возврате отчёта"
+  },
+  "reportHistory": {
+    "title": "История"
   },
   "calculatorPage": {
     "title": "Калькулятор утилизационного сбора (РОП)",
@@ -2170,6 +2187,8 @@
     "tons": "т",
     "tonsPerYear": "т/год",
     "historyTitle": "История отчётов",
+    "historySubtitle": "Все отчёты по утилизации",
+    "newReportBtn": "Новый отчёт",
     "colNumber": "Номер",
     "colPeriod": "Период",
     "colDate": "Дата подачи",

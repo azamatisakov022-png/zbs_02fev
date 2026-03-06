@@ -12,9 +12,28 @@ export const getItemNormativePercent = (wasteType: string, year: number): number
   return getNormativeForGroup(wasteType, year) * 100
 }
 
+export const getItemNormative = (wasteType: string, year: number): number => {
+  return getNormativeForGroup(wasteType, year)
+}
+
 export const getItemRequiredProcessing = (item: ProcessingItem, year: number): number => {
   const declared = parseFloat(item.declared) || 0
   return declared * getItemNormativePercent(item.wasteType, year) / 100
+}
+
+export const getItemSubjectToRecycle = (item: ProcessingItem, year: number): number => {
+  const declared = parseFloat(item.declared) || 0
+  return declared * getNormativeForGroup(item.wasteType, year)
+}
+
+export const getItemTotalProcessed = (item: ProcessingItem): number => {
+  return parseFloat(item.processed) || 0
+}
+
+export const getItemDeficit = (item: ProcessingItem, year: number): number => {
+  const subjectTo = getItemSubjectToRecycle(item, year)
+  const total = getItemTotalProcessed(item)
+  return Math.max(0, subjectTo - total)
 }
 
 export const getItemFulfillmentPercent = (item: ProcessingItem, year: number): number => {
@@ -42,6 +61,22 @@ export const getFulfillmentColor = (percent: number): string => {
   if (percent >= 100) return '#059669'
   if (percent >= 50) return '#CA8A04'
   return '#EF4444'
+}
+
+export interface ItemTotals {
+  totalDeclared: number
+  totalSubjectTo: number
+  totalProcessed: number
+  totalDeficit: number
+}
+
+export const calculateItemTotals = (items: ProcessingItem[], year: number): ItemTotals => {
+  return {
+    totalDeclared: items.reduce((s, i) => s + (parseFloat(i.declared) || 0), 0),
+    totalSubjectTo: items.reduce((s, i) => s + getItemSubjectToRecycle(i, year), 0),
+    totalProcessed: items.reduce((s, i) => s + getItemTotalProcessed(i), 0),
+    totalDeficit: items.reduce((s, i) => s + getItemDeficit(i, year), 0),
+  }
 }
 
 export const getBaseRate = (wasteType: string): number => {

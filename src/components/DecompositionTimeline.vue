@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import AppButton from './ui/AppButton.vue'
 import {
   decompositionData,
   eraThresholds,
@@ -224,9 +225,7 @@ function goToReceptionPoints() {
       <div class="container-main dt-cta-inner">
         <h3 class="dt-cta-title">{{ $t('decomposition.ctaTitle') }}</h3>
         <p class="dt-cta-text">{{ $t('decomposition.ctaText') }}</p>
-        <button class="btn-primary dt-cta-btn" @click="goToReceptionPoints">
-          {{ $t('decomposition.ctaButton') }}
-        </button>
+        <AppButton variant="primary" :label="$t('decomposition.ctaButton')" @click="goToReceptionPoints" />
       </div>
     </section>
   </div>
@@ -540,10 +539,6 @@ function goToReceptionPoints() {
   margin: 0 auto 24px;
   line-height: 1.6;
 }
-.dt-cta-btn {
-  font-size: 15px;
-}
-
 /* ═══════ Responsive: mobile single-column ═══════ */
 @media (max-width: 768px) {
   .dt-hero {

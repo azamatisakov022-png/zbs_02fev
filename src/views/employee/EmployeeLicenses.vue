@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { AppButton } from '../../components/ui'
+import { AppButton, AppInput, AppCard } from '../../components/ui'
 import { LicenseStatus } from '../../constants/statuses'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
@@ -400,11 +400,7 @@ const hoveredContact = ref<number | null>(null)
       storageKey="employee-licenses"
     />
 
-    <!-- ══ Form (add / edit) ══ -->
-    <div v-if="showForm" class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0] mb-6">
-      <h3 class="text-lg font-bold text-[#1e293b] mb-5">
-        {{ editingId ? $t('employeeLicenses.editTitle') : $t('employeeLicenses.newTitle') }}
-      </h3>
+    <AppCard v-if="showForm" class="mb-6" :title="editingId ? $t('employeeLicenses.editTitle') : $t('employeeLicenses.newTitle')">
 
       <!-- Row 1: Company + Number -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -419,12 +415,14 @@ const hoveredContact = ref<number | null>(null)
               <option value="">{{ $t('employeeLicenses.selectOrg') }}</option>
               <option v-for="org in knownOrganizations" :key="org" :value="org">{{ org }}</option>
             </select>
-            <input
+            <AppInput
               v-else
               v-model="form.companyManual"
-              type="text"
               :placeholder="$t('employeeLicenses.enterOrgName')"
-              class="lic-input flex-1 min-w-0"
+              hideLabel
+              borderColor="#e2e8f0"
+              focusColor="#2563eb"
+              class="flex-1 min-w-0"
             />
             <button
               @click="companyMode = companyMode === 'select' ? 'manual' : 'select'"
@@ -439,16 +437,14 @@ const hoveredContact = ref<number | null>(null)
           </div>
         </div>
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.licenseNumber') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.number" type="text" placeholder="ЛП-2026-0001" class="lic-input w-full" />
+          <AppInput v-model="form.number" :label="$t('employeeLicenses.licenseNumber') + ' *'" placeholder="ЛП-2026-0001" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
       </div>
 
       <!-- Row 2: Addresses -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.legalAddress') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.legalAddress" type="text" placeholder="г. Бишкек, ул. ..." class="lic-input w-full" />
+          <AppInput v-model="form.legalAddress" :label="$t('employeeLicenses.legalAddress') + ' *'" placeholder="г. Бишкек, ул. ..." borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
         <div>
           <label class="lic-label flex items-center gap-3">
@@ -458,13 +454,13 @@ const hoveredContact = ref<number | null>(null)
               {{ $t('employeeLicenses.sameAsLegal') }}
             </label>
           </label>
-          <input
+          <AppInput
             v-model="form.actualAddress"
-            type="text"
             placeholder="г. Бишкек, ул. ..."
-            class="lic-input w-full"
             :disabled="sameAddress"
-            :class="{ 'opacity-50': sameAddress }"
+            borderColor="#e2e8f0"
+            focusColor="#2563eb"
+            hideLabel
           />
         </div>
       </div>
@@ -524,28 +520,23 @@ const hoveredContact = ref<number | null>(null)
       <!-- Row 4: Dates -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.issuedDate') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.issuedAt" type="date" class="lic-input w-full" />
+          <AppInput v-model="form.issuedAt" type="date" :label="$t('employeeLicenses.issuedDate') + ' *'" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.expiryDate') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.expiresAt" type="date" class="lic-input w-full" />
+          <AppInput v-model="form.expiresAt" type="date" :label="$t('employeeLicenses.expiryDate') + ' *'" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
       </div>
 
       <!-- Row 5: Contacts -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.contactPhone') }}</label>
-          <input v-model="form.phone" type="text" placeholder="+996 XXX XXX XXX" class="lic-input w-full" />
+          <AppInput v-model="form.phone" :label="$t('employeeLicenses.contactPhone')" placeholder="+996 XXX XXX XXX" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.email') }}</label>
-          <input v-model="form.email" type="text" placeholder="info@company.kg" class="lic-input w-full" />
+          <AppInput v-model="form.email" :label="$t('employeeLicenses.email')" placeholder="info@company.kg" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
         <div>
-          <label class="lic-label">{{ $t('employeeLicenses.contactPerson') }}</label>
-          <input v-model="form.contactPerson" type="text" :placeholder="$t('employeeLicenses.contactPersonPlaceholder')" class="lic-input w-full" />
+          <AppInput v-model="form.contactPerson" :label="$t('employeeLicenses.contactPerson')" :placeholder="$t('employeeLicenses.contactPersonPlaceholder')" borderColor="#e2e8f0" focusColor="#2563eb" />
         </div>
       </div>
 
@@ -559,7 +550,7 @@ const hoveredContact = ref<number | null>(null)
           {{ $t('common.cancel') }}
         </AppButton>
       </div>
-    </div>
+    </AppCard>
 
     <!-- ══ Stats ══ -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -581,14 +572,15 @@ const hoveredContact = ref<number | null>(null)
       </div>
     </div>
 
-    <!-- ══ Filters ══ -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+    <AppCard class="mb-6" padding="sm">
       <div class="flex flex-wrap gap-4">
-        <input
+        <AppInput
           v-model="searchQuery"
-          type="text"
           :placeholder="$t('common.search')"
-          class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]"
+          hideLabel
+          borderColor="#e2e8f0"
+          focusColor="#2563eb"
+          class="flex-1 min-w-[200px]"
         />
         <select v-model="filterType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('employeeLicenses.allLicenseTypes') }}</option>
@@ -603,7 +595,7 @@ const hoveredContact = ref<number | null>(null)
           <option value="revoked">{{ $t('status.revoked') }}</option>
         </select>
       </div>
-    </div>
+    </AppCard>
 
     <!-- ══ Table ══ -->
     <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">

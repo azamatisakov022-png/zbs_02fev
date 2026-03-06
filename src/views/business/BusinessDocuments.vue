@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppPageHeader, AppModal, AppCtaBanner, AppStatCard } from '../../components/ui'
 import Select from '@/components/ui/general/Select.vue'
 import type { SelectOption } from '@/types/select'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -251,55 +251,25 @@ const resetDocFilters = () => {
 
 <template>
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
-    <div class="content__header mb-6">
-      <h1 class="bdoc-page-title font-bold mb-2">{{ $t('businessDocs.title') }}</h1>
-      <p class="bdoc-page-subtitle">{{ $t('businessDocs.subtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('businessDocs.title')" :subtitle="$t('businessDocs.subtitle')" titleSize="40px" subtitleSize="22px" />
 
-    <!-- CTA Banner -->
-    <div class="bdoc-cta-banner mb-6 rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-      <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
-      <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
-        <div class="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h2 class="bdoc-cta-title font-bold mb-2">{{ $t('businessDocs.uploadDocuments') }}</h2>
-          <p class="bdoc-cta-desc text-white/80">{{ $t('businessDocs.uploadDescription') }}</p>
-        </div>
-        <button
-          @click="showUploadModal = true"
-          class="bdoc-cta-btn flex items-center justify-center gap-2 bg-white px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-sky-50 transition-colors shadow-lg flex-shrink-0"
-        >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('businessDocs.uploadFiles') }}
-        </button>
-      </div>
-    </div>
+    <AppCtaBanner :title="$t('businessDocs.uploadDocuments')" :description="$t('businessDocs.uploadDescription')" color="sky" class="mb-6">
+      <template #icon>
+        <svg class="w-8 h-8 lg:w-10 lg:h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+      </template>
+      <template #action>
+        <AppButton variant="secondary" bg="white" color="#0ea5e9" font-size="16px" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'" :label="$t('businessDocs.uploadFiles')" @click="showUploadModal = true" />
+      </template>
+    </AppCtaBanner>
 
     <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bd-stat-card">
-        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.totalDocuments') }}</p>
-        <p class="bdoc-stat-value font-bold">{{ documents.length }}</p>
-      </div>
-      <div class="bd-stat-card">
-        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.declarations') }}</p>
-        <p class="bdoc-stat-value bdoc-stat-value--blue font-bold">{{ documents.filter(d => d.category === 'declarations').length }}</p>
-      </div>
-      <div class="bd-stat-card">
-        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.reports') }}</p>
-        <p class="bdoc-stat-value bdoc-stat-value--green font-bold">{{ documents.filter(d => d.category === 'reports').length }}</p>
-      </div>
-      <div class="bd-stat-card">
-        <p class="bdoc-stat-label mb-1">{{ $t('businessDocs.contracts') }}</p>
-        <p class="bdoc-stat-value bdoc-stat-value--purple font-bold">{{ documents.filter(d => d.category === 'contracts').length }}</p>
-      </div>
+      <AppStatCard :label="$t('businessDocs.totalDocuments')" :value="String(documents.length)" />
+      <AppStatCard :label="$t('businessDocs.declarations')" :value="String(documents.filter(d => d.category === 'declarations').length)" color="blue" />
+      <AppStatCard :label="$t('businessDocs.reports')" :value="String(documents.filter(d => d.category === 'reports').length)" color="green" />
+      <AppStatCard :label="$t('businessDocs.contracts')" :value="String(documents.filter(d => d.category === 'contracts').length)" color="purple" />
     </div>
 
     <!-- Categories -->
@@ -334,16 +304,22 @@ const resetDocFilters = () => {
     <!-- Search -->
     <div class="bd-section mb-6">
       <div class="flex flex-wrap gap-4">
-        <div class="bdoc-search-wrap flex-1 relative">
-          <svg class="w-5 h-5 bdoc-search-icon absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
+        <div class="bdoc-search-wrap flex-1">
+          <AppInput
             v-model="searchQuery"
             :placeholder="$t('businessDocs.searchPlaceholder')"
-            class="bdoc-search-input w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none"
-          />
+            size="sm"
+            borderColor="#e2e8f0"
+            focusColor="#0ea5e9"
+            fontSize="21px"
+            hideLabel
+          >
+            <template #prefix>
+              <svg class="w-5 h-5 bdoc-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </template>
+          </AppInput>
         </div>
         <Select v-model="filterType" :options="typeFilterOptions" size="sm" />
         <Select v-model="filterYear" :options="yearFilterOptions" size="sm" />
@@ -494,109 +470,83 @@ const resetDocFilters = () => {
     <!-- Document Preview Modal -->
     <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
 
-    <!-- Upload Modal -->
-    <div
-      v-if="showUploadModal"
-      class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      @click.self="closeUploadModal"
-    >
-      <div class="bdoc-modal bg-white rounded-2xl w-full max-w-xl overflow-hidden flex flex-col">
-        <!-- Header -->
-        <div class="bd-card__header">
-          <h2 class="bdoc-list-title font-semibold">{{ $t('businessDocs.uploadingDocuments') }}</h2>
-          <button @click="closeUploadModal" class="bdoc-close-btn p-2 rounded-lg">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    <AppModal :visible="showUploadModal" :title="$t('businessDocs.uploadingDocuments')" size="lg" @close="closeUploadModal">
+      <div>
+        <div
+          @dragover.prevent="isDragging = true"
+          @dragleave="isDragging = false"
+          @drop.prevent="handleDrop"
+          :class="[
+            'border-2 border-dashed rounded-xl p-8 text-center transition-colors mb-6',
+            isDragging ? 'bdoc-dropzone--active bg-sky-50' : 'bdoc-dropzone--idle'
+          ]"
+        >
+          <div class="bdoc-dropzone-icon w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
+            <svg class="w-8 h-8 bdoc-muted-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-          </button>
+          </div>
+          <p class="bdoc-doc-name font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
+          <p class="bdoc-doc-meta mb-4">{{ $t('businessDocs.or') }}</p>
+          <label class="bdoc-upload-btn inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors cursor-pointer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            {{ $t('businessDocs.selectFiles') }}
+            <input type="file" multiple class="hidden" @change="handleFileSelect" />
+          </label>
+          <p class="bdoc-doc-meta mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
         </div>
 
-        <!-- Content -->
-        <div class="p-6 overflow-y-auto flex-1">
-          <!-- Drop Zone -->
+        <div v-if="uploadedFiles.length > 0" class="space-y-3">
+          <h3 class="bdoc-upload-heading font-medium">{{ $t('businessDocs.uploadingFiles') }}</h3>
           <div
-            @dragover.prevent="isDragging = true"
-            @dragleave="isDragging = false"
-            @drop.prevent="handleDrop"
-            :class="[
-              'border-2 border-dashed rounded-xl p-8 text-center transition-colors mb-6',
-              isDragging ? 'bdoc-dropzone--active bg-sky-50' : 'bdoc-dropzone--idle'
-            ]"
+            v-for="file in uploadedFiles"
+            :key="file.id"
+            class="bdoc-file-card rounded-lg p-4"
           >
-            <div class="bdoc-dropzone-icon w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
-              <svg class="w-8 h-8 bdoc-muted-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="bdoc-upload-heading font-medium truncate">{{ file.name }}</p>
+                <p class="bdoc-doc-meta">{{ file.size }}</p>
+              </div>
+              <div v-if="file.status === 'complete'" class="text-green-500">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <AppButton variant="icon-danger" size="sm" @click="removeUploadedFile(file.id)">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </AppButton>
             </div>
-            <p class="bdoc-doc-name font-medium mb-2">{{ $t('businessDocs.dragFilesHere') }}</p>
-            <p class="bdoc-doc-meta mb-4">{{ $t('businessDocs.or') }}</p>
-            <label class="bdoc-upload-btn inline-flex items-center gap-2 text-white px-5 py-2.5 rounded-lg font-medium transition-colors cursor-pointer">
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              {{ $t('businessDocs.selectFiles') }}
-              <input type="file" multiple class="hidden" @change="handleFileSelect" />
-            </label>
-            <p class="bdoc-doc-meta mt-4">{{ $t('businessDocs.fileSizeLimit') }}</p>
-          </div>
-
-          <!-- Uploaded Files -->
-          <div v-if="uploadedFiles.length > 0" class="space-y-3">
-            <h3 class="bdoc-upload-heading font-medium">{{ $t('businessDocs.uploadingFiles') }}</h3>
-            <div
-              v-for="file in uploadedFiles"
-              :key="file.id"
-              class="bdoc-file-card rounded-lg p-4"
-            >
-              <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p class="bdoc-upload-heading font-medium truncate">{{ file.name }}</p>
-                  <p class="bdoc-doc-meta">{{ file.size }}</p>
-                </div>
-                <div v-if="file.status === 'complete'" class="text-green-500">
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <button
-                  @click="removeUploadedFile(file.id)"
-                  class="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                >
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div v-if="file.status === 'uploading'" class="bdoc-progress-track h-1.5 rounded-full overflow-hidden">
-                <div
-                  class="bdoc-progress-bar h-full rounded-full transition-all duration-300"
-                  :style="{ width: `${file.progress}%` }"
-                ></div>
-              </div>
+            <div v-if="file.status === 'uploading'" class="bdoc-progress-track h-1.5 rounded-full overflow-hidden">
+              <div
+                class="bdoc-progress-bar h-full rounded-full transition-all duration-300"
+                :style="{ width: `${file.progress}%` }"
+              ></div>
             </div>
           </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="bd-modal__footer">
-          <AppButton variant="secondary" @click="closeUploadModal">
-            {{ $t('common.cancel') }}
-          </AppButton>
-          <button
-            @click="finishUpload"
-            :disabled="uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'uploading')"
-            class="bdoc-upload-btn px-5 py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ $t('businessDocs.upload') }}
-          </button>
         </div>
       </div>
-    </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="closeUploadModal">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton
+          variant="primary"
+          :label="$t('businessDocs.upload')"
+          :disabled="uploadedFiles.length === 0 || uploadedFiles.some(f => f.status === 'uploading')"
+          @click="finishUpload"
+        />
+      </template>
+    </AppModal>
     <ConfirmDialog
       :visible="confirmDialog.visible"
       :title="confirmDialog.title"
@@ -611,13 +561,6 @@ const resetDocFilters = () => {
 </template>
 
 <style scoped>
-.bd-stat-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  border: 1px solid #e2e8f0;
-}
 .bd-section {
   background: #fff;
   border-radius: 16px;
@@ -644,59 +587,6 @@ const resetDocFilters = () => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-}
-.bdoc-page-title {
-  font-size: 34px;
-  color: #1e293b;
-}
-@media (min-width: 1024px) {
-  .bdoc-page-title {
-    font-size: 40px;
-  }
-}
-.bdoc-page-subtitle {
-  font-size: 22px;
-  color: #64748b;
-}
-.bdoc-cta-banner {
-  background: linear-gradient(to right, #0ea5e9, #0284c7);
-}
-.bdoc-cta-title {
-  font-size: 28px;
-}
-@media (min-width: 1024px) {
-  .bdoc-cta-title {
-    font-size: 22px;
-  }
-}
-.bdoc-cta-desc {
-  font-size: 21px;
-}
-@media (min-width: 1024px) {
-  .bdoc-cta-desc {
-    font-size: 22px;
-  }
-}
-.bdoc-cta-btn {
-  font-size: 21px;
-  color: #0ea5e9;
-}
-.bdoc-stat-label {
-  font-size: 21px;
-  color: #64748b;
-}
-.bdoc-stat-value {
-  font-size: 22px;
-  color: #1e293b;
-}
-.bdoc-stat-value--blue {
-  color: #2563eb;
-}
-.bdoc-stat-value--green {
-  color: #10b981;
-}
-.bdoc-stat-value--purple {
-  color: #8b5cf6;
 }
 .bdoc-category-btn {
   font-size: 21px;
@@ -758,12 +648,6 @@ const resetDocFilters = () => {
 }
 .bdoc-muted-text {
   color: #64748b;
-}
-.bdoc-close-btn {
-  color: #64748b;
-}
-.bdoc-close-btn:hover {
-  background: #f1f5f9;
 }
 .bdoc-dropzone--active {
   border-color: #0ea5e9;

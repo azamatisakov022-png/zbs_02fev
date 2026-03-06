@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppInput, AppModal } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { ReportStatus } from '../../constants/statuses'
 import { useAdminMenu } from '../../composables/useRoleMenu'
@@ -127,7 +127,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
       <div class="flex flex-wrap gap-4">
-        <input v-model="searchQuery" type="text" :placeholder="$t('adminReports.searchPlaceholder')" class="flex-1 min-w-[200px] px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]" />
+        <AppInput v-model="searchQuery" :placeholder="$t('adminReports.searchPlaceholder')" borderColor="#e2e8f0" focusColor="#2563eb" :hideLabel="true" class="flex-1 min-w-[200px]" />
         <select v-model="filterPeriod" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('adminReports.allPeriods') }}</option><option value="2025 год">2025 год</option><option value="2026 год">2026 год</option><option value="2027 год">2027 год</option><option value="2028 год">2028 год</option><option value="2029 год">2029 год</option><option value="2030 год">2030 год</option>
         </select>
@@ -165,59 +165,47 @@ function handleOverlay(e: MouseEvent, close: () => void) {
     </DataTable>
 
     <!-- View Modal -->
-    <Teleport to="body">
-      <div v-if="showViewModal && viewingReport" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" style="backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showViewModal = false)">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-          <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <div>
-              <p class="font-mono text-[#2563eb] font-medium">{{ viewingReport.number }}</p>
-              <h3 class="text-lg font-bold text-[#1e293b]">{{ viewingReport.type }}</h3>
-            </div>
-            <button @click="showViewModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-          </div>
-          <div class="p-6">
-            <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelOrganization') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.company }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelPeriod') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.period }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelSubmittedAt') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.submittedAt }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelStatus') }}</p><AppBadge :variant="getStatusBadgeVariant(viewingReport.status)">{{ $t('status.' + (viewingReport.status === 'under_review' ? 'underReview' : viewingReport.status)) }}</AppBadge></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelRecycled') }}</p><p class="text-[#1e293b] font-bold">{{ viewingReport.recycledTons }}</p></div>
-              <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelCategories') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.categories }}</p></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-            <AppButton v-if="viewingReport.status === 'under_review'" variant="danger" @click="showViewModal = false; openConfirm(viewingReport!, 'reject')">{{ $t('adminReports.btnReject') }}</AppButton>
-            <AppButton v-if="viewingReport.status === 'under_review'" variant="primary" @click="showViewModal = false; openConfirm(viewingReport!, 'accept')">{{ $t('adminReports.btnAccept') }}</AppButton>
-            <AppButton v-else variant="primary" @click="showViewModal = false">{{ $t('adminReports.btnClose') }}</AppButton>
-          </div>
+    <AppModal :visible="showViewModal && !!viewingReport" :title="viewingReport?.type || ''" size="md" @close="showViewModal = false">
+      <template v-if="viewingReport" #header-extra>
+        <p class="font-mono text-[#2563eb] font-medium">{{ viewingReport.number }}</p>
+      </template>
+      <template v-if="viewingReport">
+        <div class="bg-[#f8fafc] rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelOrganization') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.company }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelPeriod') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.period }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelSubmittedAt') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.submittedAt }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelStatus') }}</p><AppBadge :variant="getStatusBadgeVariant(viewingReport.status)">{{ $t('status.' + (viewingReport.status === 'under_review' ? 'underReview' : viewingReport.status)) }}</AppBadge></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelRecycled') }}</p><p class="text-[#1e293b] font-bold">{{ viewingReport.recycledTons }}</p></div>
+          <div><p class="text-[#94a3b8]">{{ $t('adminReports.labelCategories') }}</p><p class="text-[#1e293b] font-medium">{{ viewingReport.categories }}</p></div>
         </div>
-      </div>
-    </Teleport>
+      </template>
+      <template v-if="viewingReport" #footer>
+        <AppButton v-if="viewingReport.status === 'under_review'" variant="danger" @click="showViewModal = false; openConfirm(viewingReport!, 'reject')">{{ $t('adminReports.btnReject') }}</AppButton>
+        <AppButton v-if="viewingReport.status === 'under_review'" variant="primary" @click="showViewModal = false; openConfirm(viewingReport!, 'accept')">{{ $t('adminReports.btnAccept') }}</AppButton>
+        <AppButton v-else variant="primary" @click="showViewModal = false">{{ $t('adminReports.btnClose') }}</AppButton>
+      </template>
+    </AppModal>
 
     <!-- Confirm Modal -->
-    <Teleport to="body">
-      <div v-if="showConfirmModal && confirmReport" class="modal-overlay fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" style="backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showConfirmModal = false)">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-          <div class="p-6 text-center">
-            <div :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4', confirmAction === 'accept' ? 'bg-green-100' : 'bg-red-100']">
-              <svg v-if="confirmAction === 'accept'" class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-              <svg v-else class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </div>
-            <h3 class="text-xl font-bold text-[#1e293b] mb-2">{{ confirmAction === 'accept' ? $t('adminReports.confirmAcceptTitle') : $t('adminReports.confirmRejectTitle') }}</h3>
-            <p class="text-[#64748b]"><span class="font-medium text-[#1e293b]">{{ confirmReport.number }}</span> {{ $t('adminReports.from') }} {{ confirmReport.company }}</p>
+    <AppModal :visible="showConfirmModal && !!confirmReport" :title="confirmAction === 'accept' ? $t('adminReports.confirmAcceptTitle') : $t('adminReports.confirmRejectTitle')" size="sm" @close="showConfirmModal = false">
+      <template v-if="confirmReport">
+        <div class="text-center mb-4">
+          <div :class="['w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4', confirmAction === 'accept' ? 'bg-green-100' : 'bg-red-100']">
+            <svg v-if="confirmAction === 'accept'" class="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            <svg v-else class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
           </div>
-          <div v-if="confirmAction === 'reject'" class="px-6 pb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminReports.rejectReasonLabel') }}</label>
-            <textarea v-model="rejectReason" rows="3" :placeholder="$t('adminReports.rejectReasonPlaceholder')" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 resize-none"></textarea>
-          </div>
-          <div class="flex items-center justify-center gap-3 px-6 pb-6">
-            <AppButton variant="secondary" class="flex-1" @click="showConfirmModal = false">{{ $t('adminReports.cancel') }}</AppButton>
-            <button @click="executeAction" :class="['flex-1 px-5 py-2.5 text-white rounded-xl font-medium', confirmAction === 'accept' ? 'bg-[#10b981] hover:bg-[#059669]' : 'bg-red-500 hover:bg-red-600']">
-              {{ confirmAction === 'accept' ? $t('adminReports.btnAccept') : $t('adminReports.btnReject') }}
-            </button>
-          </div>
+          <p class="text-[#64748b]"><span class="font-medium text-[#1e293b]">{{ confirmReport.number }}</span> {{ $t('adminReports.from') }} {{ confirmReport.company }}</p>
         </div>
-      </div>
-    </Teleport>
+        <div v-if="confirmAction === 'reject'">
+          <AppInput v-model="rejectReason" type="textarea" :rows="3" :label="$t('adminReports.rejectReasonLabel')" :placeholder="$t('adminReports.rejectReasonPlaceholder')" />
+        </div>
+      </template>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showConfirmModal = false">{{ $t('adminReports.cancel') }}</AppButton>
+        <AppButton :variant="confirmAction === 'accept' ? 'success' : 'danger'" class="flex-1" @click="executeAction">
+          {{ confirmAction === 'accept' ? $t('adminReports.btnAccept') : $t('adminReports.btnReject') }}
+        </AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>

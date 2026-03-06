@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -487,9 +488,9 @@ const changeStatus = (status: Ticket['status']) => {
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <p class="text-sm text-gray-500">{{ $t('adminSupport.shown') }} {{ filteredTickets.length }} {{ $t('adminSupport.tickets') }}</p>
           <div class="flex items-center gap-2">
-            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">{{ $t('adminSupport.prevPage') }}</button>
-            <button class="px-3 py-1 bg-rose-600 text-white rounded-lg">1</button>
-            <button class="px-3 py-1 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">{{ $t('adminSupport.nextPage') }}</button>
+            <AppButton variant="secondary" size="sm">{{ $t('adminSupport.prevPage') }}</AppButton>
+            <AppButton variant="primary" size="sm">1</AppButton>
+            <AppButton variant="secondary" size="sm">{{ $t('adminSupport.nextPage') }}</AppButton>
           </div>
         </div>
       </div>
@@ -514,11 +515,11 @@ const changeStatus = (status: Ticket['status']) => {
                 </div>
                 <h3 class="text-xl font-bold text-gray-900">{{ selectedTicket.subject }}</h3>
               </div>
-              <button @click="showDetailModal = false" class="p-2 text-gray-400 hover:text-gray-600">
+              <AppButton variant="icon-only" size="sm" @click="showDetailModal = false">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </AppButton>
             </div>
           </div>
 
@@ -569,13 +570,9 @@ const changeStatus = (status: Ticket['status']) => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
                     </button>
-                    <button
-                      @click="sendMessage"
-                      :disabled="!newMessage.trim()"
-                      class="px-4 py-2 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <AppButton variant="primary" :disabled="!newMessage.trim()" @click="sendMessage">
                       {{ $t('adminSupport.sendBtn') }}
-                    </button>
+                    </AppButton>
                   </div>
                 </div>
               </div>
@@ -626,13 +623,9 @@ const changeStatus = (status: Ticket['status']) => {
                   <div>
                     <label class="text-xs text-gray-500 uppercase">{{ $t('adminSupport.labelAssignee') }}</label>
                     <p v-if="selectedTicket.assignee" class="text-gray-900">{{ selectedTicket.assignee }}</p>
-                    <button
-                      v-else
-                      @click="assignToMe"
-                      class="text-rose-600 hover:text-rose-700 font-medium"
-                    >
+                    <AppButton v-else variant="ghost" size="sm" @click="assignToMe">
                       {{ $t('adminSupport.takeInWork') }}
-                    </button>
+                    </AppButton>
                   </div>
                 </div>
 

@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { useAccountStore } from '../../stores/account'
-import { AppButton } from '../../components/ui'
+import { AppButton, AppCard } from '../../components/ui'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
@@ -184,7 +184,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
 
     <template v-if="!isLoading">
       <!-- Filter tabs + search -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
+      <AppCard padding="sm" class="mb-6">
         <div class="flex flex-wrap gap-2 mb-3">
           <button
             v-for="tab in ([
@@ -223,7 +223,7 @@ const resetFilters = () => { searchQuery.value = ''; balanceFilter.value = 'all'
           :placeholder="$t('ecoAccounts.searchPlaceholder')"
           class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
         />
-      </div>
+      </AppCard>
 
       <DataTable :columns="columns" :data="tableData" :actions="true">
         <template #cell-company="{ value }">

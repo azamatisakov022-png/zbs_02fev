@@ -2,7 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { AppButton } from '../../components/ui'
+import { AppButton, AppInput, AppModal } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -155,9 +155,6 @@ function importData() {
   importFile.value = null
 }
 
-function handleOverlay(e: MouseEvent, close: () => void) {
-  if ((e.target as HTMLElement).classList.contains('modal-overlay')) close()
-}
 </script>
 
 <template>
@@ -195,9 +192,9 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       <!-- Selected Registry View -->
       <div v-else class="space-y-4">
         <div class="flex items-center gap-4">
-          <button @click="selectedRegistry = null" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <AppButton variant="back" size="sm" @click="selectedRegistry = null">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-          </button>
+          </AppButton>
           <div>
             <h2 class="text-xl font-bold text-gray-900">{{ registryCategories.find(r => r.id === selectedRegistry)?.name }}</h2>
             <p class="text-sm text-gray-500">{{ filteredData.length }} {{ $t('adminRegistries.records') }}</p>
@@ -207,18 +204,21 @@ function handleOverlay(e: MouseEvent, close: () => void) {
         <!-- Search and filters -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
           <div class="flex items-center gap-4">
-            <div class="flex-1 relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input v-model="searchQuery" type="text" :placeholder="$t('adminRegistries.searchPlaceholder')" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" />
+            <div class="flex-1">
+              <AppInput v-model="searchQuery" :placeholder="$t('adminRegistries.searchPlaceholder')" borderColor="#d1d5db" focusColor="#f43f5e" :hideLabel="true">
+                <template #prefix>
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </template>
+              </AppInput>
             </div>
-            <button @click="showFilters = !showFilters" :class="['px-4 py-2 rounded-lg transition-colors flex items-center gap-2', showFilters ? 'bg-rose-100 text-rose-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']">
+            <AppButton :variant="showFilters ? 'primary' : 'secondary'" size="sm" @click="showFilters = !showFilters">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
               {{ $t('adminRegistries.filters') }}
-            </button>
-            <button @click="exportData" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2">
+            </AppButton>
+            <AppButton variant="secondary" size="sm" @click="exportData">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
               {{ $t('adminRegistries.export') }}
-            </button>
+            </AppButton>
           </div>
           <!-- Expanded filters -->
           <Transition name="slide">
@@ -277,102 +277,68 @@ function handleOverlay(e: MouseEvent, close: () => void) {
       </div>
     </div>
 
-    <!-- ===== ADD/EDIT RECORD MODAL ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showFormModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showFormModal = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 class="text-lg font-bold text-gray-900">{{ isEditing ? $t('adminRegistries.editRecord') : $t('adminRegistries.addRecord') }}</h3>
-              <button @click="showFormModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div class="p-6 space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminRegistries.codeColumn') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.code" type="text" :placeholder="$t('adminRegistries.codePlaceholder')" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none font-mono', formErrors.code ? 'border-red-400 bg-red-50/50' : 'border-gray-300 focus:border-rose-500']" />
-                <p v-if="formErrors.code" class="mt-1 text-xs text-red-500">{{ formErrors.code }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminRegistries.nameLabel') }} <span class="text-red-500">*</span></label>
-                <input v-model="form.name" type="text" :placeholder="$t('adminRegistries.namePlaceholder')" :class="['w-full px-4 py-2.5 border rounded-xl focus:outline-none', formErrors.name ? 'border-red-400 bg-red-50/50' : 'border-gray-300 focus:border-rose-500']" />
-                <p v-if="formErrors.name" class="mt-1 text-xs text-red-500">{{ formErrors.name }}</p>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminRegistries.hazardClassLabel') }}</label>
-                <select v-model="form.class" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:border-rose-500">
-                  <option :value="1">{{ $t('adminRegistries.hazardClass1Full') }}</option>
-                  <option :value="2">{{ $t('adminRegistries.hazardClass2Full') }}</option>
-                  <option :value="3">{{ $t('adminRegistries.hazardClass3Full') }}</option>
-                  <option :value="4">{{ $t('adminRegistries.hazardClass4Full') }}</option>
-                  <option :value="5">{{ $t('adminRegistries.hazardClass5Full') }}</option>
-                </select>
-              </div>
-              <label class="flex items-center gap-3 cursor-pointer">
-                <input v-model="form.active" type="checkbox" class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500" />
-                <span class="text-gray-700">{{ $t('adminRegistries.recordActive') }}</span>
-              </label>
-            </div>
-            <div class="flex gap-3 p-6 border-t border-gray-200">
-              <AppButton variant="secondary" class="flex-1" @click="showFormModal = false">{{ $t('adminRegistries.cancel') }}</AppButton>
-              <AppButton variant="primary" class="flex-1" @click="saveRecord">{{ isEditing ? $t('adminRegistries.save') : $t('adminRegistries.add') }}</AppButton>
-            </div>
-          </div>
+    <AppModal :visible="showFormModal" :title="isEditing ? $t('adminRegistries.editRecord') : $t('adminRegistries.addRecord')" size="md" @close="showFormModal = false">
+      <div class="space-y-4">
+        <div>
+          <AppInput v-model="form.code" :label="$t('adminRegistries.codeColumn')" :placeholder="$t('adminRegistries.codePlaceholder')" :error="formErrors.code" required />
         </div>
-      </Transition>
-    </Teleport>
+        <div>
+          <AppInput v-model="form.name" :label="$t('adminRegistries.nameLabel')" :placeholder="$t('adminRegistries.namePlaceholder')" :error="formErrors.name" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminRegistries.hazardClassLabel') }}</label>
+          <select v-model="form.class" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:border-rose-500">
+            <option :value="1">{{ $t('adminRegistries.hazardClass1Full') }}</option>
+            <option :value="2">{{ $t('adminRegistries.hazardClass2Full') }}</option>
+            <option :value="3">{{ $t('adminRegistries.hazardClass3Full') }}</option>
+            <option :value="4">{{ $t('adminRegistries.hazardClass4Full') }}</option>
+            <option :value="5">{{ $t('adminRegistries.hazardClass5Full') }}</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input v-model="form.active" type="checkbox" class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500" />
+          <span class="text-gray-700">{{ $t('adminRegistries.recordActive') }}</span>
+        </label>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showFormModal = false">{{ $t('adminRegistries.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" @click="saveRecord">{{ isEditing ? $t('adminRegistries.save') : $t('adminRegistries.add') }}</AppButton>
+      </template>
+    </AppModal>
 
-    <!-- ===== DELETE CONFIRM ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showDeleteConfirm && deletingItem" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showDeleteConfirm = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-8">
-            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">{{ $t('adminRegistries.deleteRecordTitle') }}</h3>
-            <p class="text-gray-500 text-sm mb-6">{{ deletingItem.code }} — {{ deletingItem.name }}</p>
-            <div class="flex gap-3">
-              <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminRegistries.cancel') }}</AppButton>
-              <AppButton variant="danger" class="flex-1" @click="deleteRecord">{{ $t('adminRegistries.deleteBtn') }}</AppButton>
-            </div>
-          </div>
+    <AppModal :visible="showDeleteConfirm && !!deletingItem" :title="$t('adminRegistries.deleteRecordTitle')" size="sm" @close="showDeleteConfirm = false">
+      <div class="text-center">
+        <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
         </div>
-      </Transition>
-    </Teleport>
+        <p class="text-gray-500 text-sm mb-2">{{ deletingItem?.code }} — {{ deletingItem?.name }}</p>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showDeleteConfirm = false">{{ $t('adminRegistries.cancel') }}</AppButton>
+        <AppButton variant="danger" class="flex-1" @click="deleteRecord">{{ $t('adminRegistries.deleteBtn') }}</AppButton>
+      </template>
+    </AppModal>
 
-    <!-- ===== IMPORT MODAL ===== -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="showImportModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" @click="(e: MouseEvent) => handleOverlay(e, () => showImportModal = false)">
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 class="text-lg font-bold text-gray-900">{{ $t('adminRegistries.importDataTitle') }}</h3>
-              <button @click="showImportModal = false" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div class="p-6 space-y-4">
-              <p class="text-sm text-gray-600">{{ $t('adminRegistries.importDescription') }}</p>
-              <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-rose-400 transition-colors">
-                <svg class="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                <p v-if="importFile" class="text-sm font-medium text-gray-900">{{ importFile.name }}</p>
-                <p v-else class="text-sm text-gray-500 mb-2">{{ $t('adminRegistries.dragOrClick') }}</p>
-                <input type="file" accept=".csv,.xlsx,.xls" class="hidden" id="import-file" @change="handleFileSelect" />
-                <label for="import-file" class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-200 transition-colors">{{ $t('adminRegistries.selectFile') }}</label>
-              </div>
-            </div>
-            <div class="flex gap-3 p-6 border-t border-gray-200">
-              <AppButton variant="secondary" class="flex-1" @click="showImportModal = false">{{ $t('adminRegistries.cancel') }}</AppButton>
-              <button @click="importData" :disabled="!importFile" :class="['flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors', importFile ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed']">{{ $t('adminRegistries.importBtn') }}</button>
-            </div>
-          </div>
+    <AppModal :visible="showImportModal" :title="$t('adminRegistries.importDataTitle')" size="md" @close="showImportModal = false">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600">{{ $t('adminRegistries.importDescription') }}</p>
+        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-rose-400 transition-colors">
+          <svg class="w-10 h-10 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+          <p v-if="importFile" class="text-sm font-medium text-gray-900">{{ importFile.name }}</p>
+          <p v-else class="text-sm text-gray-500 mb-2">{{ $t('adminRegistries.dragOrClick') }}</p>
+          <input type="file" accept=".csv,.xlsx,.xls" class="hidden" id="import-file" @change="handleFileSelect" />
+          <label for="import-file" class="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium cursor-pointer hover:bg-gray-200 transition-colors">{{ $t('adminRegistries.selectFile') }}</label>
         </div>
-      </Transition>
-    </Teleport>
+      </div>
+      <template #footer>
+        <AppButton variant="secondary" class="flex-1" @click="showImportModal = false">{{ $t('adminRegistries.cancel') }}</AppButton>
+        <AppButton variant="primary" class="flex-1" :disabled="!importFile" @click="importData">{{ $t('adminRegistries.importBtn') }}</AppButton>
+      </template>
+    </AppModal>
   </DashboardLayout>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; }
 .slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; margin-top: 0; padding-top: 0; }
 .slide-enter-to { max-height: 100px; }

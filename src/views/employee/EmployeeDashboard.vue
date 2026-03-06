@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { AppPageHeader, AppCard } from '../../components/ui'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
@@ -94,10 +95,7 @@ onMounted(() => {
     userName="Мамытова Айгуль"
     :menuItems="menuItems"
   >
-    <div class="content__header mb-8">
-      <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('pages.employee.dashboardTitle') }}</h1>
-      <p class="text-[#64748b]">{{ $t('pages.employee.dashboardSubtitle') }}</p>
-    </div>
+    <AppPageHeader :title="$t('pages.employee.dashboardTitle')" :subtitle="$t('pages.employee.dashboardSubtitle')" />
 
     <SectionGuide
       :title="$t('employeeDashboard.guideTitle')"
@@ -154,11 +152,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Quick Actions & Pie Chart -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('employeeDashboard.quickActions') }}</h3>
+        <AppCard :title="$t('employeeDashboard.quickActions')">
           <div class="space-y-3">
             <router-link
               v-for="action in quickActions"
@@ -180,9 +175,8 @@ onMounted(() => {
               </svg>
             </router-link>
           </div>
-        </div>
+        </AppCard>
 
-        <!-- Pie Chart -->
         <PieChart
           :data="wasteTypePie"
           :size="200"
@@ -190,14 +184,12 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Мониторинг полигонов -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-        <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('employeeDashboard.landfillMonitoring') }}</h2>
+      <AppCard padding="none" :title="$t('employeeDashboard.landfillMonitoring')" :headerBorder="true">
+        <template #header-actions>
           <router-link to="/employee/landfills" class="text-[#0e888d] text-sm font-medium hover:underline">
             {{ $t('employeeDashboard.allLandfills') }} &rarr;
           </router-link>
-        </div>
+        </template>
         <div class="divide-y divide-[#f1f5f9]">
           <div
             v-for="landfill in landfillMonitoring"
@@ -224,7 +216,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
     </template>
   </DashboardLayout>
 </template>

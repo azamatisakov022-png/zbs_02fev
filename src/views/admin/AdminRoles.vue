@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
+import { AppButton, AppModal, AppCard } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 
 const { t } = useI18n()
@@ -244,12 +245,6 @@ function closeCreateModal() {
   showCreateModal.value = false
 }
 
-function handleCreateOverlayClick(e: MouseEvent) {
-  if ((e.target as HTMLElement).classList.contains('modal-overlay')) {
-    closeCreateModal()
-  }
-}
-
 const isCreateFormValid = computed(() => {
   return newRoleForm.name.trim().length >= 2 && newRoleForm.description.trim().length >= 5
 })
@@ -305,25 +300,12 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
           <h1 class="text-2xl font-bold text-[#415861]">{{ $t('adminRoles.title') }}</h1>
           <p class="text-[#64748b] mt-1">{{ $t('adminRoles.subtitle') }}</p>
         </div>
-        <button
-          @click="saveChanges"
-          :disabled="isSaving"
-          :class="[
-            'flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-colors',
-            isSaving
-              ? 'bg-[#94a3b8] text-white cursor-not-allowed'
-              : 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-          ]"
-        >
-          <svg v-if="isSaving" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <AppButton variant="primary" :loading="isSaving" :disabled="isSaving" @click="saveChanges">
+          <svg v-if="!isSaving" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           {{ isSaving ? $t('adminRoles.saving') : $t('adminRoles.saveChanges') }}
-        </button>
+        </AppButton>
       </div>
 
       <!-- Role Cards -->
@@ -374,7 +356,7 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
 
       <!-- Selected Role Summary -->
       <Transition name="summary-slide">
-        <div v-if="selectedRole" class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
+        <AppCard v-if="selectedRole">
           <div class="flex items-center gap-3 mb-4">
             <div
               class="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -423,15 +405,17 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               <p v-else class="text-xs text-red-400 ml-6">{{ $t('adminRoles.noAccess') }}</p>
             </div>
           </div>
-        </div>
+        </AppCard>
       </Transition>
 
       <!-- Permission Matrix Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
-        <div class="px-6 py-4 border-b border-[#e2e8f0]">
-          <h2 class="text-lg font-bold text-[#415861]">{{ $t('adminRoles.permissionMatrix') }}</h2>
-          <p class="text-sm text-[#64748b] mt-0.5">{{ $t('adminRoles.permissionMatrixDesc') }}</p>
-        </div>
+      <AppCard padding="none" :headerBorder="true">
+        <template #header>
+          <div class="px-6 py-4">
+            <h2 class="text-lg font-bold text-[#415861]">{{ $t('adminRoles.permissionMatrix') }}</h2>
+            <p class="text-sm text-[#64748b] mt-0.5">{{ $t('adminRoles.permissionMatrixDesc') }}</p>
+          </div>
+        </template>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
@@ -548,32 +532,23 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             </span>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Save Button (bottom) -->
-      <div class="flex items-center justify-between bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-5">
+      <AppCard class="flex items-center justify-between">
         <p class="text-sm text-[#64748b]">
           {{ $t('adminRoles.changesNote') }}
         </p>
-        <button
-          @click="saveChanges"
-          :disabled="isSaving"
-          :class="[
-            'flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-colors',
-            isSaving
-              ? 'bg-[#94a3b8] text-white cursor-not-allowed'
-              : 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-          ]"
-        >
+        <AppButton variant="primary" :loading="isSaving" :disabled="isSaving" @click="saveChanges">
           <svg v-if="!isSaving" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           {{ isSaving ? $t('adminRoles.saving') : $t('adminRoles.saveChanges') }}
-        </button>
-      </div>
+        </AppButton>
+      </AppCard>
 
       <!-- Create Role Section -->
-      <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
+      <AppCard>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 class="text-lg font-bold text-[#415861]">{{ $t('adminRoles.createRoleSection') }}</h2>
@@ -581,17 +556,14 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
               {{ $t('adminRoles.createRoleSectionDesc') }}
             </p>
           </div>
-          <button
-            @click="openCreateModal"
-            class="flex items-center gap-2 bg-[#415861] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#354950] transition-colors"
-          >
+          <AppButton variant="secondary" @click="openCreateModal" bg="#415861" color="#fff">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             {{ $t('adminRoles.createRoleBtn') }}
-          </button>
+          </AppButton>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Toast Notification -->
@@ -610,145 +582,102 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
             <p class="text-sm font-semibold text-[#415861]">{{ $t('adminRoles.toastSuccess') }}</p>
             <p class="text-xs text-[#64748b] mt-0.5">{{ toastMessage }}</p>
           </div>
-          <button @click="showToast = false" class="ml-2 p-1 text-[#94a3b8] hover:text-[#415861] transition-colors">
+          <AppButton variant="icon-only" size="sm" @click="showToast = false">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
+          </AppButton>
         </div>
       </Transition>
 
-      <!-- Create Role Modal -->
-      <Transition name="modal-fade">
-        <div
-          v-if="showCreateModal"
-          class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-          style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
-          @click="handleCreateOverlayClick"
-        >
-          <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-[#f1f5f9]">
-              <div>
-                <h3 class="text-xl font-bold text-[#415861]">{{ $t('adminRoles.createRoleModalTitle') }}</h3>
-                <p class="text-sm text-[#64748b] mt-1">{{ $t('adminRoles.createRoleModalDesc') }}</p>
-              </div>
-              <button
-                @click="closeCreateModal"
-                class="p-2 text-[#94a3b8] hover:text-[#415861] hover:bg-[#f1f5f9] rounded-lg transition-colors"
-              >
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <AppModal :visible="showCreateModal" :title="$t('adminRoles.createRoleModalTitle')" size="lg" @close="closeCreateModal">
+        <p class="text-sm text-[#64748b] mb-5">{{ $t('adminRoles.createRoleModalDesc') }}</p>
 
-            <!-- Modal Body -->
-            <div class="p-6 space-y-5">
-              <!-- Name -->
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">
-                  {{ $t('adminRoles.roleNameLabel') }} <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="newRoleForm.name"
-                  type="text"
-                  :placeholder="$t('adminRoles.roleNamePlaceholder')"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] transition-colors"
-                />
-              </div>
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">
+              {{ $t('adminRoles.roleNameLabel') }} <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="newRoleForm.name"
+              type="text"
+              :placeholder="$t('adminRoles.roleNamePlaceholder')"
+              class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] transition-colors"
+            />
+          </div>
 
-              <!-- Description -->
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-1.5">
-                  {{ $t('adminRoles.roleDescLabel') }} <span class="text-red-500">*</span>
-                </label>
-                <textarea
-                  v-model="newRoleForm.description"
-                  rows="3"
-                  :placeholder="$t('adminRoles.roleDescPlaceholder')"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none transition-colors"
-                ></textarea>
-              </div>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-1.5">
+              {{ $t('adminRoles.roleDescLabel') }} <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              v-model="newRoleForm.description"
+              rows="3"
+              :placeholder="$t('adminRoles.roleDescPlaceholder')"
+              class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] resize-none transition-colors"
+            ></textarea>
+          </div>
 
-              <!-- Permissions -->
-              <div>
-                <label class="block text-sm font-medium text-[#415861] mb-3">{{ $t('adminRoles.permissionsByModules') }}</label>
-                <div class="border border-[#e2e8f0] rounded-xl overflow-hidden overflow-x-auto">
-                  <table class="w-full">
-                    <thead>
-                      <tr class="bg-[#f8fafc]">
-                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">
-                          {{ $t('adminRoles.moduleColumn') }}
-                        </th>
-                        <th
-                          v-for="perm in permissionLabels"
-                          :key="perm.key"
-                          class="px-3 py-2.5 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider"
-                        >
-                          {{ perm.label }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="(mod, idx) in modules"
-                        :key="mod.id"
-                        :class="idx % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]'"
-                        class="border-t border-[#f1f5f9]"
-                      >
-                        <td class="px-4 py-2.5">
-                          <span class="text-sm text-[#415861]">{{ mod.label }}</span>
-                        </td>
-                        <td
-                          v-for="perm in permissionLabels"
-                          :key="perm.key"
-                          class="px-3 py-2.5 text-center"
-                        >
-                          <label class="inline-flex items-center justify-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              :checked="newRoleForm.permissions[mod.id]?.[perm.key]"
-                              @change="toggleNewRolePermission(mod.id, perm.key)"
-                              class="w-4 h-4 rounded border-[#cbd5e1] text-[#0e888d] focus:ring-[#0e888d] cursor-pointer"
-                            />
-                          </label>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="flex items-center justify-end gap-3 p-6 border-t border-[#f1f5f9]">
-              <button
-                @click="closeCreateModal"
-                class="px-5 py-2.5 text-[#64748b] border border-[#e2e8f0] rounded-xl font-medium hover:bg-[#f8fafc] transition-colors"
-              >
-                {{ $t('adminRoles.cancel') }}
-              </button>
-              <button
-                @click="submitCreateRole"
-                :disabled="!isCreateFormValid || isCreating"
-                :class="[
-                  'flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-colors',
-                  isCreateFormValid && !isCreating
-                    ? 'bg-[#0e888d] text-white hover:bg-[#0a6d71]'
-                    : 'bg-[#e5e7eb] text-[#94a3b8] cursor-not-allowed'
-                ]"
-              >
-                <svg v-if="isCreating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                {{ isCreating ? $t('adminRoles.creating') : $t('adminRoles.createRoleBtn') }}
-              </button>
+          <div>
+            <label class="block text-sm font-medium text-[#415861] mb-3">{{ $t('adminRoles.permissionsByModules') }}</label>
+            <div class="border border-[#e2e8f0] rounded-xl overflow-hidden overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-[#f8fafc]">
+                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+                      {{ $t('adminRoles.moduleColumn') }}
+                    </th>
+                    <th
+                      v-for="perm in permissionLabels"
+                      :key="perm.key"
+                      class="px-3 py-2.5 text-center text-xs font-semibold text-[#64748b] uppercase tracking-wider"
+                    >
+                      {{ perm.label }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(mod, idx) in modules"
+                    :key="mod.id"
+                    :class="idx % 2 === 0 ? 'bg-white' : 'bg-[#f8fafc]'"
+                    class="border-t border-[#f1f5f9]"
+                  >
+                    <td class="px-4 py-2.5">
+                      <span class="text-sm text-[#415861]">{{ mod.label }}</span>
+                    </td>
+                    <td
+                      v-for="perm in permissionLabels"
+                      :key="perm.key"
+                      class="px-3 py-2.5 text-center"
+                    >
+                      <label class="inline-flex items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          :checked="newRoleForm.permissions[mod.id]?.[perm.key]"
+                          @change="toggleNewRolePermission(mod.id, perm.key)"
+                          class="w-4 h-4 rounded border-[#cbd5e1] text-[#0e888d] focus:ring-[#0e888d] cursor-pointer"
+                        />
+                      </label>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </Transition>
+
+        <template #footer>
+          <div class="flex items-center justify-end gap-3">
+            <AppButton variant="secondary" @click="closeCreateModal">
+              {{ $t('adminRoles.cancel') }}
+            </AppButton>
+            <AppButton variant="primary" :loading="isCreating" :disabled="!isCreateFormValid || isCreating" @click="submitCreateRole">
+              {{ isCreating ? $t('adminRoles.creating') : $t('adminRoles.createRoleBtn') }}
+            </AppButton>
+          </div>
+        </template>
+      </AppModal>
     </Teleport>
   </DashboardLayout>
 </template>
@@ -759,15 +688,6 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
 }
 
 .toast-slide-enter-active {

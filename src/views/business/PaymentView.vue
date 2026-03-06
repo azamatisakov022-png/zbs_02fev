@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AppButton, AppAlert, AppBadge, AppInfoRow } from '../../components/ui'
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -167,37 +168,29 @@ function goBack() {
   <DashboardLayout role="business" :roleTitle="roleTitle" :userName="accountStore.myAccount?.company || ''" :menuItems="menuItems">
     <div v-if="!calc" class="text-center py-20">
       <h2 class="pv-heading pv-heading--lg font-bold mb-2">{{ $t('calcDetail.notFound') }}</h2>
-      <button @click="$router.push('/business/calculator')" class="pv-back-action mt-4 px-4 py-2 text-white rounded-lg">{{ $t('common.back') }}</button>
+      <AppButton variant="primary" class="mt-4" @click="$router.push('/business/calculator')" :label="$t('common.back')" />
     </div>
 
     <template v-else>
       <!-- Header -->
       <div class="mb-6">
-        <button @click="goBack" class="pv-nav-back flex items-center gap-2 mb-4 transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-          {{ $t('paymentView.backToCalc') }}
-        </button>
+        <AppButton
+          variant="back"
+          class="mb-4"
+          @click="goBack"
+          :label="$t('paymentView.backToCalc')"
+        />
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 class="pv-heading pv-heading--lg font-bold">{{ $t('paymentView.title') }} {{ calc.number }}</h1>
-          <span :class="['pv-status-badge px-3 py-1 rounded-full font-medium',
-            getStatusBadgeVariant(calc.status) === 'success' ? 'bg-green-100 text-green-800' :
-            getStatusBadgeVariant(calc.status) === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-            getStatusBadgeVariant(calc.status) === 'info' ? 'bg-blue-100 text-blue-800' :
-            'bg-gray-100 text-gray-800'
-          ]">{{ $t(statusI18nKey[calc.status] || calc.status) }}</span>
+          <AppBadge :variant="getStatusBadgeVariant(calc.status)">{{ $t(statusI18nKey[calc.status] || calc.status) }}</AppBadge>
           <span v-if="calc.approvedAt" class="pv-approved-date">{{ $t('paymentView.approvedDate') }}: {{ calc.approvedAt }}</span>
         </div>
       </div>
 
       <!-- Completed banner -->
-      <div v-if="calc.status === 'completed'" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-        <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-        </div>
-        <div>
-          <p class="pv-completed-text font-semibold text-green-900">{{ $t('paymentView.calcClosed') }}</p>
-        </div>
-      </div>
+      <AppAlert v-if="calc.status === 'completed'" variant="success" class="mb-6">
+        {{ $t('paymentView.calcClosed') }}
+      </AppAlert>
 
       <!-- ═══ BLOCK 1: UTILIZATION FEE ═══ -->
       <div class="pv-section pv-section--fee">
@@ -209,9 +202,9 @@ function goBack() {
           </div>
           <div class="pv-section-amount pv-amount--green">{{ formatNum(calc.totalAmount, 0) }} {{ $t('common.som') }}</div>
           <div class="pv-section-status">
-            <span v-if="feeStatus === 'confirmed'" class="pv-badge pv-badge--green">&#10003; {{ $t('paymentPanel.statusConfirmed') }}</span>
-            <span v-else-if="feeStatus === 'uploaded'" class="pv-badge pv-badge--blue">&#8987; {{ $t('paymentPanel.statusUploaded') }}</span>
-            <span v-else class="pv-badge pv-badge--red">&#x1F534; {{ $t('paymentPanel.statusNotPaid') }}</span>
+            <AppBadge v-if="feeStatus === 'confirmed'" variant="success" size="lg">&#10003; {{ $t('paymentPanel.statusConfirmed') }}</AppBadge>
+            <AppBadge v-else-if="feeStatus === 'uploaded'" variant="info" size="lg">&#8987; {{ $t('paymentPanel.statusUploaded') }}</AppBadge>
+            <AppBadge v-else variant="danger" size="lg">&#x1F534; {{ $t('paymentPanel.statusNotPaid') }}</AppBadge>
           </div>
         </div>
 
@@ -220,30 +213,34 @@ function goBack() {
             <div class="pv-req-card">
               <h4 class="pv-req-title">{{ $t('paymentView.requisites') }}</h4>
               <div class="pv-req-rows">
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.recipient') }}</span><span class="pv-req-val">{{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.bank') }}</span><span class="pv-req-val">{{ PAYMENT_ACCOUNTS.utilization_fee.bank }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.account') }}</span><span class="pv-req-val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.account }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.bik') }}</span><span class="pv-req-val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.bik }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.inn') }}</span><span class="pv-req-val font-mono">{{ PAYMENT_ACCOUNTS.utilization_fee.inn }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.paymentPurpose') }}</span><span class="pv-req-val">{{ feePurpose }}</span></div>
+                <AppInfoRow :label="$t('paymentPanel.recipient')" :value="PAYMENT_ACCOUNTS.utilization_fee.recipient" />
+                <AppInfoRow :label="$t('paymentPanel.bank')" :value="PAYMENT_ACCOUNTS.utilization_fee.bank" />
+                <AppInfoRow :label="$t('paymentPanel.account')" :value="PAYMENT_ACCOUNTS.utilization_fee.account" :mono="true" />
+                <AppInfoRow :label="$t('paymentPanel.bik')" :value="PAYMENT_ACCOUNTS.utilization_fee.bik" :mono="true" />
+                <AppInfoRow :label="$t('paymentPanel.inn')" :value="PAYMENT_ACCOUNTS.utilization_fee.inn" :mono="true" />
+                <AppInfoRow :label="$t('paymentPanel.paymentPurpose')" :value="feePurpose" />
               </div>
-              <button @click="copyRequisites(PAYMENT_ACCOUNTS.utilization_fee, feePurpose)" class="pv-copy-btn pv-copy-btn--green">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                {{ $t('paymentView.copyRequisites') }}
-              </button>
+              <AppButton
+                variant="outline"
+                size="sm"
+                class="mt-3"
+                @click="copyRequisites(PAYMENT_ACCOUNTS.utilization_fee, feePurpose)"
+                :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+                :label="$t('paymentView.copyRequisites')"
+              />
             </div>
             <!-- Upload zone -->
             <div v-if="!feeDisabled" class="pv-upload">
               <p class="pv-upload-label">{{ $t('paymentPanel.uploadFeeReceipt') }}</p>
               <FileUploadZone v-model="feeFile" :label="$t('workflow.uploadReceipt')" />
-              <button
+              <AppButton
                 v-if="feeFile"
+                variant="success"
                 @click="submitFeeReceipt"
                 :disabled="feeSubmitting"
-                class="pv-submit pv-submit--green"
-              >
-                {{ $t('workflow.submitReceipt') }}
-              </button>
+                :label="$t('workflow.submitReceipt')"
+                class="mt-3"
+              />
             </div>
             <div v-else-if="feeStatus === 'confirmed'" class="pv-confirmed flex items-center gap-2 font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -277,10 +274,10 @@ function goBack() {
           </div>
           <div class="pv-section-amount pv-amount--red">{{ formatNum(penaltyInfo?.amount || 0, 0) }} {{ $t('common.som') }}</div>
           <div class="pv-section-status">
-            <span v-if="!feePaid" class="pv-badge pv-badge--lock">&#x1F512; {{ $t('paymentPanel.afterFeePayment') }}</span>
-            <span v-else-if="penaltyStatus === 'confirmed'" class="pv-badge pv-badge--green">&#10003; {{ $t('paymentPanel.statusConfirmed') }}</span>
-            <span v-else-if="penaltyStatus === 'uploaded'" class="pv-badge pv-badge--blue">&#8987; {{ $t('paymentPanel.statusUploaded') }}</span>
-            <span v-else class="pv-badge pv-badge--red">&#x1F534; {{ $t('paymentPanel.statusNotPaid') }}</span>
+            <AppBadge v-if="!feePaid" variant="neutral" size="lg">&#x1F512; {{ $t('paymentPanel.afterFeePayment') }}</AppBadge>
+            <AppBadge v-else-if="penaltyStatus === 'confirmed'" variant="success" size="lg">&#10003; {{ $t('paymentPanel.statusConfirmed') }}</AppBadge>
+            <AppBadge v-else-if="penaltyStatus === 'uploaded'" variant="info" size="lg">&#8987; {{ $t('paymentPanel.statusUploaded') }}</AppBadge>
+            <AppBadge v-else variant="danger" size="lg">&#x1F534; {{ $t('paymentPanel.statusNotPaid') }}</AppBadge>
           </div>
         </div>
 
@@ -296,29 +293,33 @@ function goBack() {
             <div class="pv-req-card">
               <h4 class="pv-req-title">{{ $t('paymentView.requisites') }}</h4>
               <div class="pv-req-rows">
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.recipient') }}</span><span class="pv-req-val">{{ PAYMENT_ACCOUNTS.penalty.recipient }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.bank') }}</span><span class="pv-req-val">{{ PAYMENT_ACCOUNTS.penalty.bank }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.account') }}</span><span class="pv-req-val font-mono">{{ PAYMENT_ACCOUNTS.penalty.account }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.bik') }}</span><span class="pv-req-val font-mono">{{ PAYMENT_ACCOUNTS.penalty.bik }}</span></div>
-                <div class="pv-req-row"><span class="pv-req-key">{{ $t('paymentPanel.paymentPurpose') }}</span><span class="pv-req-val">{{ penaltyPurpose }}</span></div>
+                <AppInfoRow :label="$t('paymentPanel.recipient')" :value="PAYMENT_ACCOUNTS.penalty.recipient" />
+                <AppInfoRow :label="$t('paymentPanel.bank')" :value="PAYMENT_ACCOUNTS.penalty.bank" />
+                <AppInfoRow :label="$t('paymentPanel.account')" :value="PAYMENT_ACCOUNTS.penalty.account" :mono="true" />
+                <AppInfoRow :label="$t('paymentPanel.bik')" :value="PAYMENT_ACCOUNTS.penalty.bik" :mono="true" />
+                <AppInfoRow :label="$t('paymentPanel.paymentPurpose')" :value="penaltyPurpose" />
               </div>
-              <button @click="copyRequisites(PAYMENT_ACCOUNTS.penalty, penaltyPurpose)" class="pv-copy-btn pv-copy-btn--red">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                {{ $t('paymentView.copyRequisites') }}
-              </button>
+              <AppButton
+                variant="outline"
+                size="sm"
+                class="mt-3"
+                @click="copyRequisites(PAYMENT_ACCOUNTS.penalty, penaltyPurpose)"
+                :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; viewBox=&quot;0 0 24 24&quot; stroke=&quot;currentColor&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z&quot; /></svg>'"
+                :label="$t('paymentView.copyRequisites')"
+              />
             </div>
             <!-- Upload -->
             <div v-if="!penaltyDisabled" class="pv-upload">
               <p class="pv-upload-label">{{ $t('paymentPanel.uploadPenaltyReceipt') }}</p>
               <FileUploadZone v-model="penaltyFile" :label="$t('workflow.uploadReceipt')" />
-              <button
+              <AppButton
                 v-if="penaltyFile"
+                variant="danger"
                 @click="submitPenaltyReceipt"
                 :disabled="penaltySubmitting"
-                class="pv-submit pv-submit--red"
-              >
-                {{ $t('workflow.submitReceipt') }}
-              </button>
+                :label="$t('workflow.submitReceipt')"
+                class="mt-3"
+              />
             </div>
             <div v-else-if="penaltyStatus === 'confirmed'" class="pv-confirmed flex items-center gap-2 font-medium mt-4">
               <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -364,26 +365,9 @@ function goBack() {
 .pv-heading--lg {
   font-size: 22px;
 }
-.pv-back-action {
-  background: #2563eb;
-  font-size: 14px;
-}
-.pv-nav-back {
-  font-size: 14px;
-  color: #64748b;
-}
-.pv-nav-back:hover {
-  color: #1e293b;
-}
-.pv-status-badge {
-  font-size: 14px;
-}
 .pv-approved-date {
   font-size: 14px;
   color: #64748b;
-}
-.pv-completed-text {
-  font-size: 18px;
 }
 .pv-confirmed {
   color: #059669;
@@ -451,17 +435,6 @@ function goBack() {
 .pv-amount--red { color: #dc2626; }
 
 .pv-section-status { flex-shrink: 0; }
-.pv-badge {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 17px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.pv-badge--green { background: #dcfce7; color: #16a34a; }
-.pv-badge--blue { background: #dbeafe; color: #2563eb; }
-.pv-badge--red { background: #fee2e2; color: #dc2626; }
-.pv-badge--lock { background: #f1f5f9; color: #64748b; }
 
 .pv-section-body {
   display: flex;
@@ -491,37 +464,6 @@ function goBack() {
   flex-direction: column;
   gap: 8px;
 }
-.pv-req-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 16px;
-}
-.pv-req-key { color: #64748b; flex-shrink: 0; }
-.pv-req-val {
-  color: #1e293b;
-  font-weight: 500;
-  text-align: right;
-  word-break: break-all;
-}
-
-.pv-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 8px 16px;
-  font-size: 17px;
-  font-weight: 600;
-  background: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pv-copy-btn--green { color: #059669; border: 1px solid #a7f3d0; }
-.pv-copy-btn--green:hover { background: #ecfdf5; }
-.pv-copy-btn--red { color: #dc2626; border: 1px solid #fecaca; }
-.pv-copy-btn--red:hover { background: #fef2f2; }
 
 .pv-upload {
   margin-top: 20px;
@@ -535,22 +477,6 @@ function goBack() {
   color: #1e293b;
   margin-bottom: 10px;
 }
-.pv-submit {
-  margin-top: 12px;
-  padding: 10px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pv-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-.pv-submit--green { background: #059669; }
-.pv-submit--green:hover:not(:disabled) { background: #047857; }
-.pv-submit--red { background: #dc2626; }
-.pv-submit--red:hover:not(:disabled) { background: #b91c1c; }
 
 .pv-qr {
   background: white;

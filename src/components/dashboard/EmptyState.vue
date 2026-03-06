@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppButton from '../ui/AppButton.vue'
+
 defineProps<{
   icon?: string
   title: string
@@ -20,12 +22,11 @@ const emit = defineEmits<{
     ></div>
     <h3 class="text-[20px] font-semibold text-[#64748b] mb-2 text-center">{{ title }}</h3>
     <p v-if="description" class="text-[16px] text-[#94a3b8] text-center max-w-sm mb-5">{{ description }}</p>
-    <button
+    <AppButton
       v-if="actionLabel"
+      variant="primary"
+      :label="actionLabel"
       @click="emit('action')"
-      class="px-5 py-2.5 bg-[#0e888d] text-white rounded-lg font-medium hover:bg-[#0a6d71] transition-colors text-[16px]"
-    >
-      {{ actionLabel }}
-    </button>
+    />
   </div>
 </template>

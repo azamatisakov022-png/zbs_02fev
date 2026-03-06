@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { declarationStore, type Declaration } from '../../stores/declarations'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
-import { AppButton, AppBadge } from '../../components/ui'
+import { AppButton, AppBadge, AppModal, AppAlert, AppCard } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { DeclStatus, statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
@@ -161,15 +161,13 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
     <template v-else>
       <!-- HEADER -->
       <div class="mb-6">
-        <button
-          class="flex items-center gap-1 text-sm text-[#64748b] hover:text-[#1e293b] transition-colors mb-4"
+        <AppButton
+          variant="back"
+          size="sm"
+          :icon="'<svg class=\'w-4 h-4\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M15 19l-7-7 7-7\' /></svg>'"
+          :label="$t('ecoDeclarationDetail.incomingDeclarations')"
           @click="router.push('/eco-operator/incoming-declarations')"
-        >
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          {{ $t('ecoDeclarationDetail.incomingDeclarations') }}
-        </button>
+        />
         <div class="flex flex-wrap items-center gap-3 mb-1">
           <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('ecoDeclarationDetail.declarationNumber', { number: declaration.number }) }}</h1>
           <AppBadge :variant="getDeclarationBadgeVariant(declaration.status)">{{ $t(statusI18nKey[declaration.status] || declaration.status) }}</AppBadge>
@@ -178,48 +176,33 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
       </div>
 
       <!-- Result banner -->
-      <div
+      <AppAlert
         v-if="declaration.status === 'approved'"
-        class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+        variant="success"
+        :title="$t('ecoDeclarationDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer })"
+        class="mb-6"
       >
-        <div class="w-8 h-8 bg-[#22C55E] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-green-900">{{ $t('ecoDeclarationDetail.approvedBanner', { date: declaration.reviewDate, reviewer: declaration.reviewer }) }}</p>
-          <p v-if="declaration.reviewComment" class="text-xs text-green-700 mt-1">{{ declaration.reviewComment }}</p>
-        </div>
-      </div>
+        <span v-if="declaration.reviewComment">{{ declaration.reviewComment }}</span>
+      </AppAlert>
 
-      <div
+      <AppAlert
         v-if="declaration.status === 'rejected'"
-        class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+        variant="error"
+        class="mb-6"
       >
-        <div class="w-8 h-8 bg-[#EF4444] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-red-900">{{ $t('ecoDeclarationDetail.rejectedBanner', { date: declaration.reviewDate, comment: declaration.reviewComment }) }}</p>
-        </div>
-      </div>
+        {{ $t('ecoDeclarationDetail.rejectedBanner', { date: declaration.reviewDate, comment: declaration.reviewComment }) }}
+      </AppAlert>
 
-      <div
+      <AppAlert
         v-if="declaration.status === 'revision'"
-        class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-start gap-3"
+        variant="warning"
+        bg="#fff7ed"
+        borderColor="#fed7aa"
+        color="#9a3412"
+        class="mb-6"
       >
-        <div class="w-8 h-8 bg-[#F59E0B] rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-          <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-semibold text-orange-900">{{ $t('ecoDeclarationDetail.returnedBanner', { date: declaration.reviewDate, comment: declaration.reviewComment }) }}</p>
-        </div>
-      </div>
+        {{ $t('ecoDeclarationDetail.returnedBanner', { date: declaration.reviewDate, comment: declaration.reviewComment }) }}
+      </AppAlert>
 
       <!-- BLOCK 1 - Данные плательщика -->
       <div class="bg-[#f8fafc] rounded-xl p-5 mb-6 border border-[#e2e8f0]">
@@ -256,8 +239,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         </div>
       </div>
 
-      <!-- BLOCK 2 - Сводные данные декларации -->
-      <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
+      <AppCard radius="sm" class="mb-6">
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('ecoDeclarationDetail.summaryData') }}</h2>
 
         <!-- KPI Cards -->
@@ -421,10 +403,9 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             </table>
           </div>
         </div>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK 3 - Документы -->
-      <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-6">
+      <AppCard radius="sm" class="mb-6">
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('ecoDeclarationDetail.documents') }}</h2>
         <template v-if="declaration.documents.length > 0">
           <div class="space-y-3">
@@ -443,14 +424,18 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
                 <p class="text-xs text-[#64748b]">{{ doc.size }} &middot; {{ doc.source }}</p>
               </div>
               <div class="flex items-center gap-2 flex-shrink-0">
-                <button
-                  class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
+                <AppButton
+                  variant="ghost"
+                  size="sm"
+                  :label="$t('ecoDeclarationDetail.preview')"
                   @click="previewDoc = { name: doc.name, size: doc.size, source: doc.source }"
-                >{{ $t('ecoDeclarationDetail.preview') }}</button>
-                <button
-                  class="text-[#2563eb] hover:text-[#1d4ed8] text-sm font-medium"
+                />
+                <AppButton
+                  variant="ghost"
+                  size="sm"
+                  :label="$t('ecoDeclarationDetail.downloadLabel')"
                   @click="toastStore.show({ type: 'info', title: $t('ecoDeclarationDetail.downloading'), message: $t('ecoDeclarationDetail.downloadAvailableAfterStorage') })"
-                >{{ $t('ecoDeclarationDetail.downloadLabel') }}</button>
+                />
               </div>
             </div>
           </div>
@@ -458,10 +443,9 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         <template v-else>
           <p class="text-sm text-[#64748b]">{{ $t('ecoDeclarationDetail.noDocuments') }}</p>
         </template>
-      </div>
+      </AppCard>
 
-      <!-- BLOCK 4 - История рассмотрения -->
-      <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-5 mb-24">
+      <AppCard radius="sm" class="mb-24">
         <h2 class="text-lg font-bold text-[#1e293b] mb-4">{{ $t('ecoDeclarationDetail.reviewHistory') }}</h2>
         <div class="space-y-0">
           <div
@@ -487,7 +471,7 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
             </div>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       <!-- STICKY ACTION BAR -->
       <div
@@ -495,39 +479,24 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
         class="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] shadow-lg z-50"
       >
         <div class="max-w-5xl mx-auto px-6 py-4 flex flex-wrap items-center justify-end gap-3">
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#F59E0B] hover:bg-[#D97706] transition-colors"
+          <AppButton
+            variant="warning"
+            :icon="'<svg class=\'w-4 h-4\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6\' /></svg>'"
+            :label="$t('ecoDeclarationDetail.returnForRevision')"
             @click="showReturnModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-              {{ $t('ecoDeclarationDetail.returnForRevision') }}
-            </span>
-          </button>
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#EF4444] hover:bg-[#DC2626] transition-colors"
+          />
+          <AppButton
+            variant="danger"
+            :icon="'<svg class=\'w-4 h-4\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M6 18L18 6M6 6l12 12\' /></svg>'"
+            :label="$t('ecoDeclarationDetail.reject')"
             @click="showRejectModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              {{ $t('ecoDeclarationDetail.reject') }}
-            </span>
-          </button>
-          <button
-            class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#22C55E] hover:bg-[#16A34A] transition-colors shadow-md"
+          />
+          <AppButton
+            variant="success"
+            :icon="'<svg class=\'w-4 h-4\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M5 13l4 4L19 7\' /></svg>'"
+            :label="$t('ecoDeclarationDetail.approveDeclaration')"
             @click="showApproveModal = true"
-          >
-            <span class="flex items-center gap-2">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              {{ $t('ecoDeclarationDetail.approveDeclaration') }}
-            </span>
-          </button>
+          />
         </div>
       </div>
     </template>
@@ -535,118 +504,79 @@ const isReturnValid = computed(() => returnComment.value.trim().length >= 10)
     <!-- MODALS -->
 
     <!-- Approve Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showApproveModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showApproveModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoDeclarationDetail.approveTitle', { number: declaration.number }) }}</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <p class="text-sm text-[#64748b]">{{ $t('ecoDeclarationDetail.approveConfirmText') }}</p>
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.commentOptional') }}</label>
-              <textarea
-                v-model="approveComment"
-                rows="3"
-                :placeholder="$t('ecoDeclarationDetail.enterComment')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#22C55E] text-sm resize-none"
-              ></textarea>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showApproveModal = false; approveComment = ''">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <AppButton variant="primary" @click="handleApprove">
-              {{ $t('common.confirm') }}
-            </AppButton>
-          </div>
+    <AppModal :visible="showApproveModal && !!declaration" :title="declaration ? $t('ecoDeclarationDetail.approveTitle', { number: declaration.number }) : ''" size="md" @close="showApproveModal = false">
+      <div class="space-y-4">
+        <p class="text-sm text-[#64748b]">{{ $t('ecoDeclarationDetail.approveConfirmText') }}</p>
+        <div>
+          <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.commentOptional') }}</label>
+          <textarea
+            v-model="approveComment"
+            rows="3"
+            :placeholder="$t('ecoDeclarationDetail.enterComment')"
+            class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#22C55E] text-sm resize-none"
+          ></textarea>
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="showApproveModal = false; approveComment = ''">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton variant="primary" @click="handleApprove">
+          {{ $t('common.confirm') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Reject Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showRejectModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showRejectModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoDeclarationDetail.rejectTitle') }}</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.rejectReasonLabel') }} <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="rejectReason"
-                rows="4"
-                :placeholder="$t('ecoDeclarationDetail.rejectReasonPlaceholder')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#EF4444] text-sm resize-none"
-              ></textarea>
-              <p v-if="rejectReason.trim().length > 0 && rejectReason.trim().length < 10" class="text-xs text-red-500 mt-1">
-                {{ $t('ecoDeclarationDetail.minChars', { count: rejectReason.trim().length }) }}
-              </p>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showRejectModal = false; rejectReason = ''">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <AppButton variant="danger" :disabled="!isRejectValid" @click="handleReject">
-              {{ $t('ecoDeclarationDetail.reject') }}
-            </AppButton>
-          </div>
-        </div>
+    <AppModal :visible="showRejectModal && !!declaration" :title="$t('ecoDeclarationDetail.rejectTitle')" size="md" @close="showRejectModal = false">
+      <div>
+        <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.rejectReasonLabel') }} <span class="text-red-500">*</span></label>
+        <textarea
+          v-model="rejectReason"
+          rows="4"
+          :placeholder="$t('ecoDeclarationDetail.rejectReasonPlaceholder')"
+          class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#EF4444] text-sm resize-none"
+        ></textarea>
+        <p v-if="rejectReason.trim().length > 0 && rejectReason.trim().length < 10" class="text-xs text-red-500 mt-1">
+          {{ $t('ecoDeclarationDetail.minChars', { count: rejectReason.trim().length }) }}
+        </p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="showRejectModal = false; rejectReason = ''">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton variant="danger" :disabled="!isRejectValid" @click="handleReject">
+          {{ $t('ecoDeclarationDetail.reject') }}
+        </AppButton>
+      </template>
+    </AppModal>
 
     <!-- Return Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showReturnModal && declaration"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-        @click.self="showReturnModal = false"
-      >
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md" @click.stop>
-          <div class="p-6 border-b border-[#e2e8f0]">
-            <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('ecoDeclarationDetail.returnTitle') }}</h2>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.commentLabel') }} <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="returnComment"
-                rows="4"
-                :placeholder="$t('ecoDeclarationDetail.returnCommentPlaceholder')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#F59E0B] text-sm resize-none"
-              ></textarea>
-              <p v-if="returnComment.trim().length > 0 && returnComment.trim().length < 10" class="text-xs text-orange-500 mt-1">
-                {{ $t('ecoDeclarationDetail.minChars', { count: returnComment.trim().length }) }}
-              </p>
-            </div>
-          </div>
-          <div class="flex justify-end gap-3 p-6 border-t border-[#e2e8f0]">
-            <AppButton variant="secondary" @click="showReturnModal = false; returnComment = ''">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <button
-              class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
-              :class="isReturnValid ? 'bg-[#F59E0B] hover:bg-[#D97706] cursor-pointer' : 'bg-[#F59E0B]/50 cursor-not-allowed'"
-              :disabled="!isReturnValid"
-              @click="handleReturn"
-            >
-              {{ $t('ecoDeclarationDetail.returnForRevision') }}
-            </button>
-          </div>
-        </div>
+    <AppModal :visible="showReturnModal && !!declaration" :title="$t('ecoDeclarationDetail.returnTitle')" size="md" @close="showReturnModal = false">
+      <div>
+        <label class="block text-sm font-medium text-[#1e293b] mb-1.5">{{ $t('ecoDeclarationDetail.commentLabel') }} <span class="text-red-500">*</span></label>
+        <textarea
+          v-model="returnComment"
+          rows="4"
+          :placeholder="$t('ecoDeclarationDetail.returnCommentPlaceholder')"
+          class="w-full px-4 py-3 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#F59E0B] text-sm resize-none"
+        ></textarea>
+        <p v-if="returnComment.trim().length > 0 && returnComment.trim().length < 10" class="text-xs text-orange-500 mt-1">
+          {{ $t('ecoDeclarationDetail.minChars', { count: returnComment.trim().length }) }}
+        </p>
       </div>
-    </Teleport>
+      <template #footer>
+        <AppButton variant="secondary" @click="showReturnModal = false; returnComment = ''">
+          {{ $t('common.cancel') }}
+        </AppButton>
+        <AppButton
+          variant="warning"
+          :disabled="!isReturnValid"
+          :label="$t('ecoDeclarationDetail.returnForRevision')"
+          @click="handleReturn"
+        />
+      </template>
+    </AppModal>
 
     <!-- Toast -->
     <Teleport to="body">

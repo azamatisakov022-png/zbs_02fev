@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
+import { AppButton, AppCard } from '../../components/ui'
 
 const { t } = useI18n()
 
@@ -592,14 +593,11 @@ const saveDraft = () => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
-          <button
-            @click="goBackToList"
-            class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <AppButton variant="icon-only" size="sm" @click="goBackToList">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-          </button>
+          </AppButton>
           <div>
             <div class="flex items-center gap-3">
               <h1 class="text-2xl font-bold text-gray-900">{{ selectedReport.number }}</h1>
@@ -611,39 +609,10 @@ const saveDraft = () => {
           </div>
         </div>
         <div class="flex gap-2">
-          <button
-            @click="goBackToList"
-            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-          >
-            {{ $t('common.backToList') }}
-          </button>
-          <button
-            @click="downloadExcel"
-            class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            {{ $t('common.excel') }}
-          </button>
-          <button
-            @click="downloadPDF"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            {{ $t('common.pdf') }}
-          </button>
-          <button
-            @click="printReport"
-            class="px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            {{ $t('common.print') }}
-          </button>
+          <AppButton variant="secondary" :label="$t('common.backToList')" @click="goBackToList" />
+          <AppButton variant="export" size="sm" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4&quot; /></svg>'" :label="$t('common.excel')" @click="downloadExcel" />
+          <AppButton variant="export" size="sm" bg="#dc2626" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z&quot; /></svg>'" :label="$t('common.pdf')" @click="downloadPDF" />
+          <AppButton variant="primary" bg="#374151" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z&quot; /></svg>'" :label="$t('common.print')" @click="printReport" />
         </div>
       </div>
 
@@ -708,7 +677,7 @@ const saveDraft = () => {
       </div>
 
       <!-- Processing Summary -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <AppCard radius="sm">
         <h3 class="font-semibold text-gray-900 mb-4">{{ $t('ecoMyReports.processingMetrics') }}</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -732,7 +701,7 @@ const saveDraft = () => {
             <p class="text-2xl font-bold text-gray-900">{{ formatNumber(Math.round(detailTotals.processed / selectedReport.wasteTypesCount)) }} {{ $t('ecoMyReports.tonsShort') }}</p>
           </div>
         </div>
-      </div>
+      </AppCard>
     </div>
 
     <!-- Reports List View -->
@@ -743,15 +712,7 @@ const saveDraft = () => {
           <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.myReportsTitle') }}</h1>
           <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.myReportsSubtitle') }}</p>
         </div>
-        <button
-          @click="showWizard = true"
-          class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors flex items-center gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('common.createReport') }}
-        </button>
+        <AppButton variant="primary" bg="#65a30d" :icon="'<svg class=&quot;w-5 h-5&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'" :label="$t('common.createReport')" @click="showWizard = true" />
       </div>
 
       <!-- Stats -->
@@ -779,7 +740,7 @@ const saveDraft = () => {
       </div>
 
       <!-- Filters -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <AppCard padding="sm" radius="sm">
         <div class="flex flex-col md:flex-row gap-4">
           <div class="flex-1">
             <div class="relative">
@@ -813,7 +774,7 @@ const saveDraft = () => {
             <option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.name }}</option>
           </select>
         </div>
-      </div>
+      </AppCard>
 
       <!-- Reports List -->
       <div class="space-y-4">
@@ -885,19 +846,14 @@ const saveDraft = () => {
       </div>
 
       <!-- Empty state -->
-      <div v-if="filteredReports.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+      <AppCard v-if="filteredReports.length === 0" padding="lg" radius="sm" class="text-center">
         <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <h3 class="text-lg font-medium text-gray-900 mb-1">{{ $t('ecoMyReports.noReportsFound') }}</h3>
         <p class="text-gray-500 mb-4">{{ $t('ecoMyReports.noReportsHint') }}</p>
-        <button
-          @click="showWizard = true"
-          class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors"
-        >
-          {{ $t('common.createReport') }}
-        </button>
-      </div>
+        <AppButton variant="primary" bg="#65a30d" :label="$t('common.createReport')" @click="showWizard = true" />
+      </AppCard>
     </div>
 
     <!-- Report Wizard Modal -->
@@ -910,11 +866,11 @@ const saveDraft = () => {
               <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoMyReports.wizardTitle') }}</h3>
               <p class="text-sm text-gray-500">{{ $t('ecoMyReports.wizardStep', { step: wizardStep, total: 4 }) }}</p>
             </div>
-            <button @click="showWizard = false" class="text-gray-400 hover:text-gray-600">
+            <AppButton variant="icon-only" size="sm" @click="showWizard = false">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+            </AppButton>
           </div>
 
           <!-- Progress -->
@@ -1013,12 +969,7 @@ const saveDraft = () => {
             <div v-if="wizardStep === 2" class="space-y-4">
               <div class="flex items-center justify-between">
                 <h4 class="font-medium text-gray-900">{{ $t('ecoMyReports.processingData') }}</h4>
-                <button @click="addWasteRow" class="text-lime-600 hover:text-lime-700 text-sm font-medium flex items-center gap-1">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                  </svg>
-                  {{ $t('common.addRow') }}
-                </button>
+                <AppButton variant="ghost" size="sm" color="#65a30d" :icon="'<svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;><path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M12 4v16m8-8H4&quot; /></svg>'" :label="$t('common.addRow')" @click="addWasteRow" />
               </div>
 
               <div class="overflow-x-auto">
@@ -1095,9 +1046,7 @@ const saveDraft = () => {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p class="text-gray-500 mb-2">{{ $t('ecoMyReports.dragFilesHere') }}</p>
-                <button class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors">
-                  {{ $t('ecoMyReports.chooseFiles') }}
-                </button>
+                <AppButton variant="primary" bg="#65a30d" :label="$t('ecoMyReports.chooseFiles')" />
                 <p class="text-xs text-gray-400 mt-2">{{ $t('ecoMyReports.fileHint') }}</p>
               </div>
 
@@ -1158,35 +1107,29 @@ const saveDraft = () => {
 
           <!-- Footer -->
           <div class="px-6 py-4 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 sticky bottom-0 bg-white z-10">
-            <button
+            <AppButton
               v-if="wizardStep > 1"
+              variant="secondary"
+              :label="$t('common.back')"
               @click="prevStep"
-              class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors w-full sm:w-auto"
-            >
-              {{ $t('common.back') }}
-            </button>
+            />
             <div v-else></div>
             <div class="flex flex-col sm:flex-row gap-3">
-              <button
-                @click="saveDraft"
-                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg font-medium hover:bg-gray-200 transition-colors w-full sm:w-auto text-center"
-              >
-                {{ $t('common.saveDraft') }}
-              </button>
-              <button
+              <AppButton variant="secondary" :label="$t('common.saveDraft')" @click="saveDraft" />
+              <AppButton
                 v-if="wizardStep < 4"
+                variant="primary"
+                bg="#65a30d"
+                :label="$t('common.next')"
                 @click="nextStep"
-                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors w-full sm:w-auto text-center"
-              >
-                {{ $t('common.next') }}
-              </button>
-              <button
+              />
+              <AppButton
                 v-else
+                variant="primary"
+                bg="#65a30d"
+                :label="$t('common.sendReport')"
                 @click="submitReport"
-                class="px-4 py-2 bg-lime-600 text-white rounded-lg font-medium hover:bg-lime-700 transition-colors w-full sm:w-auto text-center"
-              >
-                {{ $t('common.sendReport') }}
-              </button>
+              />
             </div>
           </div>
         </div>
