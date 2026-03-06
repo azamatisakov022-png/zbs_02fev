@@ -10,11 +10,13 @@ import type {
   Calculation,
   CalculationStatus,
   ProductItem,
+  ItemDocument,
   AttachedDocument,
   DocumentType,
   PaymentData,
   AuditEntry,
 } from '@/types/calculation'
+import type { CalculatorProductItem } from '@/types/calculator'
 
 let nextId = 1
 
@@ -37,7 +39,10 @@ function mapBackendItem(i: any): ProductItem {
   const weight = parseFloat(i.weight) || parseFloat(i.quantity) || 0
   const norm = parseFloat(i.recyclingNorm) || 0
   const rate = parseFloat(i.rate) || 0
+  const transferred = parseFloat(i.transferredForRecycling) || 0
+  const exported = parseFloat(i.exportedFromKR) || 0
   const volToRecycle = weight * norm / 100
+  const taxable = Math.max(0, weight - transferred - exported)
   return {
     id: i.id,
     group: i.productGroup || '',
@@ -47,11 +52,18 @@ function mapBackendItem(i: any): ProductItem {
     volume: String(weight),
     recyclingStandard: norm,
     volumeToRecycle: volToRecycle,
-    transferredToRecycling: '0',
-    exportedFromKR: '',
-    taxableVolume: volToRecycle,
+    transferredToRecycling: String(transferred),
+    exportedFromKR: String(exported),
+    taxableVolume: taxable,
     rate: rate,
-    amount: parseFloat(i.amount) || 0,
+    amount: parseFloat(i.amount) || (rate * taxable),
+    documents: (i.documents || []).map((d: any): ItemDocument => ({
+      id: d.id,
+      name: d.name || '',
+      type: d.type || '',
+      url: d.url || '',
+      size: d.size || 0,
+    })),
   }
 }
 
@@ -183,7 +195,7 @@ export const useCalculationStore = defineStore('calculations', {
       payerType?: 'producer' | 'importer'
       importDate?: string
       address?: string
-      items: ProductItem[]
+      items: CalculatorProductItem[]
       totalAmount: number
       documents?: AttachedDocument[]
     }, status: CalculationStatus = CalcStatus.DRAFT): Promise<Calculation> {
@@ -215,47 +227,42 @@ export const useCalculationStore = defineStore('calculations', {
       }
       this.calculations.unshift(calc)
 
+      const validItems = data.items.filter(i => i.group && parseFloat(i.volume) > 0)
+
       const backendRequest = {
-        period: data.year,
-        quarter: data.quarter.replace('Q', ''),
-        documentType: 'INVOICE',
-        documentNumber: data.number,
-        documentDate: new Date().toISOString().split('T')[0],
-        items: data.items.filter(i => i.group && parseFloat(i.volume) > 0).map(i => ({
+        payerType: pt === 'producer' ? 'PRODUCER' : 'IMPORTER',
+        year: parseInt(data.year) || new Date().getFullYear(),
+        quarter: pt === 'producer' ? data.quarter.replace('Q', '') : undefined,
+        importDate: pt === 'importer' && data.importDate ? data.importDate : undefined,
+        items: validItems.map(i => ({
           productGroup: i.group,
           productSubgroup: i.subgroup || undefined,
           tnvedCode: i.tnvedCode || undefined,
           gskpCode: i.gskpCode || undefined,
           productName: i.subgroup || i.group,
-          quantity: parseFloat(i.volume) || 1,
-          unit: 'TON',
-          weight: parseFloat(i.volume) || 1,
-          rate: i.rate,
-          recyclingNorm: i.recyclingStandard,
+          weight: parseFloat(i.volume) || 0,
+          transferredForRecycling: parseFloat(i.transferredToRecycling) || 0,
+          exportedFromKR: parseFloat(i.exportedFromKR) || 0,
         })),
       }
 
+      const formData = new FormData()
+      formData.append('request', new Blob([JSON.stringify(backendRequest)], { type: 'application/json' }))
+
+      validItems.forEach(i => {
+        const ci = i as CalculatorProductItem
+        formData.append('recyclingContracts', ci.recycledFile?.file ?? new Blob(), ci.recycledFile?.name ?? '')
+        formData.append('exportGtds', ci.exportedFile?.file ?? new Blob(), ci.exportedFile?.name ?? '')
+      })
+
       const t = i18n.global.t as any
       try {
-        const resp = await api.post('/calculations', backendRequest)
+        const resp = await api.post('/calculations', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
         if (resp.data?.id) {
           calc.id = resp.data.id
           calc.number = resp.data.number || calc.number
-
-          const filesWithData = data.documents?.filter(d => d.file) || []
-          if (filesWithData.length > 0) {
-            const formData = new FormData()
-            for (const doc of filesWithData) {
-              formData.append('files', doc.file!)
-            }
-            try {
-              await api.put(`/calculations/${resp.data.id}/documents`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-              })
-            } catch {
-              toastStore.show({ type: 'error', title: t('toast.calcDocsUpdateError'), message: t('toast.calcDocsUpdateErrorMessage') })
-            }
-          }
 
           if (status === CalcStatus.UNDER_REVIEW) {
             api.post(`/calculations/${resp.data.id}/submit`).catch(() => {})
@@ -444,11 +451,9 @@ export const useCalculationStore = defineStore('calculations', {
         tnvedCode: i.tnvedCode || undefined,
         gskpCode: i.gskpCode || undefined,
         productName: i.subgroup || i.group,
-        quantity: parseFloat(i.volume) || 1,
-        unit: 'TON',
-        weight: parseFloat(i.volume) || 1,
-        rate: i.rate,
-        recyclingNorm: i.recyclingStandard,
+        weight: parseFloat(i.volume) || 0,
+        transferredForRecycling: parseFloat(i.transferredToRecycling) || 0,
+        exportedFromKR: parseFloat(i.exportedFromKR) || 0,
       }))
 
       try {
