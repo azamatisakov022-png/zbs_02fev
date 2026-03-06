@@ -7,14 +7,19 @@ import { RefundStatus } from '../../constants/statuses'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
 import { recyclerStore } from '../../stores/recyclers'
-import { productGroups, productSubgroups, getSubgroupLabel } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupLabel, getTranslatedGroupLabel } from '../../data/product-groups'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // ─── Tabs ───
 type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
@@ -288,7 +293,7 @@ const groupRanking = computed<GroupAnalytics[]>(() => {
       let ga = map.get(item.group)
       if (!ga) {
         const gObj = productGroups.find(g => g.value === item.group)
-        ga = { group: item.group, label: gObj?.label || item.group, calcCount: 0, totalMass: 0, totalAmount: 0, subgroups: [] }
+        ga = { group: item.group, label: getTranslatedGroupLabel(item.group), calcCount: 0, totalMass: 0, totalAmount: 0, subgroups: [] }
         map.set(item.group, ga)
       }
       ga.totalMass += parseFloat(item.volume) || 0
@@ -423,8 +428,7 @@ const incomeByGroup = computed(() => {
   const map = new Map<string, { label: string; amount: number }>()
   paidCalcs.value.forEach(c => {
     getMatchingItems(c.items).forEach(item => {
-      const gObj = productGroups.find(g => g.value === item.group)
-      const label = gObj?.label || item.group
+      const label = getTranslatedGroupLabel(item.group)
       const existing = map.get(item.group)
       if (existing) existing.amount += item.amount
       else map.set(item.group, { label, amount: item.amount })
@@ -647,8 +651,7 @@ const incomeByGroupMass = computed(() => {
   const map = new Map<string, { label: string; mass: number }>()
   paidCalcs.value.forEach(c => {
     getMatchingItems(c.items).forEach(item => {
-      const gObj = productGroups.find(g => g.value === item.group)
-      const label = gObj?.label || item.group
+      const label = getTranslatedGroupLabel(item.group)
       const existing = map.get(item.group)
       if (existing) existing.mass += parseFloat(item.volume) || 0
       else map.set(item.group, { label, mass: parseFloat(item.volume) || 0 })
@@ -1210,7 +1213,7 @@ const selectedSummaryRegion = ref('all')
             style="width: 320px; padding: 10px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-size: 13px; background: white; outline: none;"
           >
             <option value="">{{ $t('ecoAnalytics.filters.allGroups') }}</option>
-            <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+            <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ getTranslatedGroupLabel(g.value) }}</option>
           </select>
         </div>
         <div>
@@ -1581,7 +1584,7 @@ const selectedSummaryRegion = ref('all')
                     cursor: 'pointer',
                     transformOrigin: '110px 110px'
                   }"
-                  @mouseenter="hoveredGroupIdx = i; showDonutTooltip($event, incomeByGroup[i].label, incomeByGroup[i].amount.toLocaleString() + ' ' + $t('ecoAnalytics.currency'), (incomeByGroupTotal ? (incomeByGroup[i].amount / incomeByGroupTotal * 100).toFixed(1) : '0') + '%', paidCalcs.filter(c => c.items.some(it => { const gObj = productGroups.find(pg => pg.value === it.group); return (gObj?.label || it.group) === incomeByGroup[i].label })).length + ' ' + $t('ecoAnalytics.calcsShort'))"
+                  @mouseenter="hoveredGroupIdx = i; showDonutTooltip($event, incomeByGroup[i].label, incomeByGroup[i].amount.toLocaleString() + ' ' + $t('ecoAnalytics.currency'), (incomeByGroupTotal ? (incomeByGroup[i].amount / incomeByGroupTotal * 100).toFixed(1) : '0') + '%', paidCalcs.filter(c => c.items.some(it => { return getTranslatedGroupLabel(it.group) === incomeByGroup[i].label })).length + ' ' + $t('ecoAnalytics.calcsShort'))"
                   @mousemove="moveDonutTooltip($event)"
                   @mouseleave="hoveredGroupIdx = null; hideDonutTooltip()"
                 />
@@ -2169,7 +2172,7 @@ const selectedSummaryRegion = ref('all')
                 v-for="(item, i) in capacityBalance"
                 :key="i"
               >
-                <td class="font-medium">{{ item.group.label }}</td>
+                <td class="font-medium">{{ getTranslatedGroupLabel(item.group.value) }}</td>
                 <td class="text-right text-[#64748b]">{{ item.volumeToProcess.toLocaleString() }}</td>
                 <td class="text-right font-semibold">{{ item.totalCapacity.toLocaleString() }}</td>
                 <td class="text-right font-semibold" :style="{ color: item.deficit >= 0 ? '#22C55E' : '#EF4444' }">
@@ -2382,11 +2385,11 @@ const selectedSummaryRegion = ref('all')
           <div class="an-report-params__row">
             <label class="an-report-params__label">
               {{ $t('ecoAnalytics.period.periodFrom') }}
-              <input type="date" v-model="reportDateFrom" class="an-report-params__input" />
+              <input type="date" v-model="reportDateFrom" :lang="dateLang" class="an-report-params__input" />
             </label>
             <label class="an-report-params__label">
               {{ $t('ecoAnalytics.period.periodTo') }}
-              <input type="date" v-model="reportDateTo" class="an-report-params__input" />
+              <input type="date" v-model="reportDateTo" :lang="dateLang" class="an-report-params__input" />
             </label>
             <button @click="generateReport" :disabled="isGeneratingReport" class="an-report-generate-btn">
               <template v-if="isGeneratingReport">

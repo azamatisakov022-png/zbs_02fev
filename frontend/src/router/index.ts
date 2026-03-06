@@ -57,6 +57,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ContestsView.vue'),
   },
   {
+    path: '/legal-base',
+    name: 'legal-base',
+    component: () => import('../views/LegalBaseView.vue'),
+    meta: { breadcrumbLabel: 'breadcrumb.legalBase' },
+  },
+  {
+    path: '/feedback',
+    name: 'feedback',
+    component: () => import('../views/FeedbackFormView.vue'),
+    meta: { breadcrumbLabel: 'breadcrumb.feedback' },
+  },
+  {
+    path: '/feedback/status',
+    name: 'feedback-status',
+    component: () => import('../views/FeedbackStatusView.vue'),
+    meta: { breadcrumbLabel: 'breadcrumb.feedbackStatus' },
+  },
+  {
     path: '/reception-points',
     redirect: '/registries',
   },
@@ -220,6 +238,24 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/employee/EmployeeNotifications.vue'),
     meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.employeeNotifications' },
   },
+  {
+    path: '/employee/feedback',
+    name: 'employee-feedback',
+    component: () => import('../views/employee/EmployeeFeedback.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.employeeFeedback' },
+  },
+  {
+    path: '/employee/feedback/:id',
+    name: 'employee-feedback-detail',
+    component: () => import('../views/employee/EmployeeFeedbackDetail.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.feedbackDetail' },
+  },
+  {
+    path: '/employee/audit',
+    name: 'employee-audit',
+    component: () => import('../views/employee/EmployeeAuditLog.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.employeeAudit' },
+  },
 
   // Business routes
   {
@@ -270,9 +306,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/business/calculations/:id/payment',
-    name: 'calculation-payment',
-    component: () => import('../views/business/PaymentView.vue'),
-    meta: { requiresAuth: true, role: 'business' },
+    redirect: '/business',
   },
   {
     path: '/business/calculations/:id',

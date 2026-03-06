@@ -39,15 +39,16 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/refresh"
                         ).permitAll()
-                        // Swagger / actuator
+                        // Swagger & limited actuator
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/actuator/**"
+                                "/actuator/health",
+                                "/actuator/info"
                         ).permitAll()
-                        // Public GIS & analytics
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                        // Public pages
                         .requestMatchers(
-                                "/gis/**",
                                 "/public/**",
                                 "/dumps/public/**",
                                 "/collection-points/public/**",

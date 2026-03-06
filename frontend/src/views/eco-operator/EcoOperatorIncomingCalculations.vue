@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { calculationStore, type Calculation } from '../../stores/calculations'
-import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
+import { productGroups, getSubgroupLabel, getSubgroupData, isPackagingGroup, getTranslatedPackagingMaterial, getTranslatedTnvedName } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { CalcStatus, statusI18nKey } from '../../constants/statuses'
@@ -621,10 +621,10 @@ const resetPaymentFilters = () => {
                       <template v-if="!isPackagingGroup(item.group)">
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || '—' }}</td>
-                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedName || '—' }}</td>
+                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedTnvedName(getSubgroupData(item.group, item.subgroup)?.tnvedName) }}</td>
                       </template>
                       <template v-else>
-                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingMaterial || '—' }}</td>
+                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedPackagingMaterial(getSubgroupData(item.group, item.subgroup)?.packagingMaterial) }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
                       </template>

@@ -28,8 +28,13 @@ import { isExemptFromPenalty } from '../../utils/penalty'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // --- Payer data ---
 const payerId = computed(() => Number(route.params.id))
@@ -449,7 +454,7 @@ function docTypeLabel(type: string): string {
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('penalty.exemptionDate') }}</label>
-                <input v-model="exemptionForm.date" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
+                <input v-model="exemptionForm.date" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
               </div>
 
               <div>

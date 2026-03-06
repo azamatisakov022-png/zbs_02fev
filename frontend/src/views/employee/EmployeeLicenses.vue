@@ -9,7 +9,12 @@ import SectionGuide from '../../components/common/SectionGuide.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // ─── Data types ───
 interface License {
@@ -525,11 +530,11 @@ const hoveredContact = ref<number | null>(null)
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
           <label class="lic-label">{{ $t('employeeLicenses.issuedDate') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.issuedAt" type="date" class="lic-input w-full" />
+          <input v-model="form.issuedAt" type="date" :lang="dateLang" class="lic-input w-full" />
         </div>
         <div>
           <label class="lic-label">{{ $t('employeeLicenses.expiryDate') }} <span class="text-red-500">*</span></label>
-          <input v-model="form.expiresAt" type="date" class="lic-input w-full" />
+          <input v-model="form.expiresAt" type="date" :lang="dateLang" class="lic-input w-full" />
         </div>
       </div>
 

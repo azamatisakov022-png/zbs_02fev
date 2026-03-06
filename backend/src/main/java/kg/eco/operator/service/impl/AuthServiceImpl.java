@@ -50,6 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final TaxServicePort taxServicePort;
 
     @Override
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getInn(), request.getPassword())
@@ -136,6 +137,12 @@ public class AuthServiceImpl implements AuthService {
         String inn = jwtTokenProvider.getInnFromToken(refreshToken);
         User user = userRepository.findByInn(inn)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь", "ИНН", inn));
+
+        if (!refreshToken.equals(user.getRefreshToken())) {
+            user.setRefreshToken(null);
+            userRepository.save(user);
+            throw new UnauthorizedException("Refresh token не соответствует выданному. Повторите вход.");
+        }
 
         return buildLoginResponse(user);
     }

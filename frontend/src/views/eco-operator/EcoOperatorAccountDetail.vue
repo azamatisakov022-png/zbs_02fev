@@ -11,10 +11,15 @@ import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { statusI18nKey } from '../../constants/statuses'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // Loading state
 const isLoading = ref(true)
@@ -267,6 +272,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             <input
               v-model="filterDateFrom"
               type="date"
+              :lang="dateLang"
               class="px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
             />
           </div>
@@ -275,6 +281,7 @@ const isFiltersActive = computed(() => !!filterDateFrom.value || !!filterDateTo.
             <input
               v-model="filterDateTo"
               type="date"
+              :lang="dateLang"
               class="px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb]"
             />
           </div>

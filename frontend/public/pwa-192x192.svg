@@ -1,0 +1,7 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="24" fill="#2D8B4E"/>
+  <circle cx="96" cy="96" r="70" stroke="white" stroke-width="6" fill="none"/>
+  <path d="M96 40 L130 110 L62 110 Z" fill="white"/>
+  <circle cx="96" cy="90" r="20" fill="#fea629"/>
+  <text x="96" y="170" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="22" font-weight="bold">AIS CRO</text>
+</svg>

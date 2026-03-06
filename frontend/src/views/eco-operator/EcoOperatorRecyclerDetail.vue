@@ -6,7 +6,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { recyclerStore, type Recycler, type RecyclerCapacity, type InspectionStatus, type RecyclerDocument } from '../../stores/recyclers'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { generatedSubgroups } from '../../data/product-subgroups-generated'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
@@ -783,7 +783,7 @@ const goToGisMap = () => {
                       class="w-full px-2.5 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] bg-white"
                     >
                       <option value="" disabled>{{ $t('ecoRecyclerDetail.selectGroup') }}</option>
-                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ getTranslatedGroupLabel(g.value) }}</option>
                     </select>
                   </td>
                   <td class="px-3 py-2">

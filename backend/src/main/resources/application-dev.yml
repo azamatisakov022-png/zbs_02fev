@@ -9,10 +9,19 @@ spring:
     hibernate:
       ddl-auto: validate
 
+jwt:
+  secret: ZGV2LW9ubHktc2VjcmV0LWtleS1mb3ItbG9jYWwtZGV2ZWxvcG1lbnQtZG8tbm90LXVzZS1pbi1wcm9kdWN0aW9u
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
+
+minio:
+  endpoint: http://localhost:9002
+  access-key: minioadmin
+  secret-key: minioadmin
+
 logging:
   level:
     kg.eco.operator: DEBUG
     kg.eco.operator.integration: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

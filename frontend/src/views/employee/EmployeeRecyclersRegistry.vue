@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { recyclerStore, type Recycler, type RecyclerStatus, type RecyclerCapacity } from '../../stores/recyclers'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
@@ -356,7 +356,7 @@ const resetAllFilters = () => {
                   : 'bg-white text-[#64748b] border-[#e2e8f0] hover:border-[#2563eb]'
               ]"
             >
-              {{ group.label }}
+              {{ getTranslatedGroupLabel(group.value) }}
             </button>
           </div>
         </div>
@@ -428,7 +428,7 @@ const resetAllFilters = () => {
         <select v-model="filterWasteType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('employeeRecyclers.allWasteTypes') }}</option>
           <option v-for="group in productGroups" :key="group.value" :value="group.value">
-            {{ group.label }}
+            {{ getTranslatedGroupLabel(group.value) }}
           </option>
         </select>
       </div>

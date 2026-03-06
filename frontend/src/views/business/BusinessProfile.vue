@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { validators, scrollToFirstError } from '../../utils/validators'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { toastStore } from '../../stores/toast'
 
 const { t } = useI18n()
@@ -572,7 +572,7 @@ const toggleTwoFactor = () => {
                   v-model="editProductGroups"
                   class="mt-0.5 w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500 flex-shrink-0"
                 />
-                <span class="text-sm text-gray-700 leading-snug">{{ group.label }}</span>
+                <span class="text-sm text-gray-700 leading-snug">{{ getTranslatedGroupLabel(group.value) }}</span>
               </label>
             </div>
 

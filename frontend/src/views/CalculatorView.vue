@@ -5,6 +5,7 @@ import {
   productGroups,
   productSubgroups,
   isPackagingGroup,
+  getTranslatedSubgroupLabel,
   type ProductGroup,
   type ProductSubgroup,
 } from '../data/product-groups'
@@ -16,7 +17,12 @@ import { calculatePenalty } from '../utils/penalty'
 import { downloadElementAsPdf } from '../utils/pdfExport'
 import { PAYMENT_ACCOUNTS } from '../config/payment-accounts'
 
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // ─── Types ───
 interface CalcRow {
@@ -222,7 +228,7 @@ function getGroupLabel(value: string): string {
 
 function getSubgroupLabel(row: CalcRow): string {
   if (!row.subgroupData) return '—'
-  return row.subgroupData.label
+  return getTranslatedSubgroupLabel(row.subgroupData.value, row.subgroupData.label)
 }
 
 // ─── PDF Export ───
@@ -306,6 +312,7 @@ async function downloadPdf() {
                 <input
                   type="date"
                   v-model="penaltyDueDate"
+                  :lang="dateLang"
                   min="2020-01-01"
                   :max="`${new Date().getFullYear() + 1}-12-31`"
                   class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm"
@@ -644,7 +651,7 @@ async function downloadPdf() {
                   <div class="flex flex-col sm:flex-row gap-3 mb-4">
                     <div class="flex-1">
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.dueDate') }}</label>
-                      <input type="date" v-model="inlinePenaltyDate" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#10b981]" />
+                      <input type="date" v-model="inlinePenaltyDate" :lang="dateLang" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#10b981]" />
                     </div>
                     <div class="flex-1">
                       <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.debtAmount') }}</label>

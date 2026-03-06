@@ -8,6 +8,7 @@
 import wasteGroupsData from './waste-groups.json'
 import { generatedSubgroups } from './product-subgroups-generated'
 import { UTILIZATION_RATES_2025 } from './rates'
+import { subgroupLabelsEn, packagingMaterialEn, tnvedNameEn } from './product-subgroups-en'
 
 export interface ProductGroup {
   value: string
@@ -163,8 +164,99 @@ export function getSubgroupLabel(groupValue: string, subgroupValue: string): str
   // Try generated subgroups
   const subs = productSubgroups[groupValue]
   const sub = subs?.find(s => s.value === subgroupValue)
-  if (sub) return sub.label
-  // Try legacy mock keys
-  if (legacySubgroupLabels[subgroupValue]) return legacySubgroupLabels[subgroupValue]
-  return subgroupValue
+  const russianLabel = sub?.label || legacySubgroupLabels[subgroupValue] || subgroupValue
+
+  // Check if English locale — return translated label
+  const i18n = (globalThis as any).__app_i18n
+  if (i18n) {
+    const locale = i18n.global.locale
+    const currentLocale = typeof locale === 'object' && 'value' in locale ? locale.value : locale
+    if (currentLocale === 'en' && subgroupLabelsEn[subgroupValue]) {
+      return subgroupLabelsEn[subgroupValue]
+    }
+  }
+
+  return russianLabel
+}
+
+/**
+ * Get i18n-translated group label.
+ * Uses `productGroupNames.<value>` from locale files, falls back to the hardcoded Russian label.
+ * NOTE: This is NOT reactive on its own — call inside a computed/template to react to locale changes.
+ */
+export function getTranslatedGroupLabel(groupValue: string): string {
+  // Late-import to avoid circular deps — i18n is initialised before data files
+  const i18n = (globalThis as any).__app_i18n
+  const group = productGroups.find(g => g.value === groupValue)
+  if (!group) return groupValue
+  if (!i18n) return group.label
+  const key = `productGroupNames.${groupValue}`
+  const t = i18n.global.t as (k: string) => string
+  const translated = t(key)
+  return translated !== key ? translated : group.label
+}
+
+/**
+ * Get translated section title for product group sections.
+ */
+export function getTranslatedSectionTitle(letter: string): string {
+  const i18n = (globalThis as any).__app_i18n
+  const section = productGroupSections.find(s => s.letter === letter)
+  if (!section) return letter
+  if (!i18n) return section.title
+  const key = `productGroupSections.${letter}`
+  const t = i18n.global.t as (k: string) => string
+  const translated = t(key)
+  return translated !== key ? translated : section.title
+}
+
+/**
+ * Get i18n-translated subgroup label.
+ * For English locale — uses the `subgroupLabelsEn` map.
+ * For Russian / Kyrgyz — falls back to the hardcoded Russian label.
+ * NOTE: This is NOT reactive on its own — call inside a computed/template to react to locale changes.
+ */
+export function getTranslatedSubgroupLabel(subgroupValue: string, fallbackLabel: string): string {
+  const i18n = (globalThis as any).__app_i18n
+  if (!i18n) return fallbackLabel
+  const locale = i18n.global.locale
+  const currentLocale = typeof locale === 'object' && 'value' in locale ? locale.value : locale
+  if (currentLocale === 'en') {
+    return subgroupLabelsEn[subgroupValue] || fallbackLabel
+  }
+  return fallbackLabel
+}
+
+/**
+ * Get i18n-translated packaging material name.
+ * For English locale — uses the `packagingMaterialEn` map.
+ * For Russian / Kyrgyz — returns the original Russian name.
+ */
+export function getTranslatedPackagingMaterial(russianName: string | undefined): string {
+  if (!russianName) return '—'
+  const i18n = (globalThis as any).__app_i18n
+  if (!i18n) return russianName
+  const locale = i18n.global.locale
+  const currentLocale = typeof locale === 'object' && 'value' in locale ? locale.value : locale
+  if (currentLocale === 'en') {
+    return packagingMaterialEn[russianName] || russianName
+  }
+  return russianName
+}
+
+/**
+ * Get i18n-translated TNVED (HS Code) name.
+ * For English locale — uses the `tnvedNameEn` map.
+ * For Russian / Kyrgyz — returns the original Russian name.
+ */
+export function getTranslatedTnvedName(russianName: string | undefined): string {
+  if (!russianName) return '—'
+  const i18n = (globalThis as any).__app_i18n
+  if (!i18n) return russianName
+  const locale = i18n.global.locale
+  const currentLocale = typeof locale === 'object' && 'value' in locale ? locale.value : locale
+  if (currentLocale === 'en') {
+    return tnvedNameEn[russianName] || russianName
+  }
+  return russianName
 }

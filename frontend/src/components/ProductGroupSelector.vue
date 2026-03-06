@@ -5,6 +5,9 @@ import {
   productGroups,
   productSubgroups,
   isPackagingGroup,
+  getTranslatedSubgroupLabel,
+  getTranslatedPackagingMaterial,
+  getTranslatedTnvedName,
   type ProductSubgroup,
 } from '../data/product-groups'
 import SubgroupPickerModal from './SubgroupPickerModal.vue'
@@ -43,12 +46,23 @@ const selectedSubgroupData = computed<ProductSubgroup | null>(() => {
 
 const isPackaging = computed(() => isPackagingGroup(props.group))
 
+/** Return the i18n-translated group name, falling back to the Russian label in the data */
+const translateGroupName = (value: string, fallback: string): string => {
+  const key = `productGroupNames.${value}`
+  const translated = t(key)
+  return translated !== key ? translated : fallback
+}
+
 const groupLabel = computed(() => {
-  return productGroups.find(g => g.value === props.group)?.label || ''
+  const g = productGroups.find(g => g.value === props.group)
+  if (!g) return ''
+  return translateGroupName(g.value, g.label)
 })
 
 const subgroupLabel = computed(() => {
-  return selectedSubgroupData.value?.label || ''
+  const sub = selectedSubgroupData.value
+  if (!sub) return ''
+  return getTranslatedSubgroupLabel(sub.value, sub.label)
 })
 
 const onGroupChange = (value: string) => {
@@ -89,7 +103,7 @@ watch(() => props.subgroup, () => {
           :style="{ '--tw-ring-color': accentColor }"
         >
           <option value="">{{ $t('productGroup.selectGroup') }}</option>
-          <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+          <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ translateGroupName(g.value, g.label) }}</option>
         </select>
       </template>
     </div>
@@ -129,8 +143,8 @@ watch(() => props.subgroup, () => {
       </div>
       <div class="sm:col-span-2 lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedName') }}</label>
-        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]" :title="selectedSubgroupData?.tnvedName || ''">
-          {{ selectedSubgroupData?.tnvedName || '—' }}
+        <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]" :title="getTranslatedTnvedName(selectedSubgroupData?.tnvedName)">
+          {{ getTranslatedTnvedName(selectedSubgroupData?.tnvedName) }}
         </div>
       </div>
     </div>
@@ -138,7 +152,7 @@ watch(() => props.subgroup, () => {
       <div class="sm:col-span-2 lg:col-span-4">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.packagingMaterial') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b]">
-          {{ selectedSubgroupData?.packagingMaterial || '—' }}
+          {{ getTranslatedPackagingMaterial(selectedSubgroupData?.packagingMaterial) }}
         </div>
       </div>
       <div class="lg:col-span-3">

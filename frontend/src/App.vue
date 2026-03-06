@@ -5,6 +5,7 @@ import TheHeader from './components/layout/TheHeader.vue'
 import TheNavigation from './components/layout/TheNavigation.vue'
 import TheFooter from './components/layout/TheFooter.vue'
 import AppToast from './components/ui/AppToast.vue'
+import PwaStatus from './components/ui/PwaStatus.vue'
 
 const route = useRoute()
 
@@ -42,5 +43,8 @@ const isDashboard = computed(() => {
 
     <!-- Global Toast Notifications -->
     <AppToast />
+
+    <!-- PWA Status (offline banner, update notification) -->
+    <PwaStatus />
   </div>
 </template>

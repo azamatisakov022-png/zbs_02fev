@@ -10,12 +10,13 @@ const mobileNavOpen = ref(false)
 const navItems = computed(() => [
   { name: 'home', path: '/', label: t('nav.home') },
   { name: 'about', path: '/about', label: t('nav.about') },
-  { name: 'legislation', path: '/legislation', label: t('nav.legislation') },
+  { name: 'legal-base', path: '/legal-base', label: t('nav.legalBase') },
   { name: 'licenses', path: '/licenses', label: t('nav.licenses') },
   { name: 'publications', path: '/publications', label: t('nav.publications') },
   { name: 'gis-map', path: '/registries', label: t('nav.gisMap') },
   { name: 'calculator', path: '/calculator', label: t('nav.calculator') },
   { name: 'contests', path: '/contests', label: t('nav.contests') },
+  { name: 'feedback', path: '/feedback', label: t('nav.feedback') },
 ])
 
 const isActive = (path: string) => {

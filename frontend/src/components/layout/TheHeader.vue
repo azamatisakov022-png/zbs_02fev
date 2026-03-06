@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getLocale, setLocale } from '../../i18n'
@@ -10,6 +10,7 @@ const { t } = useI18n()
 const langOptions = [
   { code: 'ru' as const, label: 'РУС' },
   { code: 'ky' as const, label: 'КЫР' },
+  { code: 'en' as const, label: 'ENG' },
 ]
 
 const currentLangLabel = computed(() => {
@@ -17,12 +18,26 @@ const currentLangLabel = computed(() => {
   return langOptions.find(l => l.code === locale)?.label ?? 'РУС'
 })
 
-const toggleLang = () => {
-  const locale = getLocale()
-  const currentIndex = langOptions.findIndex(l => l.code === locale)
-  const next = langOptions[(currentIndex + 1) % langOptions.length]
-  setLocale(next.code)
+const langDropdownOpen = ref(false)
+const langDropdownRef = ref<HTMLElement | null>(null)
+
+const selectLang = (code: 'ru' | 'ky' | 'en') => {
+  setLocale(code)
+  langDropdownOpen.value = false
 }
+
+const handleClickOutsideLang = (e: MouseEvent) => {
+  if (langDropdownRef.value && !langDropdownRef.value.contains(e.target as Node)) {
+    langDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutsideLang)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutsideLang)
+})
 
 const mobileMenuOpen = ref(false)
 
@@ -78,17 +93,36 @@ const toggleMobileMenu = () => {
 
         <!-- Right side: Language + Auth -->
         <div class="flex items-center gap-2 md:gap-4 lg:gap-[30px]">
-          <!-- Language selector -->
-          <div class="hidden sm:flex items-center">
+          <!-- Language selector dropdown -->
+          <div ref="langDropdownRef" class="hidden sm:flex items-center relative">
             <div class="w-px h-5 bg-gray-300"></div>
             <button
-              @click="toggleLang"
+              @click="langDropdownOpen = !langDropdownOpen"
               class="flex items-center gap-2 px-4 lg:px-[31px] text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
             >
               {{ currentLangLabel }}
-              <IconChevron class="w-[10px] h-[10px]" />
+              <IconChevron :class="['w-[10px] h-[10px] transition-transform', langDropdownOpen ? 'rotate-180' : '']" />
             </button>
             <div class="w-px h-5 bg-gray-300"></div>
+            <!-- Dropdown menu -->
+            <div
+              v-if="langDropdownOpen"
+              class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[100px]"
+            >
+              <button
+                v-for="lang in langOptions"
+                :key="lang.code"
+                @click="selectLang(lang.code)"
+                :class="[
+                  'w-full px-4 py-2 text-sm text-left transition-colors',
+                  getLocale() === lang.code
+                    ? 'font-bold text-[#0e888d] bg-[#f0fdfa]'
+                    : 'text-[#415861] hover:bg-gray-50'
+                ]"
+              >
+                {{ lang.label }}
+              </button>
+            </div>
           </div>
 
           <!-- Auth buttons -->
@@ -160,13 +194,19 @@ const toggleMobileMenu = () => {
         </div>
 
         <!-- Language switcher (mobile) -->
-        <div class="sm:hidden flex items-center gap-2 mb-4 pt-3 border-t border-gray-100">
+        <div class="sm:hidden flex items-center gap-3 mb-4 pt-3 border-t border-gray-100">
           <button
-            @click="toggleLang"
-            class="text-[#415861] text-sm font-medium hover:text-[#0e888d] transition-colors"
+            v-for="lang in langOptions"
+            :key="lang.code"
+            @click="selectLang(lang.code)"
+            :class="[
+              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+              getLocale() === lang.code
+                ? 'bg-[#0e888d] text-white'
+                : 'text-[#415861] bg-gray-100 hover:bg-gray-200'
+            ]"
           >
-            {{ currentLangLabel }}
-            <IconChevron class="w-[10px] h-[10px] inline" />
+            {{ lang.label }}
           </button>
         </div>
 

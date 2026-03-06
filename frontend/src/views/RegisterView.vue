@@ -2,7 +2,7 @@
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { productGroups } from '../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../data/product-groups'
 import { toastStore } from '../stores/toast'
 import api from '../api/client'
 
@@ -1234,7 +1234,7 @@ const goHome = () => {
                         @change="toggleProductGroup(group.value)"
                         class="pg-checkbox"
                       />
-                      <span class="pg-card-label">{{ group.label }}</span>
+                      <span class="pg-card-label">{{ getTranslatedGroupLabel(group.value) }}</span>
                     </label>
                   </div>
 

@@ -7,7 +7,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { reportStore, type Report } from '../../stores/reports'
-import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
+import { productGroups, getSubgroupByCode, isPackagingGroup, getTranslatedPackagingMaterial, getTranslatedTnvedName } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { AppButton, AppBadge } from '../../components/ui'
@@ -457,10 +457,10 @@ const resetFilters = () => {
                       <template v-if="!isPackagingGroup(item.wasteType)">
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.gskpCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ item.wasteCode }}</td>
-                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedName || '—' }}</td>
+                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedTnvedName(getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedName) }}</td>
                       </template>
                       <template v-else>
-                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial || '—' }}</td>
+                        <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedPackagingMaterial(getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial) }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '—' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '—' }}</td>
                       </template>

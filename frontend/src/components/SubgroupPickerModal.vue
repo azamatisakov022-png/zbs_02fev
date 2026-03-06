@@ -5,6 +5,9 @@ import {
   productGroups,
   productSubgroups,
   isPackagingGroup,
+  getTranslatedSubgroupLabel,
+  getTranslatedPackagingMaterial,
+  getTranslatedTnvedName,
   type ProductSubgroup,
 } from '../data/product-groups'
 
@@ -39,11 +42,20 @@ const selectedSubgroupData = computed<ProductSubgroup | null>(() => {
   return availableSubgroups.value.find(s => s.value === props.modelValue) || null
 })
 
+/** Translated label for a subgroup (reactive to locale changes via `t` dependency) */
+const subLabel = (sub: ProductSubgroup) => {
+  // Reference t so Vue tracks locale reactivity
+  void t('common.cancel')
+  return getTranslatedSubgroupLabel(sub.value, sub.label)
+}
+
 const filteredSubgroups = computed(() => {
   const q = searchQuery.value.toLowerCase().trim()
   if (!q) return availableSubgroups.value
   return availableSubgroups.value.filter(sub => {
+    // Search both original Russian label and translated label
     if (sub.label.toLowerCase().includes(q)) return true
+    if (subLabel(sub).toLowerCase().includes(q)) return true
     if (sub.gskpCode?.toLowerCase().includes(q)) return true
     if (sub.tnvedCode?.toLowerCase().includes(q)) return true
     if (sub.tnvedName?.toLowerCase().includes(q)) return true
@@ -110,8 +122,8 @@ watch(() => props.groupId, () => {
       :disabled="!groupId"
       @click="openModal"
     >
-      <span class="spm-trigger-text" :title="selectedSubgroupData ? selectedSubgroupData.label : ''">
-        {{ selectedSubgroupData ? selectedSubgroupData.label : $t('subgroupPicker.clickToSelect') }}
+      <span class="spm-trigger-text" :title="selectedSubgroupData ? subLabel(selectedSubgroupData) : ''">
+        {{ selectedSubgroupData ? subLabel(selectedSubgroupData) : $t('subgroupPicker.clickToSelect') }}
       </span>
       <svg class="spm-trigger-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" stroke-linecap="round" />
@@ -119,7 +131,7 @@ watch(() => props.groupId, () => {
     </button>
     <!-- Full name hint under field -->
     <div v-if="selectedSubgroupData" class="spm-hint">
-      {{ selectedSubgroupData.label }}
+      {{ subLabel(selectedSubgroupData) }}
     </div>
 
     <!-- Modal -->
@@ -130,7 +142,7 @@ watch(() => props.groupId, () => {
           <div class="spm-header">
             <div>
               <h2 class="spm-title">{{ $t('subgroupPicker.title') }}</h2>
-              <p v-if="groupData" class="spm-subtitle">{{ groupData.label }}</p>
+              <p v-if="groupData" class="spm-subtitle">{{ $t(`productGroupNames.${groupData.value}`) !== `productGroupNames.${groupData.value}` ? $t(`productGroupNames.${groupData.value}`) : groupData.label }}</p>
             </div>
             <button class="spm-close" @click="closeModal">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -190,16 +202,16 @@ watch(() => props.groupId, () => {
                   >
                     <template v-if="!isPackaging">
                       <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
-                      <td class="spm-td spm-td-name">{{ sub.label }}</td>
+                      <td class="spm-td spm-td-name">{{ subLabel(sub) }}</td>
                       <td class="spm-td spm-td-code">{{ sub.gskpCode || '—' }}</td>
                       <td class="spm-td spm-td-code">{{ sub.tnvedCode || '—' }}</td>
-                      <td class="spm-td spm-td-tnved">{{ sub.tnvedName || '—' }}</td>
+                      <td class="spm-td spm-td-tnved">{{ getTranslatedTnvedName(sub.tnvedName) }}</td>
                       <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>
                     </template>
                     <template v-else>
                       <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
-                      <td class="spm-td spm-td-name">{{ sub.label }}</td>
-                      <td class="spm-td spm-td-material">{{ sub.packagingMaterial || '—' }}</td>
+                      <td class="spm-td spm-td-name">{{ subLabel(sub) }}</td>
+                      <td class="spm-td spm-td-material">{{ getTranslatedPackagingMaterial(sub.packagingMaterial) }}</td>
                       <td class="spm-td spm-td-code">{{ sub.packagingDigitalCode || '—' }}</td>
                       <td class="spm-td spm-td-code">{{ sub.packagingLetterCode || '—' }}</td>
                       <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>

@@ -39,6 +39,18 @@ integration:
     eco-operator-account: ${ECO_OPERATOR_ACCOUNT}
     eco-operator-bik: ${ECO_OPERATOR_BIK}
 
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
 logging:
   level:
     kg.eco.operator: INFO

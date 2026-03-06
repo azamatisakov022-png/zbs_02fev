@@ -6,8 +6,13 @@ import { AppButton } from '../../components/ui'
 import { useAdminMenu } from '../../composables/useRoleMenu'
 import { getRatePerKg } from '../../data/rates'
 
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const { roleTitle, menuItems } = useAdminMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 const activeTab = ref('rates')
 
@@ -285,7 +290,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
           <div class="p-6 space-y-4">
             <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelCode') }}</label><input v-model="editingRate.code" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" readonly /></div>
             <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelRate') }}</label><div class="flex gap-2"><input v-model.number="editingRate.rate" type="number" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" /><input v-model="editingRate.unit" type="text" class="w-28 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50" readonly /></div></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelEffectiveFrom') }}</label><input v-model="editingRate.effectiveFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" /></div>
+            <div><label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelEffectiveFrom') }}</label><input v-model="editingRate.effectiveFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500" /></div>
             <label class="flex items-center gap-2"><input type="checkbox" v-model="editingRate.isActive" class="w-4 h-4 text-rose-600 rounded" /><span class="text-sm text-gray-700">{{ $t('adminCalcs.labelRateActive') }}</span></label>
           </div>
           <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
@@ -339,7 +344,7 @@ function handleOverlay(e: MouseEvent, close: () => void) {
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('adminCalcs.labelStartDate') }} <span class="text-red-500">*</span></label>
-                <input v-model="newRate.effectiveFrom" type="date" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.effectiveFrom ? 'border-red-400' : 'border-gray-300']" />
+                <input v-model="newRate.effectiveFrom" type="date" :lang="dateLang" :class="['w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500', addErrors.effectiveFrom ? 'border-red-400' : 'border-gray-300']" />
                 <p v-if="addErrors.effectiveFrom" class="mt-1 text-xs text-red-500">{{ addErrors.effectiveFrom }}</p>
               </div>
             </div>

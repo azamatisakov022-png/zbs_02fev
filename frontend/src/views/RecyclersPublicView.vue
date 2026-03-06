@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import TheHeader from '../components/layout/TheHeader.vue'
-import TheNavigation from '../components/layout/TheNavigation.vue'
-import TheFooter from '../components/layout/TheFooter.vue'
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { recyclerStore } from '../stores/recyclers'
-import { productGroups } from '../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../data/product-groups'
 
 const { t } = useI18n()
 
@@ -40,11 +37,8 @@ const getGroupLabel = (value: string) => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-[#f8fafc]">
-    <TheHeader />
-    <TheNavigation />
-
-    <main class="flex-1">
+  <div class="bg-[#f8fafc]">
+    <div class="flex-1">
       <div class="container-main py-8 lg:py-12">
         <!-- Header -->
         <div class="mb-8">
@@ -84,7 +78,7 @@ const getGroupLabel = (value: string) => {
             <select v-model="filterWasteType" class="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#0e888d]">
               <option value="">{{ $t('publicRecyclers.allWasteTypes') }}</option>
               <option v-for="group in productGroups" :key="group.value" :value="group.value">
-                {{ group.label }}
+                {{ getTranslatedGroupLabel(group.value) }}
               </option>
             </select>
           </div>
@@ -164,8 +158,6 @@ const getGroupLabel = (value: string) => {
           </div>
         </div>
       </div>
-    </main>
-
-    <TheFooter />
+    </div>
   </div>
 </template>

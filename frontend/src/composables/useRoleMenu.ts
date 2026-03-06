@@ -5,6 +5,7 @@ import { calculationStore } from '../stores/calculations'
 import { refundStore } from '../stores/refunds'
 import { reportStore } from '../stores/reports'
 import { notificationStore } from '../stores/notifications'
+import { feedbackStore } from '../stores/feedback'
 
 export function useBusinessMenu() {
   const { t } = useI18n()
@@ -54,7 +55,9 @@ export function useEmployeeMenu() {
     { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
     { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills' },
     { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
+    { id: 'feedback', label: t('nav.employee.feedback'), icon: icons.feedback, route: '/employee/feedback', badge: feedbackStore.getNewCount() },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
+    { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit' },
     { id: 'map', label: t('nav.employee.map'), icon: icons.map, route: '/employee/map' },
     { id: 'profile', label: t('nav.employee.profile'), icon: icons.profile, route: '/employee/profile' },
   ])

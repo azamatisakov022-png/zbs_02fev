@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { locale } = useI18n()
+
 const props = defineProps<{
   label?: string
   placeholder?: string
@@ -19,6 +24,12 @@ const onInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   emit('update:modelValue', props.type === 'number' ? Number(target.value) : target.value)
 }
+
+// BCP 47 lang tag for native date inputs – helps browsers show the correct date format
+const inputLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(locale as any).value || 'ru'] || 'ru-RU'
+})
 </script>
 
 <template>
@@ -34,10 +45,15 @@ const onInput = (event: Event) => {
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
+        :lang="type === 'date' ? inputLang : undefined"
         class="app-input__field"
-        :class="{ 'app-input__field--suffix': suffix }"
+        :class="{ 'app-input__field--suffix': suffix, 'app-input__field--date-empty': type === 'date' && !modelValue }"
         @input="onInput"
       />
+      <!-- Translated date placeholder overlay (hides browser-native ДД.ММ.ГГГГ) -->
+      <span v-if="type === 'date' && !modelValue" class="app-input__date-placeholder">
+        {{ placeholder || $t('common.datePlaceholder') }}
+      </span>
       <span v-if="suffix" class="app-input__suffix">{{ suffix }}</span>
     </div>
     <p v-if="error" class="app-input__error">{{ error }}</p>
@@ -96,6 +112,22 @@ const onInput = (event: Event) => {
 }
 
 .app-input__field--suffix { padding-right: 60px; }
+
+/* Hide native date placeholder text when our overlay is active */
+.app-input__field--date-empty::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.app-input__date-placeholder {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #94A3B8;
+  font-size: 14px;
+  font-weight: 400;
+}
 
 .app-input__suffix {
   position: absolute;

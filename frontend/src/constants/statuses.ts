@@ -78,6 +78,25 @@ export const AccountStatus = {
 } as const
 export type AccountStatusType = typeof AccountStatus[keyof typeof AccountStatus]
 
+// Feedback statuses
+export const FeedbackStatus = {
+  NEW: 'new',
+  IN_PROGRESS: 'in_progress',
+  UNDER_REVIEW: 'under_review',
+  RESOLVED: 'resolved',
+  REJECTED: 'rejected',
+} as const
+export type FeedbackStatusType = typeof FeedbackStatus[keyof typeof FeedbackStatus]
+
+// Feedback categories
+export const FeedbackCategory = {
+  COMPLAINT: 'complaint',
+  SUGGESTION: 'suggestion',
+  INFO_REQUEST: 'info_request',
+  VIOLATION_REPORT: 'violation_report',
+} as const
+export type FeedbackCategoryType = typeof FeedbackCategory[keyof typeof FeedbackCategory]
+
 // i18n key mapping: status value -> i18n key under "status.*"
 export const statusI18nKey: Record<string, string> = {
   draft: 'status.draft',
@@ -106,4 +125,6 @@ export const statusI18nKey: Record<string, string> = {
   fee_paid: 'status.feePaid',
   penalty_paid: 'status.penaltyPaid',
   completed: 'status.completed',
+  in_progress: 'status.inProgress',
+  resolved: 'status.resolved',
 }

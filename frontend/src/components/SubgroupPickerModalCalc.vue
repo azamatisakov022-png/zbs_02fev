@@ -5,6 +5,7 @@
  */
 import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getTranslatedPackagingMaterial, getTranslatedTnvedName } from '../data/product-groups'
 
 interface GoodsSubgroup {
   name: string
@@ -213,12 +214,12 @@ watch(isOpen, (val) => {
                       <td class="spm-td spm-td-name">{{ (sub as GoodsSubgroup).name }}</td>
                       <td class="spm-td spm-td-code">{{ (sub as GoodsSubgroup).gskpCode || '—' }}</td>
                       <td class="spm-td spm-td-code">{{ (sub as GoodsSubgroup).tnVedCode || '—' }}</td>
-                      <td class="spm-td spm-td-tnved">{{ (sub as GoodsSubgroup).tnVedName || '—' }}</td>
+                      <td class="spm-td spm-td-tnved">{{ getTranslatedTnvedName((sub as GoodsSubgroup).tnVedName) }}</td>
                     </template>
                     <template v-else>
                       <td class="spm-td spm-td-num">{{ i + 1 }}</td>
                       <td class="spm-td spm-td-name">{{ (sub as PackagingSubgroup).name }}</td>
-                      <td class="spm-td spm-td-material">{{ (sub as PackagingSubgroup).material || '—' }}</td>
+                      <td class="spm-td spm-td-material">{{ getTranslatedPackagingMaterial((sub as PackagingSubgroup).material) }}</td>
                       <td class="spm-td spm-td-code">{{ (sub as PackagingSubgroup).digitalCode || '—' }}</td>
                       <td class="spm-td spm-td-code">{{ (sub as PackagingSubgroup).letterCode || '—' }}</td>
                     </template>

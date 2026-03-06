@@ -14,7 +14,7 @@ import { recyclerStore } from '../stores/recyclers'
 import { landfillStore } from '../stores/landfills'
 import { collectionPointStore } from '../stores/collectionPoints'
 import { dumpStore } from '../stores/dumps'
-import { productGroups } from '../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../data/product-groups'
 
 const { t } = useI18n()
 
@@ -692,7 +692,7 @@ const getTypeBadgeClass = (type: LayerType) => {
 const getWasteGroupLabel = (groupValue: string) => {
   const group = productGroups.find(g => g.value === groupValue)
   if (!group) return groupValue
-  const short = group.label.replace(/^\d+\.\s*/, '')
+  const short = getTranslatedGroupLabel(group.value).replace(/^\d+\.\s*/, '')
   return short.length > 35 ? short.slice(0, 35) + '...' : short
 }
 

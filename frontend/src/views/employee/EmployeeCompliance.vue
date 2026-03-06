@@ -33,12 +33,11 @@ interface LicenseRecord {
 }
 
 // ========== TABS ==========
-type TabId = 'norms' | 'licenses'
+type TabId = 'licenses'
 
-const activeTab = ref<TabId>('norms')
+const activeTab = ref<TabId>('licenses')
 
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
-  { id: 'norms', label: t('employeeCompliance.tabNorms') },
   { id: 'licenses', label: t('employeeCompliance.tabLicenses') },
 ])
 
@@ -168,23 +167,7 @@ const summaryStats = computed(() => {
       />
 
       <!-- Summary Stat Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Norms not fulfilled -->
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-500">{{ $t('employeeCompliance.normsNotFulfilled') }}</p>
-              <p class="text-3xl font-bold text-red-600 mt-1">{{ summaryStats.normsNotFulfilled }}</p>
-            </div>
-            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-          <p class="text-xs text-gray-400 mt-2">{{ $t('employeeCompliance.outOfControlled', { count: normsData.length }) }}</p>
-        </div>
-
+      <div class="grid grid-cols-1 gap-6">
         <!-- Licenses expiring -->
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between">
@@ -202,107 +185,8 @@ const summaryStats = computed(() => {
         </div>
       </div>
 
-      <!-- Tab Navigation -->
-      <div class="border-b border-gray-200">
-        <nav class="flex space-x-8" aria-label="Tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            @click="activeTab = tab.id"
-            :class="[
-              'py-3 px-1 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-              activeTab === tab.id
-                ? 'border-[#0e888d] text-[#0e888d]'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
-      </div>
-
-      <!-- ========== TAB 1: RECYCLING NORMS ========== -->
-      <div v-if="activeTab === 'norms'" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 class="font-semibold text-gray-900">{{ $t('employeeCompliance.normsTitle') }}</h3>
-          <p class="text-sm text-gray-500 mt-1">{{ $t('employeeCompliance.normsSubtitle') }}</p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.wasteType') }}</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.normPercent') }}</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.factPercent') }}</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-48">{{ $t('employeeCompliance.progress') }}</th>
-                <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('employeeCompliance.volumeT') }}</th>
-                <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">{{ $t('common.status') }}</th>
-              </tr>
-            </thead>
-            <tbody v-if="normsData.length === 0">
-              <tr>
-                <td colspan="6">
-                  <EmptyState
-                    :title="$t('common.noData')"
-                    :description="$t('employeeCompliance.normsEmpty')"
-                  />
-                </td>
-              </tr>
-            </tbody>
-            <tbody v-else class="divide-y divide-gray-200">
-              <tr v-for="norm in normsData" :key="norm.id" class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 font-medium text-gray-900">{{ norm.wasteType }}</td>
-                <td class="px-6 py-4 text-center text-gray-700 font-semibold">{{ norm.normPercent }}%</td>
-                <td class="px-6 py-4 text-center font-bold" :class="{
-                  'text-green-600': norm.status === 'fulfilled',
-                  'text-amber-600': norm.status === 'close',
-                  'text-red-600': norm.status === 'failed'
-                }">{{ norm.factPercent }}%</td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-2">
-                    <div class="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        :class="['h-full rounded-full transition-all', getNormProgressColor(norm)]"
-                        :style="{ width: getNormProgressWidth(norm) }"
-                      ></div>
-                    </div>
-                    <span class="text-xs text-gray-500 w-10 text-right">{{ ((norm.factPercent / norm.normPercent) * 100).toFixed(0) }}%</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-right text-gray-700 font-medium">{{ norm.volumeTons.toFixed(1) }}</td>
-                <td class="px-6 py-4 text-center">
-                  <AppBadge :variant="getStatusBadgeVariant(norm.status)">
-                    {{ getNormStatusLabel(norm.status) }}
-                  </AppBadge>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot class="bg-gray-50 border-t-2 border-gray-300">
-              <tr>
-                <td class="px-6 py-4 font-bold text-gray-900">{{ $t('employeeCompliance.totalAverage') }}</td>
-                <td class="px-6 py-4 text-center font-bold text-gray-700">{{ normsTotals.avgNorm.toFixed(1) }}%</td>
-                <td class="px-6 py-4 text-center font-bold text-gray-700">{{ normsTotals.avgFact.toFixed(1) }}%</td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center gap-2">
-                    <div class="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        class="h-full rounded-full bg-[#0e888d] transition-all"
-                        :style="{ width: `${Math.min((normsTotals.avgFact / normsTotals.avgNorm) * 100, 100)}%` }"
-                      ></div>
-                    </div>
-                    <span class="text-xs text-gray-500 w-10 text-right">{{ ((normsTotals.avgFact / normsTotals.avgNorm) * 100).toFixed(0) }}%</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-right font-bold text-gray-900">{{ formatNumber(parseFloat(normsTotals.volumeTons.toFixed(1))) }} {{ $t('employeeCompliance.tons') }}</td>
-                <td class="px-6 py-4"></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      <!-- ========== TAB 2: LICENSES ========== -->
-      <div v-if="activeTab === 'licenses'" class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <!-- ========== LICENSES ========== -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h3 class="font-semibold text-gray-900">{{ $t('employeeCompliance.licensesTitle') }}</h3>
           <p class="text-sm text-gray-500 mt-1">{{ $t('employeeCompliance.licensesSubtitle') }}</p>

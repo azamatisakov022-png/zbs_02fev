@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { getLocale, setLocale } from '../../i18n'
+import { getLocale, setLocale, type AppLocale } from '../../i18n'
 import { authStore } from '../../stores/auth'
 import { notificationStore } from '../../stores/notifications'
 import NotificationBell from './NotificationBell.vue'
@@ -31,7 +31,7 @@ const { t } = useI18n()
 const sidebarOpen = ref(false)
 const currentLocale = computed(() => getLocale())
 
-const switchLocale = (locale: 'ru' | 'ky') => {
+const switchLocale = (locale: AppLocale) => {
   setLocale(locale)
 }
 
@@ -207,6 +207,11 @@ const breadcrumbs = computed(() => {
               @click="switchLocale('ky')"
               :class="['px-1.5 py-0.5 rounded transition-colors', currentLocale === 'ky' ? 'font-bold text-[#2D8B4E]' : 'text-[#94a3b8] hover:text-[#4B5563]']"
             >KY</button>
+            <span class="text-[#cbd5e1]">|</span>
+            <button
+              @click="switchLocale('en')"
+              :class="['px-1.5 py-0.5 rounded transition-colors', currentLocale === 'en' ? 'font-bold text-[#2D8B4E]' : 'text-[#94a3b8] hover:text-[#4B5563]']"
+            >EN</button>
           </div>
           <span class="text-[#4B5563] font-medium">{{ userName }}</span>
           <NotificationBell :role="role" />

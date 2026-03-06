@@ -7,7 +7,7 @@ import EmptyState from '../../components/dashboard/EmptyState.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupData, isPackagingGroup, getTranslatedPackagingMaterial, getTranslatedTnvedName } from '../../data/product-groups'
 import { calculationStore } from '../../stores/calculations'
 import { reportStore } from '../../stores/reports'
 import { declarationStore, type Declaration } from '../../stores/declarations'
@@ -759,10 +759,10 @@ const signDeclaration = (id: number) => {
                     <template v-if="!isPackagingGroup(item.group)">
                       <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
                       <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || item.tnvedCode }}</td>
-                      <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedName || '—' }}</td>
+                      <td class="px-3 py-3 text-xs">{{ getTranslatedTnvedName(getSubgroupData(item.group, item.subgroup)?.tnvedName) }}</td>
                     </template>
                     <template v-else>
-                      <td class="px-3 py-3 text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingMaterial || '—' }}</td>
+                      <td class="px-3 py-3 text-xs">{{ getTranslatedPackagingMaterial(getSubgroupData(item.group, item.subgroup)?.packagingMaterial) }}</td>
                       <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
                       <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
                     </template>

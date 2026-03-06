@@ -8,7 +8,7 @@ import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { productGroups, productSubgroups, type ProductSubgroup } from '../../data/product-groups'
+import { productGroups, productSubgroups, getTranslatedGroupLabel, type ProductSubgroup } from '../../data/product-groups'
 import { getNormativeForGroup, normativeTiers } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import { reportStore, type ProcessingItem } from '../../stores/reports'
@@ -70,7 +70,7 @@ const processingItems = ref<ProcessingItem[]>([
 ])
 
 // Lookup для getWasteTypeLabel
-const wasteTypes = productGroups.map(g => ({ value: g.value, label: g.label, code: g.code }))
+const wasteTypes = productGroups.map(g => ({ value: g.value, label: getTranslatedGroupLabel(g.value), code: g.code }))
 
 // Recyclers from shared store, filtered by active status and matching waste types
 const getRecyclersForItem = (item: ProcessingItem) => {

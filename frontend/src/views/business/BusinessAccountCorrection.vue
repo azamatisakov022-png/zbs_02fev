@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
 import { accountStore } from '../../stores/account'
-import { productGroups, getSubgroupLabel } from '../../data/product-groups'
+import { productGroups, getSubgroupLabel, getTranslatedGroupLabel } from '../../data/product-groups'
 import InstructionDrawer from '../../components/InstructionDrawer.vue'
 import { instructionCalculationHtml } from '../../data/instructionCalculation'
 import { validators, scrollToFirstError } from '../../utils/validators'
@@ -81,8 +81,7 @@ function onCalculationSelect() {
 
 // Get group label
 function getGroupLabel(groupValue: string): string {
-  const group = productGroups.find(g => g.value === groupValue)
-  return group ? group.label : groupValue
+  return getTranslatedGroupLabel(groupValue)
 }
 
 // Computed: new taxable volume per row

@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
 import { recyclerStore, type Recycler, type RecyclerStatus } from '../../stores/recyclers'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { generatedSubgroups } from '../../data/product-subgroups-generated'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
@@ -441,7 +441,7 @@ const resetAllFilters = () => {
                       class="w-full min-w-[200px] px-2 py-1.5 border border-[#e2e8f0] rounded text-xs focus:outline-none focus:border-[#2563eb] bg-white"
                     >
                       <option value="">{{ $t('ecoRecyclersRegistry.selectGroup') }}</option>
-                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ getTranslatedGroupLabel(g.value) }}</option>
                     </select>
                   </td>
                   <td class="px-3 py-2">
@@ -594,7 +594,7 @@ const resetAllFilters = () => {
         <select v-model="filterWasteType" class="px-4 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb]">
           <option value="">{{ $t('ecoRecyclersRegistry.allWasteTypes') }}</option>
           <option v-for="group in productGroups" :key="group.value" :value="group.value">
-            {{ group.label }}
+            {{ getTranslatedGroupLabel(group.value) }}
           </option>
         </select>
       </div>

@@ -4,8 +4,13 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // Полный список 24 групп товаров
 const productGroups = computed(() => [
@@ -779,11 +784,11 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
-              <input v-model="paymentsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
+              <input v-model="paymentsFilters.dateFrom" type="date" :lang="dateLang" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
-              <input v-model="paymentsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
+              <input v-model="paymentsFilters.dateTo" type="date" :lang="dateLang" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.productGroupLabel') }}</label>
@@ -888,11 +893,11 @@ const paidPercent = computed(() => Math.round((summaryStats.value.totalPayments 
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodFrom') }}</label>
-              <input v-model="debtsFilters.dateFrom" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
+              <input v-model="debtsFilters.dateFrom" type="date" :lang="dateLang" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.periodTo') }}</label>
-              <input v-model="debtsFilters.dateTo" type="date" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
+              <input v-model="debtsFilters.dateTo" type="date" :lang="dateLang" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-lime-500" />
             </div>
             <div>
               <label class="block text-xs text-gray-500 mb-1">{{ $t('ecoPayments.minDebtAmount') }}</label>

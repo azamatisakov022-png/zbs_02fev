@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { calculationStore } from '../../stores/calculations'
 import { refundStore } from '../../stores/refunds'
-import { productGroups, productSubgroups } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupLabel as getSubgroupLabelFromGroups } from '../../data/product-groups'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { CalcStatus } from '../../constants/statuses'
@@ -20,7 +20,7 @@ const viewMode = ref<ViewMode>('form')
 
 // Helpers
 const getGroupLabel = (value: string) => productGroups.find(g => g.value === value)?.label || value
-const getSubgroupLabel = (group: string, subgroup: string) => productSubgroups[group]?.find(s => s.value === subgroup)?.label || subgroup || '—'
+const getSubgroupLabel = (group: string, subgroup: string) => getSubgroupLabelFromGroups(group, subgroup)
 const formatAmount = (amount: number) => amount.toLocaleString() + ' ' + t('businessRefundNew.som')
 
 // Step 1: Select a paid calculation

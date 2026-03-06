@@ -11,7 +11,12 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 
 const { roleTitle, menuItems } = useEmployeeMenu()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // Loading state
 const isLoading = ref(true)
@@ -580,11 +585,11 @@ const goBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="summaryFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+              <input v-model="summaryFilters.dateFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="summaryFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
+              <input v-model="summaryFilters.dateTo" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" />
             </div>
             <div class="flex items-end">
               <button
@@ -659,11 +664,11 @@ const goBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="landfillsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
+              <input v-model="landfillsFilters.dateFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="landfillsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
+              <input v-model="landfillsFilters.dateTo" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -807,11 +812,11 @@ const goBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="licensesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <input v-model="licensesFilters.dateFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="licensesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              <input v-model="licensesFilters.dateTo" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -940,11 +945,11 @@ const goBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="normativesFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+              <input v-model="normativesFilters.dateFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="normativesFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
+              <input v-model="normativesFilters.dateTo" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.region') }}</label>
@@ -1061,11 +1066,11 @@ const goBack = () => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="regionsFilters.dateFrom" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input v-model="regionsFilters.dateFrom" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('common.period') }}</label>
-              <input v-model="regionsFilters.dateTo" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input v-model="regionsFilters.dateTo" type="date" :lang="dateLang" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
             <div class="flex items-end">
               <button

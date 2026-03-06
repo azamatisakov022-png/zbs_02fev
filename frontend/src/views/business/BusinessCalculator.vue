@@ -7,7 +7,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import DataTable from '../../components/dashboard/DataTable.vue'
 import EmptyState from '../../components/dashboard/EmptyState.vue'
-import { productGroups, productSubgroups, getSubgroupLabel, type ProductSubgroup } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupLabel, getTranslatedGroupLabel, type ProductSubgroup } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import ProductGroupSelector from '../../components/ProductGroupSelector.vue'
 import TnvedCode from '../../components/TnvedCode.vue'
@@ -31,7 +31,12 @@ import PaymentPanel from '../../components/payment/PaymentPanel.vue'
 import PenaltyInfo from '../../components/PenaltyInfo.vue'
 
 const { roleTitle, menuItems } = useBusinessMenu()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 const router = useRouter()
 
@@ -1384,7 +1389,7 @@ const downloadReceipt = () => {
             <div class="px-5 pb-5 pt-3 bg-white border-t border-[#e2e8f0]">
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div v-for="group in productGroups" :key="group.value" class="bg-[#f8fafc] rounded-lg p-3">
-                  <p class="text-xs text-[#64748b] mb-1">{{ group.label }}</p>
+                  <p class="text-xs text-[#64748b] mb-1">{{ getTranslatedGroupLabel(group.value) }}</p>
                   <p class="font-bold text-[#1e293b]">{{ group.baseRate.toLocaleString() }} {{ $t('businessCalc.som') }}</p>
                 </div>
               </div>
@@ -1555,19 +1560,24 @@ const downloadReceipt = () => {
               <div v-if="payerType === 'importer'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.importDateLabel') }} <span class="text-[#EF4444]">*</span></label>
-                  <input
-                    type="date"
-                    v-model="importDate"
-                    min="2020-01-01"
-                    :max="dateInputMax"
-                    :class="[
-                      'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
-                      (validationErrors.importDate || (formSubmitted && formErrors.importDate))
-                        ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
-                        : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
-                    ]"
-                    @change="validationErrors.importDate && delete validationErrors.importDate"
-                  />
+                  <div class="relative">
+                    <input
+                      type="date"
+                      v-model="importDate"
+                      :lang="dateLang"
+                      min="2020-01-01"
+                      :max="dateInputMax"
+                      :class="[
+                        'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
+                        importDate ? '' : 'date-empty',
+                        (validationErrors.importDate || (formSubmitted && formErrors.importDate))
+                          ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
+                          : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
+                      ]"
+                      @change="validationErrors.importDate && delete validationErrors.importDate"
+                    />
+                    <span v-if="!importDate" class="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#94a3b8] pointer-events-none">{{ $t('calcDetail.datePlaceholder') }}</span>
+                  </div>
                   <p v-if="validationErrors.importDate" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors.importDate }}</p>
                   <p v-else-if="formSubmitted && formErrors.importDate" class="vld-error" data-validation-error>
                     <span class="vld-error__icon">&#9888;</span> {{ formErrors.importDate }}
@@ -2309,6 +2319,7 @@ const downloadReceipt = () => {
               <input
                 v-model="paymentForm.paymentDate"
                 type="text"
+                :lang="dateLang"
                 :placeholder="$t('businessCalc.paymentDatePlaceholder')"
                 min="2020-01-01"
                 :max="dateInputMax"
@@ -3259,5 +3270,9 @@ const downloadReceipt = () => {
 }
 .act-btn--gray:hover {
   background: #475569 !important;
+}
+/* Hide native date placeholder when empty so translated overlay is visible */
+.date-empty::-webkit-datetime-edit {
+  color: transparent;
 }
 </style>

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { reportStore } from '../../stores/reports'
-import { productGroups, getSubgroupByCode, isPackagingGroup } from '../../data/product-groups'
+import { productGroups, getSubgroupByCode, isPackagingGroup, getTranslatedPackagingMaterial, getTranslatedTnvedName } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { generateRecyclingReportExcel } from '../../utils/excelExport'
 import { downloadElementAsPdf } from '../../utils/pdfExport'
@@ -258,7 +258,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
                 <td class="rd-td rd-td--center">{{ idx + 1 }}</td>
                 <td class="rd-td">{{ getGroupLabel(item.wasteType) }}</td>
                 <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.gskpCode || item.wasteCode }}</td>
-                <td class="rd-td rd-td--small">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedName || '—' }}</td>
+                <td class="rd-td rd-td--small">{{ getTranslatedTnvedName(getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedName) }}</td>
                 <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedCode || item.wasteCode }}</td>
                 <td class="rd-td rd-td--num">{{ fmt((parseFloat(item.declared) || 0) * 1000) }}</td>
                 <td class="rd-td rd-td--num">{{ fmtPercent(getItemNormative(item)) }}</td>
@@ -320,7 +320,7 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
             <tbody>
               <tr v-for="(item, idx) in packagingItems" :key="item.id" class="rd-row">
                 <td class="rd-td rd-td--center">{{ idx + 1 }}</td>
-                <td class="rd-td">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial || '—' }}</td>
+                <td class="rd-td">{{ getTranslatedPackagingMaterial(getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial) }}</td>
                 <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '—' }}</td>
                 <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '—' }}</td>
                 <td class="rd-td">{{ getGroupLabel(item.wasteType) }}</td>

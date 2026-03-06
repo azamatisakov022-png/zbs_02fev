@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5433/eco_operator
-    username: ${DB_USERNAME:eco}
-    password: ${DB_PASSWORD:eco123}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -33,14 +33,14 @@ server:
     context-path: /api/v1
 
 jwt:
-  secret: ${JWT_SECRET:defaultSecretKeyForDevelopmentOnlyChangeInProduction2024!}
+  secret: ${JWT_SECRET}
   access-token-expiration: 3600000    # 1 hour
   refresh-token-expiration: 604800000 # 7 days
 
 minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9002}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
   bucket: ${MINIO_BUCKET:eco-operator}
 
 payment:

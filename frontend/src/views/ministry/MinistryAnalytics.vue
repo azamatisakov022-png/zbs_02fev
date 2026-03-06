@@ -5,14 +5,19 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import { AppBadge } from '../../components/ui'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { getNormativeForGroup } from '../../data/recycling-norms'
 import { toastStore } from '../../stores/toast'
 import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
 
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 // ─── Loading ───
 const isLoading = ref(true)
@@ -302,9 +307,9 @@ const periodButtons = computed(() => [
         </div>
         <!-- Custom dates -->
         <template v-if="periodMode === 'custom'">
-          <input type="date" v-model="customFrom" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
+          <input type="date" v-model="customFrom" :lang="dateLang" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
           <span class="text-xs text-[#94a3b8]">—</span>
-          <input type="date" v-model="customTo" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
+          <input type="date" v-model="customTo" :lang="dateLang" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
         </template>
         <!-- Region -->
         <select v-model="regionFilter" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]">
@@ -513,7 +518,7 @@ const periodButtons = computed(() => [
               </thead>
               <tbody>
                 <tr v-for="c in categoryNorms" :key="c.group.value" class="border-t border-[#f1f5f9] hover:bg-[#f8fafc]">
-                  <td class="px-3 py-2.5 text-[#1e293b] text-xs">{{ c.group.label }}</td>
+                  <td class="px-3 py-2.5 text-[#1e293b] text-xs">{{ getTranslatedGroupLabel(c.group.value) }}</td>
                   <td class="px-3 py-2.5 text-center font-medium">{{ c.normPercent }}%</td>
                   <td class="px-3 py-2.5 text-center font-medium">{{ c.fact }}%</td>
                   <td class="px-3 py-2.5 text-center">

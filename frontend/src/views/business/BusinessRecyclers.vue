@@ -5,7 +5,7 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { recyclerStore, type Recycler } from '../../stores/recyclers'
 import { toastStore } from '../../stores/toast'
-import { productGroups } from '../../data/product-groups'
+import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
@@ -204,7 +204,7 @@ const getStars = (rating: number) => {
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           >
             <option value="all">{{ $t('businessRecyclers.allWasteTypes') }}</option>
-            <option v-for="group in productGroups" :key="group.value" :value="group.value">{{ group.label }}</option>
+            <option v-for="group in productGroups" :key="group.value" :value="group.value">{{ getTranslatedGroupLabel(group.value) }}</option>
           </select>
         </div>
 

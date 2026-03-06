@@ -7,7 +7,7 @@ import { calculationStore, type ProductItem, type AttachedDocument, type Documen
 
 const documentTypes: DocumentType[] = ['gtd', 'act', 'invoice_goods', 'invoice', 'contract', 'other']
 import { accountStore } from '../../stores/account'
-import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData } from '../../data/product-groups'
+import { productGroups, productSubgroups, getSubgroupLabel, getSubgroupData, getTranslatedGroupLabel } from '../../data/product-groups'
 import TnvedCode from '../../components/TnvedCode.vue'
 import { calculatePaymentDeadline, getRemainingDays, formatDateShort } from '../../utils/dateUtils'
 import { generateCalculationExcel } from '../../utils/excelExport'
@@ -24,8 +24,13 @@ import { formatNum } from '../../utils/formatNumber'
 
 const router = useRouter()
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale: i18nLocale } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
+
+const dateLang = computed(() => {
+  const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }
+  return map[(i18nLocale as any).value || 'ru'] || 'ru-RU'
+})
 
 const calcId = computed(() => Number(route.params.id))
 const calc = computed(() => calculationStore.getCalculationById(calcId.value))
@@ -589,7 +594,7 @@ function submitPaymentConfirmation() {
                 <td class="px-5 py-3 text-[#1e293b] font-medium">
                   <template v-if="isEditing">
                     <select v-model="item.group" @change="onGroupChange(item)" class="edit-select mb-1">
-                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ g.label }}</option>
+                      <option v-for="g in productGroups" :key="g.value" :value="g.value">{{ getTranslatedGroupLabel(g.value) }}</option>
                     </select>
                     <select v-model="item.subgroup" @change="onSubgroupChange(item)" class="edit-select text-xs">
                       <option v-for="s in availableSubgroups(item.group)" :key="s.value" :value="s.value">{{ s.label }}</option>
@@ -1091,7 +1096,7 @@ function submitPaymentConfirmation() {
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="pay-label">{{ $t('calcDetail.paymentDateLabel') }} *</label>
-                  <input v-model="paymentForm.paymentDate" type="text" :placeholder="$t('calcDetail.datePlaceholder')" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
+                  <input v-model="paymentForm.paymentDate" type="text" :lang="dateLang" :placeholder="$t('common.datePlaceholder')" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" class="pay-input" />
                 </div>
                 <div>
                   <label class="pay-label">{{ $t('calcDetail.payerBank') }} *</label>
