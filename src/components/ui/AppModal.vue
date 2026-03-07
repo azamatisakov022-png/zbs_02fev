@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { onMounted, onUnmounted, watch } from 'vue'
+
+const props = defineProps<{
   visible: boolean
   title?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
@@ -12,42 +14,69 @@ const emit = defineEmits<{
 }>()
 
 const onOverlayClick = () => {
-  emit('close')
+  if (!props.persistent) {
+    emit('close')
+  }
 }
+
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && props.visible && !props.persistent && props.closable !== false) {
+    emit('close')
+  }
+}
+
+watch(() => props.visible, (val) => {
+  if (val) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
+  document.body.style.overflow = ''
+})
 </script>
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="visible"
-      class="app-modal__overlay"
-      @click.self="!persistent && onOverlayClick()"
-    >
+    <Transition name="modal">
       <div
-        class="app-modal__container"
-        :class="[`app-modal--${size || 'md'}`]"
+        v-if="visible"
+        class="app-modal__overlay"
+        @click.self="onOverlayClick"
       >
-        <div v-if="title || closable !== false" class="app-modal__header">
-          <h2 v-if="title" class="app-modal__title">{{ title }}</h2>
-          <slot name="header-extra" />
-          <button
-            v-if="closable !== false"
-            class="app-modal__close"
-            @click="emit('close')"
-          >
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="app-modal__body">
-          <slot />
-        </div>
-        <div v-if="$slots.footer" class="app-modal__footer">
-          <slot name="footer" />
+        <div
+          class="app-modal__container"
+          :class="[`app-modal--${size || 'md'}`]"
+        >
+          <div v-if="title || closable !== false" class="app-modal__header">
+            <h2 v-if="title" class="app-modal__title">{{ title }}</h2>
+            <slot name="header-extra" />
+            <button
+              v-if="closable !== false"
+              class="app-modal__close"
+              @click="emit('close')"
+            >
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="app-modal__body">
+            <slot />
+          </div>
+          <div v-if="$slots.footer" class="app-modal__footer">
+            <slot name="footer" />
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -105,6 +134,8 @@ const onOverlayClick = () => {
   cursor: pointer;
   transition: all 0.15s;
   flex-shrink: 0;
+  border: none;
+  background: none;
 }
 .app-modal__close:hover {
   background: #f1f5f9;
@@ -123,5 +154,33 @@ const onOverlayClick = () => {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* ── Modal transition ── */
+.modal-enter-active {
+  transition: opacity 0.2s ease-out;
+}
+.modal-enter-active .app-modal__container {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+.modal-leave-active {
+  transition: opacity 0.15s ease-in;
+}
+.modal-leave-active .app-modal__container {
+  transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+.modal-enter-from {
+  opacity: 0;
+}
+.modal-enter-from .app-modal__container {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
+}
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-leave-to .app-modal__container {
+  transform: scale(0.95) translateY(10px);
+  opacity: 0;
 }
 </style>

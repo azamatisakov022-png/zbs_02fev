@@ -205,23 +205,23 @@ const slides = computed(() => [
   }
 
   .hero-card {
-    @apply static translate-y-0 w-[calc(100%-40px)] h-auto mx-5 mt-auto;
     position: absolute;
     bottom: 20px;
-    left: 0;
-    right: 0;
+    left: 20px;
+    right: 20px;
     top: auto;
     transform: none;
-    margin: 0 20px;
-    width: calc(100% - 40px);
+    width: auto;
     height: auto;
   }
 
   .hero-card-content {
-    @apply relative top-auto left-auto right-auto h-auto p-5;
     position: relative;
-    inset: auto;
+    top: auto;
+    left: auto;
+    right: auto;
     height: auto;
+    padding: 20px;
     margin: 10px;
   }
 
