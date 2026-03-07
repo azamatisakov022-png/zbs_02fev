@@ -240,13 +240,13 @@ const lastCalcPeriod = computed(() => {
   margin-top: 2px;
 }
 .info-alert__title {
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 700;
   color: #92400e;
   margin: 0 0 4px;
 }
 .info-alert__text {
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 500;
   color: #a16207;
   margin: 0;
