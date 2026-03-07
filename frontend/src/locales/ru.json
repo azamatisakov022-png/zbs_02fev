@@ -664,7 +664,12 @@
       "enterDirectorPhone": "Введите телефон руководителя",
       "enterContactFullName": "Введите ФИО контактного лица",
       "enterContactPhone": "Введите телефон контактного лица",
-      "enterContactEmail": "Введите email контактного лица"
+      "enterContactEmail": "Введите email контактного лица",
+      "serviceUnavailable": "Сервис регистрации временно недоступен. Попробуйте позже.",
+      "registrationFailed": "Ошибка при отправке заявки на регистрацию",
+      "enterValidInn": "Введите корректный ИНН (14 цифр)",
+      "innNotFound": "Организация с указанным ИНН не найдена в ЕСИ",
+      "verificationFailed": "Не удалось проверить ИНН. Попробуйте позже."
     },
     "toast": {
       "confirmAgreementTitle": "Подтвердите согласие",
