@@ -143,13 +143,30 @@ const submitEsiRegistration = async () => {
   if (!validateEsiForm()) return
 
   isEsiSubmitting.value = true
-  await new Promise(resolve => setTimeout(resolve, 2000))
 
-  const num = String(Math.floor(Math.random() * 9000) + 1000)
-  esiRegistrationNumber.value = `РЕГ-2026-${num}`
+  if (import.meta.env.DEV) {
+    // DEV-стаб: имитация ответа сервера
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const num = String(Math.floor(Math.random() * 9000) + 1000)
+    esiRegistrationNumber.value = `РЕГ-${new Date().getFullYear()}-${num}`
+    isEsiSubmitting.value = false
+    isEsiSuccess.value = true
+    return
+  }
 
-  isEsiSubmitting.value = false
-  isEsiSuccess.value = true
+  try {
+    const { data } = await api.post('/public/register/esi', {
+      inn: esiData.inn,
+      activityType: esiForm.activityType,
+      wasteCategories: esiForm.wasteCategories,
+    })
+    esiRegistrationNumber.value = data.registrationNumber
+    isEsiSuccess.value = true
+  } catch {
+    toastStore.show({ type: 'error', title: t('register.errors.registrationFailed'), message: t('register.errors.serviceUnavailable') })
+  } finally {
+    isEsiSubmitting.value = false
+  }
 }
 
 const startManualRegistration = () => {
@@ -488,11 +505,33 @@ const submitRegistration = async () => {
     return
   }
   isSubmitting.value = true
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  const num = String(Math.floor(Math.random() * 9000) + 1000)
-  registrationNumber.value = `РЕГ-2026-${num}`
-  isSubmitting.value = false
-  isSuccess.value = true
+
+  if (import.meta.env.DEV) {
+    // DEV-стаб: имитация ответа сервера
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    const num = String(Math.floor(Math.random() * 9000) + 1000)
+    registrationNumber.value = `РЕГ-${new Date().getFullYear()}-${num}`
+    isSubmitting.value = false
+    isSuccess.value = true
+    return
+  }
+
+  try {
+    const { data } = await api.post('/public/register', {
+      orgType: formData.orgType,
+      activityType: formData.activityType,
+      inn: formData.inn,
+      shortName: formData.shortName,
+      fullName: formData.fullName,
+      wasteCategories: formData.selectedProductGroups,
+    })
+    registrationNumber.value = data.registrationNumber
+    isSuccess.value = true
+  } catch {
+    toastStore.show({ type: 'error', title: t('register.errors.registrationFailed'), message: t('register.errors.serviceUnavailable') })
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const getOrgTypeLabel = (value: string) => {

@@ -1,13 +1,18 @@
 /**
  * Penalty calculation utilities
  * Based on application.yml: calculation.penalty.daily-rate = 0.0009 (0.09% per day)
+ *
+ * Ставки конфигурируются через env-переменные:
+ *   VITE_PENALTY_DAILY_RATE — дневная ставка (по умолчанию 0.0009)
+ *   VITE_PENALTY_CAP — потолок пени как множитель суммы долга (по умолчанию 1.0)
+ * При появлении API бэкенда — заменить на серверные значения.
  */
 
-/** Daily penalty rate: 0.09% */
-export const PENALTY_DAILY_RATE = 0.0009
+/** Daily penalty rate: configurable, default 0.09% */
+export const PENALTY_DAILY_RATE = Number(import.meta.env.VITE_PENALTY_DAILY_RATE) || 0.0009
 
-/** Penalty cap: penalty cannot exceed the debt amount (multiplier = 1.0) */
-export const PENALTY_CAP_MULTIPLIER = 1.0
+/** Penalty cap: configurable, default 100% of debt */
+export const PENALTY_CAP_MULTIPLIER = Number(import.meta.env.VITE_PENALTY_CAP) || 1.0
 
 export type PenaltyExemptionReason =
   | 'force_majeure'

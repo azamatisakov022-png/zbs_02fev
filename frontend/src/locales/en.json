@@ -664,7 +664,12 @@
       "enterDirectorPhone": "Enter director's phone",
       "enterContactFullName": "Enter contact person's full name",
       "enterContactPhone": "Enter contact person's phone",
-      "enterContactEmail": "Enter contact person's email"
+      "enterContactEmail": "Enter contact person's email",
+      "serviceUnavailable": "Registration service is temporarily unavailable. Please try again later.",
+      "registrationFailed": "Failed to submit registration application",
+      "enterValidInn": "Enter a valid INN (14 digits)",
+      "innNotFound": "Organization with the specified INN was not found in ESI",
+      "verificationFailed": "Could not verify INN. Please try again later."
     },
     "toast": {
       "confirmAgreementTitle": "Confirm agreement",

@@ -1,6 +1,11 @@
 /**
  * Payment account details — synced with backend application.yml → payment.accounts
+ *
+ * Статические реквизиты используются как fallback.
+ * При появлении API бэкенда — вызвать fetchPaymentAccounts() для получения актуальных данных.
  */
+import api from '../api/client'
+
 export interface PaymentAccount {
   recipient: string
   bank: string
@@ -26,4 +31,17 @@ export const PAYMENT_ACCOUNTS: Record<string, PaymentAccount> & {
     account: '4402013100100330',
     bik: '440001',
   },
+}
+
+/**
+ * Загружает актуальные реквизиты с бэкенда.
+ * При ошибке (API ещё не готов) — возвращает статические данные.
+ */
+export async function fetchPaymentAccounts(): Promise<typeof PAYMENT_ACCOUNTS> {
+  try {
+    const { data } = await api.get('/public/payment-accounts')
+    return data
+  } catch {
+    return PAYMENT_ACCOUNTS
+  }
 }
