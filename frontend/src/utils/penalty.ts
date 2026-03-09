@@ -3,10 +3,15 @@
  * KR Code on Non-Tax Revenues No. 90.
  *
  * Rate: 0.09% per calendar day on the debt amount, capped at 100%.
+ *
+ * Ставки конфигурируются через env-переменные:
+ *   VITE_PENALTY_DAILY_RATE — дневная ставка (по умолчанию 0.0009)
+ *   VITE_PENALTY_CAP — потолок пени как множитель суммы долга (по умолчанию 1.0)
+ * При появлении API бэкенда — заменить на серверные значения.
  */
 
-export const PENALTY_DAILY_RATE = 0.0009
-export const PENALTY_CAP_MULTIPLIER = 1.0
+export const PENALTY_DAILY_RATE = Number(import.meta.env.VITE_PENALTY_DAILY_RATE) || 0.0009
+export const PENALTY_CAP_MULTIPLIER = Number(import.meta.env.VITE_PENALTY_CAP) || 1.0
 export const PENALTY_LEGAL_BASE = 'penalty.legalBase'
 
 export type PenaltyExemptionReason =
