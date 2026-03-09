@@ -607,7 +607,12 @@
       "enterDirectorPhone": "Жетекчинин телефонун киргизиңиз",
       "enterContactFullName": "Байланыш адамынын аты-жөнүн киргизиңиз",
       "enterContactPhone": "Байланыш адамынын телефонун киргизиңиз",
-      "enterContactEmail": "Байланыш адамынын email киргизиңиз"
+      "enterContactEmail": "Байланыш адамынын email киргизиңиз",
+      "serviceUnavailable": "Каттоо кызматы убактылуу жеткиликсиз. Кийинчерээк аракет кылыңыз.",
+      "registrationFailed": "Каттоо арызын жөнөтүүдө ката кетти",
+      "enterValidInn": "Туура ИНН киргизиңиз (14 сан)",
+      "innNotFound": "Көрсөтүлгөн ИНН менен уюм ЕСИде табылган жок",
+      "verificationFailed": "ИННди текшерүү мүмкүн болгон жок. Кийинчерээк аракет кылыңыз."
     },
     "toast": {
       "confirmAgreementTitle": "Макулдукту тастыктаңыз",
