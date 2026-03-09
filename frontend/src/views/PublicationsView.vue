@@ -6,8 +6,8 @@ import { useRouter } from 'vue-router'
 const { t } = useI18n()
 const router = useRouter()
 
-function goToDecomposition() {
-  router.push('/publications/decomposition')
+function goToWasteLifetime() {
+  router.push('/publications/waste-lifetime')
 }
 
 interface Publication {
@@ -96,7 +96,7 @@ const handleClick = (_publication: Publication) => {
 
     <div class="container-main">
       <!-- Promo banner -->
-      <div class="promo-banner" @click="goToDecomposition">
+      <div class="promo-banner" @click="goToWasteLifetime">
         <span class="promo-badge">{{ $t('publications.bannerBadge') }}</span>
         <div class="promo-icon-box">
           <span class="promo-icon">♻️</span>
@@ -107,7 +107,7 @@ const handleClick = (_publication: Publication) => {
           </h3>
           <p class="promo-desc">{{ $t('publications.bannerDescription') }}</p>
         </div>
-        <button class="promo-btn" @click.stop="goToDecomposition">
+        <button class="promo-btn" @click.stop="goToWasteLifetime">
           {{ $t('publications.bannerButton') }} →
         </button>
       </div>
