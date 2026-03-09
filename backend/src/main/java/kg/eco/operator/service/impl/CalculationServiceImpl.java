@@ -52,6 +52,7 @@ public class CalculationServiceImpl implements CalculationService {
     private final DocumentRepository documentRepository;
     private final AuditLogRepository auditLogRepository;
     private final CalculationMapper calculationMapper;
+    private final FileStorageService fileStorageService;
     private final ApplicationEventPublisher eventPublisher;
     private final FileStorageService fileStorageService;
     private final BankingServicePort bankingServicePort;
