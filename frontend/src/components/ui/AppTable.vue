@@ -60,7 +60,7 @@ defineEmits<{
         <tr v-if="rows.length === 0">
           <td :colspan="columns.length + ($slots.actions ? 1 : 0)" class="app-table__empty">
             <slot name="empty">
-              <span class="text-[#94A3B8]">{{ t('common.noData') }}</span>
+              <span class="text-[#64748b]">{{ t('common.noData') }}</span>
             </slot>
           </td>
         </tr>
@@ -86,7 +86,7 @@ defineEmits<{
   background: #F8FAFC;
   font-size: 11px;
   text-transform: uppercase;
-  color: #94A3B8;
+  color: #64748B;
   font-weight: 600;
   letter-spacing: 0.5px;
   padding: 12px 16px;

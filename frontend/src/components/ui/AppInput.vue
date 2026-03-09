@@ -7,21 +7,29 @@ const { locale } = useI18n()
 const props = defineProps<{
   label?: string
   placeholder?: string
-  type?: 'text' | 'number' | 'email' | 'password' | 'date'
+  type?: 'text' | 'number' | 'email' | 'password' | 'date' | 'textarea'
   modelValue?: string | number
   error?: string
   hint?: string
   disabled?: boolean
   required?: boolean
   suffix?: string
+  autocomplete?: string
+  rows?: number
+  maxlength?: number
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string | number): void
+  (e: 'blur'): void
 }>()
 
+const inputId = `input-${Math.random().toString(36).slice(2, 9)}`
+const errorId = `${inputId}-error`
+const hintId = `${inputId}-hint`
+
 const onInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
   emit('update:modelValue', props.type === 'number' ? Number(target.value) : target.value)
 }
 
@@ -34,30 +42,54 @@ const inputLang = computed(() => {
 
 <template>
   <div class="app-input">
-    <label v-if="label" class="app-input__label">
+    <label v-if="label" :for="inputId" class="app-input__label">
       {{ label }}
       <span v-if="required" class="app-input__req">*</span>
     </label>
     <div class="app-input__wrap" :class="{ 'app-input__wrap--error': error, 'app-input__wrap--disabled': disabled }">
+      <!-- Textarea -->
+      <textarea
+        v-if="type === 'textarea'"
+        :id="inputId"
+        :value="modelValue"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :required="required"
+        :rows="rows || 3"
+        :maxlength="maxlength"
+        :aria-invalid="!!error"
+        :aria-describedby="error ? errorId : (hint ? hintId : undefined)"
+        class="app-input__field app-input__field--textarea"
+        @input="onInput"
+        @blur="emit('blur')"
+      />
+      <!-- Input -->
       <input
+        v-else
+        :id="inputId"
         :type="type || 'text'"
         :value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
         :lang="type === 'date' ? inputLang : undefined"
+        :autocomplete="autocomplete"
+        :maxlength="maxlength"
+        :aria-invalid="!!error"
+        :aria-describedby="error ? errorId : (hint ? hintId : undefined)"
         class="app-input__field"
         :class="{ 'app-input__field--suffix': suffix, 'app-input__field--date-empty': type === 'date' && !modelValue }"
         @input="onInput"
+        @blur="emit('blur')"
       />
       <!-- Translated date placeholder overlay (hides browser-native ДД.ММ.ГГГГ) -->
       <span v-if="type === 'date' && !modelValue" class="app-input__date-placeholder">
         {{ placeholder || $t('common.datePlaceholder') }}
       </span>
-      <span v-if="suffix" class="app-input__suffix">{{ suffix }}</span>
+      <span v-if="suffix && type !== 'textarea'" class="app-input__suffix">{{ suffix }}</span>
     </div>
-    <p v-if="error" class="app-input__error">{{ error }}</p>
-    <p v-else-if="hint" class="app-input__hint">{{ hint }}</p>
+    <p v-if="error" :id="errorId" class="app-input__error" role="alert">{{ error }}</p>
+    <p v-else-if="hint" :id="hintId" class="app-input__hint">{{ hint }}</p>
   </div>
 </template>
 
@@ -93,11 +125,18 @@ const inputLang = computed(() => {
   outline: none;
 }
 
+.app-input__field--textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
 .app-input__field::placeholder { color: #94A3B8; font-weight: 400; }
 
 .app-input__field:focus {
-  border-color: #22C55E;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 136, 141, 0.1);
 }
 
 .app-input__wrap--error .app-input__field {
@@ -133,14 +172,14 @@ const inputLang = computed(() => {
   position: absolute;
   right: 14px;
   font-size: 13px;
-  color: #94A3B8;
+  color: #64748B;
   font-weight: 500;
   pointer-events: none;
 }
 
 .app-input__hint {
   font-size: 11px;
-  color: #94A3B8;
+  color: #64748B;
   margin-top: 4px;
 }
 

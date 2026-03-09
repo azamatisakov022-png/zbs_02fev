@@ -48,10 +48,13 @@ services:
     ports:
       - "8081:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/eco_operator
+      SPRING_DATASOURCE_USERNAME: eco
+      SPRING_DATASOURCE_PASSWORD: eco123
       DB_USERNAME: eco
       DB_PASSWORD: eco123
-      JWT_SECRET: ${JWT_SECRET:-production-secret-change-me-in-env-file}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-only-for-local-development-do-not-use-in-production}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin

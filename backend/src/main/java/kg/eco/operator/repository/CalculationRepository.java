@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,6 +22,6 @@ public interface CalculationRepository extends JpaRepository<Calculation, Long>,
     long countByStatus(CalculationStatus status);
     long countByStatusIn(List<CalculationStatus> statuses);
 
-    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(c.number, 4, 4) AS int)), 0) FROM Calculation c WHERE c.number LIKE :prefix")
-    int findMaxNumberByPrefix(String prefix);
+    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(c.number, 9, 6) AS int)), 0) FROM Calculation c WHERE c.number LIKE :prefix")
+    int findMaxNumberByPrefix(@Param("prefix") String prefix);
 }

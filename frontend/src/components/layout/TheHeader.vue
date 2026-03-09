@@ -44,6 +44,17 @@ const mobileMenuOpen = ref(false)
 const toggleMobileMenu = () => {
   mobileMenuOpen.value = !mobileMenuOpen.value
 }
+
+const navItems = computed(() => [
+  { path: '/', label: t('nav.home') },
+  { path: '/about', label: t('nav.about') },
+  { path: '/legislation', label: t('nav.legislation') },
+  { path: '/licenses', label: t('nav.licenses') },
+  { path: '/publications', label: t('nav.publications') },
+  { path: '/registries', label: t('nav.gisMap') },
+  { path: '/calculator', label: t('nav.calculator') },
+  { path: '/contests', label: t('nav.contests') },
+])
 </script>
 
 <template>
@@ -191,6 +202,19 @@ const toggleMobileMenu = () => {
             <img src="/images/icons/map-pin.svg" alt="location" class="w-5 h-5" />
             <span class="text-[#415861] text-sm">{{ $t('common.addressFull') }}</span>
           </div>
+        </div>
+
+        <!-- Navigation links (mobile only) -->
+        <div class="space-y-1 mb-4 pt-3 border-t border-gray-100">
+          <RouterLink
+            v-for="item in navItems"
+            :key="item.path"
+            :to="item.path"
+            class="block py-2 text-sm font-medium uppercase text-[#415861] hover:text-[#0e888d] transition-colors"
+            @click="mobileMenuOpen = false"
+          >
+            {{ item.label }}
+          </RouterLink>
         </div>
 
         <!-- Language switcher (mobile) -->

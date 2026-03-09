@@ -19,5 +19,7 @@ public interface PayerService {
 
     SuccessResponse addDocument(Long id, MultipartFile file, String type);
 
+    PayerResponse getByInn(String inn);
+
     PayerStatsResponse getStats();
 }

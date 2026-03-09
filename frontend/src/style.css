@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* ═══ Skip-link (a11y) ═══ */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 10px 24px;
+  background: var(--color-primary, #0e888d);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 0 0 10px 10px;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--color-primary, #0e888d);
+  outline-offset: 2px;
+}
+
 /* Custom font imports */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@900&family=Source+Sans+3:wght@400;600&display=swap');
 
@@ -7,10 +29,16 @@
    Design System — CSS Custom Properties
    ═══════════════════════════════════════ */
 :root {
-  /* Brand colors */
-  --color-primary: #2D8B4E;
-  --color-primary-light: #34A85A;
-  --color-primary-dark: #236B3E;
+  /* Primary = teal (matches tailwind primary-500) */
+  --color-primary: #0e888d;
+  --color-primary-light: #33a9ab;
+  --color-primary-dark: #0b6d71;
+
+  /* CTA = green (public CTA, sidebar active) */
+  --color-cta: #2D8B4E;
+  --color-cta-light: #34A85A;
+  --color-cta-dark: #236B3E;
+
   --color-secondary: #fea629;
   --color-dark: #111827;
   --color-text: #374151;
@@ -47,7 +75,9 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Dashboard Buttons — Four Categories
+   Dashboard Buttons — .btn-action-*
+   Used in: DataTable, DashboardLayout, business views
+   Shape: 6px radius, 14px text, compact
    ═══════════════════════════════════════ */
 .btn-action {
   display: inline-flex;
@@ -69,7 +99,7 @@ body {
 }
 
 .btn-action-primary {
-  background: linear-gradient(135deg, #2D8B4E 0%, #236B3E 100%);
+  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-dark) 100%);
   color: white;
   box-shadow: 0 2px 4px rgba(45,139,78,0.3);
 }
@@ -220,8 +250,8 @@ body {
 
 .form-input:focus {
   outline: none;
-  border-color: #2D8B4E;
-  box-shadow: 0 0 0 3px rgba(45,139,78,0.12);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14,136,141,0.12);
 }
 
 .form-input-error {
@@ -305,8 +335,8 @@ body {
    Stepper — Pulse animation for active step
    ═══════════════════════════════════════ */
 @keyframes stepPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(45,139,78,0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(45,139,78,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(14,136,141,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(14,136,141,0); }
 }
 .step-active-pulse {
   animation: stepPulse 2s ease-in-out infinite;
@@ -325,7 +355,7 @@ body {
    Accessibility
    ═══════════════════════════════════════ */
 *:focus-visible {
-  outline: 2px solid #2D8B4E;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -333,23 +363,6 @@ body {
   outline: none;
 }
 
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: 16px;
-  z-index: 9999;
-  padding: 12px 24px;
-  background: #1e293b;
-  color: white;
-  border-radius: 0 0 8px 8px;
-  font-weight: 600;
-  font-size: 14px;
-  transition: top 0.2s;
-}
-
-.skip-link:focus {
-  top: 0;
-}
 
 /* ═══════════════════════════════════════
    Public Site — Legacy Classes
@@ -359,11 +372,11 @@ body {
 }
 
 @utility text-primary-500 {
-  color: #2D8B4E;
+  color: #0e888d;
 }
 
 @utility bg-primary-500 {
-  background-color: #2D8B4E;
+  background-color: #0e888d;
 }
 
 @utility text-secondary-500 {
@@ -419,8 +432,9 @@ body {
 }
 
 .strategy-card {
-  width: 407px;
-  height: 309px;
+  width: 100%;
+  max-width: 407px;
+  min-height: 250px;
   background: white;
   border: 1px solid rgba(0,0,0,0.06);
   border-radius: var(--radius-xl);
@@ -442,9 +456,13 @@ body {
   box-shadow: 0px 25px 30px 0px rgba(0, 0, 0, 0.25);
 }
 
-/* Public CTA buttons */
+/* ═══════════════════════════════════════
+   Public Site CTA Buttons — .btn-primary / .btn-secondary / .btn-outline
+   Used in: public pages (hero, sections, decomposition)
+   Shape: 30px pill radius, 700 weight, uppercase
+   ═══════════════════════════════════════ */
 .btn-primary {
-  background: linear-gradient(135deg, #2D8B4E 0%, #236B3E 100%);
+  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-dark) 100%);
   color: white;
   border-radius: 30px;
   padding: 14px 30px;
@@ -479,8 +497,8 @@ body {
 
 .btn-outline {
   background-color: transparent;
-  border: 2px solid #2D8B4E;
-  color: #2D8B4E;
+  border: 2px solid var(--color-cta);
+  color: var(--color-cta);
   border-radius: 30px;
   padding: 12px 28px;
   font-weight: 700;
@@ -489,14 +507,14 @@ body {
 }
 
 .btn-outline:hover {
-  background-color: #2D8B4E;
+  background-color: var(--color-cta);
   color: white;
 }
 
 .section-title-underline {
   width: 157px;
   height: 3px;
-  background-color: #2D8B4E;
+  background-color: var(--color-cta);
   border-radius: 3px;
 }
 

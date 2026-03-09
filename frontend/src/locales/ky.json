@@ -29,6 +29,7 @@
     "no": "Жок",
     "loading": "Жүктөлүүдө...",
     "noData": "Маалымат жок",
+    "noDataDescription": "Маалымат жеткиликтүү болгондо бул жерде пайда болот",
     "actions": "Аракеттер",
     "status": "Статус",
     "date": "Күнү",
@@ -664,7 +665,12 @@
       "enterDirectorPhone": "Жетекчинин телефонун киргизиңиз",
       "enterContactFullName": "Байланыш адамынын аты-жөнүн киргизиңиз",
       "enterContactPhone": "Байланыш адамынын телефонун киргизиңиз",
-      "enterContactEmail": "Байланыш адамынын email киргизиңиз"
+      "enterContactEmail": "Байланыш адамынын email киргизиңиз",
+      "serviceUnavailable": "Каттоо кызматы убактылуу жеткиликсиз. Кийинчерээк аракет кылыңыз.",
+      "registrationFailed": "Каттоо арызын жөнөтүүдө ката кетти",
+      "enterValidInn": "Туура ИНН киргизиңиз (14 сан)",
+      "innNotFound": "Көрсөтүлгөн ИНН менен уюм ЕСИде табылган жок",
+      "verificationFailed": "ИННди текшерүү мүмкүн болгон жок. Кийинчерээк аракет кылыңыз."
     },
     "toast": {
       "confirmAgreementTitle": "Макулдукту тастыктаңыз",
@@ -6774,6 +6780,11 @@
   },
   "instructionCalc": {
     "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Утилизациялык жыйымдын суммасын эсептөө формасын толтуруу боюнча нускама</h2><p class=\"inst-subtitle\">өндүрүүчүлөр жана импорттоочулар үчүн</p><div class=\"inst-section\"><div class=\"inst-graph-label\">Графа 1</div><p>Катар номери көрсөтүлөт.</p></div></div>"
+  },
+  "error": {
+    "title": "Бир нерсе туура эмес болду",
+    "description": "Күтүлбөгөн ката пайда болду. Баракты жаңылап көрүңүз.",
+    "retry": "Кайра аракет кылуу"
   },
   "instructionReport": {
     "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Отчёттуулук формасын толтуруу боюнча нускама</h2><div class=\"inst-section\"><div class=\"inst-graph-label\">Жалпы эрежелер</div><p>Толтурууга жатпаган отчёттуулук позицияларында сызык коюлат.</p></div></div>"

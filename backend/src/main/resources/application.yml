@@ -4,7 +4,7 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5433/eco_operator
-    username: ${DB_USERNAME}
+    username: ${DB_USERNAME:eco}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 

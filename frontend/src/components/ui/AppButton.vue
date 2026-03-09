@@ -69,11 +69,11 @@ defineEmits<{
 
 /* Variants */
 .app-btn--primary {
-  background: #22C55E;
+  background: var(--color-primary);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 2px 8px rgba(14, 136, 141, 0.25);
 }
-.app-btn--primary:hover { background: #16A34A; }
+.app-btn--primary:hover { background: var(--color-primary-dark); }
 
 .app-btn--secondary {
   background: #fff;
@@ -96,10 +96,10 @@ defineEmits<{
 
 .app-btn--outline {
   background: #fff;
-  color: #22C55E;
-  border-color: #22C55E;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
-.app-btn--outline:hover { background: #F0FDF4; }
+.app-btn--outline:hover { background: #e6f4f4; }
 
 /* States */
 .app-btn--full { width: 100%; }

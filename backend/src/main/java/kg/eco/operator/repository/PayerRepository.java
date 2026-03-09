@@ -22,6 +22,8 @@ public interface PayerRepository extends JpaRepository<Payer, Long>, JpaSpecific
 
     Optional<Payer> findByCompany_Id(Long companyId);
 
+    Optional<Payer> findByCompany_Inn(String inn);
+
     @Query("SELECT COUNT(p) FROM Payer p WHERE p.systemStatus = 'ACTIVE'")
     long countActive();
 

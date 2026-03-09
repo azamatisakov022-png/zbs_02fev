@@ -44,12 +44,8 @@ const { t } = useI18n()
             </p>
           </div>
 
-          <!-- Pagination dots -->
-          <div class="flex items-center gap-[8px] mt-8 lg:mt-auto">
-            <span class="w-[30px] h-[7px] bg-[#e3e3e3] rounded-[7px]"></span>
-            <span class="w-[34px] h-[9px] bg-[#fea629] rounded-[7px]"></span>
-            <span class="w-[30px] h-[7px] bg-[#e3e3e3] rounded-[7px]"></span>
-          </div>
+          <!-- Spacer -->
+          <div class="mt-8 lg:mt-auto"></div>
         </div>
 
         <!-- Right card - Desktop only positioned absolutely -->

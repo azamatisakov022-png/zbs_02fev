@@ -85,11 +85,11 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
             <td :colspan="actions ? columns.length + 1 : columns.length">
               <slot name="empty">
                 <div class="flex flex-col items-center justify-center py-[60px] px-5">
-                  <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#94a3b8]">
+                  <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#64748b]">
                     <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                   </div>
                   <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
-                  <p class="text-sm text-[#94a3b8]">{{ t('common.noData') }}</p>
+                  <p class="text-sm text-[#64748b]">{{ t('common.noDataDescription') }}</p>
                 </div>
               </slot>
             </td>
@@ -142,11 +142,11 @@ defineEmits(['view', 'edit', 'delete', 'approve', 'reject'])
       <template v-else>
         <slot name="empty">
           <div class="flex flex-col items-center justify-center py-[60px] px-5">
-            <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#94a3b8]">
+            <div class="w-20 h-20 rounded-full bg-[#f1f5f9] flex items-center justify-center mb-5 text-[#64748b]">
               <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
             </div>
             <h3 class="text-lg font-semibold text-[#64748b] mb-2">{{ t('common.noData') }}</h3>
-            <p class="text-sm text-[#94a3b8]">{{ t('common.noData') }}</p>
+            <p class="text-sm text-[#64748b]">{{ t('common.noDataDescription') }}</p>
           </div>
         </slot>
       </template>

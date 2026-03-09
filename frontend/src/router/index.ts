@@ -577,9 +577,12 @@ const router = createRouter({
 
 // Auth guard — check real authentication state
 router.beforeEach((to, _from, next) => {
-  // Auto-logout when navigating to login pages (allow account/role switching)
+  // Redirect authenticated users away from login pages to their dashboard
   if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
-    authStore.logout()
+    const role = authStore.userRole.value
+    if (role) {
+      return next(authStore.getRoleDashboard(role))
+    }
   }
 
   if (to.meta.requiresAuth) {

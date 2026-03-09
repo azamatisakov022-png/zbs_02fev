@@ -1,29 +1,38 @@
 /**
- * Penalty calculation utilities
- * Based on application.yml: calculation.penalty.daily-rate = 0.0009 (0.09% per day)
+ * Penalty (пеня) calculation utilities per Article 37,
+ * KR Code on Non-Tax Revenues No. 90.
+ *
+ * Rate: 0.09% per calendar day on the debt amount, capped at 100%.
+ *
+ * Ставки конфигурируются через env-переменные:
+ *   VITE_PENALTY_DAILY_RATE — дневная ставка (по умолчанию 0.0009)
+ *   VITE_PENALTY_CAP — потолок пени как множитель суммы долга (по умолчанию 1.0)
+ * При появлении API бэкенда — заменить на серверные значения.
  */
 
-/** Daily penalty rate: 0.09% */
-export const PENALTY_DAILY_RATE = 0.0009
-
-/** Penalty cap: penalty cannot exceed the debt amount (multiplier = 1.0) */
-export const PENALTY_CAP_MULTIPLIER = 1.0
+export const PENALTY_DAILY_RATE = Number(import.meta.env.VITE_PENALTY_DAILY_RATE) || 0.0009
+export const PENALTY_CAP_MULTIPLIER = Number(import.meta.env.VITE_PENALTY_CAP) || 1.0
+export const PENALTY_LEGAL_BASE = 'penalty.legalBase'
 
 export type PenaltyExemptionReason =
-  | 'force_majeure'
-  | 'government_decree'
+  | 'government_decision'
   | 'court_decision'
-  | 'payment_plan'
+  | 'force_majeure'
+  | 'restructuring'
+  | 'tax_authority_decision'
 
 export interface PenaltyExemption {
   reason: PenaltyExemptionReason
-  startDate: string
-  endDate?: string
-  documentNumber?: string
+  documentNumber: string
+  date: string
+  notes?: string
   active: boolean
 }
 
-export interface PenaltyResult {
+export interface PenaltyCalculation {
+  debtAmount: number
+  dueDate: Date
+  calculationDate: Date
   overdueDays: number
   dailyPenalty: number
   totalPenalty: number
@@ -32,58 +41,77 @@ export interface PenaltyResult {
 }
 
 /**
- * Calculate overdue days from a due date to today
+ * Parse a dd.MM.yyyy string into a Date.
  */
-export function getOverdueDays(dueDate: string | Date): number {
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  due.setHours(0, 0, 0, 0)
-
-  const diff = today.getTime() - due.getTime()
-  if (diff <= 0) return 0
-
-  return Math.floor(diff / (1000 * 60 * 60 * 24))
+function parseDateString(dateStr: string): Date {
+  const [d, m, y] = dateStr.split('.')
+  return new Date(+y, +m - 1, +d)
 }
 
 /**
- * Calculate penalty for a given debt amount and due date
+ * Get the number of calendar days between dueDate and toDate.
+ * Returns 0 if toDate <= dueDate (not overdue).
  */
-export function calculatePenalty(debtAmount: number, dueDate: string | Date): PenaltyResult {
-  const overdueDays = getOverdueDays(dueDate)
+export function getOverdueDays(dueDate: Date | string, toDate?: Date | string): number {
+  const due = typeof dueDate === 'string' ? parseDateString(dueDate) : new Date(dueDate)
+  const to = toDate
+    ? (typeof toDate === 'string' ? parseDateString(toDate) : new Date(toDate))
+    : new Date()
 
-  if (overdueDays <= 0) {
-    return {
-      overdueDays: 0,
-      dailyPenalty: 0,
-      totalPenalty: 0,
-      capReached: false,
-      totalToPay: debtAmount,
-    }
-  }
+  due.setHours(0, 0, 0, 0)
+  to.setHours(0, 0, 0, 0)
 
-  const dailyPenalty = debtAmount * PENALTY_DAILY_RATE
-  let totalPenalty = dailyPenalty * overdueDays
-  const cap = debtAmount * PENALTY_CAP_MULTIPLIER
-  const capReached = totalPenalty >= cap
+  const diffMs = to.getTime() - due.getTime()
+  if (diffMs <= 0) return 0
 
-  if (capReached) {
-    totalPenalty = cap
-  }
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+}
+
+/**
+ * Calculate penalty for a single debt.
+ */
+export function calculatePenalty(
+  debtAmount: number,
+  dueDate: Date | string,
+  calculationDate?: Date | string,
+): PenaltyCalculation {
+  const due = typeof dueDate === 'string' ? parseDateString(dueDate) : new Date(dueDate)
+  const calcDate = calculationDate
+    ? (typeof calculationDate === 'string' ? parseDateString(calculationDate) : new Date(calculationDate))
+    : new Date()
+
+  const overdueDays = getOverdueDays(due, calcDate)
+  const dailyPenalty = Math.round(debtAmount * PENALTY_DAILY_RATE * 100) / 100
+  const maxPenalty = Math.round(debtAmount * PENALTY_CAP_MULTIPLIER * 100) / 100
+  const rawPenalty = Math.round(dailyPenalty * overdueDays * 100) / 100
+  const totalPenalty = Math.min(rawPenalty, maxPenalty)
+  const capReached = rawPenalty >= maxPenalty && overdueDays > 0
 
   return {
+    debtAmount,
+    dueDate: due,
+    calculationDate: calcDate,
     overdueDays,
     dailyPenalty,
     totalPenalty,
     capReached,
-    totalToPay: debtAmount + totalPenalty,
+    totalToPay: Math.round((debtAmount + totalPenalty) * 100) / 100,
   }
 }
 
 /**
- * Check if an organization is exempt from penalty
+ * Check if a payer is exempt from penalty based on active exemptions.
  */
 export function isExemptFromPenalty(exemptions: PenaltyExemption[]): boolean {
-  if (!exemptions || exemptions.length === 0) return false
-  return exemptions.some((e) => e.active)
+  return exemptions.some(e => e.active)
+}
+
+/**
+ * Calculate penalty for multiple debts.
+ */
+export function calculateTotalPenalty(
+  debts: Array<{ amount: number; dueDate: Date | string }>,
+  calculationDate?: Date | string,
+): PenaltyCalculation[] {
+  return debts.map(d => calculatePenalty(d.amount, d.dueDate, calculationDate))
 }

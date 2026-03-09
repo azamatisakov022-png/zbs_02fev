@@ -48,8 +48,8 @@ const closeNav = () => {
         </li>
       </ul>
 
-      <!-- Mobile navigation toggle -->
-      <div class="lg:hidden py-3">
+      <!-- Mobile navigation toggle (md-lg only; below md, TheHeader handles nav) -->
+      <div class="hidden md:block lg:hidden py-3">
         <button
           @click="mobileNavOpen = !mobileNavOpen"
           class="flex items-center justify-between w-full text-[#415861]"

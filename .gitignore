@@ -1,27 +1,56 @@
 # Dependencies
-node_modules
+node_modules/
+frontend/node_modules/
 
-# Environment
+# Build output
+dist/
+frontend/dist/
+backend/target/
+*.jar
+*.war
+
+# Environment files
 .env
 .env.local
 .env.*.local
+frontend/.env.local
+frontend/.env.*.local
 
-# Build output
-dist
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
 
-# IDE / Editor
-.vscode
-.idea
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel
 .vercel
 
-# OS files
-.DS_Store
-.localized
-
-# Claude
-.claude
+# Claude Code
+.claude/
 .mcp.json
 
 # MD files (except README.md)
 *.md
 !README.md
+
+# Misc
+*.swp
+*.swo
+*~
+.cache/
