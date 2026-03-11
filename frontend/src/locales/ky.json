@@ -156,7 +156,8 @@
       "map": "ГИС-карта",
       "profile": "Менин профилим",
       "feedback": "Жарандардын кайрылуулары",
-      "audit": "Аракеттер журналы"
+      "audit": "Аракеттер журналы",
+      "detectedCompanies": "Аныкталган компаниялар"
     },
     "admin": {
       "dashboard": "Башкы бет",
@@ -375,7 +376,8 @@
     "employeeFeedback": "Жарандардын кайрылуулары",
     "feedbackDetail": "Кайрылуу картасы",
     "legalBase": "Ченемдик-укуктук база",
-    "employeeAudit": "Аракеттер журналы"
+    "employeeAudit": "Аракеттер журналы",
+    "employeeDetectedCompanies": "Аныкталган компаниялар"
   },
   "dashboard": {
     "ecoOperatorName": "МИ Эко Оператор"
@@ -664,7 +666,9 @@
       "enterDirectorPhone": "Жетекчинин телефонун киргизиңиз",
       "enterContactFullName": "Байланыш адамынын аты-жөнүн киргизиңиз",
       "enterContactPhone": "Байланыш адамынын телефонун киргизиңиз",
-      "enterContactEmail": "Байланыш адамынын email киргизиңиз"
+      "enterContactEmail": "Байланыш адамынын email киргизиңиз",
+      "enterValidInn": "Туура ИНН киргизиңиз (14 сан)",
+      "innNotFound": "ИНН ГНС реестринде табылган жок"
     },
     "toast": {
       "confirmAgreementTitle": "Макулдукту тастыктаңыз",
@@ -7236,5 +7240,77 @@
     "subtitle": "Системадагы аракеттериңиздин тарыхы",
     "personalStats": "Сиздин статистикаңыз",
     "exportPersonal": "Менин журналымды экспорттоо"
+  },
+  "detectedCompanies": {
+    "title": "Аныкталган компаниялар",
+    "subtitle": "ГТС жана ГНС мониторинги аркылуу аныкталган компаниялар",
+    "found": "Табылды",
+    "of": "ичинен",
+    "searchPlaceholder": "Аталышы же ИНН боюнча издөө",
+    "sourceAll": "Булак: Баары",
+    "statusAll": "Статус: Баары",
+    "resetFilters": "Фильтрлерди тазалоо",
+    "showPerPage": "Көрсөтүү",
+    "showing": "Көрсөтүлүүдө",
+    "noResults": "Компаниялар табылган жок",
+    "tryChangingSearch": "Издөө параметрлерин өзгөртүп көрүңүз",
+    "runGts": "ГТС мониторинг",
+    "runGns": "ГНС мониторинг",
+    "gtsMonitoringDone": "ГТС мониторинг аяктады. Жаңы компаниялар: {count}",
+    "gnsMonitoringDone": "ГНС мониторинг аяктады. Жаңы компаниялар: {count}",
+    "monitoringError": "Мониторингди баштоодо ката",
+    "statsTotal": "Жалпы аныкталган",
+    "statsNew": "Жаңылар",
+    "statsGts": "ГТС ден",
+    "statsGns": "ГНС ден",
+    "colCompany": "Компания",
+    "colInn": "ИНН",
+    "colSource": "Булак",
+    "colStatus": "Статус",
+    "colCodes": "ОКЭД / ТН ВЭД",
+    "colMass": "Массасы (кг)",
+    "colEmployee": "Кызматкер",
+    "colDate": "Аныктоо датасы",
+    "source": {
+      "gts": "ГТС",
+      "gns": "ГНС",
+      "self": "Кол менен"
+    },
+    "status": {
+      "new": "Жаңы",
+      "notified": "Кабарланды",
+      "registration_submitted": "Арыз берилди",
+      "under_review": "Каралууда",
+      "revision_requested": "Оңдоо талап кылынат",
+      "registered": "Катталган",
+      "approved": "Бекитилди",
+      "rejected": "Четке кагылды"
+    },
+    "backToList": "Тизмеге кайтуу",
+    "notFound": "Компания табылган жок",
+    "statusPipeline": "Иштетүү статусу",
+    "companyData": "Компаниянын маалыматтары",
+    "fieldLegalForm": "Уюштуруу-укуктук формасы",
+    "fieldLegalAddress": "Юридикалык дареги",
+    "fieldDirector": "Жетекчи",
+    "fieldPhone": "Телефон",
+    "fieldEmail": "Email",
+    "fieldOkpo": "ОКПО коду",
+    "fieldOked": "ОКЭД коддору",
+    "fieldTnved": "ТН ВЭД коддору",
+    "fieldGnsStatus": "ГНС статусу",
+    "fieldNotifiedAt": "Кабарлоо датасы",
+    "kg": "кг",
+    "actions": "Аракеттер",
+    "actionNotify": "Компанияга кабарлоо",
+    "actionReject": "Четке кагуу",
+    "actionAssign": "Кызматкер дайындоо",
+    "rejectReason": "Четке кагуу себеби",
+    "rejectReasonPlaceholder": "Четке кагуу себебин көрсөтүңүз...",
+    "confirmReject": "Четке кагууну ырастоо",
+    "cancel": "Жокко чыгаруу",
+    "assignEmployeeId": "Кызматкер ID",
+    "assignPlaceholder": "Кызматкердин ID син киргизиңиз",
+    "confirmAssign": "Дайындоо"
   }
 }

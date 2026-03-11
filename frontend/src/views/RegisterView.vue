@@ -79,16 +79,16 @@ const handleEsiLogin = async () => {
   isEsiLoading.value = true
   try {
     const { data } = await api.get(`/public/verify-inn/${inn}`)
-    if (!data.verification?.valid) {
-      esiError.value = data.verification?.errorMessage || t('register.errors.innNotFound')
+    if (!data.valid || !data.inn) {
+      esiError.value = data.error || t('register.errors.innNotFound')
       return
     }
-    esiData.inn = data.verification.inn
-    esiData.shortName = data.verification.officialName || ''
-    esiData.directorFullName = data.registration?.directorFullName || ''
-    esiData.legalAddress = data.registration?.legalAddress || ''
-    esiData.phone = data.registration?.phone || ''
-    esiData.email = data.registration?.email || ''
+    esiData.inn = data.inn
+    esiData.shortName = data.shortName || ''
+    esiData.directorFullName = data.directorFullName || ''
+    esiData.legalAddress = data.legalAddress || ''
+    esiData.phone = data.phone || ''
+    esiData.email = data.email || ''
     registrationMode.value = 'esi'
   } catch {
     esiError.value = t('register.errors.verificationFailed')

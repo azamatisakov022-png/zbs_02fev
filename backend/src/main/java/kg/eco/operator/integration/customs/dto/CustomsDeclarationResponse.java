@@ -11,6 +11,7 @@ import java.util.List;
 public class CustomsDeclarationResponse {
     private String declarationNumber;
     private LocalDate declarationDate;
+    private String companyInn;
     private String customsPost;
     private List<CustomsImportItem> items;
     private String countryOfOrigin;

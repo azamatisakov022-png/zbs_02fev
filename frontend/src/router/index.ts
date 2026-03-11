@@ -251,6 +251,18 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.feedbackDetail' },
   },
   {
+    path: '/employee/detected-companies',
+    name: 'employee-detected-companies',
+    component: () => import('../views/employee/EmployeeDetectedCompanies.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.employeeDetectedCompanies' },
+  },
+  {
+    path: '/employee/detected-companies/:id',
+    name: 'employee-detected-company-detail',
+    component: () => import('../views/employee/EmployeeDetectedCompanyDetail.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.detectedCompanyCard' },
+  },
+  {
     path: '/employee/audit',
     name: 'employee-audit',
     component: () => import('../views/employee/EmployeeAuditLog.vue'),

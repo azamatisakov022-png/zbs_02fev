@@ -17,6 +17,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "https://frontend-zeta-five-85.vercel.app",
                 "http://localhost:5173",
+                "http://localhost:5174",
                 "http://localhost:3000"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

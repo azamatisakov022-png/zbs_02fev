@@ -34,6 +34,7 @@ public class StubCustomsServiceAdapter implements CustomsServicePort {
         declarations.add(CustomsDeclarationResponse.builder()
                 .declarationNumber("10311010/150325/0001234")
                 .declarationDate(request.getPeriodFrom().plusDays(15))
+                .companyInn("11223344556677")
                 .customsPost("Бишкекский таможенный пост")
                 .countryOfOrigin("Китай")
                 .items(List.of(
@@ -63,6 +64,7 @@ public class StubCustomsServiceAdapter implements CustomsServicePort {
         declarations.add(CustomsDeclarationResponse.builder()
                 .declarationNumber("10311010/200325/0001567")
                 .declarationDate(request.getPeriodFrom().plusDays(20))
+                .companyInn("99887766554433")
                 .customsPost("Бишкекский таможенный пост")
                 .countryOfOrigin("Россия")
                 .items(List.of(

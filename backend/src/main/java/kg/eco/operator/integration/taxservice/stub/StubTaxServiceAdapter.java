@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -124,6 +125,85 @@ public class StubTaxServiceAdapter implements TaxServicePort {
                 .referenceNumber("GNS-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                 .submittedAt(LocalDateTime.now())
                 .build();
+    }
+
+    @Override
+    public List<TaxCompanyRegistrationResponse> getCompaniesByOkedCodes(List<String> okedCodes) {
+        log.info("[STUB ГНС] Поиск компаний по ОКЭД: {}", okedCodes);
+
+        List<TaxCompanyRegistrationResponse> results = new ArrayList<>();
+
+        // Проверяем известные компании
+        for (Map.Entry<String, StubCompany> entry : KNOWN_COMPANIES.entrySet()) {
+            StubCompany company = entry.getValue();
+            if (company.okedCodes != null &&
+                    company.okedCodes.stream().anyMatch(okedCodes::contains)) {
+                results.add(TaxCompanyRegistrationResponse.builder()
+                        .inn(entry.getKey())
+                        .officialName(company.name)
+                        .legalForm(company.legalForm)
+                        .legalAddress(company.address)
+                        .actualAddress(company.address)
+                        .director(company.director)
+                        .directorPosition(company.directorPosition)
+                        .okpoCode(company.okpoCode)
+                        .okedCodes(company.okedCodes)
+                        .phone(company.phone)
+                        .email(company.email)
+                        .registrationDate(company.registrationDate)
+                        .status(company.status)
+                        .build());
+            }
+        }
+
+        // Добавляем тестовые компании-производители
+        results.add(TaxCompanyRegistrationResponse.builder()
+                .inn("55667788001122")
+                .officialName("ОсОО \"Бишкек Пластик\"")
+                .legalForm("ОсОО")
+                .legalAddress("г. Бишкек, ул. Жибек Жолу 150")
+                .director("Асанов К.М.")
+                .directorPosition("Директор")
+                .okpoCode("22334")
+                .okedCodes(List.of("22.21", "22.29"))
+                .phone("+996 555 202020")
+                .email("info@bishkek-plastic.kg")
+                .registrationDate(LocalDate.of(2018, 5, 20))
+                .status("active")
+                .build());
+
+        results.add(TaxCompanyRegistrationResponse.builder()
+                .inn("33445566778899")
+                .officialName("ОсОО \"Кыргыз Упаковка\"")
+                .legalForm("ОсОО")
+                .legalAddress("г. Бишкек, ул. Ахунбаева 77")
+                .director("Жумабеков Т.А.")
+                .directorPosition("Директор")
+                .okpoCode("33445")
+                .okedCodes(List.of("17.21", "17.29"))
+                .phone("+996 555 303030")
+                .email("info@kyrgyz-pack.kg")
+                .registrationDate(LocalDate.of(2020, 2, 10))
+                .status("active")
+                .build());
+
+        results.add(TaxCompanyRegistrationResponse.builder()
+                .inn("77889900112233")
+                .officialName("ОсОО \"Ош Напитки\"")
+                .legalForm("ОсОО")
+                .legalAddress("г. Ош, ул. Ленина 45")
+                .director("Маматов Б.Р.")
+                .directorPosition("Директор")
+                .okpoCode("44556")
+                .okedCodes(List.of("11.01", "11.02"))
+                .phone("+996 555 404040")
+                .email("info@osh-drinks.kg")
+                .registrationDate(LocalDate.of(2017, 8, 1))
+                .status("active")
+                .build());
+
+        log.info("[STUB ГНС] Найдено компаний по ОКЭД: {}", results.size());
+        return results;
     }
 
     private record StubCompany(

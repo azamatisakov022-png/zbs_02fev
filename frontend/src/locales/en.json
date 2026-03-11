@@ -156,7 +156,8 @@
       "map": "GIS Map",
       "profile": "My profile",
       "feedback": "Citizen Requests",
-      "audit": "Activity Log"
+      "audit": "Activity Log",
+      "detectedCompanies": "Detected Companies"
     },
     "admin": {
       "dashboard": "Home",
@@ -375,7 +376,8 @@
     "employeeFeedback": "Citizen Requests",
     "feedbackDetail": "Request Details",
     "legalBase": "Legal and Regulatory Framework",
-    "employeeAudit": "Activity Log"
+    "employeeAudit": "Activity Log",
+    "employeeDetectedCompanies": "Detected Companies"
   },
   "dashboard": {
     "ecoOperatorName": "SE Eco Operator"
@@ -664,7 +666,9 @@
       "enterDirectorPhone": "Enter director's phone",
       "enterContactFullName": "Enter contact person's full name",
       "enterContactPhone": "Enter contact person's phone",
-      "enterContactEmail": "Enter contact person's email"
+      "enterContactEmail": "Enter contact person's email",
+      "enterValidInn": "Enter a valid TIN (14 digits)",
+      "innNotFound": "TIN not found in the GNS registry"
     },
     "toast": {
       "confirmAgreementTitle": "Confirm agreement",
@@ -7182,5 +7186,77 @@
     "subtitle": "History of your actions in the system",
     "personalStats": "Your Statistics",
     "exportPersonal": "Export My Log"
+  },
+  "detectedCompanies": {
+    "title": "Detected Companies",
+    "subtitle": "Companies detected through GTS and GNS monitoring",
+    "found": "Found",
+    "of": "of",
+    "searchPlaceholder": "Search by name or TIN",
+    "sourceAll": "Source: All",
+    "statusAll": "Status: All",
+    "resetFilters": "Reset filters",
+    "showPerPage": "Show",
+    "showing": "Showing",
+    "noResults": "No companies found",
+    "tryChangingSearch": "Try changing search parameters",
+    "runGts": "GTS Monitoring",
+    "runGns": "GNS Monitoring",
+    "gtsMonitoringDone": "GTS monitoring completed. New companies: {count}",
+    "gnsMonitoringDone": "GNS monitoring completed. New companies: {count}",
+    "monitoringError": "Error starting monitoring",
+    "statsTotal": "Total detected",
+    "statsNew": "New",
+    "statsGts": "From GTS",
+    "statsGns": "From GNS",
+    "colCompany": "Company",
+    "colInn": "TIN",
+    "colSource": "Source",
+    "colStatus": "Status",
+    "colCodes": "OKED / HS Code",
+    "colMass": "Mass (kg)",
+    "colEmployee": "Employee",
+    "colDate": "Detection date",
+    "source": {
+      "gts": "GTS",
+      "gns": "GNS",
+      "self": "Manual"
+    },
+    "status": {
+      "new": "New",
+      "notified": "Notified",
+      "registration_submitted": "Application submitted",
+      "under_review": "Under review",
+      "revision_requested": "Revision requested",
+      "registered": "Registered",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "backToList": "Back to list",
+    "notFound": "Company not found",
+    "statusPipeline": "Processing status",
+    "companyData": "Company data",
+    "fieldLegalForm": "Legal form",
+    "fieldLegalAddress": "Legal address",
+    "fieldDirector": "Director",
+    "fieldPhone": "Phone",
+    "fieldEmail": "Email",
+    "fieldOkpo": "OKPO code",
+    "fieldOked": "OKED codes",
+    "fieldTnved": "HS codes",
+    "fieldGnsStatus": "GNS status",
+    "fieldNotifiedAt": "Notification date",
+    "kg": "kg",
+    "actions": "Actions",
+    "actionNotify": "Notify company",
+    "actionReject": "Reject",
+    "actionAssign": "Assign employee",
+    "rejectReason": "Rejection reason",
+    "rejectReasonPlaceholder": "Specify the reason for rejection...",
+    "confirmReject": "Confirm rejection",
+    "cancel": "Cancel",
+    "assignEmployeeId": "Employee ID",
+    "assignPlaceholder": "Enter employee ID",
+    "confirmAssign": "Assign"
   }
 }

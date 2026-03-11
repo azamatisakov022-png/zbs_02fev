@@ -5,6 +5,8 @@ import kg.eco.operator.integration.taxservice.dto.TaxInnVerificationResponse;
 import kg.eco.operator.integration.taxservice.dto.TaxReportSubmissionRequest;
 import kg.eco.operator.integration.taxservice.dto.TaxReportSubmissionResponse;
 
+import java.util.List;
+
 /**
  * Port for integration with ГНС КР (Государственная налоговая служба).
  * <p>
@@ -27,4 +29,9 @@ public interface TaxServicePort {
      * Submit utilization fee calculation data to ГНС КР for tax reporting.
      */
     TaxReportSubmissionResponse submitUtilizationFeeReport(TaxReportSubmissionRequest request);
+
+    /**
+     * Search companies by ОКЭД codes in ГНС КР registry.
+     */
+    List<TaxCompanyRegistrationResponse> getCompaniesByOkedCodes(List<String> okedCodes);
 }

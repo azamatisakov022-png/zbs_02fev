@@ -37,7 +37,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/auth/login",
                                 "/auth/register",
-                                "/auth/refresh"
+                                "/auth/refresh",
+                                "/integrations/company-info"
                         ).permitAll()
                         // Swagger & limited actuator
                         .requestMatchers(

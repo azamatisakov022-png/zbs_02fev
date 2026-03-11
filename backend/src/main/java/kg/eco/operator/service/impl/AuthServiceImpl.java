@@ -24,9 +24,11 @@ import kg.eco.operator.repository.AccountRepository;
 import kg.eco.operator.repository.CompanyRepository;
 import kg.eco.operator.repository.PayerRepository;
 import kg.eco.operator.repository.UserRepository;
+import kg.eco.operator.repository.DetectedCompanyRepository;
 import kg.eco.operator.security.JwtTokenProvider;
 import kg.eco.operator.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -48,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final TaxServicePort taxServicePort;
+    private final DetectedCompanyRepository detectedCompanyRepository;
 
     @Override
     @Transactional
@@ -117,6 +121,13 @@ public class AuthServiceImpl implements AuthService {
         account.setTotalPaid(BigDecimal.ZERO);
         account.setTotalOffset(BigDecimal.ZERO);
         accountRepository.save(account);
+
+        // Если компания была выявлена через ГТС/ГНС — обновляем статус
+        detectedCompanyRepository.findByInn(request.getInn()).ifPresent(detected -> {
+            detected.setStatus("registered");
+            detectedCompanyRepository.save(detected);
+            log.info("Компания {} переведена из detected в registered", request.getInn());
+        });
 
         return buildLoginResponse(user);
     }

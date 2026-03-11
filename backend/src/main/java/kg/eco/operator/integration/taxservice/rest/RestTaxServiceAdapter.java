@@ -7,6 +7,7 @@ import kg.eco.operator.integration.taxservice.dto.TaxInnVerificationResponse;
 import kg.eco.operator.integration.taxservice.dto.TaxReportSubmissionRequest;
 import kg.eco.operator.integration.taxservice.dto.TaxReportSubmissionResponse;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -61,6 +62,21 @@ public class RestTaxServiceAdapter implements TaxServicePort {
                     .body(TaxReportSubmissionResponse.class);
         } catch (Exception e) {
             throw new IntegrationException("ГНС КР", "submitUtilizationFeeReport", e);
+        }
+    }
+
+    @Override
+    public List<TaxCompanyRegistrationResponse> getCompaniesByOkedCodes(List<String> okedCodes) {
+        log.info("Поиск компаний по ОКЭД в ГНС КР: {}", okedCodes);
+        try {
+            TaxCompanyRegistrationResponse[] result = taxServiceClient.post()
+                    .uri("/companies/by-oked")
+                    .body(okedCodes)
+                    .retrieve()
+                    .body(TaxCompanyRegistrationResponse[].class);
+            return result != null ? List.of(result) : List.of();
+        } catch (Exception e) {
+            throw new IntegrationException("ГНС КР", "getCompaniesByOkedCodes", e);
         }
     }
 }

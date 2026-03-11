@@ -57,6 +57,7 @@ export function useEmployeeMenu() {
     { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
     { id: 'feedback', label: t('nav.employee.feedback'), icon: icons.feedback, route: '/employee/feedback', badge: feedbackStore.getNewCount() },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
+    { id: 'detected-companies', label: t('nav.employee.detectedCompanies'), icon: icons.search, route: '/employee/detected-companies' },
     { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit' },
     { id: 'map', label: t('nav.employee.map'), icon: icons.map, route: '/employee/map' },
     { id: 'profile', label: t('nav.employee.profile'), icon: icons.profile, route: '/employee/profile' },

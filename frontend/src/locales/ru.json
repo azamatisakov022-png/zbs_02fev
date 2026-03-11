@@ -156,6 +156,7 @@
       "map": "ГИС-карта",
       "profile": "Мой профиль",
       "feedback": "Обращения граждан",
+      "detectedCompanies": "Выявленные компании",
       "audit": "Журнал действий"
     },
     "admin": {
@@ -375,7 +376,8 @@
     "employeeFeedback": "Обращения граждан",
     "feedbackDetail": "Карточка обращения",
     "legalBase": "Нормативно-правовая база",
-    "employeeAudit": "Журнал действий"
+    "employeeAudit": "Журнал действий",
+    "employeeDetectedCompanies": "Выявленные компании"
   },
   "dashboard": {
     "ecoOperatorName": "ГП Эко Оператор"
@@ -664,7 +666,9 @@
       "enterDirectorPhone": "Введите телефон руководителя",
       "enterContactFullName": "Введите ФИО контактного лица",
       "enterContactPhone": "Введите телефон контактного лица",
-      "enterContactEmail": "Введите email контактного лица"
+      "enterContactEmail": "Введите email контактного лица",
+      "enterValidInn": "Введите корректный ИНН (14 цифр)",
+      "innNotFound": "ИНН не найден в реестре ГНС"
     },
     "toast": {
       "confirmAgreementTitle": "Подтвердите согласие",
@@ -7182,5 +7186,77 @@
     "subtitle": "История ваших действий в системе",
     "personalStats": "Ваша статистика",
     "exportPersonal": "Экспорт моего журнала"
+  },
+  "detectedCompanies": {
+    "title": "Выявленные компании",
+    "subtitle": "Компании, выявленные через мониторинг ГТС и ГНС",
+    "found": "Найдено",
+    "of": "из",
+    "searchPlaceholder": "Поиск по наименованию или ИНН",
+    "sourceAll": "Источник: Все",
+    "statusAll": "Статус: Все",
+    "resetFilters": "Сбросить фильтры",
+    "showPerPage": "Показывать",
+    "showing": "Показаны",
+    "noResults": "Компании не найдены",
+    "tryChangingSearch": "Попробуйте изменить параметры поиска",
+    "runGts": "Мониторинг ГТС",
+    "runGns": "Мониторинг ГНС",
+    "gtsMonitoringDone": "Мониторинг ГТС завершён. Новых компаний: {count}",
+    "gnsMonitoringDone": "Мониторинг ГНС завершён. Новых компаний: {count}",
+    "monitoringError": "Ошибка при запуске мониторинга",
+    "statsTotal": "Всего выявлено",
+    "statsNew": "Новых",
+    "statsGts": "Из ГТС",
+    "statsGns": "Из ГНС",
+    "colCompany": "Компания",
+    "colInn": "ИНН",
+    "colSource": "Источник",
+    "colStatus": "Статус",
+    "colCodes": "ОКЭД / ТН ВЭД",
+    "colMass": "Масса (кг)",
+    "colEmployee": "Сотрудник",
+    "colDate": "Дата выявления",
+    "source": {
+      "gts": "ГТС",
+      "gns": "ГНС",
+      "self": "Ручной"
+    },
+    "status": {
+      "new": "Новая",
+      "notified": "Уведомлена",
+      "registration_submitted": "Заявка подана",
+      "under_review": "На рассмотрении",
+      "revision_requested": "Доработка",
+      "registered": "Зарегистрирована",
+      "approved": "Одобрена",
+      "rejected": "Отклонена"
+    },
+    "backToList": "Назад к списку",
+    "notFound": "Компания не найдена",
+    "statusPipeline": "Статус обработки",
+    "companyData": "Данные компании",
+    "fieldLegalForm": "Организационно-правовая форма",
+    "fieldLegalAddress": "Юридический адрес",
+    "fieldDirector": "Руководитель",
+    "fieldPhone": "Телефон",
+    "fieldEmail": "Email",
+    "fieldOkpo": "Код ОКПО",
+    "fieldOked": "Коды ОКЭД",
+    "fieldTnved": "Коды ТН ВЭД",
+    "fieldGnsStatus": "Статус в ГНС",
+    "fieldNotifiedAt": "Дата уведомления",
+    "kg": "кг",
+    "actions": "Действия",
+    "actionNotify": "Уведомить компанию",
+    "actionReject": "Отклонить",
+    "actionAssign": "Назначить сотрудника",
+    "rejectReason": "Причина отклонения",
+    "rejectReasonPlaceholder": "Укажите причину отклонения...",
+    "confirmReject": "Подтвердить отклонение",
+    "cancel": "Отмена",
+    "assignEmployeeId": "ID сотрудника",
+    "assignPlaceholder": "Введите ID сотрудника",
+    "confirmAssign": "Назначить"
   }
 }
