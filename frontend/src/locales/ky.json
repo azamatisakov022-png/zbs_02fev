@@ -140,7 +140,8 @@
       "accounts": "Жеке эсептер",
       "refunds": "Кайтаруу арыздары",
       "payers": "Төлөөчүлөрдүн реестри",
-      "profile": "Компаниялардын профилдери"
+      "profile": "Компаниялардын профилдери",
+      "detectedCompanies": "Аныкталган компаниялар"
     },
     "employee": {
       "dashboard": "Башкы бет",
@@ -377,7 +378,9 @@
     "feedbackDetail": "Кайрылуу картасы",
     "legalBase": "Ченемдик-укуктук база",
     "employeeAudit": "Аракеттер журналы",
-    "employeeDetectedCompanies": "Аныкталган компаниялар"
+    "employeeDetectedCompanies": "Аныкталган компаниялар",
+    "detectedCompanyCard": "Компаниянын картасы",
+    "ecoOperatorDetectedCompanies": "Аныкталган компаниялар"
   },
   "dashboard": {
     "ecoOperatorName": "МИ Эко Оператор"

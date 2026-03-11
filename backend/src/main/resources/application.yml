@@ -80,3 +80,10 @@ integration:
     eco-operator-account: "1280021000000730"
     eco-operator-bik: "128001"
     enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    try-it-out-enabled: true

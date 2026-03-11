@@ -140,7 +140,8 @@
       "accounts": "Account statements",
       "refunds": "Refund applications",
       "payers": "Payers registry",
-      "profile": "Company profiles"
+      "profile": "Company profiles",
+      "detectedCompanies": "Detected Companies"
     },
     "employee": {
       "dashboard": "Home",
@@ -377,7 +378,9 @@
     "feedbackDetail": "Request Details",
     "legalBase": "Legal and Regulatory Framework",
     "employeeAudit": "Activity Log",
-    "employeeDetectedCompanies": "Detected Companies"
+    "employeeDetectedCompanies": "Detected Companies",
+    "detectedCompanyCard": "Company Card",
+    "ecoOperatorDetectedCompanies": "Detected Companies"
   },
   "dashboard": {
     "ecoOperatorName": "SE Eco Operator"

@@ -140,7 +140,8 @@
       "accounts": "Лицевые счета",
       "refunds": "Заявки на возврат",
       "payers": "Реестр плательщиков",
-      "profile": "Профили компаний"
+      "profile": "Профили компаний",
+      "detectedCompanies": "Выявленные компании"
     },
     "employee": {
       "dashboard": "Главная",
@@ -377,7 +378,9 @@
     "feedbackDetail": "Карточка обращения",
     "legalBase": "Нормативно-правовая база",
     "employeeAudit": "Журнал действий",
-    "employeeDetectedCompanies": "Выявленные компании"
+    "employeeDetectedCompanies": "Выявленные компании",
+    "detectedCompanyCard": "Карточка компании",
+    "ecoOperatorDetectedCompanies": "Выявленные компании"
   },
   "dashboard": {
     "ecoOperatorName": "ГП Эко Оператор"

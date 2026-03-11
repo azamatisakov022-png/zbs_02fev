@@ -39,6 +39,7 @@ export function useEcoOperatorMenu() {
     { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile' },
     { id: 'payers', label: t('nav.ecoOperator.payers'), icon: icons.registries, route: '/eco-operator/payers' },
     { id: 'recyclers-registry', label: t('nav.ecoOperator.recyclers'), icon: icons.recycle, route: '/eco-operator/recyclers' },
+    { id: 'detected-companies', label: t('nav.ecoOperator.detectedCompanies'), icon: icons.search, route: '/eco-operator/detected-companies' },
   ])
   return { roleTitle, menuItems }
 }
