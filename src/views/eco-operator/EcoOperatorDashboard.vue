@@ -9,33 +9,50 @@ import LineChart from '../../components/charts/LineChart.vue'
 import BarChart from '../../components/charts/BarChart.vue'
 import { icons, statsIcons } from '../../utils/menuIcons'
 import { useCalculationStore } from '../../stores/calculations'
+import { useReportStore } from '../../stores/reports'
+import { declarationStore } from '../../stores/declarations'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
-import { CalcStatus, DeclStatus } from '../../constants/statuses'
+import { CalcStatus, ReportStatus, DeclStatus } from '../../constants/statuses'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
 const calcStore = useCalculationStore()
+const reportStore = useReportStore()
 
 const allCalcs = computed(() => calcStore.calculations)
+const allReports = computed(() => reportStore.reports)
+const allDecls = computed(() => declarationStore.state.declarations.filter(d => d.status !== DeclStatus.DRAFT))
 
 const stats = computed(() => [
   {
-    title: t('ecoDashboard.incomingCalcs'),
-    value: String(allCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW).length),
+    title: t('ecoDashboard.incomingDocs'),
+    value: String(
+      allCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW).length +
+      allReports.value.filter(r => r.status === ReportStatus.UNDER_REVIEW).length +
+      allDecls.value.filter(d => d.status === DeclStatus.UNDER_REVIEW).length
+    ),
     icon: statsIcons.pending,
     color: 'orange' as const
   },
   {
     title: t('ecoDashboard.acceptedMonth'),
-    value: String(allCalcs.value.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID).length),
+    value: String(
+      allCalcs.value.filter(c => c.status === CalcStatus.APPROVED || c.status === CalcStatus.PAID).length +
+      allReports.value.filter(r => r.status === ReportStatus.APPROVED).length +
+      allDecls.value.filter(d => d.status === DeclStatus.APPROVED).length
+    ),
     icon: statsIcons.approved,
     color: 'green' as const
   },
   {
     title: t('ecoDashboard.paymentsOnReview'),
-    value: String(allCalcs.value.filter(c => c.status === CalcStatus.PAYMENT_PENDING).length),
+    value: String(
+      allCalcs.value.filter(c => c.status === CalcStatus.PAYMENT_PENDING).length +
+      allReports.value.filter(r => r.status === ReportStatus.UNDER_REVIEW).length +
+      allDecls.value.filter(d => d.status === DeclStatus.UNDER_REVIEW).length
+    ),
     icon: statsIcons.payment,
     color: 'purple' as const
   },

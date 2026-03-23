@@ -17,7 +17,6 @@ const pageTitleKeys: Record<string, string> = {
   '/eco-operator/licenses': 'pages.ecoOperator.licensesTitle',
   '/eco-operator/waste-types': 'pages.ecoOperator.wasteTypesTitle',
   '/eco-operator/my-reports': 'pages.ecoOperator.myReportsTitle',
-  '/eco-operator/profile': 'pages.ecoOperator.profileTitle',
 }
 
 const pageTitle = computed(() => {

@@ -26,15 +26,18 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const yearFilter = ref('')
 
+// Все декларации без черновиков (оператор не должен видеть DRAFT)
+const nonDraftDeclarations = computed(() => declarationStore.state.declarations.filter(d => d.status !== DeclStatus.DRAFT))
+
 // Stats
-const pendingCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.UNDER_REVIEW).length)
-const approvedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.APPROVED).length)
-const rejectedCount = computed(() => declarationStore.state.declarations.filter(d => d.status === DeclStatus.REJECTED).length)
-const totalCount = computed(() => declarationStore.state.declarations.length)
+const pendingCount = computed(() => nonDraftDeclarations.value.filter(d => d.status === DeclStatus.UNDER_REVIEW).length)
+const approvedCount = computed(() => nonDraftDeclarations.value.filter(d => d.status === DeclStatus.APPROVED).length)
+const rejectedCount = computed(() => nonDraftDeclarations.value.filter(d => d.status === DeclStatus.REJECTED).length)
+const totalCount = computed(() => nonDraftDeclarations.value.length)
 
 // Filtered data
 const filteredDeclarations = computed(() => {
-  let list = declarationStore.state.declarations
+  let list = nonDraftDeclarations.value
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(d => d.company.toLowerCase().includes(q) || d.inn.includes(q))

@@ -20,10 +20,29 @@ import {
   systemStatusColors,
   type Payer,
 } from '../../stores/payers'
+import { useAccountStore } from '../../stores/account'
+import StatsCard from '../../components/dashboard/StatsCard.vue'
+import { statsIcons } from '../../utils/menuIcons'
 
 const router = useRouter()
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEcoOperatorMenu()
+const accountStore = useAccountStore()
+
+// ── Balance KPI stats ──────────────────────────────────────
+const allAccounts = computed(() => accountStore.allAccounts)
+const debtAccounts = computed(() => allAccounts.value.filter(a => a.balance < 0))
+const overpaidAccounts = computed(() => allAccounts.value.filter(a => a.balance > 0))
+const noDebtAccounts = computed(() => allAccounts.value.filter(a => a.balance === 0))
+const totalDebt = computed(() => debtAccounts.value.reduce((sum, a) => sum + Math.abs(a.balance), 0))
+const totalOverpaid = computed(() => overpaidAccounts.value.reduce((sum, a) => sum + a.balance, 0))
+
+const balanceStats = computed(() => [
+  { title: t('ecoPayers.kpiTotal'), value: String(allAccounts.value.length), icon: statsIcons.applications, color: 'blue' as const },
+  { title: t('ecoPayers.kpiDebt'), value: String(debtAccounts.value.length), icon: statsIcons.pending, color: 'orange' as const },
+  { title: t('ecoPayers.kpiOverpaid'), value: String(overpaidAccounts.value.length), icon: statsIcons.money, color: 'green' as const },
+  { title: t('ecoPayers.kpiNoDebt'), value: String(noDebtAccounts.value.length), icon: statsIcons.approved, color: 'purple' as const },
+])
 
 // ── Column definitions ──────────────────────────────────────
 interface ColumnDef {
@@ -397,6 +416,18 @@ onMounted(() => {
         :actions="[$t('ecoPayers.guideAction1'), $t('ecoPayers.guideAction2'), $t('ecoPayers.guideAction3'), $t('ecoPayers.guideAction4')]"
         storageKey="eco-payers"
       />
+
+      <!-- Balance KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatsCard
+          v-for="stat in balanceStats"
+          :key="stat.title"
+          :title="stat.title"
+          :value="stat.value"
+          :icon="stat.icon"
+          :color="stat.color"
+        />
+      </div>
 
       <!-- Export & Column Settings -->
       <div class="flex flex-wrap items-center justify-between gap-3">

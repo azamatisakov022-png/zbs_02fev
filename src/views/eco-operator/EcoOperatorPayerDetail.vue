@@ -23,6 +23,7 @@ import {
   type Payer,
 } from '../../stores/payers'
 import { AppButton, AppInput, AppModal, AppCard } from '../../components/ui'
+import { useAccountStore } from '../../stores/account'
 import PenaltyCalculator from '../../components/penalty/PenaltyCalculator.vue'
 import type { PenaltyExemption, PenaltyExemptionReason } from '../../utils/penalty'
 import { isExemptFromPenalty } from '../../utils/penalty'
@@ -105,6 +106,52 @@ function addComment() {
 const sortedComments = computed(() => {
   if (!payer.value) return []
   return [...payer.value.comments].reverse()
+})
+
+// --- Account / Transaction history ---
+const accountStore = useAccountStore()
+
+const payerAccount = computed(() => {
+  if (!payer.value) return undefined
+  return accountStore.allAccounts.find(a => a.inn === payer.value!.inn)
+})
+
+const txFilterType = ref('')
+
+const filteredTransactions = computed(() => {
+  if (!payerAccount.value || !payerAccount.value.transactions) return []
+  let txs = [...payerAccount.value.transactions]
+  if (txFilterType.value) {
+    txs = txs.filter(tx => tx.type === txFilterType.value)
+  }
+  return txs
+})
+
+const txTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    charge: t('ecoPayerDetail.txCharge'),
+    payment: t('ecoPayerDetail.txPayment'),
+    penalty: t('ecoPayerDetail.txPenalty'),
+    penalty_payment: t('ecoPayerDetail.txPenaltyPayment'),
+    correction: t('ecoPayerDetail.txCorrection'),
+    offset: t('ecoPayerDetail.txOffset'),
+    refund: t('ecoPayerDetail.txRefund'),
+  }
+  return labels[type] || type
+}
+
+const balanceColorClass = computed(() => {
+  if (!payerAccount.value) return 'bg-gray-50 border-gray-200'
+  if (payerAccount.value.balance < 0) return 'bg-red-50 border-red-200'
+  if (payerAccount.value.balance > 0) return 'bg-green-50 border-green-200'
+  return 'bg-gray-50 border-gray-200'
+})
+
+const balanceTextClass = computed(() => {
+  if (!payerAccount.value) return 'text-gray-800'
+  if (payerAccount.value.balance < 0) return 'text-red-700'
+  if (payerAccount.value.balance > 0) return 'text-green-700'
+  return 'text-gray-800'
 })
 
 // --- Penalty exemptions ---
@@ -534,6 +581,67 @@ function docTypeLabel(type: string): string {
           </table>
         </div>
         <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noPayments') }}</p>
+      </AppCard>
+
+      <!-- ==================== BLOCK 4.5: Personal Account (Лицевой счёт) ==================== -->
+      <AppCard v-if="payerAccount" radius="sm" :shadow="false" class="mb-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ecoPayerDetail.personalAccount') }}</h2>
+
+        <!-- Balance card -->
+        <div :class="['p-4 rounded-xl border mb-4', balanceColorClass]">
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ecoPayerDetail.currentBalance') }}</p>
+          <p :class="['text-2xl font-bold', balanceTextClass]">
+            {{ formatMoney(payerAccount.balance) }} {{ $t('ecoPayerDetail.som') }}
+          </p>
+          <p v-if="payerAccount.balance < 0" class="text-sm text-red-600 mt-1">{{ $t('ecoPayerDetail.debtNote') }}</p>
+          <p v-else-if="payerAccount.balance > 0" class="text-sm text-green-600 mt-1">{{ $t('ecoPayerDetail.overpaidNote') }}</p>
+          <p v-else class="text-sm text-gray-500 mt-1">{{ $t('ecoPayerDetail.balanceClear') }}</p>
+        </div>
+
+        <!-- Transaction filter -->
+        <div class="flex items-center gap-3 mb-3">
+          <select v-model="txFilterType" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+            <option value="">{{ $t('ecoPayerDetail.allTransactions') }}</option>
+            <option value="charge">{{ $t('ecoPayerDetail.txCharge') }}</option>
+            <option value="payment">{{ $t('ecoPayerDetail.txPayment') }}</option>
+            <option value="penalty">{{ $t('ecoPayerDetail.txPenalty') }}</option>
+            <option value="penalty_payment">{{ $t('ecoPayerDetail.txPenaltyPayment') }}</option>
+            <option value="correction">{{ $t('ecoPayerDetail.txCorrection') }}</option>
+            <option value="offset">{{ $t('ecoPayerDetail.txOffset') }}</option>
+            <option value="refund">{{ $t('ecoPayerDetail.txRefund') }}</option>
+          </select>
+        </div>
+
+        <!-- Transaction table -->
+        <div v-if="filteredTransactions.length > 0" class="overflow-x-auto">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.txDate') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.txType') }}</th>
+                <th class="text-left px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.txDescription') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.txAmount') }}</th>
+                <th class="text-right px-4 py-3 font-medium text-gray-500 border-b border-gray-200">{{ $t('ecoPayerDetail.txBalance') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="tx in filteredTransactions" :key="tx.id" class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 text-gray-700 border-b border-gray-100 whitespace-nowrap">{{ tx.date }}</td>
+                <td class="px-4 py-3 border-b border-gray-100">
+                  <span class="px-2 py-0.5 rounded-full text-xs font-semibold" :class="tx.credit > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                    {{ txTypeLabel(tx.type) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-gray-700 border-b border-gray-100">{{ tx.description }}</td>
+                <td class="px-4 py-3 text-right font-medium border-b border-gray-100 whitespace-nowrap" :class="tx.credit > 0 ? 'text-green-700' : 'text-red-700'">
+                  {{ tx.credit > 0 ? '+' : '-' }}{{ formatMoney(tx.credit > 0 ? tx.credit : tx.debit) }} {{ $t('ecoPayerDetail.som') }}
+                </td>
+                <td class="px-4 py-3 text-right text-gray-700 border-b border-gray-100 whitespace-nowrap">{{ formatMoney(tx.balance) }} {{ $t('ecoPayerDetail.som') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-else class="text-sm text-gray-400 text-center py-6">{{ $t('ecoPayerDetail.noTransactions') }}</p>
       </AppCard>
 
       <!-- ==================== BLOCK 5: Audit Log ==================== -->

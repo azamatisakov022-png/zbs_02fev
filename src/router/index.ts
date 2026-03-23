@@ -447,21 +447,15 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/eco-operator/profile',
-    name: 'eco-operator-profile',
-    component: () => import('@/views/eco-operator/EcoOperatorProfile.vue'),
-    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.ecoOperatorProfile' },
+    redirect: '/eco-operator/payers',
   },
   {
     path: '/eco-operator/accounts',
-    name: 'eco-operator-accounts',
-    component: () => import('@/views/eco-operator/EcoOperatorAccounts.vue'),
-    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.ecoOperatorAccounts' },
+    redirect: '/eco-operator/payers',
   },
   {
     path: '/eco-operator/accounts/:id',
-    name: 'eco-operator-account-detail',
-    component: () => import('@/views/eco-operator/EcoOperatorAccountDetail.vue'),
-    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.accountDetail' },
+    redirect: '/eco-operator/payers',
   },
   {
     path: '/eco-operator/reports/:id',

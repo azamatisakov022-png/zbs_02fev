@@ -35,9 +35,7 @@ export function useEcoOperatorMenu() {
     { id: 'incoming-declarations', label: t('nav.ecoOperator.incomingDeclarations'), icon: icons.document, route: '/eco-operator/incoming-declarations', theme: 'cyan' },
     { id: 'incoming-reports', label: t('nav.ecoOperator.incomingReports'), icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.pendingCount, theme: 'indigo' },
     { id: 'refunds', label: t('nav.ecoOperator.refunds'), icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount(), theme: 'orange' },
-    { id: 'accounts', label: t('nav.ecoOperator.accounts'), icon: icons.money, route: '/eco-operator/accounts', theme: 'emerald' },
     { id: 'analytics', label: t('nav.ecoOperator.analytics'), icon: icons.analytics, route: '/eco-operator/analytics', theme: 'teal' },
-    { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile', theme: 'rose' },
     { id: 'payers', label: t('nav.ecoOperator.payers'), icon: icons.registries, route: '/eco-operator/payers', theme: 'slate' },
     { id: 'recyclers-registry', label: t('nav.ecoOperator.recyclers'), icon: icons.recycle, route: '/eco-operator/recyclers', theme: 'emerald' },
   ])

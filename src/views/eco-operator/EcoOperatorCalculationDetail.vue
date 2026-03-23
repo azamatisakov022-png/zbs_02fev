@@ -204,7 +204,7 @@ const goBack = () => {
   const from = route.query.from as string
   const routes: Record<string, string> = {
     'incoming-calculations': '/eco-operator/calculations',
-    accounts: '/eco-operator/accounts',
+    accounts: '/eco-operator/payers',
   }
   router.push(routes[from] || '/eco-operator/calculations')
 }

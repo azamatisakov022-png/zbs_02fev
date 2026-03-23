@@ -10,9 +10,11 @@ import ProgressBar from '../../components/charts/ProgressBar.vue'
 import { AppPageHeader } from '../../components/ui'
 import { statsIcons } from '../../utils/menuIcons'
 import { useCalculationStore } from '../../stores/calculations'
+import { useReportStore } from '../../stores/reports'
+import { declarationStore } from '../../stores/declarations'
 import { useAccountStore } from '../../stores/account'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
-import { CalcStatus } from '../../constants/statuses'
+import { CalcStatus, ReportStatus, DeclStatus } from '../../constants/statuses'
 import { statusI18nKey } from '../../constants/statuses'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 
@@ -20,6 +22,7 @@ const { t } = useI18n()
 const { roleTitle, menuItems } = useBusinessMenu()
 const account = useAccountStore()
 const calcStore = useCalculationStore()
+const reportStore = useReportStore()
 
 const actionCards = computed(() => [
   {
@@ -46,18 +49,49 @@ const actionCards = computed(() => [
 ])
 
 const myCalcs = computed(() => calcStore.getBusinessCalculations(account.myAccount?.company || ''))
+const myReports = computed(() => reportStore.reports)
+const myDecls = computed(() => declarationStore.state.declarations)
 
-const stats = computed(() => [
-  { title: t('businessDashboard.totalCalcs'), value: String(myCalcs.value.length), icon: statsIcons.applications, color: 'blue' as const },
-  { title: t('businessDashboard.paid'), value: String(myCalcs.value.filter(c => c.status === CalcStatus.PAID).length), icon: statsIcons.approved, color: 'green' as const },
-  { title: t('businessDashboard.underReview'), value: String(myCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.PAYMENT_PENDING).length), icon: statsIcons.pending, color: 'orange' as const },
-  {
-    title: t('businessDashboard.totalAmount'),
-    value: myCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString() + ' ' + t('businessDashboard.som'),
-    icon: statsIcons.money,
-    color: 'purple' as const
-  },
-])
+const stats = computed(() => {
+  const calcsNonDraft = myCalcs.value.filter(c => c.status !== CalcStatus.DRAFT)
+  const reportsNonDraft = myReports.value.filter(r => r.status !== ReportStatus.DRAFT)
+  const declsNonDraft = myDecls.value.filter(d => d.status !== DeclStatus.DRAFT)
+
+  return [
+    {
+      title: t('businessDashboard.totalDocs'),
+      value: String(calcsNonDraft.length + reportsNonDraft.length + declsNonDraft.length),
+      icon: statsIcons.applications,
+      color: 'blue' as const
+    },
+    {
+      title: t('businessDashboard.approvedPaid'),
+      value: String(
+        myCalcs.value.filter(c => c.status === CalcStatus.PAID || c.status === CalcStatus.COMPLETED).length +
+        myReports.value.filter(r => r.status === ReportStatus.APPROVED).length +
+        myDecls.value.filter(d => d.status === DeclStatus.APPROVED).length
+      ),
+      icon: statsIcons.approved,
+      color: 'green' as const
+    },
+    {
+      title: t('businessDashboard.underReview'),
+      value: String(
+        myCalcs.value.filter(c => c.status === CalcStatus.UNDER_REVIEW || c.status === CalcStatus.PAYMENT_PENDING).length +
+        myReports.value.filter(r => r.status === ReportStatus.UNDER_REVIEW).length +
+        myDecls.value.filter(d => d.status === DeclStatus.UNDER_REVIEW).length
+      ),
+      icon: statsIcons.pending,
+      color: 'orange' as const
+    },
+    {
+      title: t('businessDashboard.totalAmount'),
+      value: myCalcs.value.reduce((s, c) => s + c.totalAmount, 0).toLocaleString() + ' ' + t('businessDashboard.som'),
+      icon: statsIcons.money,
+      color: 'purple' as const
+    },
+  ]
+})
 
 // Mock monthly data for line chart
 const monthlyData = [
