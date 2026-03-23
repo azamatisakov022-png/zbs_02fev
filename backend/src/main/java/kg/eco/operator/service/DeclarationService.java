@@ -35,7 +35,9 @@ public class DeclarationService {
 
     public PaginatedResponse<DeclarationResponse> getDeclarations(int page, int pageSize,
                                                                     String search, String status, Integer year) {
-        Page<Declaration> declPage = declarationRepository.findAll(
+        // Исключаем черновики — оператор не должен видеть неотправленные декларации
+        Page<Declaration> declPage = declarationRepository.findByStatusNot(
+                DeclarationStatus.DRAFT,
                 PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt")));
         List<DeclarationResponse> data = declPage.getContent().stream()
                 .map(this::toResponse)

@@ -6,6 +6,7 @@ import kg.eco.operator.dto.response.*;
 import kg.eco.operator.entity.Account;
 import kg.eco.operator.entity.Transaction;
 import kg.eco.operator.entity.enums.ReferenceType;
+import kg.eco.operator.entity.enums.RoleEnum;
 import kg.eco.operator.entity.enums.TransactionType;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
@@ -34,13 +35,13 @@ public class AccountServiceImpl implements AccountService {
         List<Account> accounts;
 
         if (search != null && !search.isBlank()) {
-            accounts = accountRepository.searchAccounts(search.trim());
+            accounts = accountRepository.searchAccountsByRole(search.trim(), RoleEnum.BUSINESS);
         } else if (Boolean.TRUE.equals(hasDebt)) {
             accounts = accountRepository.findAccountsWithDebt();
         } else if (Boolean.TRUE.equals(hasPositiveBalance)) {
             accounts = accountRepository.findAccountsWithPositiveBalance();
         } else {
-            accounts = accountRepository.findAllWithCompany();
+            accounts = accountRepository.findAllByUserRole(RoleEnum.BUSINESS);
         }
 
         return accounts.stream()

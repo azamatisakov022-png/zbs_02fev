@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface DeclarationRepository extends JpaRepository<Declaration, Long> {
     Page<Declaration> findByCompany_Id(Long companyId, Pageable pageable);
     Page<Declaration> findByStatus(DeclarationStatus status, Pageable pageable);
+    Page<Declaration> findByStatusNot(DeclarationStatus status, Pageable pageable);
     Optional<Declaration> findByNumber(String number);
     Optional<Declaration> findByCompany_IdAndYear(Long companyId, Integer year);
     long countByStatus(DeclarationStatus status);

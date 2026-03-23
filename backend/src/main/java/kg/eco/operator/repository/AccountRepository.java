@@ -1,8 +1,10 @@
 package kg.eco.operator.repository;
 
 import kg.eco.operator.entity.Account;
+import kg.eco.operator.entity.enums.RoleEnum;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -26,10 +28,20 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("SELECT a FROM Account a JOIN FETCH a.company")
     List<Account> findAllWithCompany();
 
+    @Query("SELECT a FROM Account a JOIN FETCH a.company c " +
+           "WHERE EXISTS (SELECT u FROM User u WHERE u.company = c AND u.role = :role)")
+    List<Account> findAllByUserRole(@Param("role") RoleEnum role);
+
     @Query("SELECT a FROM Account a JOIN FETCH a.company " +
            "WHERE LOWER(a.company.companyName) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "OR a.company.inn LIKE CONCAT('%', :search, '%')")
     List<Account> searchAccounts(String search);
+
+    @Query("SELECT a FROM Account a JOIN FETCH a.company c " +
+           "WHERE EXISTS (SELECT u FROM User u WHERE u.company = c AND u.role = :role) " +
+           "AND (LOWER(c.companyName) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "OR c.inn LIKE CONCAT('%', :search, '%'))")
+    List<Account> searchAccountsByRole(@Param("search") String search, @Param("role") RoleEnum role);
 
     @Query("SELECT COUNT(a) FROM Account a WHERE a.balance < 0")
     long countWithDebt();
