@@ -130,7 +130,7 @@ const onInput = (event: Event) => {
 
 .app-input__label {
   display: block;
-  font-size: 20px;
+  font-size: 15px;
   color: #1e293b;
   font-weight: 600;
   margin-bottom: 6px;
@@ -162,11 +162,11 @@ const onInput = (event: Event) => {
 }
 .app-input__field--md {
   padding: 10px 14px;
-  font-size: 20px;
+  font-size: 15px;
 }
 .app-input__field--lg {
   padding: 14px 18px;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .app-input__field--textarea {
@@ -226,8 +226,8 @@ const onInput = (event: Event) => {
 }
 
 .app-input__error {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   color: #EF4444;
   margin-top: 4px;
 }

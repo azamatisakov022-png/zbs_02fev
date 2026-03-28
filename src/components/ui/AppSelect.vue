@@ -88,9 +88,9 @@ const customLabelStyle = computed(() => {
 }
 
 .app-select__label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
   margin-bottom: 6px;
 }
 
@@ -154,7 +154,8 @@ const customLabelStyle = computed(() => {
 }
 
 .app-select__error {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: #ef4444;
   margin-top: 4px;
 }

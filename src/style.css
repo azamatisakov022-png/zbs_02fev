@@ -31,10 +31,10 @@
   --color-primary-light: #33a9ab;
   --color-primary-dark: #0b6d71;
 
-  /* Accent = green (public CTA, sidebar active) */
-  --color-accent: #2D8B4E;
-  --color-accent-light: #34A85A;
-  --color-accent-dark: #236B3E;
+  /* CTA = green (public CTA buttons, sidebar active) */
+  --color-cta: #2D8B4E;
+  --color-cta-light: #34A85A;
+  --color-cta-dark: #236B3E;
 
   --color-secondary: #fea629;
   --color-dark: #111827;
@@ -110,7 +110,7 @@ body {
 }
 
 .btn-action-primary {
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-dark) 100%);
   color: white;
   box-shadow: 0 2px 4px rgba(45,139,78,0.3);
 }
@@ -248,11 +248,11 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 500;
   color: #EF4444;
   margin-top: 4px;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 .vld-error__icon {
   flex-shrink: 0;
@@ -391,24 +391,6 @@ body {
   outline: none;
 }
 
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: 16px;
-  z-index: 9999;
-  padding: 12px 24px;
-  background: #1e293b;
-  color: white;
-  border-radius: 0 0 8px 8px;
-  font-weight: 600;
-  font-size: 14px;
-  transition: top 0.2s;
-}
-
-.skip-link:focus {
-  top: 0;
-}
-
 /* ═══════════════════════════════════════
    Public Site — Legacy Classes
    ═══════════════════════════════════════ */
@@ -507,7 +489,7 @@ body {
    Shape: 30px pill radius, 700 weight, uppercase
    ═══════════════════════════════════════ */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  background: linear-gradient(135deg, var(--color-cta) 0%, var(--color-cta-dark) 100%);
   color: white;
   border-radius: 30px;
   padding: 14px 30px;
@@ -542,8 +524,8 @@ body {
 
 .btn-outline {
   background-color: transparent;
-  border: 2px solid var(--color-accent);
-  color: var(--color-accent);
+  border: 2px solid var(--color-cta);
+  color: var(--color-cta);
   border-radius: 30px;
   padding: 12px 28px;
   font-weight: 700;
@@ -552,14 +534,14 @@ body {
 }
 
 .btn-outline:hover {
-  background-color: var(--color-accent);
+  background-color: var(--color-cta);
   color: white;
 }
 
 .section-title-underline {
   width: 157px;
   height: 3px;
-  background-color: var(--color-accent);
+  background-color: var(--color-cta);
   border-radius: 3px;
 }
 
@@ -575,27 +557,8 @@ body {
   flex-shrink: 0;
 }
 
-/* Responsive container */
-.container-main {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding-left: 40px;
-  padding-right: 40px;
-}
-
-@media (max-width: 1280px) {
-  .container-main {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-}
-
+/* container-main is defined in main.css — only strategy-card override here */
 @media (max-width: 768px) {
-  .container-main {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-
   .strategy-card {
     width: 100%;
     height: auto;
