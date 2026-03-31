@@ -150,6 +150,115 @@
 - Зачёт — при одобрении отчёта о переработке
 - Переплата остаётся на счёте (кредитовое сальдо) для будущих периодов
 
+### 5.13. detectedCompanies.ts → /api/v1/detected-companies
+
+**Модуль выявления компаний через интеграции с ГТС и ГНС.**
+
+Система автоматически находит компании-импортёры (через ГТС — Государственную таможенную службу) и компании-производители (через ГНС — Государственную налоговую службу), которые обязаны платить утилизационный сбор, но ещё не зарегистрированы в системе.
+
+#### Эндпоинты
+
+| Метод | Путь | Роли | Описание |
+|-------|------|------|----------|
+| GET | `/detected-companies` | ECO_OPERATOR, EMPLOYEE, ADMIN | Список выявленных компаний (пагинация, фильтры: status, source, search) |
+| GET | `/detected-companies/{id}` | ECO_OPERATOR, EMPLOYEE, ADMIN | Детальная карточка компании |
+| GET | `/detected-companies/stats` | ECO_OPERATOR, EMPLOYEE, ADMIN | Статистика: всего, новых, из ГТС, из ГНС |
+| POST | `/detected-companies/{id}/notify` | ECO_OPERATOR, EMPLOYEE, ADMIN | Отправить уведомление компании (статус → `notified`) |
+| POST | `/detected-companies/{id}/reject` | ECO_OPERATOR, EMPLOYEE, ADMIN | Отклонить. Body: `{ "reason": "текст" }` |
+| POST | `/detected-companies/{id}/assign` | ECO_OPERATOR, ADMIN | Назначить сотрудника. Body: `{ "employeeId": 123 }` |
+| POST | `/detected-companies/run-gts-monitoring` | ECO_OPERATOR, ADMIN | Ручной запуск мониторинга ГТС |
+| POST | `/detected-companies/run-gns-monitoring` | ECO_OPERATOR, ADMIN | Ручной запуск мониторинга ГНС |
+
+#### Источники данных (source)
+
+| Значение | Описание | Расписание |
+|----------|----------|------------|
+| `gts` | Государственная таможенная служба — импортёры | Ежедневно в 02:00 |
+| `gns` | Государственная налоговая служба — производители | Ежедневно в 03:00 |
+| `manual` | Добавлено вручную | — |
+
+#### Workflow статусов
+
+```
+new → notified → registration_submitted → under_review → approved
+                                                        → rejected
+                                                        → revision_requested
+```
+
+#### Логика мониторинга ГТС (таможня)
+1. Запрашивает таможенные декларации за последние 3 дня из `CustomsServicePort`
+2. Для каждого ИНН проверяет: нет ли уже в `detected_companies`
+3. Проверяет статус в ГНС — ликвидированные пропускает
+4. Получает полные данные компании из ГНС (название, адрес, директор, ОКЭД, ОКПО)
+5. Собирает коды ТН ВЭД и суммарную массу из позиций декларации
+6. Сохраняет с `source=gts`, `status=new`
+
+#### Логика мониторинга ГНС (налоговая)
+1. Запрашивает компании-производители по ОКЭД кодам из `TaxServicePort`
+2. Коды ОКЭД производителей: 22.21-22.29, 17.21-17.29, 25.11-25.29, 20.41-20.42, 11.01-11.06, 10.81-10.84, 38.11, 38.21
+3. Для каждого ИНН проверяет: нет ли уже в `detected_companies`
+4. Ликвидированные пропускает
+5. Сохраняет с `source=gns`, `status=new`
+
+#### Ответ мониторинга (run-gts/gns-monitoring)
+```json
+{
+  "success": true,
+  "newCompaniesFound": 3,
+  "message": "Мониторинг ГТС выполнен. Новых компаний: 3"
+}
+```
+
+#### Модель данных (таблица detected_companies)
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | BIGINT PK | Идентификатор |
+| inn | VARCHAR(14) NOT NULL | ИНН компании |
+| company_name | VARCHAR(500) | Наименование |
+| legal_form | VARCHAR(100) | ОПФ (ОсОО, ОАО, ИП...) |
+| legal_address | TEXT | Юридический адрес |
+| director | VARCHAR(200) | Руководитель |
+| phone | VARCHAR(50) | Телефон |
+| email | VARCHAR(255) | Email |
+| okpo_code | VARCHAR(20) | Код ОКПО |
+| oked_codes | TEXT | Коды ОКЭД (через запятую) |
+| source | VARCHAR(20) NOT NULL | gts / gns / manual |
+| status | VARCHAR(30) NOT NULL | new / notified / registration_submitted / under_review / approved / rejected / revision_requested |
+| tnved_codes | TEXT | Коды ТН ВЭД (через запятую, только для ГТС) |
+| estimated_mass | DECIMAL(12,3) | Оценочная масса в кг (только для ГТС) |
+| gns_status | VARCHAR(20) | Статус в ГНС (active / suspended / liquidated) |
+| assigned_employee_id | BIGINT FK → users | Назначенный сотрудник |
+| notified_at | TIMESTAMP | Дата отправки уведомления |
+| notes | TEXT | Примечания |
+| created_at | TIMESTAMP NOT NULL | Дата выявления |
+| updated_at | TIMESTAMP NOT NULL | Дата обновления |
+
+#### Интеграции (внешние сервисы)
+
+| Сервис | Порт (интерфейс) | Конфигурация |
+|--------|-------------------|--------------|
+| ГТС (таможня) | `CustomsServicePort` | `integration.customs-service.base-url` (default: `http://localhost:8091/api/v1`) |
+| ГНС (налоговая) | `TaxServicePort` | `integration.tax-service.base-url` (default: `http://localhost:8090/api/v1`) |
+
+#### Доступ по ролям на фронтенде
+
+| Роль | Просмотр списка | Карточка компании | Кнопки мониторинга ГТС/ГНС |
+|------|-----------------|-------------------|-----------------------------|
+| EMPLOYEE | /employee/detected-companies | /employee/detected-companies/{id} | Нет |
+| ECO_OPERATOR | /eco-operator/detected-companies | /eco-operator/detected-companies/{id} | Да |
+| ADMIN | (через employee маршрут) | (через employee маршрут) | Да |
+
+#### Swagger UI
+
+После пересборки бэкенда Swagger UI доступен по адресу:
+```
+http://localhost:8080/api/v1/swagger-ui/index.html
+```
+Зависимость `springdoc-openapi-starter-webmvc-ui:2.8.4` добавлена в `pom.xml`. Все эндпоинты `DetectedCompanyController` автоматически появятся в Swagger.
+
+---
+
 ## 7. Структура БД (из ТЗ раздел 8.2)
 
 Основные таблицы:
@@ -176,6 +285,7 @@
 - `notifications` — уведомления
 - `notification_templates` — шаблоны (12 штук)
 - `documents` — прикреплённые файлы
+- `detected_companies` — выявленные компании (мониторинг ГТС/ГНС)
 - `audit_log` — журнал аудита
 
 ## 8. Файлы проекта

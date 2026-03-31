@@ -3,7 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { useEmployeeMenu, useEcoOperatorMenu } from '../../composables/useRoleMenu'
+import { authStore } from '../../stores/auth'
 import {
   detectedCompanyStore,
   getSourceLabel,
@@ -16,7 +17,12 @@ import {
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useEmployeeMenu()
+const isEcoOperator = computed(() => authStore.userRole.value === 'eco-operator')
+const employeeMenu = useEmployeeMenu()
+const ecoOperatorMenu = useEcoOperatorMenu()
+const roleTitle = computed(() => isEcoOperator.value ? ecoOperatorMenu.roleTitle.value : employeeMenu.roleTitle.value)
+const menuItems = computed(() => isEcoOperator.value ? ecoOperatorMenu.menuItems.value : employeeMenu.menuItems.value)
+const routePrefix = computed(() => isEcoOperator.value ? '/eco-operator' : '/employee')
 
 const companyId = computed(() => Number(route.params.id))
 const company = computed(() => detectedCompanyStore.getById(companyId.value))
@@ -105,7 +111,7 @@ function formatMass(mass: number | null): string {
 }
 
 function goBack() {
-  router.push('/employee/detected-companies')
+  router.push(`${routePrefix.value}/detected-companies`)
 }
 
 onMounted(() => {
@@ -117,9 +123,9 @@ onMounted(() => {
 
 <template>
   <DashboardLayout
-    role="employee"
+    :role="isEcoOperator ? 'eco-operator' : 'employee'"
     :roleTitle="roleTitle"
-    userName="Сотрудник МПРЭТН"
+    :userName="authStore.userName.value || (isEcoOperator ? 'ГП Эко Оператор' : 'Сотрудник МПРЭТН')"
     :menuItems="menuItems"
   >
     <div class="space-y-6">

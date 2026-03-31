@@ -516,6 +516,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/eco-operator/EcoOperatorNotifications.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.ecoOperatorNotifications' },
   },
+  {
+    path: '/eco-operator/detected-companies',
+    name: 'eco-operator-detected-companies',
+    component: () => import('../views/employee/EmployeeDetectedCompanies.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.ecoOperatorDetectedCompanies' },
+  },
+  {
+    path: '/eco-operator/detected-companies/:id',
+    name: 'eco-operator-detected-company-detail',
+    component: () => import('../views/employee/EmployeeDetectedCompanyDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.detectedCompanyCard' },
+  },
 
   // Ministry (МПРЭТН) routes
   {

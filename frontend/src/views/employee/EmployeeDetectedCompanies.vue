@@ -3,8 +3,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import { useEmployeeMenu } from '../../composables/useRoleMenu'
+import { useEmployeeMenu, useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { authStore } from '../../stores/auth'
+import { toastStore } from '../../stores/toast'
 import {
   detectedCompanyStore,
   getSourceLabel,
@@ -18,7 +19,13 @@ import {
 
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useEmployeeMenu()
+
+const isEcoOperator = computed(() => authStore.userRole.value === 'eco-operator')
+const employeeMenu = useEmployeeMenu()
+const ecoOperatorMenu = useEcoOperatorMenu()
+const roleTitle = computed(() => isEcoOperator.value ? ecoOperatorMenu.roleTitle.value : employeeMenu.roleTitle.value)
+const menuItems = computed(() => isEcoOperator.value ? ecoOperatorMenu.menuItems.value : employeeMenu.menuItems.value)
+const routePrefix = computed(() => isEcoOperator.value ? '/eco-operator' : '/employee')
 
 // ── Filters ─────────────────────────────────────────────────
 const searchQuery = ref('')
@@ -156,7 +163,7 @@ function goToPage(page: number) {
 
 // ── Row click ───────────────────────────────────────────────
 function navigateToCompany(company: DetectedCompany) {
-  router.push(`/employee/detected-companies/${company.id}`)
+  router.push(`${routePrefix.value}/detected-companies/${company.id}`)
 }
 
 // ── Monitoring actions ──────────────────────────────────────
@@ -166,10 +173,10 @@ async function runGtsMonitoring() {
   monitoringLoading.value = true
   try {
     const result = await detectedCompanyStore.runGtsMonitoring()
-    alert(t('detectedCompanies.gtsMonitoringDone', { count: result.newCompaniesFound }))
+    toastStore.show({ type: 'success', title: t('detectedCompanies.gtsMonitoringDone', { count: result.newCompaniesFound }) })
     await detectedCompanyStore.fetchAll()
   } catch {
-    alert(t('detectedCompanies.monitoringError'))
+    toastStore.show({ type: 'error', title: t('detectedCompanies.monitoringError') })
   } finally {
     monitoringLoading.value = false
   }
@@ -179,10 +186,10 @@ async function runGnsMonitoring() {
   monitoringLoading.value = true
   try {
     const result = await detectedCompanyStore.runGnsMonitoring()
-    alert(t('detectedCompanies.gnsMonitoringDone', { count: result.newCompaniesFound }))
+    toastStore.show({ type: 'success', title: t('detectedCompanies.gnsMonitoringDone', { count: result.newCompaniesFound }) })
     await detectedCompanyStore.fetchAll()
   } catch {
-    alert(t('detectedCompanies.monitoringError'))
+    toastStore.show({ type: 'error', title: t('detectedCompanies.monitoringError') })
   } finally {
     monitoringLoading.value = false
   }
@@ -211,9 +218,9 @@ onMounted(() => {
 
 <template>
   <DashboardLayout
-    role="employee"
+    :role="isEcoOperator ? 'eco-operator' : 'employee'"
     :roleTitle="roleTitle"
-    userName="Сотрудник МПРЭТН"
+    :userName="authStore.userName.value || (isEcoOperator ? 'ГП Эко Оператор' : 'Сотрудник МПРЭТН')"
     :menuItems="menuItems"
   >
     <div class="space-y-6">
