@@ -7,6 +7,7 @@ import kg.eco.operator.entity.CollectionPoint;
 import kg.eco.operator.entity.enums.CollectionPointStatus;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.CollectionPointRepository;
+import kg.eco.operator.service.AuditLogger;
 import kg.eco.operator.service.CollectionPointService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class CollectionPointServiceImpl implements CollectionPointService {
 
     private final CollectionPointRepository repository;
     private final CollectionPointMapper mapper;
+    private final AuditLogger audit;
 
     @Override
     public List<CollectionPointResponse> getAll(String region, String status) {
@@ -47,6 +49,8 @@ public class CollectionPointServiceImpl implements CollectionPointService {
         CollectionPoint point = new CollectionPoint();
         mapRequestToEntity(request, point);
         point = repository.save(point);
+        audit.log("CREATE", "COLLECTION_POINT", point.getId(),
+                "Создан пункт приёма: " + point.getName());
         return mapper.toResponse(point);
     }
 
@@ -61,16 +65,19 @@ public class CollectionPointServiceImpl implements CollectionPointService {
         CollectionPoint point = findById(id);
         mapRequestToEntity(request, point);
         point = repository.save(point);
+        audit.log("UPDATE", "COLLECTION_POINT", point.getId(),
+                "Обновлён пункт приёма: " + point.getName());
         return mapper.toResponse(point);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Пункт приёма не найден: " + id);
-        }
+        CollectionPoint point = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Пункт приёма не найден: " + id));
+        String name = point.getName();
         repository.deleteById(id);
+        audit.log("DELETE", "COLLECTION_POINT", id, "Удалён пункт приёма: " + name);
     }
 
     @Override

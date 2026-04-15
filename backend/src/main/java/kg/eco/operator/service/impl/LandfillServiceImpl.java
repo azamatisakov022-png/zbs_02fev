@@ -9,6 +9,7 @@ import kg.eco.operator.entity.enums.LandfillStatus;
 import kg.eco.operator.entity.enums.LandfillType;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.LandfillRepository;
+import kg.eco.operator.service.AuditLogger;
 import kg.eco.operator.service.LandfillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class LandfillServiceImpl implements LandfillService {
 
     private final LandfillRepository landfillRepository;
     private final LandfillMapper landfillMapper;
+    private final AuditLogger audit;
 
     @Override
     public List<LandfillResponse> getAll(String region, String type, String status) {
@@ -60,6 +62,8 @@ public class LandfillServiceImpl implements LandfillService {
         Landfill landfill = new Landfill();
         mapRequestToEntity(request, landfill);
         landfill = landfillRepository.save(landfill);
+        audit.log("CREATE", "LANDFILL", landfill.getId(),
+                "Создан полигон ТБО: " + landfill.getName());
         return landfillMapper.toResponse(landfill);
     }
 
@@ -72,8 +76,15 @@ public class LandfillServiceImpl implements LandfillService {
     @Transactional
     public LandfillResponse update(Long id, LandfillCreateRequest request) {
         Landfill landfill = findLandfillById(id);
+        String oldStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "—";
         mapRequestToEntity(request, landfill);
         landfill = landfillRepository.save(landfill);
+        String newStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "—";
+        String details = "Обновлён полигон: " + landfill.getName();
+        if (!oldStatus.equals(newStatus)) {
+            details += " (статус " + oldStatus + " → " + newStatus + ")";
+        }
+        audit.log("UPDATE", "LANDFILL", landfill.getId(), details);
         return landfillMapper.toResponse(landfill);
     }
 

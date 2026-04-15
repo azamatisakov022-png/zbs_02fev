@@ -5,16 +5,46 @@
 // Left filter panel overlay, grid-based clustering, tables below map
 // ════════════════════════════════════════════════════════════════════
 
-import { ref, reactive, computed, watch, nextTick } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import 'leaflet/dist/leaflet.css'
-import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
-import L from 'leaflet'
-import { recyclerStore } from '../stores/recyclers'
-import { landfillStore } from '../stores/landfills'
-import { collectionPointStore } from '../stores/collectionPoints'
-import { dumpStore } from '../stores/dumps'
+import KyrgyzstanCutoutMap, { type CutoutMarker } from '../components/maps/KyrgyzstanCutoutMap.vue'
+import { useGisPublicData } from '../composables/useGisPublicData'
 import { productGroups, getTranslatedGroupLabel } from '../data/product-groups'
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Публичный реестр читает данные через общий composable, который ходит
+// на /api/v1/public/* без JWT. Тот же composable использует и ЛК сотрудника
+// — гарантия что обе страницы видят одни и те же объекты.
+// ═══════════════════════════════════════════════════════════════════════════
+// Polling раз в 60 сек — публичная карта автоматически обновляется,
+// если сотрудник МПРЭТН добавил/изменил объект в своём ЛК.
+const {
+  landfills: backendLandfills,
+  recyclers: backendRecyclers,
+  collectionPoints: backendCollectionPoints,
+  dumps: backendDumps,
+  error: backendError,
+} = useGisPublicData({ pollIntervalMs: 60_000 })
+
+// Приводим visiblePoints к интерфейсу CutoutMarker с краткой description-строкой.
+function pointToMarker(p: { id: number; type: string; name: string; lat: number; lng: number; address?: string; phone?: string; status?: string; landfillType?: string; area?: string; fillLevel?: string; wasteTypes?: string[]; workingHours?: string; operator?: string; discoveryDate?: string; notes?: string }): CutoutMarker {
+  let desc = ''
+  if (p.type === 'landfills') desc = [p.landfillType, p.area, p.fillLevel ? 'заполн. ' + p.fillLevel : ''].filter(Boolean).join(' · ')
+  else if (p.type === 'reception') desc = [p.wasteTypes?.slice(0, 3).join(', '), p.workingHours, p.operator].filter(Boolean).join(' · ')
+  else if (p.type === 'recyclers') desc = (p.wasteTypes ?? []).slice(0, 4).join(', ')
+  else if (p.type === 'dumps') desc = [p.area, p.discoveryDate ? 'обнаруж. ' + p.discoveryDate : '', p.notes].filter(Boolean).join(' · ')
+  return {
+    id: p.id,
+    type: p.type,
+    name: p.name,
+    lat: p.lat,
+    lng: p.lng,
+    address: p.address,
+    phone: p.phone,
+    status: p.status,
+    description: desc,
+  }
+}
 
 const { t } = useI18n()
 
@@ -151,96 +181,75 @@ const dumpsTabSearch = ref('')
 const expandedWasteRows = reactive(new Set<number>())
 
 // ════════════════════════════════════════════════════════════════════
-// Data: Recyclers from store
+// Computed: All Map Points — строится ТОЛЬКО из данных backend.
+// Конвертация backend-полей (latitude/longitude/companyName) в формат
+// таблицы (lat/lng/name).
 // ════════════════════════════════════════════════════════════════════
 
-const recyclerTableData = computed(() => {
-  return recyclerStore.getActiveRecyclers().map(r => {
-    const coords = recyclerCoords[r.name] || { lat: 42.87, lng: 74.59, region: 'Бишкек' }
-    const totalCapacity = recyclerStore.getTotalCapacity(r)
-    return {
-      id: r.id,
-      name: r.name,
-      inn: r.inn,
-      lat: coords.lat,
-      lng: coords.lng,
-      address: r.address,
-      phone: r.contactPhone,
-      region: coords.region,
-      wasteTypes: r.wasteTypes,
-      licenseNumber: r.licenseNumber,
-      licenseExpiry: r.licenseExpiry,
-      capacity: totalCapacity > 0 ? `${totalCapacity} ${t('registries.tonsPerYear')}` : '',
-      status: 'active',
-    }
-  })
-})
-
-// ════════════════════════════════════════════════════════════════════
-// Computed: All Map Points
-// ════════════════════════════════════════════════════════════════════
+const recyclerTableData = computed(() => backendRecyclers.value.map(r => ({
+  id: r.id,
+  name: r.companyName ?? '',
+  inn: r.inn ?? '',
+  lat: r.latitude ?? 0,
+  lng: r.longitude ?? 0,
+  address: r.address ?? '',
+  phone: r.phone ?? '',
+  region: r.region ?? '',
+  wasteTypes: r.wasteTypes ?? [],
+  licenseNumber: r.licenseNumber ?? '',
+  licenseExpiry: '',
+  capacity: '',
+  status: (r.status ?? 'active').toLowerCase(),
+})))
 
 const allMapPoints = computed<MapPoint[]>(() => {
-  const recyclerPoints: MapPoint[] = recyclerTableData.value.map(r => ({
-    id: r.id,
-    type: 'recyclers' as LayerType,
-    name: r.name,
-    lat: r.lat,
-    lng: r.lng,
-    address: r.address,
-    phone: r.phone,
-    status: r.status,
-    region: r.region,
-    wasteTypes: r.wasteTypes,
-    licenseNumber: r.licenseNumber,
-    capacity: r.capacity,
-  }))
+  const recyclerPoints: MapPoint[] = recyclerTableData.value
+    .filter(r => r.lat && r.lng)
+    .map(r => ({
+      id: r.id, type: 'recyclers' as LayerType, name: r.name, lat: r.lat, lng: r.lng,
+      address: r.address, phone: r.phone, status: r.status, region: r.region,
+      wasteTypes: r.wasteTypes, licenseNumber: r.licenseNumber, capacity: r.capacity,
+    }))
 
-  const recPoints: MapPoint[] = collectionPointStore.getForGisMap().map(p => ({
-    id: p.id,
-    type: 'reception' as LayerType,
-    name: p.name,
-    lat: p.lat,
-    lng: p.lng,
-    address: p.address,
-    phone: p.phone,
-    status: p.status,
-    region: p.region,
-    wasteTypes: p.wasteTypes,
-    workingHours: p.workingHours,
-    operator: p.operator,
-  }))
+  const recPoints: MapPoint[] = backendCollectionPoints.value
+    .filter(p => p.latitude && p.longitude)
+    .map(p => ({
+      id: p.id, type: 'reception' as LayerType, name: p.name,
+      lat: p.latitude!, lng: p.longitude!,
+      address: p.address ?? '', phone: p.contactPhone ?? '',
+      status: (p.status ?? 'active').toLowerCase(),
+      region: p.region ?? '',
+      wasteTypes: p.wasteTypes ?? [],
+      workingHours: p.operatingHours ?? '',
+      operator: p.operator ?? '',
+    }))
 
-  const landfillPoints: MapPoint[] = landfillStore.getForGisMap().map(l => ({
-    id: l.id,
-    type: 'landfills' as LayerType,
-    name: l.name,
-    lat: l.lat,
-    lng: l.lng,
-    address: l.address,
-    phone: l.phone || '',
-    status: l.status,
-    region: l.region,
-    landfillType: l.landfillType,
-    area: l.area,
-    fillLevel: l.fillLevel,
-  }))
+  const landfillPoints: MapPoint[] = backendLandfills.value
+    .filter(l => l.latitude && l.longitude)
+    .map(l => ({
+      id: l.id, type: 'landfills' as LayerType, name: l.name,
+      lat: l.latitude!, lng: l.longitude!,
+      address: l.address ?? '', phone: '',
+      status: (l.status ?? 'active').toLowerCase(),
+      region: l.region ?? '',
+      landfillType: l.type ?? '',
+      area: l.area != null ? `${l.area} га` : '—',
+      fillLevel: l.fillPercent != null ? `${l.fillPercent}%` : '—',
+    }))
 
-  const dumpPoints: MapPoint[] = dumpStore.state.dumps.map(d => ({
-    id: d.id,
-    type: 'dumps' as LayerType,
-    name: d.name,
-    lat: d.lat,
-    lng: d.lng,
-    address: d.address,
-    phone: '',
-    status: d.dumpStatus,
-    region: d.region,
-    area: d.area + ' ' + t('registries.ha'),
-    discoveryDate: d.discoveryDate,
-    dumpStatus: d.dumpStatus,
-    notes: d.notes,
-  }))
+  const dumpPoints: MapPoint[] = backendDumps.value
+    .filter(d => d.latitude && d.longitude)
+    .map(d => ({
+      id: d.id, type: 'dumps' as LayerType, name: d.name,
+      lat: d.latitude!, lng: d.longitude!,
+      address: d.address ?? '', phone: '',
+      status: (d.status ?? 'active').toLowerCase(),
+      region: d.region ?? '',
+      area: d.area != null ? `${d.area} ${t('registries.ha')}` : '—',
+      discoveryDate: d.discoveredDate ?? '—',
+      dumpStatus: (d.status ?? 'active').toLowerCase(),
+      notes: d.notes ?? '',
+    }))
 
   return [...landfillPoints, ...recyclerPoints, ...recPoints, ...dumpPoints]
 })
@@ -292,13 +301,15 @@ const countByType = computed(() => {
   return counts
 })
 
-const totalCountByType = computed(() => ({
-  landfills: landfillStore.state.landfills.length,
-  recyclers: recyclerTableData.value.length,
-  reception: collectionPointStore.state.points.length,
-  dumps: dumpStore.state.dumps.length,
-  total: landfillStore.state.landfills.length + recyclerTableData.value.length + collectionPointStore.state.points.length + dumpStore.state.dumps.length,
-}))
+// Счётчики берутся из allMapPoints — учитывают и сторы, и mock fallback.
+const totalCountByType = computed(() => {
+  const acc = { landfills: 0, recyclers: 0, reception: 0, dumps: 0, total: 0 }
+  for (const p of allMapPoints.value) {
+    if (p.type in acc) (acc as any)[p.type]++
+    acc.total++
+  }
+  return acc
+})
 
 // ════════════════════════════════════════════════════════════════════
 // Computed: Clustering (grid-based)
@@ -357,70 +368,45 @@ const displayItems = computed<DisplayItem[]>(() => {
 // Computed: Filtered data for registry tables
 // ════════════════════════════════════════════════════════════════════
 
+// Все реестры берут данные из allMapPoints (источник: /api/v1/public/*).
 const filteredLandfills = computed(() => {
-  let result = landfillStore.getForGisMap()
-
-  // Apply global region filter
-  if (regionFilter.value) {
-    result = result.filter(l => l.region === regionFilter.value)
-  }
-  // Apply landfill status filter
-  if (landfillStatusFilter.value) {
-    result = result.filter(l => l.status === landfillStatusFilter.value)
-  }
-  // Apply tab search
+  let result = allMapPoints.value.filter(p => p.type === 'landfills')
+  if (regionFilter.value) result = result.filter(l => l.region === regionFilter.value)
+  if (landfillStatusFilter.value) result = result.filter(l => l.status === landfillStatusFilter.value)
   if (landfillTabSearch.value.trim()) {
     const q = landfillTabSearch.value.toLowerCase()
-    result = result.filter(l => l.name.toLowerCase().includes(q) || l.address.toLowerCase().includes(q))
+    result = result.filter(l => (l.name ?? '').toLowerCase().includes(q) || (l.address ?? '').toLowerCase().includes(q))
   }
   return result
 })
 
 const filteredRecyclers = computed(() => {
   let result = recyclerTableData.value
-
-  // Apply global region filter
-  if (regionFilter.value) {
-    result = result.filter(r => r.region === regionFilter.value)
-  }
-  // Apply tab search
+  if (regionFilter.value) result = result.filter(r => r.region === regionFilter.value)
   if (recyclerTabSearch.value.trim()) {
     const q = recyclerTabSearch.value.toLowerCase()
-    result = result.filter(r => r.name.toLowerCase().includes(q) || r.inn.includes(q))
+    result = result.filter(r => r.name.toLowerCase().includes(q) || (r.inn ?? '').includes(q))
   }
   return result
 })
 
 const filteredReceptionPoints = computed(() => {
-  let result = collectionPointStore.getForGisMap()
-
-  // Apply global region filter
-  if (regionFilter.value) {
-    result = result.filter(p => p.region === regionFilter.value)
-  }
-  // Apply tab search
+  let result = allMapPoints.value.filter(p => p.type === 'reception')
+  if (regionFilter.value) result = result.filter(p => p.region === regionFilter.value)
   if (receptionTabSearch.value.trim()) {
     const q = receptionTabSearch.value.toLowerCase()
-    result = result.filter(p => p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q))
+    result = result.filter(p => (p.name ?? '').toLowerCase().includes(q) || (p.address ?? '').toLowerCase().includes(q))
   }
   return result
 })
 
 const filteredDumps = computed(() => {
-  let result = [...dumpStore.state.dumps]
-
-  // Apply global region filter
-  if (regionFilter.value) {
-    result = result.filter(d => d.region === regionFilter.value)
-  }
-  // Apply dump status filter
-  if (dumpStatusFilter.value) {
-    result = result.filter(d => d.dumpStatus === dumpStatusFilter.value)
-  }
-  // Apply tab search
+  let result = allMapPoints.value.filter(p => p.type === 'dumps')
+  if (regionFilter.value) result = result.filter(d => d.region === regionFilter.value)
+  if (dumpStatusFilter.value) result = result.filter(d => d.dumpStatus === dumpStatusFilter.value)
   if (dumpsTabSearch.value.trim()) {
     const q = dumpsTabSearch.value.toLowerCase()
-    result = result.filter(d => d.name.toLowerCase().includes(q) || d.address.toLowerCase().includes(q))
+    result = result.filter(d => (d.name ?? '').toLowerCase().includes(q) || (d.address ?? '').toLowerCase().includes(q))
   }
   return result
 })
@@ -502,7 +488,10 @@ const getMarkerIcon = (point: MapPoint) => {
 
 const getLeafletMap = (): L.Map | null => {
   if (!mapRef.value) return null
-  return (mapRef.value as any).leafletObject || null
+  // Новый CutoutMap экспонирует getLeafletMap(); старый LMap — свойство leafletObject.
+  const ref = mapRef.value as any
+  if (typeof ref.getLeafletMap === 'function') return ref.getLeafletMap() || null
+  return ref.leafletObject || null
 }
 
 const onMapReady = () => {
@@ -813,48 +802,13 @@ const hasActiveFilters = computed(() => {
             </div>
           </div>
 
-          <div class="w-px h-7 bg-gray-200 flex-shrink-0"></div>
+          <div class="flex-1"></div>
 
-          <!-- Layer type chips -->
-          <div class="flex items-center gap-2 flex-shrink-0">
-            <button
-              v-for="layer in layerConfig"
-              :key="layer.id"
-              @click="toggleLayer(layer.id)"
-              :class="[
-                'flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] font-medium transition-all border',
-                layerVisibility[layer.id]
-                  ? 'bg-white border-current shadow-sm'
-                  : 'bg-gray-100 border-gray-200 text-gray-400'
-              ]"
-              :style="layerVisibility[layer.id] ? { color: layer.color, borderColor: layer.color } : {}"
-            >
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layerVisibility[layer.id] ? layer.color : '#d1d5db' }"></span>
-              <span class="whitespace-nowrap">{{ layer.name }}</span>
-              <span :class="['text-[11px] px-1.5 py-0.5 rounded-full font-semibold', layerVisibility[layer.id] ? 'bg-current/10' : 'bg-gray-200 text-gray-500']"
-                :style="layerVisibility[layer.id] ? { backgroundColor: layer.color + '1a', color: layer.color } : {}"
-              >{{ countByType[layer.id] }}</span>
-            </button>
-          </div>
-
-          <div class="w-px h-7 bg-gray-200 flex-shrink-0"></div>
-
-          <!-- Dropdowns -->
-          <select v-model="regionFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[160px] flex-shrink-0">
+          <!-- Глобальный фильтр: регион (остальные фильтры переехали внутрь
+               соответствующих слоёв и вкладок реестра) -->
+          <select v-model="regionFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[180px] flex-shrink-0">
             <option value="">{{ $t('registries.regionAll') }}</option>
             <option v-for="region in gisRegions" :key="region" :value="region">{{ region }}</option>
-          </select>
-          <select v-model="landfillStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[180px] flex-shrink-0">
-            <option value="">{{ $t('registries.landfillsAll') }}</option>
-            <option value="active">{{ $t('registries.landfillsActive') }}</option>
-            <option value="full">{{ $t('registries.landfillsFull') }}</option>
-            <option value="closed">{{ $t('registries.landfillsClosed') }}</option>
-          </select>
-          <select v-model="dumpStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent w-[170px] flex-shrink-0">
-            <option value="">{{ $t('registries.dumpsAll') }}</option>
-            <option value="discovered">{{ $t('registries.dumpDiscovered') }}</option>
-            <option value="liquidating">{{ $t('registries.dumpLiquidating') }}</option>
-            <option value="liquidated">{{ $t('registries.dumpLiquidated') }}</option>
           </select>
 
           <!-- Reset -->
@@ -909,49 +863,15 @@ const hasActiveFilters = computed(() => {
               <svg :class="['w-3 h-3 transition-transform', mobileFiltersOpen ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
           </div>
-          <!-- Expanded mobile filters -->
+          <!-- Expanded mobile filters (упрощены — только регион) -->
           <div v-if="mobileFiltersOpen" class="px-4 pb-3 space-y-3 border-t border-gray-100 pt-3">
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="layer in layerConfig"
-                :key="layer.id"
-                @click="toggleLayer(layer.id)"
-                :class="[
-                  'flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] font-medium transition-all border',
-                  layerVisibility[layer.id]
-                    ? 'bg-white border-current shadow-sm'
-                    : 'bg-gray-100 border-gray-200 text-gray-400'
-                ]"
-                :style="layerVisibility[layer.id] ? { color: layer.color, borderColor: layer.color } : {}"
-              >
-                <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: layerVisibility[layer.id] ? layer.color : '#d1d5db' }"></span>
-                {{ layer.name }}
-                <span class="text-[11px] px-1.5 rounded-full font-semibold"
-                  :style="layerVisibility[layer.id] ? { backgroundColor: layer.color + '1a', color: layer.color } : { backgroundColor: '#e5e7eb', color: '#6b7280' }"
-                >{{ countByType[layer.id] }}</span>
-              </button>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <select v-model="regionFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">{{ $t('registries.regionAll') }}</option>
-                <option v-for="region in gisRegions" :key="region" :value="region">{{ region }}</option>
-              </select>
-              <select v-model="landfillStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">{{ $t('registries.landfillsAll') }}</option>
-                <option value="active">{{ $t('registries.landfillsActive') }}</option>
-                <option value="full">{{ $t('registries.landfillsFull') }}</option>
-                <option value="closed">{{ $t('registries.landfillsClosed') }}</option>
-              </select>
-              <select v-model="dumpStatusFilter" class="h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
-                <option value="">{{ $t('registries.dumpsAll') }}</option>
-                <option value="discovered">{{ $t('registries.dumpDiscovered') }}</option>
-                <option value="liquidating">{{ $t('registries.dumpLiquidating') }}</option>
-                <option value="liquidated">{{ $t('registries.dumpLiquidated') }}</option>
-              </select>
-              <button v-if="hasActiveFilters" @click="resetFilters" class="h-9 text-sm text-gray-500 hover:text-gray-700">
-                ✕ {{ $t('registries.resetFilters') }}
-              </button>
-            </div>
+            <select v-model="regionFilter" class="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+              <option value="">{{ $t('registries.regionAll') }}</option>
+              <option v-for="region in gisRegions" :key="region" :value="region">{{ region }}</option>
+            </select>
+            <button v-if="hasActiveFilters" @click="resetFilters" class="w-full h-9 text-sm text-gray-500 hover:text-gray-700 text-left">
+              ✕ {{ $t('registries.resetFilters') }}
+            </button>
           </div>
         </div>
       </div>
@@ -963,165 +883,44 @@ const hasActiveFilters = computed(() => {
     <div id="map-section" class="container-main pt-3 lg:pt-4">
       <div class="relative rounded-xl overflow-hidden shadow-sm border border-gray-200" style="height: calc(100vh - 320px); min-height: 400px; max-height: 700px;">
 
-        <!-- Leaflet Map -->
-        <LMap
+        <!-- ── Leaflet OSM + inverse-маска цвета фона ── -->
+        <KyrgyzstanCutoutMap
           ref="mapRef"
-          :zoom="mapZoom"
-          :center="mapCenter"
-          :use-global-leaflet="false"
-          :options="{ scrollWheelZoom: false, zoomControl: false }"
-          class="h-full w-full z-0"
-          @ready="onMapReady"
-          @update:zoom="mapZoom = $event"
-          @update:center="(c: any) => { mapCenter = [c.lat, c.lng] }"
+          :markers="visiblePoints.map(pointToMarker)"
+          height="100%"
+          mask-color="#f8fafc"
+          @marker-click="(m: CutoutMarker) => onMarkerClick(allMapPoints.find(p => p.id === m.id && p.type === m.type) ?? (m as any))"
+        />
+
+        <!-- ══ Слои (floating control — слева-сверху) ══ -->
+        <div
+          class="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/70 overflow-hidden"
+          style="min-width: 200px;"
         >
-          <LTileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            layer-type="base"
-            name="OpenStreetMap"
-          />
-
-          <!-- Markers & Clusters -->
-          <template v-for="(item, idx) in displayItems" :key="'di-' + idx">
-            <!-- Single marker -->
-            <LMarker
-              v-if="item.type === 'marker'"
-              :lat-lng="[item.point.lat, item.point.lng]"
-              :icon="getMarkerIcon(item.point)"
-              @click="onMarkerClick(item.point)"
+          <div class="px-3 py-2 bg-gray-50/80 border-b border-gray-100">
+            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">{{ $t('registries.layersTitle') || 'Слои' }}</p>
+          </div>
+          <div class="p-1.5 space-y-0.5">
+            <label
+              v-for="layer in layerConfig"
+              :key="layer.id"
+              class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors select-none"
             >
-              <LPopup :options="{ maxWidth: 320, className: 'custom-popup' }">
-                <div class="min-w-[260px]">
-                  <!-- Popup header -->
-                  <div class="flex items-start justify-between mb-3">
-                    <h4 class="font-bold text-gray-900 text-[14px] pr-2 leading-tight">{{ item.point.name }}</h4>
-                    <span :class="['px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap', getTypeBadgeClass(item.point.type)]">
-                      {{ getTypeLabel(item.point.type) }}
-                    </span>
-                  </div>
+              <input
+                type="checkbox"
+                :checked="layerVisibility[layer.id]"
+                @change="toggleLayer(layer.id)"
+                class="w-4 h-4 rounded border-gray-300 text-[#0e888d] focus:ring-[#0e888d] focus:ring-offset-0 cursor-pointer"
+              />
+              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.color }"></span>
+              <span class="text-[13px] font-medium flex-1" :class="layerVisibility[layer.id] ? 'text-gray-900' : 'text-gray-400'">
+                {{ layer.name }}
+              </span>
+            </label>
+          </div>
+        </div>
 
-                  <!-- Status badge -->
-                  <div class="mb-3">
-                    <template v-if="item.point.type === 'dumps'">
-                      <span :class="['px-2 py-0.5 rounded-full text-[11px] font-medium', getDumpStatusInfo(item.point.dumpStatus || '').color]">
-                        {{ getDumpStatusInfo(item.point.dumpStatus || '').label }}
-                      </span>
-                    </template>
-                    <template v-else>
-                      <span :class="['px-2 py-0.5 rounded-full text-[11px] font-medium', getStatusInfo(item.point.status).color]">
-                        {{ getStatusInfo(item.point.status).label }}
-                      </span>
-                    </template>
-                  </div>
-
-                  <!-- Popup body by type -->
-                  <div class="space-y-2 text-[12px]">
-
-                    <!-- ── Landfills popup ── -->
-                    <template v-if="item.point.type === 'landfills'">
-                      <p v-if="item.point.landfillType" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupType') }}</span>
-                        <span class="text-gray-700">{{ item.point.landfillType }}</span>
-                      </p>
-                      <p v-if="item.point.area" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupArea') }}</span>
-                        <span class="text-gray-700">{{ item.point.area }}</span>
-                      </p>
-                      <p v-if="item.point.capacity" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupCapacity') }}</span>
-                        <span class="text-gray-700">{{ item.point.capacity }}</span>
-                      </p>
-                      <div v-if="item.point.fillLevel && item.point.fillLevel !== '—'" class="flex items-center gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupFillLevel') }}</span>
-                        <div class="flex-1 flex items-center gap-2">
-                          <div class="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full" :class="getFillLevelColor(item.point.fillLevel)" :style="{ width: item.point.fillLevel }"></div>
-                          </div>
-                          <span class="text-gray-700 text-[11px]">{{ item.point.fillLevel }}</span>
-                        </div>
-                      </div>
-                    </template>
-
-                    <!-- ── Recyclers popup ── -->
-                    <template v-if="item.point.type === 'recyclers'">
-                      <div v-if="item.point.wasteTypes && item.point.wasteTypes.length" class="flex flex-wrap gap-1 mb-1">
-                        <span v-for="wt in item.point.wasteTypes" :key="wt"
-                          class="px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px]">
-                          {{ getWasteGroupLabel(wt) }}
-                        </span>
-                      </div>
-                      <p v-if="item.point.licenseNumber" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupLicense') }}</span>
-                        <span class="text-gray-700">{{ item.point.licenseNumber }}</span>
-                      </p>
-                      <p v-if="item.point.capacity" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupPower') }}</span>
-                        <span class="text-gray-700">{{ item.point.capacity }}</span>
-                      </p>
-                    </template>
-
-                    <!-- ── Reception popup ── -->
-                    <template v-if="item.point.type === 'reception'">
-                      <div v-if="item.point.wasteTypes && item.point.wasteTypes.length" class="flex flex-wrap gap-1 mb-1">
-                        <span v-for="wt in item.point.wasteTypes" :key="wt"
-                          class="px-1.5 py-0.5 bg-yellow-50 text-yellow-700 rounded text-[10px]">
-                          {{ wt }}
-                        </span>
-                      </div>
-                      <p v-if="item.point.workingHours" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupWorkingHours') }}</span>
-                        <span class="text-gray-700">{{ item.point.workingHours }}</span>
-                      </p>
-                      <p v-if="item.point.operator" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupOperator') }}</span>
-                        <span class="text-gray-700">{{ item.point.operator }}</span>
-                      </p>
-                    </template>
-
-                    <!-- ── Dumps popup ── -->
-                    <template v-if="item.point.type === 'dumps'">
-                      <p v-if="item.point.area" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupArea') }}</span>
-                        <span class="text-gray-700">{{ item.point.area }}</span>
-                      </p>
-                      <p v-if="item.point.discoveryDate" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupDiscoveryDate') }}</span>
-                        <span class="text-gray-700">{{ item.point.discoveryDate }}</span>
-                      </p>
-                      <p v-if="item.point.notes" class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupNote') }}</span>
-                        <span class="text-gray-700">{{ item.point.notes }}</span>
-                      </p>
-                      <p class="flex gap-2">
-                        <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupCoordinates') }}</span>
-                        <span class="text-gray-700 font-mono text-[11px]">{{ item.point.lat.toFixed(4) }}, {{ item.point.lng.toFixed(4) }}</span>
-                      </p>
-                    </template>
-
-                    <!-- Common: address, phone -->
-                    <p class="flex gap-2">
-                      <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupAddress') }}</span>
-                      <span class="text-gray-700">{{ item.point.address }}</span>
-                    </p>
-                    <p v-if="item.point.phone" class="flex gap-2">
-                      <span class="text-gray-400 flex-shrink-0">{{ $t('registries.popupPhone') }}</span>
-                      <span class="text-gray-700">{{ item.point.phone }}</span>
-                    </p>
-                  </div>
-                </div>
-              </LPopup>
-            </LMarker>
-
-            <!-- Cluster marker -->
-            <LMarker
-              v-else
-              :lat-lng="[item.lat, item.lng]"
-              :icon="createClusterIcon(item.count)"
-              @click="onClusterClick(item as ClusterItem)"
-            />
-          </template>
-        </LMap>
+        <!-- (legacy Leaflet markup removed — replaced by KyrgyzstanInteractiveMap above) -->
 
         <!-- ════════════════════════════════════════════ -->
         <!-- Zoom Controls (right side)                  -->
@@ -1164,19 +963,7 @@ const hasActiveFilters = computed(() => {
           </button>
         </div>
 
-        <!-- ════════════════════════════════════════════ -->
-        <!-- Legend (bottom-right overlay)               -->
-        <!-- ════════════════════════════════════════════ -->
-        <div
-          class="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-gray-200/60 px-3 py-2.5"
-        >
-          <div class="space-y-1.5">
-            <div v-for="layer in layerConfig" :key="layer.id" class="flex items-center gap-2">
-              <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.color }"></div>
-              <span class="text-[12px] text-gray-600 whitespace-nowrap">{{ layer.name }}</span>
-            </div>
-          </div>
-        </div>
+        <!-- Старая легенда убрана — слои теперь в floating control слева-сверху -->
 
       </div><!-- end map container -->
     </div>
@@ -1256,7 +1043,7 @@ const hasActiveFilters = computed(() => {
 
         <!-- ════════════════ TAB: LANDFILLS ════════════════ -->
         <div v-if="activeTab === 'landfills'" class="p-6">
-          <!-- Tab search -->
+          <!-- Tab search + status filter -->
           <div class="flex flex-col md:flex-row gap-3 mb-6">
             <div class="relative flex-1">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1265,6 +1052,12 @@ const hasActiveFilters = computed(() => {
               <input v-model="landfillTabSearch" type="text" :placeholder="$t('registries.searchByName')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
+            <select v-model="landfillStatusFilter" class="h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent md:w-[200px]">
+              <option value="">{{ $t('registries.landfillsAll') }}</option>
+              <option value="active">{{ $t('registries.landfillsActive') }}</option>
+              <option value="full">{{ $t('registries.landfillsFull') }}</option>
+              <option value="closed">{{ $t('registries.landfillsClosed') }}</option>
+            </select>
           </div>
 
           <!-- Table -->
@@ -1457,7 +1250,7 @@ const hasActiveFilters = computed(() => {
 
         <!-- ════════════════ TAB: DUMPS ════════════════ -->
         <div v-if="activeTab === 'dumps'" class="p-6">
-          <!-- Tab search -->
+          <!-- Tab search + status filter -->
           <div class="flex flex-col md:flex-row gap-3 mb-6">
             <div class="relative flex-1">
               <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1466,6 +1259,12 @@ const hasActiveFilters = computed(() => {
               <input v-model="dumpsTabSearch" type="text" :placeholder="$t('registries.searchByName')"
                 class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#0e888d] focus:border-transparent" />
             </div>
+            <select v-model="dumpStatusFilter" class="h-11 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-[#0e888d] focus:border-transparent md:w-[200px]">
+              <option value="">{{ $t('registries.dumpsAll') }}</option>
+              <option value="discovered">{{ $t('registries.dumpDiscovered') }}</option>
+              <option value="liquidating">{{ $t('registries.dumpLiquidating') }}</option>
+              <option value="liquidated">{{ $t('registries.dumpLiquidated') }}</option>
+            </select>
           </div>
 
           <!-- Table -->

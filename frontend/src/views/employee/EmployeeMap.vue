@@ -1,32 +1,56 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SectionGuide from '../../components/common/SectionGuide.vue'
-import 'leaflet/dist/leaflet.css'
-import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
-import L from 'leaflet'
+import KyrgyzstanCutoutMap from '../../components/maps/KyrgyzstanCutoutMap.vue'
 import MapCoordinatePicker from '../../components/MapCoordinatePicker.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { useI18n } from 'vue-i18n'
 import { toastStore } from '../../stores/toast'
-import { landfillStore, getFillPercent, type Landfill as StoreLandfill } from '../../stores/landfills'
-import { recyclerStore, type Recycler as StoreRecycler } from '../../stores/recyclers'
-import { collectionPointStore, type CollectionPoint } from '../../stores/collectionPoints'
-import { dumpStore, getDumpStatusLabel, type Dump as StoreDump } from '../../stores/dumps'
+import { useGisPublicData } from '../../composables/useGisPublicData'
+
+// ─── Источник данных карты — общий composable. Тот же что и у /registries. ───
+const {
+  landfills: backendLandfills,
+  recyclers: backendRecyclers,
+  collectionPoints: backendCollectionPoints,
+  dumps: backendDumps,
+} = useGisPublicData()
+import {
+  KG_CENTER,
+  KG_DEFAULT_ZOOM,
+  KG_MIN_ZOOM,
+  KG_MAX_ZOOM,
+  KG_BOUNDS,
+  KG_TILE_URL,
+  KG_TILE_ATTRIBUTION,
+  KG_TILE_SUBDOMAINS,
+  KG_MASK_PANE,
+  KG_MASK_PANE_Z,
+  loadKgOblasts,
+  oblastStyle,
+  oblastHoverStyle,
+  buildMaskLatLngs,
+  maskStyle,
+} from '../../composables/useKgMap'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // ==================== MAP STATE ====================
-const mapCenter = ref<[number, number]>([41.2, 74.7])
-const mapZoom = ref(7)
+const mapCenter = ref<[number, number]>([...KG_CENTER])
+const mapZoom = ref(KG_DEFAULT_ZOOM)
 const mapRef = ref<any>(null)
 const mapSearchQuery = ref('')
 const mapSearchResults = ref<MapPoint[]>([])
 const showMapSearchResults = ref(false)
+const oblastsGeo = ref<GeoJSON.FeatureCollection | null>(null)
 
 type LayerType = 'recyclers' | 'reception' | 'landfills' | 'dumps' | 'payers'
 
+// На карте показываем только основные слои объектов.
+// Слой 'payers' оставлен в типе (используется реестрами ниже на странице),
+// но на карте как маркеры не отображается.
 const layerVisibility = ref<Record<LayerType, boolean>>({
   landfills: true, recyclers: true, reception: true, dumps: true, payers: false,
 })
@@ -35,7 +59,6 @@ const layers = computed(() => [
   { id: 'recyclers' as LayerType, name: t('employeeMap.layerRecyclers'), icon: '🔵', visible: layerVisibility.value.recyclers, color: '#2563EB' },
   { id: 'reception' as LayerType, name: t('employeeMap.layerReception'), icon: '🟡', visible: layerVisibility.value.reception, color: '#EAB308' },
   { id: 'dumps' as LayerType, name: t('employeeMap.layerDumps'), icon: '🟠', visible: layerVisibility.value.dumps, color: '#DC2626' },
-  { id: 'payers' as LayerType, name: t('employeeMap.layerPayers'), icon: '🟣', visible: layerVisibility.value.payers, color: '#9333EA' },
 ])
 
 interface MapPoint {
@@ -95,21 +118,28 @@ interface Landfill {
   discoveryDate: string; status: string; photo: string; notes: string
 }
 
-const landfills = computed(() => landfillStore.state.landfills.map(l => ({
+// Маппинг backend → frontend-shape для таблиц EmployeeMap.
+const landfills = computed(() => backendLandfills.value.map(l => ({
   id: l.id,
-  name: l.name,
-  region: l.region,
-  district: l.district,
-  type: l.type === 'sanitary' ? t('employeeMap.statusSanctioned') : t('employeeMap.statusUnsanctioned'),
-  area: l.designCapacity / 100,
-  volume: l.currentVolume * 1000,
-  wasteTypes: l.wasteAcceptance.map(w => w.category),
-  gpsLat: String(l.lat),
-  gpsLng: String(l.lng),
-  address: l.address,
-  organization: l.operator,
-  discoveryDate: '01.01.' + l.openYear,
-  status: l.status === 'active' ? t('employeeMap.statusActive') : l.status === 'closed' ? t('employeeMap.statusClosed') : t('employeeMap.statusReconstruction'),
+  name: l.name ?? '',
+  region: l.region ?? '',
+  district: '',
+  type: l.type === 'MUNICIPAL'
+    ? t('employeeMap.statusSanctioned')
+    : (l.type === 'INDUSTRIAL' || l.type === 'HAZARDOUS')
+      ? 'Промышленный отвал'
+      : t('employeeMap.statusUnsanctioned'),
+  area: Number(l.area ?? 0),
+  volume: Number(l.currentVolume ?? 0),
+  wasteTypes: [] as string[],
+  gpsLat: l.latitude != null ? String(l.latitude) : '',
+  gpsLng: l.longitude != null ? String(l.longitude) : '',
+  address: l.address ?? '',
+  organization: l.operator ?? '',
+  discoveryDate: l.yearOpened ? '01.01.' + l.yearOpened : '',
+  status: l.status === 'ACTIVE' ? t('employeeMap.statusActive')
+    : l.status === 'CLOSED' ? t('employeeMap.statusClosed')
+    : t('employeeMap.statusReconstruction'),
   photo: '',
   notes: '',
 })))
@@ -129,21 +159,23 @@ interface ReceptionPoint {
   wasteTypes: string[]; workingHours: string; phone: string; email: string; organization: string; status: string; notes: string
 }
 
-const receptionPoints = computed(() => collectionPointStore.state.points.map(p => ({
+const receptionPoints = computed(() => backendCollectionPoints.value.map(p => ({
   id: p.id,
-  name: p.name,
-  region: p.region,
-  district: p.district,
-  address: p.address,
-  gpsLat: String(p.lat),
-  gpsLng: String(p.lng),
-  wasteTypes: p.wasteTypes,
-  workingHours: p.workingHours,
-  phone: p.phone,
-  email: p.email,
-  organization: p.organization,
-  status: p.status === 'active' ? t('employeeMap.statusWorking') : p.status === 'paused' ? t('employeeMap.statusTempClosed') : t('employeeMap.statusClosed'),
-  notes: p.notes,
+  name: p.name ?? '',
+  region: p.region ?? '',
+  district: '',
+  address: p.address ?? '',
+  gpsLat: p.latitude != null ? String(p.latitude) : '',
+  gpsLng: p.longitude != null ? String(p.longitude) : '',
+  wasteTypes: p.wasteTypes ?? [],
+  workingHours: p.operatingHours ?? '',
+  phone: p.contactPhone ?? '',
+  email: '',
+  organization: p.operator ?? '',
+  status: p.status === 'ACTIVE' ? t('employeeMap.statusWorking')
+    : p.status === 'RENOVATING' ? t('employeeMap.statusTempClosed')
+    : t('employeeMap.statusClosed'),
+  notes: '',
 })))
 
 const selectedReception = ref<ReceptionPoint | null>(null)
@@ -162,25 +194,27 @@ interface Recycler {
   capacity: number; licenseNumber: string; licenseExpiry: string; region: string; status: string; notes: string
 }
 
-const recyclers = computed(() => recyclerStore.state.recyclers.map(r => ({
+const recyclers = computed(() => backendRecyclers.value.map(r => ({
   id: r.id,
-  name: r.name,
-  inn: r.inn,
-  address: r.address,
-  gpsLat: String(r.coordinates?.lat || 42.87),
-  gpsLng: String(r.coordinates?.lng || 74.59),
-  director: r.directorName || '',
-  contactPerson: r.contactPerson || '',
-  phone: r.contactPhone,
-  email: r.contactEmail,
-  activityType: r.wasteTypes.join(', '),
-  wasteTypes: r.wasteTypes,
-  capacity: r.capacities?.reduce((s: number, c: any) => s + (c.capacityTons || 0), 0) || 0,
-  licenseNumber: r.licenseNumber,
-  licenseExpiry: r.licenseExpiry,
-  region: r.region || '',
-  status: r.status === 'active' ? t('employeeMap.statusActive') : r.status === 'suspended' ? t('employeeMap.statusSuspended') : t('employeeMap.statusInactive'),
-  notes: r.notes || '',
+  name: r.companyName ?? '',
+  inn: r.inn ?? '',
+  address: r.address ?? '',
+  gpsLat: r.latitude != null ? String(r.latitude) : '',
+  gpsLng: r.longitude != null ? String(r.longitude) : '',
+  director: '',
+  contactPerson: '',
+  phone: r.phone ?? '',
+  email: r.email ?? '',
+  activityType: (r.wasteTypes ?? []).join(', '),
+  wasteTypes: r.wasteTypes ?? [],
+  capacity: 0,
+  licenseNumber: r.licenseNumber ?? '',
+  licenseExpiry: r.licenseExpiry ?? '',
+  region: r.region ?? '',
+  status: r.status === 'ACTIVE' ? t('employeeMap.statusActive')
+    : r.status === 'SUSPENDED' ? t('employeeMap.statusSuspended')
+    : t('employeeMap.statusInactive'),
+  notes: '',
 })))
 
 const selectedRecycler = ref<Recycler | null>(null)
@@ -222,17 +256,23 @@ interface Dump {
   area: number; discoveryDate: string; dumpStatus: string; notes: string
 }
 
-const dumps = computed(() => dumpStore.state.dumps.map(d => ({
+const dumpStatusLabels: Record<string, string> = {
+  ACTIVE: t('employeeMap.statusDiscovered'),
+  UNDER_CLEANUP: t('employeeMap.statusLiquidating'),
+  CLEANED: t('employeeMap.statusLiquidated'),
+  MONITORING: 'Под наблюдением',
+}
+const dumps = computed(() => backendDumps.value.map(d => ({
   id: d.id,
-  name: d.name,
-  region: d.region,
-  address: d.address,
-  gpsLat: String(d.lat),
-  gpsLng: String(d.lng),
-  area: d.area,
-  discoveryDate: d.discoveryDate,
-  dumpStatus: getDumpStatusLabel(d.dumpStatus),
-  notes: d.notes,
+  name: d.name ?? '',
+  region: d.region ?? '',
+  address: d.address ?? '',
+  gpsLat: d.latitude != null ? String(d.latitude) : '',
+  gpsLng: d.longitude != null ? String(d.longitude) : '',
+  area: Number(d.area ?? 0),
+  discoveryDate: d.discoveredDate ?? '',
+  dumpStatus: dumpStatusLabels[d.status ?? ''] ?? d.status ?? '',
+  notes: d.notes ?? '',
 })))
 
 const selectedDump = ref<Dump | null>(null)
@@ -296,71 +336,51 @@ const filteredPayers = computed(() => {
   return payers.value.filter(p => p.name.toLowerCase().includes(q) || p.inn.includes(q) || p.region.toLowerCase().includes(q))
 })
 
-// ==================== MAP POINTS FROM REGISTRY DATA ====================
+// ==================== MAP POINTS FROM BACKEND ====================
+// Источник — общий composable useGisPublicData (см. выше).
+// Producers и payers намеренно не добавляются на карту.
+
 const allMapPoints = computed<MapPoint[]>(() => {
   const points: MapPoint[] = []
-
   landfills.value.forEach(l => {
     if (l.gpsLat && l.gpsLng) {
       points.push({
         id: l.id, type: 'landfills', name: l.name, lat: parseFloat(l.gpsLat), lng: parseFloat(l.gpsLng),
-        address: l.address || l.region, phone: '', status: l.status, description: l.notes
+        address: l.address || l.region, phone: '', status: l.status, description: l.notes,
       })
     }
   })
-
   receptionPoints.value.forEach(r => {
     if (r.gpsLat && r.gpsLng) {
       points.push({
         id: r.id, type: 'reception', name: r.name, lat: parseFloat(r.gpsLat), lng: parseFloat(r.gpsLng),
-        address: r.address, phone: r.phone, status: r.status, description: r.notes
+        address: r.address, phone: r.phone, status: r.status, description: r.notes,
       })
     }
   })
-
   recyclers.value.forEach(r => {
     if (r.gpsLat && r.gpsLng) {
       points.push({
         id: r.id, type: 'recyclers', name: r.name, lat: parseFloat(r.gpsLat), lng: parseFloat(r.gpsLng),
-        address: r.address, phone: r.phone, status: r.status, description: r.activityType
+        address: r.address, phone: r.phone, status: r.status, description: r.activityType,
       })
     }
   })
-
-  producers.value.forEach(p => {
-    if (p.gpsLat && p.gpsLng) {
-      points.push({
-        id: p.id, type: 'recyclers' as LayerType, name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
-        address: p.address, phone: p.phone, status: p.status, description: p.productType
-      })
-    }
-  })
-
   dumps.value.forEach(d => {
     if (d.gpsLat && d.gpsLng) {
       points.push({
         id: d.id, type: 'dumps', name: d.name, lat: parseFloat(d.gpsLat), lng: parseFloat(d.gpsLng),
-        address: d.address || d.region, phone: '', status: d.dumpStatus, description: d.notes
+        address: d.address || d.region, phone: '', status: d.dumpStatus, description: d.notes,
       })
     }
   })
-
-  payers.value.forEach(p => {
-    if (p.gpsLat && p.gpsLng) {
-      points.push({
-        id: p.id, type: 'payers', name: p.name, lat: parseFloat(p.gpsLat), lng: parseFloat(p.gpsLng),
-        address: p.address, phone: p.phone, status: p.calcStatus, description: p.category
-      })
-    }
-  })
-
   return points
 })
 
 const visiblePoints = computed(() => {
   return allMapPoints.value.filter(point => {
     const layer = layers.value.find(l => l.id === point.type)
-    return layer?.visible
+    return layer?.visible ?? false
   })
 })
 
@@ -369,11 +389,13 @@ interface ClusterItem { type: 'cluster'; lat: number; lng: number; count: number
 interface MarkerItem { type: 'marker'; point: MapPoint }
 type DisplayItem = ClusterItem | MarkerItem
 
+// Сетка пересчитана под ограничения по стране (minZoom=6).
 const getGridSize = (zoom: number): number => {
-  if (zoom <= 7) return 2.0
-  if (zoom <= 8) return 1.0
-  if (zoom <= 9) return 0.5
-  if (zoom <= 10) return 0.25
+  if (zoom <= 7) return 1.0
+  if (zoom <= 8) return 0.6
+  if (zoom <= 9) return 0.35
+  if (zoom <= 10) return 0.2
+  if (zoom <= 11) return 0.1
   return 0
 }
 
@@ -404,10 +426,21 @@ const displayItems = computed<DisplayItem[]>(() => {
 })
 
 const onClusterClick = (cluster: ClusterItem) => {
-  const map = mapRef.value?.leafletObject
-  if (map) {
-    const bounds = L.latLngBounds(cluster.points.map(p => [p.lat, p.lng] as [number, number]))
-    map.flyToBounds(bounds, { padding: [50, 50], duration: 1 })
+  const map = mapRef.value?.leafletObject as L.Map | undefined
+  if (!map || cluster.points.length === 0) return
+  const latlngs = cluster.points.map(p => L.latLng(p.lat, p.lng))
+  const bounds = L.latLngBounds(latlngs)
+  const diagMeters =
+    bounds.isValid() && bounds.getNorthEast().distanceTo(bounds.getSouthWest())
+  if (typeof diagMeters === 'number' && diagMeters > 200) {
+    map.flyToBounds(bounds, {
+      padding: [60, 60],
+      duration: 0.6,
+      maxZoom: KG_MAX_ZOOM,
+    })
+  } else {
+    const next = Math.min(map.getZoom() + 3, KG_MAX_ZOOM)
+    map.flyTo([cluster.lat, cluster.lng], next, { duration: 0.6 })
   }
 }
 
@@ -434,6 +467,64 @@ const createClusterIcon = (count: number) => {
     iconAnchor: [size / 2, size / 2],
   })
 }
+
+// ==================== ОБЛАСТИ КЫРГЫЗСТАНА (GeoJSON + маска) ====================
+const oblastStyleFn = () => oblastStyle
+const oblastGeoJsonOptions = {
+  onEachFeature: (feature: GeoJSON.Feature, layer: L.Layer) => {
+    const pathLayer = layer as L.Path
+    const name = (feature.properties as Record<string, string> | null)?.shapeName ?? ''
+    if (name) pathLayer.bindTooltip(name, { sticky: true, className: 'oblast-tooltip' })
+    pathLayer.on({
+      mouseover: () => pathLayer.setStyle(oblastHoverStyle),
+      mouseout: () => pathLayer.setStyle(oblastStyle),
+    })
+  },
+}
+
+// Маска «мир минус КР» добавляется императивно после готовности карты —
+// ей нужен собственный pane между tilePane (200) и overlayPane (400).
+const mapReady = ref(false)
+let maskLayer: L.Polygon | null = null
+
+const ensureMaskPane = (map: L.Map) => {
+  if (!map.getPane(KG_MASK_PANE)) {
+    const pane = map.createPane(KG_MASK_PANE)
+    pane.style.zIndex = KG_MASK_PANE_Z
+    pane.style.pointerEvents = 'none'
+  }
+}
+
+const applyKgMask = () => {
+  const map = mapRef.value?.leafletObject as L.Map | undefined
+  if (!map || !oblastsGeo.value) return
+  ensureMaskPane(map)
+  if (maskLayer) {
+    maskLayer.remove()
+    maskLayer = null
+  }
+  maskLayer = L.polygon(buildMaskLatLngs(oblastsGeo.value), maskStyle).addTo(map)
+}
+
+const onMapReady = () => {
+  mapReady.value = true
+}
+
+watch([mapReady, oblastsGeo], ([ready, data]) => {
+  if (ready && data) applyKgMask()
+})
+
+onMounted(async () => {
+  // Загружаем данные из сторов — без fetchAll() сторы остаются пустыми
+  // и на карте не появляются маркеры. Ошибки подавлены в самих сторах.
+  // Данные подгружаются через useGisPublicData (см. composables/useGisPublicData.ts)
+
+  try {
+    oblastsGeo.value = await loadKgOblasts()
+  } catch (err) {
+    console.warn('[EmployeeMap] Failed to load Kyrgyzstan oblasts GeoJSON:', err)
+  }
+})
 
 const getStatusInfo = (status: string) => {
   const colorMap: Record<string, string> = {
@@ -573,129 +664,156 @@ const openDelete = (item: any) => {
   showDeleteConfirm.value = true
 }
 
-const mapLandfillFormToStore = (form: Landfill): Omit<StoreLandfill, 'id'> => {
-  const existing = landfillStore.getLandfillById(form.id)
-  return {
-    name: form.name, region: form.region, district: form.district,
-    type: form.type === t('employeeMap.statusSanctioned') ? 'sanitary' : 'unauthorized',
-    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusClosed') ? 'closed' : 'recultivation',
-    operator: form.organization, address: form.address,
-    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
-    designCapacity: form.area * 100, currentVolume: form.volume / 1000,
-    openYear: parseInt(form.discoveryDate.split('.').pop() || '2000') || 2000,
-    wasteAcceptance: form.wasteTypes.map(w => ({ category: w, hazardClass: 'IV-V', acceptedPerYear: 0, limitPerYear: 0 })),
-    settlement: existing?.settlement || '', expiryYear: existing?.expiryYear || 2050,
-    hazardClasses: existing?.hazardClasses || ['IV', 'V'],
-    monthlyIntake: existing?.monthlyIntake || [0,0,0,0,0,0,0,0,0,0,0,0],
-    infrastructure: existing?.infrastructure || { fencing: false, weighControl: false, monitoring: false, drainage: false, leachateCollection: false, fireSafety: false, ecoMonitoring: false },
-    permits: existing?.permits || { operationPermit: { number: '', date: '', expiry: '' }, ecoConclusion: { number: '', date: '' } },
-    documents: existing?.documents || [],
-    population: existing?.population || 0, servicedPopulation: existing?.servicedPopulation || 0,
-    tariffPhysical: existing?.tariffPhysical || 0, tariffLegal: existing?.tariffLegal || 0,
-    dailyVolume: existing?.dailyVolume || 0, wasteSchedule: existing?.wasteSchedule || '',
-    equipment: existing?.equipment || { trucks: 0, excavators: 0, tractors: 0, bulldozers: 0 },
-    morphology: existing?.morphology || { plastic: 0, paper: 0, glass: 0, food: 0, other: 0 },
-    landCategory: existing?.landCategory || '',
-  }
-}
+// ═══════════════════════════════════════════════════════════════════════════
+// CRUD-операции через backend API + автоматический refresh публичной карты.
+// При успешном сохранении вызываем refresh useGisPublicData → главная страница
+// (/registries) и эта же страница увидят изменения мгновенно.
+// ═══════════════════════════════════════════════════════════════════════════
+import api from '../../api/client'
+import { loadGisPublicData } from '../../composables/useGisPublicData'
 
-const mapReceptionFormToStore = (form: ReceptionPoint): Omit<CollectionPoint, 'id'> => ({
-  name: form.name, region: form.region, district: form.district, address: form.address,
-  lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
-  wasteTypes: form.wasteTypes, workingHours: form.workingHours,
-  phone: form.phone, email: form.email, organization: form.organization,
-  status: form.status === t('employeeMap.statusWorking') ? 'active' : form.status === t('employeeMap.statusTempClosed') ? 'paused' : 'closed',
-  notes: form.notes,
+// ─── Мапперы frontend-form → backend-DTO ───
+const mapLandfillToBackend = (form: Landfill): Record<string, unknown> => ({
+  name: form.name,
+  // Тип: «Санкционированная» = MUNICIPAL, «Промышленный отвал» = INDUSTRIAL,
+  // «Несанкционированная» = используется для DUMPS отдельно — здесь MIXED.
+  type: form.type === 'Промышленный отвал' ? 'INDUSTRIAL'
+      : form.type === t('employeeMap.statusUnsanctioned') ? 'MIXED'
+      : 'MUNICIPAL',
+  region: form.region || null,
+  address: form.address || null,
+  latitude: form.gpsLat ? parseFloat(form.gpsLat) : null,
+  longitude: form.gpsLng ? parseFloat(form.gpsLng) : null,
+  area: form.area || null,
+  status: form.status === t('employeeMap.statusActive') ? 'ACTIVE'
+        : form.status === t('employeeMap.statusClosed') ? 'CLOSED'
+        : 'SUSPENDED',
+  operator: form.organization || null,
 })
 
-const mapDumpFormToStore = (form: Dump): Omit<StoreDump, 'id'> => {
-  const existing = dumpStore.getDumpById(form.id)
-  const statusMap: Record<string, 'discovered' | 'liquidating' | 'liquidated'> = {
-    [t('employeeMap.statusDiscovered')]: 'discovered', [t('employeeMap.statusLiquidating')]: 'liquidating', [t('employeeMap.statusLiquidated')]: 'liquidated',
-  }
-  return {
-    name: form.name, region: form.region, address: form.address,
-    lat: parseFloat(form.gpsLat) || 0, lng: parseFloat(form.gpsLng) || 0,
-    area: form.area, discoveryDate: form.discoveryDate,
-    dumpStatus: statusMap[form.dumpStatus] || 'discovered',
-    district: existing?.district || '', responsibleAuthority: existing?.responsibleAuthority || '',
-    notes: form.notes, photos: existing?.photos || [],
+const mapReceptionToBackend = (form: ReceptionPoint): Record<string, unknown> => ({
+  name: form.name,
+  region: form.region || null,
+  address: form.address || null,
+  latitude: form.gpsLat ? parseFloat(form.gpsLat) : null,
+  longitude: form.gpsLng ? parseFloat(form.gpsLng) : null,
+  wasteTypes: form.wasteTypes,
+  operatingHours: form.workingHours || null,
+  contactPhone: form.phone || null,
+  operator: form.organization || null,
+  status: form.status === t('employeeMap.statusWorking') ? 'ACTIVE'
+        : form.status === t('employeeMap.statusTempClosed') ? 'RENOVATING'
+        : 'CLOSED',
+})
+
+const mapDumpToBackend = (form: Dump): Record<string, unknown> => ({
+  name: form.name,
+  region: form.region || null,
+  address: form.address || null,
+  latitude: form.gpsLat ? parseFloat(form.gpsLat) : null,
+  longitude: form.gpsLng ? parseFloat(form.gpsLng) : null,
+  area: form.area || null,
+  status: form.dumpStatus === t('employeeMap.statusLiquidating') ? 'UNDER_CLEANUP'
+        : form.dumpStatus === t('employeeMap.statusLiquidated') ? 'CLEANED'
+        : form.dumpStatus === 'Под наблюдением' ? 'MONITORING'
+        : 'ACTIVE',
+  notes: form.notes || null,
+  discoveredDate: form.discoveryDate || null,
+})
+
+const mapRecyclerToBackend = (form: Recycler): Record<string, unknown> => ({
+  companyName: form.name,
+  legalForm: 'ОсОО',
+  inn: form.inn,
+  region: form.region || null,
+  address: form.address || null,
+  latitude: form.gpsLat ? parseFloat(form.gpsLat) : null,
+  longitude: form.gpsLng ? parseFloat(form.gpsLng) : null,
+  director: form.director || null,
+  contactPerson: form.contactPerson || null,
+  phone: form.phone || null,
+  email: form.email || null,
+  licenseNumber: form.licenseNumber || null,
+  licenseExpiry: form.licenseExpiry || null,
+  status: form.status === t('employeeMap.statusActive') ? 'ACTIVE'
+        : form.status === t('employeeMap.statusSuspended') ? 'SUSPENDED'
+        : 'INACTIVE',
+})
+
+// ─── Универсальный shower toast ───
+const showSuccess = (msg: string) => toastStore.show({ type: 'success', title: 'Сохранено', message: msg })
+const showErr = (e: unknown) => {
+  const msg = (e as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+    ?? (e as { message?: string })?.message
+    ?? 'Ошибка сервера'
+  toastStore.show({ type: 'error', title: 'Ошибка сохранения', message: msg })
+}
+
+const saveItem = async () => {
+  try {
+    if (activeRegistry.value === 'landfills') {
+      const dto = mapLandfillToBackend(landfillForm.value)
+      if (isCreating.value) await api.post('/landfills', dto)
+      else await api.put(`/landfills/${landfillForm.value.id}`, dto)
+      await loadGisPublicData(true)
+      showSuccess('Полигон сохранён в БД')
+    } else if (activeRegistry.value === 'reception') {
+      const dto = mapReceptionToBackend(receptionForm.value)
+      if (isCreating.value) await api.post('/collection-points', dto)
+      else await api.put(`/collection-points/${receptionForm.value.id}`, dto)
+      await loadGisPublicData(true)
+      showSuccess('Пункт приёма сохранён в БД')
+    } else if (activeRegistry.value === 'recyclers') {
+      const dto = mapRecyclerToBackend(recyclerForm.value)
+      if (isCreating.value) await api.post('/recyclers', dto)
+      else await api.put(`/recyclers/${recyclerForm.value.id}`, dto)
+      await loadGisPublicData(true)
+      showSuccess('Переработчик сохранён в БД')
+    } else if (activeRegistry.value === 'dumps') {
+      const dto = mapDumpToBackend(dumpForm.value)
+      if (isCreating.value) await api.post('/dumps', dto)
+      else await api.put(`/dumps/${dumpForm.value.id}`, dto)
+      await loadGisPublicData(true)
+      showSuccess('Свалка сохранена в БД')
+    } else {
+      // producers / payers пока локально (нет backend-сущности)
+      toastStore.show({ type: 'info', title: 'Локальное сохранение', message: 'Этот реестр пока хранится локально. Backend-интеграция в следующем этапе.' })
+    }
+    showEditModal.value = false
+  } catch (err) {
+    showErr(err)
   }
 }
 
-const mapRecyclerFormToStore = (form: Recycler): Partial<StoreRecycler> => {
-  const existing = recyclerStore.getRecyclerById(form.id)
-  return {
-    name: form.name, inn: form.inn, address: form.address, region: form.region,
-    coordinates: { lat: parseFloat(form.gpsLat) || 42.87, lng: parseFloat(form.gpsLng) || 74.59 },
-    directorName: form.director, contactPerson: form.contactPerson || null,
-    contactPhone: form.phone, contactEmail: form.email,
-    wasteTypes: form.wasteTypes, licenseNumber: form.licenseNumber, licenseExpiry: form.licenseExpiry,
-    status: form.status === t('employeeMap.statusActive') ? 'active' : form.status === t('employeeMap.statusSuspended') ? 'suspended' : 'revoked',
-    notes: form.notes || null,
-    ...(existing ? {} : {
-      fullName: form.name, opf: 'ОсОО', legalAddress: form.address, actualAddress: form.address,
-      directorPosition: 'Директор', contactPosition: null, website: '',
-      licenseDate: '', licenseAuthority: '', licenseActivities: [],
-      ecoPassportNumber: null, ecoPassportDate: null,
-      capacities: [], technologies: {}, equipment: null, productionArea: null,
-      employeesCount: '0', certifications: [], processingMethods: [],
-      inspectionStatus: null, lastInspectionDate: null, inspectionRemarks: null, nextInspectionDate: null,
-      processedCurrentYear: 0, processedPreviousYear: 0,
-      suspensionReason: null, updatedAt: new Date().toLocaleDateString(),
-      addedDate: new Date().toLocaleDateString(), addedBy: '',
-      documents: [], rating: 0,
-    }),
+const deleteItem = async () => {
+  try {
+    if (activeRegistry.value === 'landfills' && selectedLandfill.value) {
+      // У landfill backend нет DELETE — отправляем полный DTO со статусом CLOSED.
+      const dto = {
+        ...mapLandfillToBackend({ ...selectedLandfill.value, status: t('employeeMap.statusClosed') }),
+      }
+      await api.put(`/landfills/${selectedLandfill.value.id}`, dto)
+      await loadGisPublicData(true)
+      showSuccess('Полигон помечен как закрытый')
+    } else if (activeRegistry.value === 'reception' && selectedReception.value) {
+      await api.delete(`/collection-points/${selectedReception.value.id}`)
+      await loadGisPublicData(true)
+      showSuccess('Пункт приёма удалён')
+    } else if (activeRegistry.value === 'dumps' && selectedDump.value) {
+      await api.delete(`/dumps/${selectedDump.value.id}`)
+      await loadGisPublicData(true)
+      showSuccess('Свалка удалена')
+    } else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) {
+      await api.post(`/recyclers/${selectedRecycler.value.id}/toggle-status`)
+      await loadGisPublicData(true)
+      showSuccess('Статус переработчика переключён')
+    } else {
+      toastStore.show({ type: 'info', title: 'Локальное удаление', message: 'Этот реестр пока локальный.' })
+    }
+    showDeleteConfirm.value = false
+  } catch (err) {
+    showErr(err)
   }
-}
-
-const saveItem = () => {
-  if (activeRegistry.value === 'landfills') {
-    const storeData = mapLandfillFormToStore(landfillForm.value)
-    if (isCreating.value) landfillStore.addLandfill(storeData)
-    else landfillStore.updateLandfill(landfillForm.value.id, storeData)
-  } else if (activeRegistry.value === 'reception') {
-    const storeData = mapReceptionFormToStore(receptionForm.value)
-    if (isCreating.value) collectionPointStore.addPoint(storeData)
-    else collectionPointStore.updatePoint(receptionForm.value.id, storeData)
-  } else if (activeRegistry.value === 'recyclers') {
-    const storeData = mapRecyclerFormToStore(recyclerForm.value)
-    if (isCreating.value) recyclerStore.addRecycler(storeData as Omit<StoreRecycler, 'id'>)
-    else recyclerStore.updateRecycler(recyclerForm.value.id, storeData)
-  } else if (activeRegistry.value === 'producers') {
-    if (isCreating.value) producers.value.push({ ...producerForm.value })
-    else { const idx = producers.value.findIndex(p => p.id === producerForm.value.id); if (idx !== -1) producers.value[idx] = { ...producerForm.value } }
-  } else if (activeRegistry.value === 'dumps') {
-    const storeData = mapDumpFormToStore(dumpForm.value)
-    if (isCreating.value) dumpStore.addDump(storeData)
-    else dumpStore.updateDump(dumpForm.value.id, storeData)
-  } else if (activeRegistry.value === 'payers') {
-    if (isCreating.value) payers.value.push({ ...payerForm.value })
-    else { const idx = payers.value.findIndex(p => p.id === payerForm.value.id); if (idx !== -1) payers.value[idx] = { ...payerForm.value } }
-  }
-  showEditModal.value = false
-  notificationMessage.value = isCreating.value ? t('employeeMap.recordCreated') : t('employeeMap.dataUpdated')
-  showNotification.value = true
-  setTimeout(() => { showNotification.value = false }, 3000)
-}
-
-const deleteItem = () => {
-  if (activeRegistry.value === 'landfills' && selectedLandfill.value) {
-    const idx = landfillStore.state.landfills.findIndex(l => l.id === selectedLandfill.value!.id)
-    if (idx !== -1) landfillStore.state.landfills.splice(idx, 1)
-  }
-  else if (activeRegistry.value === 'reception' && selectedReception.value) collectionPointStore.deletePoint(selectedReception.value.id)
-  else if (activeRegistry.value === 'recyclers' && selectedRecycler.value) {
-    const idx = recyclerStore.state.recyclers.findIndex(r => r.id === selectedRecycler.value!.id)
-    if (idx !== -1) recyclerStore.state.recyclers.splice(idx, 1)
-  }
-  else if (activeRegistry.value === 'producers' && selectedProducer.value) producers.value = producers.value.filter(p => p.id !== selectedProducer.value!.id)
-  else if (activeRegistry.value === 'dumps' && selectedDump.value) dumpStore.deleteDump(selectedDump.value.id)
-  else if (activeRegistry.value === 'payers' && selectedPayer.value) payers.value = payers.value.filter(p => p.id !== selectedPayer.value!.id)
-  showDeleteConfirm.value = false
-  notificationMessage.value = t('employeeMap.recordDeleted')
-  showNotification.value = true
-  setTimeout(() => { showNotification.value = false }, 3000)
 }
 
 const toggleWasteType = (form: any, type: string) => {
@@ -785,65 +903,43 @@ const countByType = computed(() => ({
             </div>
           </div>
 
-          <div class="w-px h-7 bg-gray-200 flex-shrink-0"></div>
-
-          <!-- Layer type chips -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <button
-              v-for="layer in layers"
-              :key="layer.id"
-              @click="toggleLayer(layer.id)"
-              :class="[
-                'flex items-center gap-1.5 h-8 px-3 rounded-full text-[13px] font-medium transition-all border',
-                layer.visible
-                  ? 'bg-white border-current shadow-sm'
-                  : 'bg-gray-100 border-gray-200 text-gray-400'
-              ]"
-              :style="layer.visible ? { color: layer.color, borderColor: layer.color } : {}"
-            >
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.visible ? layer.color : '#d1d5db' }"></span>
-              <span class="whitespace-nowrap">{{ layer.name }}</span>
-              <span class="text-[11px] px-1.5 py-0.5 rounded-full font-semibold"
-                :style="layer.visible ? { backgroundColor: layer.color + '1a', color: layer.color } : { backgroundColor: '#e5e7eb', color: '#6b7280' }"
-              >{{ countByType[layer.id] }}</span>
-            </button>
-          </div>
         </div>
       </div>
 
       <!-- Map Section -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="relative" style="height: calc(100vh - 360px); min-height: 350px; max-height: 600px;">
-          <LMap ref="mapRef" :zoom="mapZoom" :center="mapCenter" :use-global-leaflet="false" class="h-full w-full z-0" @update:zoom="mapZoom = $event">
-            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' layer-type="base" name="OpenStreetMap" />
-            <template v-for="(item, idx) in displayItems" :key="'di-' + idx">
-              <LMarker v-if="item.type === 'marker'" :lat-lng="[item.point.lat, item.point.lng]" :icon="getMarkerIcon(item.point.type)">
-                <LPopup :options="{ maxWidth: 300 }">
-                  <div class="min-w-[220px]">
-                    <div class="flex items-start justify-between mb-2">
-                      <h4 class="font-semibold text-gray-900 text-sm pr-2">{{ item.point.name }}</h4>
-                      <span :class="['px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', getStatusInfo(item.point.status).color]">{{ getStatusInfo(item.point.status).label }}</span>
-                    </div>
-                    <div class="space-y-1 text-xs">
-                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('common.type') }}:</span><span class="text-gray-700">{{ getTypeLabel(item.point.type) }}</span></p>
-                      <p class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.address') }}:</span><span class="text-gray-700">{{ item.point.address }}</span></p>
-                      <p v-if="item.point.phone" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.phoneShort') }}:</span><span class="text-gray-700">{{ item.point.phone }}</span></p>
-                      <p v-if="item.point.description" class="flex items-start gap-2"><span class="text-gray-400">{{ $t('employeeMap.info') }}:</span><span class="text-gray-700">{{ item.point.description }}</span></p>
-                    </div>
-                  </div>
-                </LPopup>
-              </LMarker>
-              <LMarker v-else :lat-lng="[item.lat, item.lng]" :icon="createClusterIcon(item.count)" @click="onClusterClick(item as ClusterItem)" />
-            </template>
-          </LMap>
+          <KyrgyzstanCutoutMap
+            :markers="(visiblePoints as any)"
+            height="100%"
+            mask-color="#ffffff"
+          />
 
-          <!-- Legend -->
-          <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md rounded-lg shadow-md border border-gray-200/60 px-3 py-2.5 z-[1000]">
-            <div class="space-y-1.5">
-              <div v-for="layer in layers" :key="layer.id" class="flex items-center gap-2">
-                <div class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: layer.color }"></div>
-                <span class="text-[12px] text-gray-600 whitespace-nowrap">{{ layer.name }}</span>
-              </div>
+          <!-- ══ Слои (floating control — слева-сверху) ══ -->
+          <div
+            class="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/70 overflow-hidden"
+            style="min-width: 200px;"
+          >
+            <div class="px-3 py-2 bg-gray-50/80 border-b border-gray-100">
+              <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Слои</p>
+            </div>
+            <div class="p-1.5 space-y-0.5">
+              <label
+                v-for="layer in layers"
+                :key="layer.id"
+                class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors select-none"
+              >
+                <input
+                  type="checkbox"
+                  :checked="layer.visible"
+                  @change="toggleLayer(layer.id)"
+                  class="w-4 h-4 rounded border-gray-300 text-[#0e888d] focus:ring-[#0e888d] focus:ring-offset-0 cursor-pointer"
+                />
+                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ backgroundColor: layer.color }"></span>
+                <span class="text-[13px] font-medium flex-1" :class="layer.visible ? 'text-gray-900' : 'text-gray-400'">
+                  {{ layer.name }}
+                </span>
+              </label>
             </div>
           </div>
         </div>
@@ -892,9 +988,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>{{ $t('common.edit') }}</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>{{ $t('common.delete') }}</button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                    <button @click="openDelete(item)" :title="$t('common.delete')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -927,9 +1023,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                    <button @click="openDelete(item)" :title="$t('common.delete')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -962,9 +1058,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                    <button @click="openDelete(item)" :title="$t('common.delete')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -997,9 +1093,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.status)]">{{ item.status }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="p-2 text-gray-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
-                    <button @click="openEdit(item)" class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                    <button @click="openDelete(item)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                    <button @click="openDelete(item)" :title="$t('common.delete')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -1032,9 +1128,9 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.dumpStatus)]">{{ item.dumpStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
-                    <button @click="openDelete(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors shadow-sm">{{ $t('common.delete') }}</button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
+                    <button @click="openDelete(item)" :title="$t('common.delete')" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -1067,8 +1163,8 @@ const countByType = computed(() => ({
                 <td class="px-4 py-3 text-center"><span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusClass(item.calcStatus)]">{{ item.calcStatus }}</span></td>
                 <td class="px-4 py-3" @click.stop>
                   <div class="flex items-center justify-center gap-1">
-                    <button @click="openView(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors shadow-sm">{{ $t('common.view') }}</button>
-                    <button @click="openEdit(item)" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-[#F59E0B] text-white hover:bg-[#D97706] transition-colors shadow-sm">{{ $t('common.edit') }}</button>
+                    <button @click="openView(item)" :title="$t('common.view')" class="p-1.5 text-gray-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                    <button @click="openEdit(item)" :title="$t('common.edit')" class="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                   </div>
                 </td>
               </tr>
@@ -1342,4 +1438,15 @@ const countByType = computed(() => ({
 .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
 .leaflet-popup-content { margin: 12px 14px; }
 .leaflet-popup-close-button { top: 8px !important; right: 8px !important; }
+.oblast-tooltip {
+  background: rgba(15, 23, 42, 0.88);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.oblast-tooltip::before { display: none; }
 </style>

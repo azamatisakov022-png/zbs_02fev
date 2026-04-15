@@ -2,7 +2,21 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { authStore, isDemoMode } from '../stores/auth'
+import { authStore, isDemoMode, TEST_LOGIN, TEST_PASSWORD } from '../stores/auth'
+
+type TestRole = 'employee' | 'business' | 'eco-operator' | 'admin'
+
+const quickLoginAs = async (role: TestRole) => {
+  loginError.value = ''
+  loginForm.value.inn = TEST_LOGIN
+  loginForm.value.password = TEST_PASSWORD
+  try {
+    const user = await authStore.loginAsTestRole(role)
+    await router.push(authStore.getRoleDashboard(user.role))
+  } catch (err: any) {
+    loginError.value = err?.message ?? 'Ошибка входа'
+  }
+}
 
 const router = useRouter()
 const { t } = useI18n()
@@ -136,6 +150,31 @@ const goBack = () => {
             >
               {{ authStore.state.loading ? $t('login.loading') : $t('login.submit') }}
             </button>
+          </div>
+
+          <!-- ── Быстрый вход для демонстрации (test / 2026) ── -->
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-start gap-2">
+              <svg class="w-5 h-5 text-emerald-700 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <div>
+                <p class="text-sm font-semibold text-emerald-900">Быстрый вход для тестирования</p>
+                <p class="text-xs text-emerald-700 mt-0.5">Логин: <code class="font-mono font-semibold">test</code> · Пароль: <code class="font-mono font-semibold">2026</code></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" @click="quickLoginAs('employee')" class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-800 transition-colors">
+                ЛК сотрудника МПРЭТН
+              </button>
+              <button type="button" @click="quickLoginAs('business')" class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-800 transition-colors">
+                ЛК бизнеса
+              </button>
+              <button type="button" @click="quickLoginAs('eco-operator')" class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-800 transition-colors">
+                ЛК эко-оператора
+              </button>
+              <button type="button" @click="quickLoginAs('admin')" class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-800 transition-colors">
+                ЛК администратора
+              </button>
+            </div>
           </div>
 
           <!-- Demo accounts hint (only in demo mode) -->

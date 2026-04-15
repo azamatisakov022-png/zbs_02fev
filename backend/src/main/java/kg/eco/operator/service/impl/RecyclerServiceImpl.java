@@ -12,6 +12,7 @@ import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.RecyclerCapacityRepository;
 import kg.eco.operator.repository.RecyclerRepository;
+import kg.eco.operator.service.AuditLogger;
 import kg.eco.operator.service.RecyclerService;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -37,6 +38,7 @@ public class RecyclerServiceImpl implements RecyclerService {
     private final RecyclerRepository recyclerRepository;
     private final RecyclerCapacityRepository capacityRepository;
     private final RecyclerMapper recyclerMapper;
+    private final AuditLogger audit;
 
     @Override
     public PaginatedResponse<RecyclerResponse> getAll(int page, int pageSize, String search,
@@ -67,6 +69,8 @@ public class RecyclerServiceImpl implements RecyclerService {
             saveCapacities(recycler, request.getCapacities());
         }
 
+        audit.log("CREATE", "RECYCLER", recycler.getId(),
+                "Зарегистрирован переработчик: " + recycler.getCompanyName() + " (ИНН " + recycler.getInn() + ")");
         return recyclerMapper.toResponse(recycler);
     }
 
@@ -90,6 +94,8 @@ public class RecyclerServiceImpl implements RecyclerService {
             saveCapacities(recycler, request.getCapacities());
         }
 
+        audit.log("UPDATE", "RECYCLER", recycler.getId(),
+                "Обновлены данные переработчика: " + recycler.getCompanyName());
         return recyclerMapper.toResponse(recycler);
     }
 
@@ -119,6 +125,8 @@ public class RecyclerServiceImpl implements RecyclerService {
         }
 
         recycler = recyclerRepository.save(recycler);
+        audit.log("STATUS_CHANGE", "RECYCLER", recycler.getId(),
+                "Статус переработчика «" + recycler.getCompanyName() + "» → " + recycler.getStatus());
         return recyclerMapper.toResponse(recycler);
     }
 

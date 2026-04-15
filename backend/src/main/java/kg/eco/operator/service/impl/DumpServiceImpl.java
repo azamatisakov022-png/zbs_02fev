@@ -7,6 +7,7 @@ import kg.eco.operator.entity.Dump;
 import kg.eco.operator.entity.enums.DumpStatus;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.repository.DumpRepository;
+import kg.eco.operator.service.AuditLogger;
 import kg.eco.operator.service.DumpService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class DumpServiceImpl implements DumpService {
 
     private final DumpRepository dumpRepository;
     private final DumpMapper dumpMapper;
+    private final AuditLogger audit;
 
     @Override
     public List<DumpResponse> getAll(String region, String status) {
@@ -47,6 +49,8 @@ public class DumpServiceImpl implements DumpService {
         Dump dump = new Dump();
         mapRequestToEntity(request, dump);
         dump = dumpRepository.save(dump);
+        audit.log("CREATE", "DUMP", dump.getId(),
+                "Зарегистрирована несанкц. свалка: " + dump.getName());
         return dumpMapper.toResponse(dump);
     }
 
@@ -59,18 +63,26 @@ public class DumpServiceImpl implements DumpService {
     @Transactional
     public DumpResponse update(Long id, DumpCreateRequest request) {
         Dump dump = findDumpById(id);
+        String oldStatus = dump.getStatus() != null ? dump.getStatus().name() : "—";
         mapRequestToEntity(request, dump);
         dump = dumpRepository.save(dump);
+        String newStatus = dump.getStatus() != null ? dump.getStatus().name() : "—";
+        String details = "Обновлена свалка: " + dump.getName();
+        if (!oldStatus.equals(newStatus)) {
+            details += " (статус " + oldStatus + " → " + newStatus + ")";
+        }
+        audit.log("UPDATE", "DUMP", dump.getId(), details);
         return dumpMapper.toResponse(dump);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        if (!dumpRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Свалка не найдена: " + id);
-        }
+        Dump dump = dumpRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Свалка не найдена: " + id));
+        String name = dump.getName();
         dumpRepository.deleteById(id);
+        audit.log("DELETE", "DUMP", id, "Удалена свалка: " + name);
     }
 
     @Override

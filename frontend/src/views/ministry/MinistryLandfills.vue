@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -15,8 +15,25 @@ import {
 } from '../../stores/landfills'
 
 import 'leaflet/dist/leaflet.css'
-import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
+import { LMap, LTileLayer, LMarker, LPopup, LGeoJson } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+import {
+  KG_CENTER,
+  KG_DEFAULT_ZOOM,
+  KG_MIN_ZOOM,
+  KG_MAX_ZOOM,
+  KG_BOUNDS,
+  KG_TILE_URL,
+  KG_TILE_ATTRIBUTION,
+  KG_TILE_SUBDOMAINS,
+  KG_MASK_PANE,
+  KG_MASK_PANE_Z,
+  loadKgOblasts,
+  oblastStyle,
+  oblastHoverStyle,
+  buildMaskLatLngs,
+  maskStyle,
+} from '../../composables/useKgMap'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -40,9 +57,62 @@ const filterType = ref('')
 const filterStatus = ref('')
 
 // ==================== MAP STATE ====================
-const mapCenter = ref<[number, number]>([41.5, 74.5])
-const mapZoom = ref(7)
+const mapCenter = ref<[number, number]>([...KG_CENTER])
+const mapZoom = ref(KG_DEFAULT_ZOOM)
 const mapRef = ref<any>(null)
+const oblastsGeo = ref<GeoJSON.FeatureCollection | null>(null)
+const mapReady = ref(false)
+let maskLayer: L.Polygon | null = null
+
+const oblastStyleFn = () => oblastStyle
+const oblastGeoJsonOptions = {
+  onEachFeature: (feature: GeoJSON.Feature, layer: L.Layer) => {
+    const pathLayer = layer as L.Path
+    const name = (feature.properties as Record<string, string> | null)?.shapeName ?? ''
+    if (name) pathLayer.bindTooltip(name, { sticky: true, className: 'oblast-tooltip' })
+    pathLayer.on({
+      mouseover: () => pathLayer.setStyle(oblastHoverStyle),
+      mouseout: () => pathLayer.setStyle(oblastStyle),
+    })
+  },
+}
+
+const ensureMaskPane = (map: L.Map) => {
+  if (!map.getPane(KG_MASK_PANE)) {
+    const pane = map.createPane(KG_MASK_PANE)
+    pane.style.zIndex = KG_MASK_PANE_Z
+    pane.style.pointerEvents = 'none'
+  }
+}
+
+const applyKgMask = () => {
+  const map = mapRef.value?.leafletObject as L.Map | undefined
+  if (!map || !oblastsGeo.value) return
+  ensureMaskPane(map)
+  if (maskLayer) {
+    maskLayer.remove()
+    maskLayer = null
+  }
+  maskLayer = L.polygon(buildMaskLatLngs(oblastsGeo.value), maskStyle).addTo(map)
+}
+
+const onMapReady = () => {
+  mapReady.value = true
+}
+
+watch([mapReady, oblastsGeo], ([ready, data]) => {
+  if (ready && data) applyKgMask()
+})
+
+onMounted(async () => {
+  landfillStore.fetchAll()
+
+  try {
+    oblastsGeo.value = await loadKgOblasts()
+  } catch (err) {
+    console.warn('[MinistryLandfills] Failed to load Kyrgyzstan oblasts GeoJSON:', err)
+  }
+})
 
 // ==================== COMPUTED ====================
 
@@ -581,14 +651,27 @@ const guideActions = computed(() => [
               ref="mapRef"
               :zoom="mapZoom"
               :center="mapCenter"
+              :min-zoom="KG_MIN_ZOOM"
+              :max-zoom="KG_MAX_ZOOM"
+              :max-bounds="KG_BOUNDS"
+              :max-bounds-viscosity="1.0"
+              :world-copy-jump="false"
               :use-global-leaflet="false"
               class="h-full w-full"
+              @ready="onMapReady"
             >
               <LTileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap contributors"
+                :url="KG_TILE_URL"
+                :attribution="KG_TILE_ATTRIBUTION"
+                :subdomains="KG_TILE_SUBDOMAINS"
                 layer-type="base"
                 name="OpenStreetMap"
+              />
+              <LGeoJson
+                v-if="oblastsGeo"
+                :geojson="oblastsGeo"
+                :options-style="oblastStyleFn"
+                :options="oblastGeoJsonOptions"
               />
               <LMarker
                 v-for="landfill in filteredLandfills"
@@ -871,5 +954,18 @@ const guideActions = computed(() => [
 :deep(.custom-marker) {
   background: transparent !important;
   border: none !important;
+}
+:deep(.oblast-tooltip) {
+  background: rgba(15, 23, 42, 0.88);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+:deep(.oblast-tooltip::before) {
+  display: none;
 }
 </style>

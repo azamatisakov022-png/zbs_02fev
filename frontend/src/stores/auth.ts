@@ -74,15 +74,73 @@ const demoAccounts: Record<string, AuthUser> = import.meta.env.VITE_DEMO_MODE ==
 
 export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 
+// ─── Универсальный тестовый вход ──────────────────────────────────────
+// Логин/пароль, работающие во всех ЛК. По умолчанию идут в backend через
+// seed-юзеров (V5__seed_test_users.sql), чтобы получить РЕАЛЬНЫЙ JWT и
+// иметь доступ к приватным endpoints (CRUD landfills/recyclers/...).
+// Если backend недоступен — fallback на локальный demo-токен.
+export const TEST_LOGIN = 'test'
+export const TEST_PASSWORD = '2026'
+
+const testProfiles: Record<string, AuthUser> = {
+  employee: { id: 9001, inn: 'test', companyName: 'МПРЭТН КР (тест)', role: 'employee', email: 'test@mprent.kg', phone: '+996 555 000 001' },
+  business: { id: 9002, inn: 'test', companyName: 'ОсОО «Тестовая компания»', role: 'business', email: 'test@business.kg', phone: '+996 555 000 002' },
+  'eco-operator': { id: 9003, inn: 'test', companyName: 'ГП «Эко Оператор» (тест)', role: 'eco-operator', email: 'test@eco-operator.kg', phone: '+996 555 000 003' },
+  admin: { id: 9004, inn: 'test', companyName: 'Системный администратор (тест)', role: 'admin', email: 'test@admin.kg', phone: '+996 555 000 004' },
+}
+
+// Реальные seed-credentials из backend V5__seed_test_users.sql (пароль bcrypt('test123'))
+const seedCredentialsByRole: Record<string, { inn: string; password: string }> = {
+  employee: { inn: '01234500010002', password: 'test123' },
+  business: { inn: '02312200210134', password: 'test123' },
+  'eco-operator': { inn: '01234500010001', password: 'test123' },
+  admin: { inn: '00000000000001', password: 'test123' },
+}
+
+/** Быстрый вход в указанную роль. Сначала пробует backend (реальный JWT),
+ *  иначе fallback на локальный demo-токен (для демонстрации без backend). */
+async function loginAsTestRole(role: keyof typeof testProfiles): Promise<AuthUser> {
+  state.loading = true
+  state.error = null
+  const creds = seedCredentialsByRole[role]
+  // Попытка №1: реальный backend-логин
+  if (creds) {
+    try {
+      const { data } = await api.post('/auth/login', creds)
+      state.token = data.token
+      state.refreshToken = data.refreshToken
+      state.user = data.user
+      saveToStorage()
+      state.loading = false
+      return data.user
+    } catch (err) {
+      console.warn('[auth] backend login failed, fallback to local demo:', err)
+    }
+  }
+  // Fallback: локальный demo-токен (когда backend недоступен)
+  const user = testProfiles[role]
+  state.token = 'local-demo-' + role
+  state.refreshToken = 'local-demo-refresh-' + role
+  state.user = { ...user }
+  saveToStorage()
+  state.loading = false
+  return user
+}
+
 async function login(inn: string, password: string): Promise<AuthUser> {
   state.loading = true
   state.error = null
 
-  // Demo mode: if INN matches a demo account, login locally without API
+  // ── Универсальный тестовый вход: test / 2026 → ЛК сотрудника ──
+  if (inn === TEST_LOGIN && password === TEST_PASSWORD) {
+    return loginAsTestRole('employee')
+  }
+
+  // Demo mode (только если VITE_DEMO_MODE=true в env)
   const demo = demoAccounts[inn]
   if (demo) {
-    state.token = 'demo-token-' + demo.role
-    state.refreshToken = 'demo-refresh-' + demo.role
+    state.token = 'local-demo-' + demo.role
+    state.refreshToken = 'local-demo-refresh-' + demo.role
     state.user = { ...demo }
     saveToStorage()
     state.loading = false
@@ -159,6 +217,7 @@ export const authStore = {
   userRole,
   userName,
   login,
+  loginAsTestRole,
   register,
   logout,
   getRoleDashboard,

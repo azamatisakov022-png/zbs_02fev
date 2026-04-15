@@ -131,6 +131,14 @@ export default defineConfig({
     }),
   ],
   server: {
-    allowedHosts: ['hitless-zahra-nondoubtingly.ngrok-free.dev'],
+    // Wildcard для любого ngrok-URL — не нужно править файл при каждом рестарте.
+    allowedHosts: ['.ngrok-free.dev', '.ngrok.app', '.ngrok.io', 'localhost', '127.0.0.1'],
+    // Один ngrok-туннель покрывает и UI, и API: vite сам проксирует /api/* на backend.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+      },
+    },
   },
 })

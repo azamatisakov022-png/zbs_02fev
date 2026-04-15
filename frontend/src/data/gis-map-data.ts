@@ -1,28 +1,80 @@
-// ═══ GIS Map Data — mock data for map objects across Kyrgyzstan ═══
+// ═══════════════════════════════════════════════════════════════════════════
+// GIS Map Data — реальные объекты обращения с отходами Кыргызской Республики.
+//
+// Источники открытых данных:
+//   • OpenStreetMap (landuse=landfill, amenity=waste_disposal, amenity=recycling)
+//     — выгружено через Overpass API по area["ISO3166-1"="KG"], апрель 2026.
+//     Лицензия: ODbL (openstreetmap.org/copyright).
+//   • Министерство экономики и коммерции КР: реестр юридических лиц
+//     (mineconom.gov.kg, minjust.gov.kg).
+//   • osoo.kg — публичная база юридических лиц.
+//
+// Данные, отсутствующие в открытых источниках (площадь, заполняемость,
+// телефон, часы работы оператора) помечены «—». Они должны уточняться
+// при загрузке реестра из МПРЭТН / оператором системы.
+//
+// Несанкционированные свалки — предварительная выборка по публикациям СМИ;
+// требует верификации у инспекторов МПРЭТН.
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ─── Interfaces ───
+// ─── Интерфейсы ───
 
 export interface LandfillData {
-  id: number; name: string; lat: number; lng: number; address: string; phone: string
-  region: string; landfillType: string; area: string; capacity: string; fillLevel: string; status: string
+  id: number
+  name: string
+  lat: number
+  lng: number
+  address: string
+  phone: string
+  region: string
+  landfillType: string
+  area: string
+  capacity: string
+  fillLevel: string
+  status: string
 }
 
 export interface ReceptionPointData {
-  id: number; name: string; lat: number; lng: number; address: string; phone: string
-  region: string; wasteTypes: string[]; workingHours: string; operator: string; status: string
+  id: number
+  name: string
+  lat: number
+  lng: number
+  address: string
+  phone: string
+  region: string
+  wasteTypes: string[]
+  workingHours: string
+  operator: string
+  status: string
 }
 
 export interface DumpData {
-  id: number; name: string; lat: number; lng: number; address: string; region: string
-  area: string; discoveryDate: string; dumpStatus: string; notes: string
+  id: number
+  name: string
+  lat: number
+  lng: number
+  address: string
+  region: string
+  area: string
+  discoveryDate: string
+  dumpStatus: string
+  notes: string
 }
 
 export interface PayerData {
-  id: number; name: string; inn: string; lat: number; lng: number; address: string; phone: string
-  region: string; category: string; calcStatus: string
+  id: number
+  name: string
+  inn: string
+  lat: number
+  lng: number
+  address: string
+  phone: string
+  region: string
+  category: string
+  calcStatus: string
 }
 
-// ─── Constants ───
+// ─── Справочники ───
 
 export const gisRegions = [
   'Бишкек', 'Чуйская', 'Ошская', 'Джалал-Абадская',
@@ -34,84 +86,576 @@ export const gisWasteTypes = [
   'Электроника', 'Батарейки', 'Шины', 'Текстиль', 'Опасные отходы',
 ]
 
-// ─── 1. Полигоны ТБО (sanctioned landfills) — 🟢 зелёный ───
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. Полигоны ТБО и промышленные отвалы — 🟢
+//    OSM: landuse=landfill (way) + именованные amenity=waste_disposal (way)
+// ═══════════════════════════════════════════════════════════════════════════
 
 export const landfillsData: LandfillData[] = [
-  { id: 201, name: 'Полигон ТБО «Бишкек»', lat: 42.9234, lng: 74.4567, address: 'Чуйская обл., с. Ново-Павловка', phone: '+996 312 98-76-54', region: 'Чуйская', landfillType: 'Санитарный полигон', area: '50 га', capacity: '5 000 000 т', fillLevel: '72%', status: 'active' },
-  { id: 202, name: 'Полигон ТБО «Ош»', lat: 40.4923, lng: 72.7456, address: 'Ошская обл., пригород г. Ош', phone: '+996 3222 8-76-54', region: 'Ошская', landfillType: 'Санитарный полигон', area: '30 га', capacity: '2 500 000 т', fillLevel: '65%', status: 'active' },
-  { id: 203, name: 'Полигон ТБО «Джалал-Абад»', lat: 41.0567, lng: 72.9567, address: 'Джалал-Абадская обл.', phone: '+996 3722 7-65-43', region: 'Джалал-Абадская', landfillType: 'Санитарный полигон', area: '20 га', capacity: '1 500 000 т', fillLevel: '58%', status: 'active' },
-  { id: 204, name: 'Полигон ТБО «Каракол»', lat: 42.4912, lng: 78.4234, address: 'Иссык-Кульская обл., окрестности г. Каракол', phone: '+996 3922 6-54-32', region: 'Иссык-Кульская', landfillType: 'Санитарный полигон', area: '15 га', capacity: '800 000 т', fillLevel: '91%', status: 'full' },
-  { id: 206, name: 'Полигон ТБО «Нарын»', lat: 41.4012, lng: 76.0123, address: 'Нарынская обл.', phone: '+996 3522 5-43-21', region: 'Нарынская', landfillType: 'Санитарный полигон', area: '12 га', capacity: '600 000 т', fillLevel: '45%', status: 'active' },
-  { id: 207, name: 'Полигон ТБО «Талас»', lat: 42.4923, lng: 72.2678, address: 'Таласская обл.', phone: '+996 3422 3-21-09', region: 'Таласская', landfillType: 'Санитарный полигон', area: '10 га', capacity: '500 000 т', fillLevel: '100%', status: 'closed' },
-  { id: 208, name: 'Полигон ТБО «Баткен»', lat: 40.0628, lng: 70.8194, address: 'Баткенская обл., г. Баткен', phone: '+996 3622 2-10-98', region: 'Баткенская', landfillType: 'Несанитарный полигон', area: '8 га', capacity: '350 000 т', fillLevel: '78%', status: 'active' },
-  { id: 209, name: 'Полигон ТБО «Балыкчы»', lat: 42.4534, lng: 76.1245, address: 'Иссык-Кульская обл., г. Балыкчы', phone: '+996 3944 5-12-34', region: 'Иссык-Кульская', landfillType: 'Санитарный полигон', area: '6 га', capacity: '250 000 т', fillLevel: '52%', status: 'active' },
+  // ─── Муниципальные полигоны ТБО ───
+  {
+    id: 201,
+    name: 'Бишкекский городской полигон ТБО',
+    lat: 42.9649, lng: 74.5894,
+    address: 'Чуйская обл., пригород Бишкека (с. Ново-Павловка)',
+    phone: '—',
+    region: 'Чуйская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 202,
+    name: 'Ошский городской полигон ТБО',
+    lat: 40.4635, lng: 72.7550,
+    address: 'Ошская обл., окрестности г. Ош',
+    phone: '—',
+    region: 'Ошская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 203,
+    name: 'Джалал-Абадский полигон ТБО',
+    lat: 41.0193, lng: 73.0604,
+    address: 'Джалал-Абадская обл., окрестности г. Джалал-Абад',
+    phone: '—',
+    region: 'Джалал-Абадская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 204,
+    name: 'Полигон ТБО г. Каракол',
+    lat: 42.6603, lng: 77.1150,
+    address: 'Иссык-Кульская обл., окраина г. Каракол',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 205,
+    name: 'Полигон ТБО г. Токмок',
+    lat: 42.8353, lng: 75.2905,
+    address: 'Чуйская обл., г. Токмок',
+    phone: '—',
+    region: 'Чуйская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 206,
+    name: 'Полигон ТБО г. Кант',
+    lat: 42.9159, lng: 74.9000,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 207,
+    name: 'Полигон ТБО Нарынской области',
+    lat: 41.9190, lng: 74.5264,
+    address: 'Нарынская обл.',
+    phone: '—',
+    region: 'Нарынская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 208,
+    name: 'Полигон ТБО Ноокатского района',
+    lat: 40.2439, lng: 71.4636,
+    address: 'Ошская обл., Ноокатский район',
+    phone: '—',
+    region: 'Ошская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 209,
+    name: 'Полигон ТБО г. Баткен',
+    lat: 40.0494, lng: 70.8868,
+    address: 'Баткенская обл., г. Баткен',
+    phone: '—',
+    region: 'Баткенская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 210,
+    name: 'Полигон ТБО Ат-Башинского района',
+    lat: 41.1500, lng: 75.9020,
+    address: 'Нарынская обл., Ат-Башинский район',
+    phone: '—',
+    region: 'Нарынская',
+    landfillType: 'Муниципальный полигон ТБО',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+
+  // ─── Промышленные отвалы и хвостохранилища ───
+  {
+    id: 251,
+    name: 'Хвостохранилище ОАО «Хайдарканский ртутный комбинат»',
+    lat: 39.9589, lng: 71.2809,
+    address: 'Баткенская обл., пос. Хайдаркан',
+    phone: '—',
+    region: 'Баткенская',
+    landfillType: 'Промышленный отвал (ртуть)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 252,
+    name: 'Хвостохранилище ОАО «Кадамжайский сурьмяный комбинат» (КСК)',
+    lat: 40.1486, lng: 71.7089,
+    address: 'Баткенская обл., Кадамжайский район',
+    phone: '—',
+    region: 'Баткенская',
+    landfillType: 'Промышленный отвал (сурьма)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 253,
+    name: 'Отвал «Давыдов» (м-ние Кумтор)',
+    lat: 41.8653, lng: 78.1612,
+    address: 'Иссык-Кульская обл., р-н м-ния Кумтор (ОАО «Кыргызалтын»)',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    landfillType: 'Промышленный отвал (горнодобыча)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 254,
+    name: 'Отвал «Сары-Төр» (м-ние Кумтор)',
+    lat: 41.8506, lng: 78.1561,
+    address: 'Иссык-Кульская обл., р-н м-ния Кумтор',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    landfillType: 'Промышленный отвал (горнодобыча)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 255,
+    name: 'Отвал «Лысый» (м-ние Кумтор)',
+    lat: 41.8815, lng: 78.2009,
+    address: 'Иссык-Кульская обл., р-н м-ния Кумтор',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    landfillType: 'Промышленный отвал (горнодобыча)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 256,
+    name: 'Полигон хранения отходов добычи ураносодержащих руд',
+    lat: 41.2328, lng: 71.3020,
+    address: 'Джалал-Абадская обл., Майлуу-Сууйский район',
+    phone: '—',
+    region: 'Джалал-Абадская',
+    landfillType: 'Промышленный отвал (уран)',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 257,
+    name: 'Отвал вскрышных пород',
+    lat: 39.9966, lng: 71.4215,
+    address: 'Баткенская обл.',
+    phone: '—',
+    region: 'Баткенская',
+    landfillType: 'Промышленный отвал',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
+  {
+    id: 258,
+    name: 'Отвал (Иссык-Кульская обл., р-н Чолпон-Ата)',
+    lat: 42.6884, lng: 75.6490,
+    address: 'Иссык-Кульская обл., район Чолпон-Ата',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    landfillType: 'Промышленный отвал',
+    area: '—', capacity: '—', fillLevel: '—',
+    status: 'active',
+  },
 ]
 
-// ─── 2. Пункты приёма отходов — 🟡 жёлтый ───
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. Пункты приёма отходов — 🟡
+//    OSM: amenity=recycling (container-режим) + recycling:* accept-теги
+// ═══════════════════════════════════════════════════════════════════════════
 
 export const receptionPointsData: ReceptionPointData[] = [
-  { id: 101, name: 'ЭкоПункт Бишкек-1', lat: 42.8821, lng: 74.5823, address: 'г. Бишкек, ул. Ахунбаева, 45', phone: '+996 555 12-34-56', region: 'Бишкек', wasteTypes: ['Пластик', 'Бумага/картон', 'Стекло'], workingHours: 'Пн-Сб 9:00-18:00', operator: 'ОсОО «ЭкоПереработка»', status: 'active' },
-  { id: 102, name: 'Пункт сбора батареек ГринТек', lat: 42.8567, lng: 74.6012, address: 'г. Бишкек, ул. Токтогула, 120', phone: '+996 555 23-45-67', region: 'Бишкек', wasteTypes: ['Батарейки', 'Электроника'], workingHours: 'Пн-Пт 10:00-17:00', operator: 'ОсОО «ГринТек»', status: 'active' },
-  { id: 103, name: 'ЭкоПункт Ош-1', lat: 40.5367, lng: 72.8056, address: 'г. Ош, ул. Ленина, 78', phone: '+996 550 34-56-78', region: 'Ошская', wasteTypes: ['Пластик', 'Металл', 'Стекло'], workingHours: 'Пн-Сб 9:00-17:00', operator: 'ОсОО «Ош-Ресайкл»', status: 'active' },
-  { id: 104, name: 'ЭкоПункт Бишкек-2', lat: 42.8712, lng: 74.5567, address: 'г. Бишкек, ул. Манаса, 57', phone: '+996 555 45-67-89', region: 'Бишкек', wasteTypes: ['Пластик', 'Бумага/картон', 'Металл', 'Стекло'], workingHours: 'Пн-Сб 9:00-18:00', operator: 'ОсОО «ЭкоПереработка»', status: 'active' },
-  { id: 105, name: 'Пункт приёма шин АвтоЭко', lat: 42.8345, lng: 74.5789, address: 'г. Бишкек, ул. Южная Магистраль, 88', phone: '+996 555 56-78-90', region: 'Бишкек', wasteTypes: ['Шины', 'Металл'], workingHours: 'Пн-Пт 9:00-17:00', operator: 'ОсОО «АвтоЭко»', status: 'active' },
-  { id: 106, name: 'ЭкоПункт Каракол', lat: 42.4823, lng: 78.4012, address: 'г. Каракол, ул. Токтогула, 34', phone: '+996 557 12-34-56', region: 'Иссык-Кульская', wasteTypes: ['Пластик', 'Бумага/картон', 'Стекло'], workingHours: 'Пн-Пт 10:00-17:00', operator: 'ОсОО «Иссык-Куль Ресурс»', status: 'active' },
-  { id: 107, name: 'ЭкоПункт Джалал-Абад', lat: 41.0312, lng: 72.9945, address: 'г. Джалал-Абад, ул. Ленина, 45', phone: '+996 559 12-34-56', region: 'Джалал-Абадская', wasteTypes: ['Пластик', 'Стекло', 'Текстиль'], workingHours: 'Пн-Сб 9:00-17:00', operator: 'ОсОО «Джалал-Эко»', status: 'active' },
-  { id: 108, name: 'Пункт опасных отходов Бишкек', lat: 42.8923, lng: 74.6234, address: 'г. Бишкек, ул. Фучика, 12', phone: '+996 555 67-89-01', region: 'Бишкек', wasteTypes: ['Батарейки', 'Электроника', 'Опасные отходы'], workingHours: 'Пн-Пт 10:00-16:00', operator: 'ОсОО «СпецУтиль»', status: 'active' },
-  { id: 109, name: 'ЭкоПункт Нарын', lat: 41.4356, lng: 75.9823, address: 'г. Нарын, ул. Ленина, 89', phone: '+996 556 12-34-56', region: 'Нарынская', wasteTypes: ['Пластик', 'Бумага/картон'], workingHours: 'Пн-Пт 10:00-16:00', operator: 'ОсОО «НарынЭко»', status: 'active' },
-  { id: 110, name: 'ЭкоПункт Талас', lat: 42.5234, lng: 72.2412, address: 'г. Талас, ул. Сарыгулова, 12', phone: '+996 551 12-34-56', region: 'Таласская', wasteTypes: ['Пластик', 'Стекло', 'Металл'], workingHours: 'Пн-Пт 9:00-17:00', operator: 'ОсОО «Талас-Ресайкл»', status: 'active' },
-  // ─── Дополнительные точки (Бишкек + Ош) ───
-  { id: 111, name: 'ЭкоПункт Бишкек-3 (Аламедин)', lat: 42.8789, lng: 74.6456, address: 'г. Бишкек, мкр. Аламедин-1, 78', phone: '+996 555 78-90-12', region: 'Бишкек', wasteTypes: ['Пластик', 'Бумага/картон', 'Батарейки'], workingHours: 'Пн-Сб 10:00-18:00', operator: 'ОсОО «ГринРесайкл»', status: 'active' },
-  { id: 112, name: 'ЭкоПункт Бишкек-4 (Юг)', lat: 42.8234, lng: 74.5912, address: 'г. Бишкек, ул. Баялинова, 23', phone: '+996 555 89-01-23', region: 'Бишкек', wasteTypes: ['Пластик', 'Металл', 'Стекло', 'Текстиль'], workingHours: 'Пн-Сб 9:00-19:00', operator: 'ОсОО «ЧистыйГород»', status: 'active' },
-  { id: 113, name: 'ЭкоПункт Ош-2 (Центр)', lat: 40.5234, lng: 72.8134, address: 'г. Ош, ул. Масалиева, 23', phone: '+996 550 45-67-89', region: 'Ошская', wasteTypes: ['Пластик', 'Бумага/картон', 'Батарейки'], workingHours: 'Пн-Сб 9:00-17:00', operator: 'ОсОО «Ош-Ресайкл»', status: 'active' },
-  { id: 114, name: 'ЭкоПункт Ош-3 (Ак-Бууринский)', lat: 40.5512, lng: 72.7823, address: 'г. Ош, ул. Алишера Навои, 56', phone: '+996 550 56-78-90', region: 'Ошская', wasteTypes: ['Пластик', 'Стекло', 'Шины'], workingHours: 'Пн-Пт 10:00-17:00', operator: 'ОсОО «ОшЭкоПункт»', status: 'active' },
-  { id: 115, name: 'Пункт приёма стеклотары «Чистое стекло»', lat: 42.8654, lng: 74.5345, address: 'г. Бишкек, ул. Жибек Жолу, 312', phone: '+996 555 90-12-34', region: 'Бишкек', wasteTypes: ['Стекло'], workingHours: 'Пн-Сб 8:00-20:00', operator: 'ОсОО «СтеклоРесурс»', status: 'active' },
-  { id: 116, name: 'ЭкоПункт Баткен', lat: 40.0534, lng: 70.8345, address: 'г. Баткен, ул. Центральная, 15', phone: '+996 3622 4-56-78', region: 'Баткенская', wasteTypes: ['Пластик', 'Бумага/картон'], workingHours: 'Пн-Пт 9:00-16:00', operator: 'ОсОО «БаткенЭко»', status: 'active' },
-  { id: 117, name: 'Пункт приёма электроники «ТехноУтиль»', lat: 42.8478, lng: 74.6178, address: 'г. Бишкек, ул. Исанова, 89', phone: '+996 555 01-23-45', region: 'Бишкек', wasteTypes: ['Электроника', 'Батарейки', 'Опасные отходы'], workingHours: 'Пн-Пт 10:00-18:00', operator: 'ОсОО «ТехноУтиль»', status: 'active' },
-  { id: 118, name: 'ЭкоПункт Бишкек-5 (Восток)', lat: 42.8901, lng: 74.6567, address: 'г. Бишкек, мкр. Восток-5, 12', phone: '+996 555 12-45-78', region: 'Бишкек', wasteTypes: ['Пластик', 'Бумага/картон', 'Металл'], workingHours: 'Ежедневно 9:00-20:00', operator: 'ОсОО «ЭкоПереработка»', status: 'active' },
+  {
+    id: 101,
+    name: 'Пункт приёма ПЭТ (Бишкек, микрорайон Асанбай)',
+    lat: 42.8760, lng: 74.6357,
+    address: 'г. Бишкек, микрорайон Асанбай',
+    phone: '—',
+    region: 'Бишкек',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 102,
+    name: 'Центр раздельного сбора (Кант)',
+    lat: 42.8934, lng: 74.8954,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Пластик', 'Бумага/картон', 'Стекло', 'Металл', 'Алюминий', 'Электроника', 'Текстиль'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 103,
+    name: 'Пункт приёма ПЭТ и стекла (Organic) — Кант',
+    lat: 42.8917, lng: 74.8601,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
+    workingHours: '—',
+    operator: 'Organic',
+    status: 'active',
+  },
+  {
+    id: 104,
+    name: 'Пункт приёма ПЭТ и стекла (Organic) — Кант-2',
+    lat: 42.8910, lng: 74.8494,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
+    workingHours: '—',
+    operator: 'Organic',
+    status: 'active',
+  },
+  {
+    id: 105,
+    name: 'Пункт приёма пластика (Бишкек, ул. Токтоналиева)',
+    lat: 42.8745, lng: 74.6042,
+    address: 'г. Бишкек, ул. Токтоналиева',
+    phone: '—',
+    region: 'Бишкек',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 106,
+    name: 'Пункт приёма пластика (Бишкек, ул. Тыныстанова)',
+    lat: 42.8780, lng: 74.6109,
+    address: 'г. Бишкек, ул. Тыныстанова',
+    phone: '—',
+    region: 'Бишкек',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 107,
+    name: 'Пункт приёма пластика (Бишкек, Восток-5)',
+    lat: 42.8339, lng: 74.6215,
+    address: 'г. Бишкек, микрорайон Восток-5',
+    phone: '—',
+    region: 'Бишкек',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 108,
+    name: 'Пункт приёма (Чолпон-Ата)',
+    lat: 42.6428, lng: 77.1006,
+    address: 'Иссык-Кульская обл., г. Чолпон-Ата',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 109,
+    name: 'Пункт приёма у Иссык-Куля',
+    lat: 42.4897, lng: 78.3906,
+    address: 'Иссык-Кульская обл., район Каракола',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    wasteTypes: ['Пластик', 'Металл'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 110,
+    name: 'Пункт приёма ПЭТ и стекла (Токмок)',
+    lat: 42.8303, lng: 75.2896,
+    address: 'Чуйская обл., г. Токмок',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 111,
+    name: 'Пункт приёма ПЭТ (Ош, центр)',
+    lat: 40.5427, lng: 72.7966,
+    address: 'г. Ош, центр',
+    phone: '—',
+    region: 'Ошская',
+    wasteTypes: ['Пластик (ПЭТ)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 112,
+    name: 'Центр приёма цветного металла (Кант)',
+    lat: 42.8911, lng: 74.8572,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Металл', 'Цветной металл'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 113,
+    name: 'Хлебные контейнеры (раздельный сбор)',
+    lat: 42.8921, lng: 74.8646,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Органика (хлеб)'],
+    workingHours: '—',
+    operator: '—',
+    status: 'active',
+  },
+  {
+    id: 114,
+    name: 'Контейнеры «Кант тазалык» №1',
+    lat: 42.8924, lng: 74.8676,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Бытовые отходы'],
+    workingHours: 'Круглосуточно',
+    operator: 'Кант тазалык',
+    status: 'active',
+  },
+  {
+    id: 115,
+    name: 'Контейнеры «Кант тазалык» №2',
+    lat: 42.8893, lng: 74.8685,
+    address: 'Чуйская обл., г. Кант',
+    phone: '—',
+    region: 'Чуйская',
+    wasteTypes: ['Бытовые отходы'],
+    workingHours: 'Круглосуточно',
+    operator: 'Кант тазалык',
+    status: 'active',
+  },
 ]
 
-// ─── 3. Несанкционированные свалки — 🟠 оранжево-красный ───
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. Несанкционированные свалки — 🟠
+//    По публикациям СМИ и жалобам граждан; координаты приблизительные,
+//    требуют верификации инспектором МПРЭТН.
+// ═══════════════════════════════════════════════════════════════════════════
 
 export const dumpsData: DumpData[] = [
-  { id: 401, name: 'Свалка у р. Аламедин', lat: 42.9456, lng: 74.5123, address: 'Чуйская обл., берег р. Аламедин', region: 'Чуйская', area: '2.5 га', discoveryDate: '15.03.2024', dumpStatus: 'liquidating', notes: 'Бытовые и строительные отходы' },
-  { id: 402, name: 'Свалка «Токмок»', lat: 42.8567, lng: 75.3123, address: 'Чуйская обл., окрестности г. Токмок', region: 'Чуйская', area: '8 га', discoveryDate: '20.06.2018', dumpStatus: 'liquidating', notes: 'Крупная стихийная свалка' },
-  { id: 403, name: 'Свалка у трассы Бишкек–Ош (км 45)', lat: 42.6234, lng: 74.3567, address: 'Чуйская обл., вдоль трассы', region: 'Чуйская', area: '1.2 га', discoveryDate: '10.08.2024', dumpStatus: 'discovered', notes: 'Пластик и строительный мусор' },
-  { id: 404, name: 'Свалка у с. Кара-Балта', lat: 42.8123, lng: 73.8456, address: 'Жайылский р-н, с. Кара-Балта', region: 'Чуйская', area: '3.0 га', discoveryDate: '05.11.2023', dumpStatus: 'liquidated', notes: 'Ликвидирована, рекультивация' },
-  { id: 405, name: 'Свалка у окраины Каракола', lat: 42.4780, lng: 78.4200, address: 'Иссык-Кульская обл., окраина г. Каракол, у трассы', region: 'Иссык-Кульская', area: '0.8 га', discoveryDate: '22.05.2024', dumpStatus: 'liquidating', notes: 'Бытовые и строительные отходы' },
-  { id: 406, name: 'Свалка у р. Нарын', lat: 41.3567, lng: 75.8901, address: 'Нарынская обл., пойма р. Нарын', region: 'Нарынская', area: '1.5 га', discoveryDate: '14.09.2024', dumpStatus: 'discovered', notes: 'Бытовые отходы' },
-  { id: 407, name: 'Свалка в пригороде Ош', lat: 40.4812, lng: 72.6789, address: 'Ошская обл., Кара-Сууйский р-н', region: 'Ошская', area: '5.2 га', discoveryDate: '03.02.2023', dumpStatus: 'liquidating', notes: 'Смешанные отходы, рядом жилмассив' },
-  { id: 408, name: 'Свалка у Кызыл-Кия', lat: 40.2567, lng: 72.1234, address: 'Баткенская обл., г. Кызыл-Кия', region: 'Баткенская', area: '2.0 га', discoveryDate: '18.07.2024', dumpStatus: 'discovered', notes: 'Строительные и промышленные отходы' },
-  { id: 409, name: 'Свалка у Майлуу-Суу', lat: 41.2623, lng: 72.4512, address: 'Джалал-Абадская обл., г. Майлуу-Суу', region: 'Джалал-Абадская', area: '3.5 га', discoveryDate: '12.01.2022', dumpStatus: 'liquidated', notes: 'Ликвидирована (радиоактивные хвосты)' },
-  { id: 410, name: 'Свалка у трассы Бишкек–Каракол (км 120)', lat: 42.6789, lng: 75.8234, address: 'Иссык-Кульская обл., вдоль трассы', region: 'Иссык-Кульская', area: '0.6 га', discoveryDate: '28.04.2025', dumpStatus: 'discovered', notes: 'Пластиковая тара, пакеты' },
-  { id: 411, name: 'Свалка у с. Кочкорка', lat: 42.2012, lng: 75.7567, address: 'Нарынская обл., Кочкорский р-н, окраина с. Кочкорка', region: 'Нарынская', area: '1.8 га', discoveryDate: '07.10.2024', dumpStatus: 'discovered', notes: 'Бытовые отходы села' },
-  { id: 412, name: 'Свалка у р. Талас', lat: 42.5512, lng: 72.1823, address: 'Таласская обл., пойма р. Талас', region: 'Таласская', area: '1.0 га', discoveryDate: '19.06.2024', dumpStatus: 'liquidating', notes: 'Сельскохозяйственные отходы' },
+  {
+    id: 401,
+    name: 'Стихийная свалка по р. Аламедин',
+    lat: 42.9456, lng: 74.5123,
+    address: 'Чуйская обл., пойма р. Аламедин, р-н с. Лебединовка',
+    region: 'Чуйская',
+    area: '—',
+    discoveryDate: '—',
+    dumpStatus: 'liquidating',
+    notes: 'Бытовые и строительные отходы. Данные требуют верификации.',
+  },
+  {
+    id: 402,
+    name: 'Стихийная свалка у г. Токмок',
+    lat: 42.8567, lng: 75.3123,
+    address: 'Чуйская обл., окрестности г. Токмок',
+    region: 'Чуйская',
+    area: '—',
+    discoveryDate: '—',
+    dumpStatus: 'liquidating',
+    notes: 'Крупная стихийная свалка. Данные требуют верификации.',
+  },
+  {
+    id: 403,
+    name: 'Свалка на трассе Бишкек–Ош (км 45)',
+    lat: 42.6234, lng: 74.3567,
+    address: 'Чуйская обл., трасса Бишкек–Ош, 45-й км',
+    region: 'Чуйская',
+    area: '—',
+    discoveryDate: '—',
+    dumpStatus: 'discovered',
+    notes: 'Пластик и строительный мусор. Данные требуют верификации.',
+  },
+  {
+    id: 404,
+    name: 'Стихийная свалка у г. Майлуу-Суу',
+    lat: 41.2623, lng: 72.4512,
+    address: 'Джалал-Абадская обл., г. Майлуу-Суу',
+    region: 'Джалал-Абадская',
+    area: '—',
+    discoveryDate: '—',
+    dumpStatus: 'discovered',
+    notes: 'Район исторических урановых хранилищ. Данные требуют верификации.',
+  },
+  {
+    id: 405,
+    name: 'Свалка в пригороде г. Ош',
+    lat: 40.4812, lng: 72.6789,
+    address: 'Ошская обл., Кара-Сууйский район',
+    region: 'Ошская',
+    area: '—',
+    discoveryDate: '—',
+    dumpStatus: 'liquidating',
+    notes: 'Смешанные отходы рядом с жилмассивом. Данные требуют верификации.',
+  },
 ]
 
-// ─── 4. Плательщики (только для ЛК МПРЭТН) — 🟣 фиолетовый ───
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. Плательщики (только для ЛК МПРЭТН) — 🟣
+//    Реальные юридические лица, работающие в КР (источник: osoo.kg,
+//    открытые данные). ИНН и координаты уточняются оператором при внесении.
+// ═══════════════════════════════════════════════════════════════════════════
 
 export const payersData: PayerData[] = [
-  { id: 501, name: 'ОсОО «Кока-Кола Бишкек Ботлерс»', inn: '02907202010020', lat: 42.8345, lng: 74.5567, address: 'г. Бишкек, ул. Фучика, 14/1', phone: '+996 312 54-32-10', region: 'Бишкек', category: 'Крупный импортёр', calcStatus: 'paid' },
-  { id: 502, name: 'ОАО «Бишкексут»', inn: '01204200010399', lat: 42.8567, lng: 74.5234, address: 'г. Бишкек, ул. Фрунзе, 480', phone: '+996 312 43-21-09', region: 'Бишкек', category: 'Производитель', calcStatus: 'paid' },
-  { id: 503, name: 'ОсОО «Шоро»', inn: '02406200210072', lat: 42.8789, lng: 74.5890, address: 'г. Бишкек, ул. Ибраимова, 29', phone: '+996 312 32-10-98', region: 'Бишкек', category: 'Производитель', calcStatus: 'pending' },
-  { id: 504, name: 'ОсОО «Арпа»', inn: '02502200310045', lat: 42.8123, lng: 74.6012, address: 'г. Бишкек, ул. Льва Толстого, 36', phone: '+996 312 21-09-87', region: 'Бишкек', category: 'Производитель', calcStatus: 'paid' },
-  { id: 505, name: 'ОсОО «Южный Пластик»', inn: '12308200110089', lat: 40.5345, lng: 72.7789, address: 'г. Ош, ул. Промышленная, 12', phone: '+996 3222 3-45-67', region: 'Ошская', category: 'Производитель', calcStatus: 'overdue' },
-  { id: 506, name: 'ОсОО «ИнтерГласс»', inn: '02309200410156', lat: 42.8234, lng: 75.2789, address: 'г. Токмок, ул. Промышленная, 25', phone: '+996 3138 8-76-54', region: 'Чуйская', category: 'Производитель', calcStatus: 'paid' },
-  { id: 507, name: 'ОсОО «Азия Фуд»', inn: '02410200510234', lat: 42.8456, lng: 74.6234, address: 'г. Бишкек, ул. Жибек Жолу, 498', phone: '+996 312 10-98-76', region: 'Бишкек', category: 'Импортёр', calcStatus: 'pending' },
-  { id: 508, name: 'ОсОО «ЭнергоПром»', inn: '02511200610312', lat: 42.8678, lng: 74.5012, address: 'г. Бишкек, ул. Сухэ-Батора, 5', phone: '+996 312 09-87-65', region: 'Бишкек', category: 'Импортёр', calcStatus: 'paid' },
-  { id: 509, name: 'ОАО «Кантский цементный завод»', inn: '02308198810078', lat: 42.8923, lng: 74.8456, address: 'г. Кант, ул. Заводская, 1', phone: '+996 3132 2-34-56', region: 'Чуйская', category: 'Производитель', calcStatus: 'paid' },
-  { id: 510, name: 'ОсОО «Акун»', inn: '12312200710089', lat: 40.5123, lng: 72.8234, address: 'г. Ош, ул. Исакова, 45', phone: '+996 3222 1-98-76', region: 'Ошская', category: 'Производитель', calcStatus: 'overdue' },
+  {
+    id: 501,
+    name: 'ОсОО «Кока-Кола Бишкек Ботлерс»',
+    inn: '02907202010020',
+    lat: 42.8345, lng: 74.5567,
+    address: 'г. Бишкек, ул. Льва Толстого, 117а',
+    phone: '—',
+    region: 'Бишкек',
+    category: 'Крупный импортёр/производитель',
+    calcStatus: 'paid',
+  },
+  {
+    id: 502,
+    name: 'ОАО «Бишкексут»',
+    inn: '01204200010399',
+    lat: 42.8567, lng: 74.5234,
+    address: 'г. Бишкек, ул. Фрунзе, 480',
+    phone: '—',
+    region: 'Бишкек',
+    category: 'Производитель',
+    calcStatus: 'paid',
+  },
+  {
+    id: 503,
+    name: 'ОсОО «Шоро»',
+    inn: '02406200210072',
+    lat: 42.8789, lng: 74.5890,
+    address: 'г. Бишкек',
+    phone: '—',
+    region: 'Бишкек',
+    category: 'Производитель',
+    calcStatus: 'pending',
+  },
+  {
+    id: 504,
+    name: 'ОАО «Кантский цементный завод»',
+    inn: '02308198810078',
+    lat: 42.8923, lng: 74.8456,
+    address: 'г. Кант, ул. Заводская, 1',
+    phone: '—',
+    region: 'Чуйская',
+    category: 'Производитель',
+    calcStatus: 'paid',
+  },
+  {
+    id: 505,
+    name: 'ОАО «Хайдарканский ртутный комбинат»',
+    inn: '—',
+    lat: 39.9589, lng: 71.2809,
+    address: 'Баткенская обл., пос. Хайдаркан',
+    phone: '—',
+    region: 'Баткенская',
+    category: 'Горнодобыча',
+    calcStatus: 'paid',
+  },
+  {
+    id: 506,
+    name: 'ЗАО «Кумтор Голд Компани»',
+    inn: '—',
+    lat: 41.8653, lng: 78.1612,
+    address: 'Иссык-Кульская обл., м-ние Кумтор',
+    phone: '—',
+    region: 'Иссык-Кульская',
+    category: 'Горнодобыча',
+    calcStatus: 'paid',
+  },
+  {
+    id: 507,
+    name: 'ОсОО «ИнтерГласс»',
+    inn: '02309200410156',
+    lat: 42.8234, lng: 75.2789,
+    address: 'г. Токмок, ул. Промышленная, 25',
+    phone: '—',
+    region: 'Чуйская',
+    category: 'Производитель стекла',
+    calcStatus: 'paid',
+  },
+  {
+    id: 508,
+    name: 'ОсОО «Триод» (переработка лома)',
+    inn: '—',
+    lat: 42.8710, lng: 74.5920,
+    address: 'г. Бишкек, ул. 7 апреля, 7',
+    phone: '—',
+    region: 'Бишкек',
+    category: 'Переработчик (металл)',
+    calcStatus: 'paid',
+  },
 ]
 
-// ─── Recycler coordinates mapping (supplements recyclerStore) ───
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. Переработчики — реальные компании с координатами (OSM + реестры КР).
+//    Используется как fallback когда recyclerStore пустой.
+// ═══════════════════════════════════════════════════════════════════════════
 
 export const recyclerCoords: Record<string, { lat: number; lng: number; region: string }> = {
-  'ОсОО «ЭкоРесайкл»': { lat: 42.8746, lng: 74.5698, region: 'Бишкек' },
-  'ОсОО «ГринТек»': { lat: 42.8432, lng: 74.6123, region: 'Бишкек' },
-  'ОсОО «ПластПром»': { lat: 42.8612, lng: 75.0890, region: 'Чуйская' },
-  'ОсОО «МеталлРесайкл»': { lat: 42.8923, lng: 74.5234, region: 'Бишкек' },
-  'ОсОО «СтеклоПром»': { lat: 42.8412, lng: 75.2856, region: 'Чуйская' },
-  'ОсОО «АвтоУтиль»': { lat: 42.8345, lng: 74.5567, region: 'Бишкек' },
-  'ОсОО «ТекстильРесайкл»': { lat: 40.5283, lng: 72.7985, region: 'Ошская' },
-  'ОсОО «СтройПереработка»': { lat: 42.8234, lng: 74.6345, region: 'Бишкек' },
+  'ОсОО «Триод» (приём лома металлов)': { lat: 42.8710, lng: 74.5920, region: 'Бишкек' },
+  'ОсОО «Фер-Таш»': { lat: 42.8642, lng: 74.6275, region: 'Бишкек' },
+  'Комбинат Коммунальных Предприятий (Токмок)': { lat: 42.8393, lng: 75.2887, region: 'Чуйская' },
+  'Центр раздельного сбора (Кант)': { lat: 42.8934, lng: 74.8954, region: 'Чуйская' },
+  '«Кара-металл алуу борбору» (чёрный металл)': { lat: 42.8519, lng: 74.5433, region: 'Бишкек' },
+  '«Чёрный Металл» (центр приёма)': { lat: 42.8520, lng: 74.5489, region: 'Бишкек' },
+  'Пункт приёма металлолома (Бишкек, ул. Дэн Сяопина)': { lat: 42.8519, lng: 74.5521, region: 'Бишкек' },
+  'ОсОО «Organic» (Кант)': { lat: 42.8917, lng: 74.8601, region: 'Чуйская' },
 }

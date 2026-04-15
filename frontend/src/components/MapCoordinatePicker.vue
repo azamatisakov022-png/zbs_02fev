@@ -4,6 +4,16 @@ import { useI18n } from 'vue-i18n'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+import {
+  KG_CENTER,
+  KG_DEFAULT_ZOOM,
+  KG_MIN_ZOOM,
+  KG_MAX_ZOOM,
+  KG_BOUNDS,
+  KG_TILE_URL,
+  KG_TILE_ATTRIBUTION,
+  KG_TILE_SUBDOMAINS,
+} from '../composables/useKgMap'
 
 const { t } = useI18n()
 
@@ -22,8 +32,8 @@ const emit = defineEmits<{
   'update:visible': [value: boolean]
 }>()
 
-const mapCenter = ref<[number, number]>([41.2, 74.7])
-const mapZoom = ref(7)
+const mapCenter = ref<[number, number]>([...KG_CENTER])
+const mapZoom = ref(KG_DEFAULT_ZOOM)
 const pickerCoords = ref<Coords | null>(null)
 const searchQuery = ref('')
 const searchResults = ref<Array<{ display_name: string; lat: string; lon: string }>>([])
@@ -45,8 +55,8 @@ watch(() => props.visible, (val) => {
       mapZoom.value = 13
     } else {
       pickerCoords.value = null
-      mapCenter.value = [41.2, 74.7]
-      mapZoom.value = 7
+      mapCenter.value = [...KG_CENTER]
+      mapZoom.value = KG_DEFAULT_ZOOM
     }
     searchQuery.value = ''
     searchResults.value = []
@@ -152,13 +162,19 @@ const cancel = () => {
             <LMap
               :zoom="mapZoom"
               :center="mapCenter"
+              :min-zoom="KG_MIN_ZOOM"
+              :max-zoom="KG_MAX_ZOOM"
+              :max-bounds="KG_BOUNDS"
+              :max-bounds-viscosity="1.0"
+              :world-copy-jump="false"
               :use-global-leaflet="false"
               class="h-full w-full"
               @click="onMapClick"
             >
               <LTileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap contributors"
+                :url="KG_TILE_URL"
+                :attribution="KG_TILE_ATTRIBUTION"
+                :subdomains="KG_TILE_SUBDOMAINS"
               />
               <LMarker
                 v-if="pickerCoords"

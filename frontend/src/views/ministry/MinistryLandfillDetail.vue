@@ -13,6 +13,14 @@ import { toastStore } from '../../stores/toast'
 import 'leaflet/dist/leaflet.css'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import L from 'leaflet'
+import {
+  KG_MIN_ZOOM,
+  KG_MAX_ZOOM,
+  KG_BOUNDS,
+  KG_TILE_URL,
+  KG_TILE_ATTRIBUTION,
+  KG_TILE_SUBDOMAINS,
+} from '../../composables/useKgMap'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -706,8 +714,22 @@ const coordsText = computed(() => {
           </router-link>
         </div>
         <div class="rounded-xl overflow-hidden border border-gray-200">
-          <LMap :center="[landfill.lat, landfill.lng]" :zoom="15" style="height: 300px;" :use-global-leaflet="false">
-            <LTileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+          <LMap
+            :center="[landfill.lat, landfill.lng]"
+            :zoom="15"
+            :min-zoom="KG_MIN_ZOOM"
+            :max-zoom="KG_MAX_ZOOM"
+            :max-bounds="KG_BOUNDS"
+            :max-bounds-viscosity="1.0"
+            :world-copy-jump="false"
+            style="height: 300px;"
+            :use-global-leaflet="false"
+          >
+            <LTileLayer
+              :url="KG_TILE_URL"
+              :attribution="KG_TILE_ATTRIBUTION"
+              :subdomains="KG_TILE_SUBDOMAINS"
+            />
             <LMarker :lat-lng="[landfill.lat, landfill.lng]" :icon="markerIcon">
               <LPopup :options="{ maxWidth: 280 }">
                 <div style="font-family: system-ui, sans-serif;">
