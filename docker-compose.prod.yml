@@ -1,0 +1,117 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Production docker-compose для развёртывания на серверах Заказчика.
+#
+# Запуск:
+#   1. Скопируйте .env.prod.example в .env и пропишите значения.
+#   2. docker compose -f docker-compose.prod.yml up -d --build
+#   3. Откройте http://<IP-сервера>/ — публичная ГИС-карта.
+#
+# Сервисы:
+#   postgres  — БД (volume postgres_data на хосте)
+#   minio     — S3-совместимое хранилище для документов и фото
+#   app       — Spring Boot backend (порт 8080 внутри сети, не публикуется)
+#   web       — nginx с собранным Vue SPA + reverse-proxy на backend (порт 80)
+#
+# Бэкап БД (cron):
+#   0 3 * * *  docker exec eco-postgres pg_dump -U eco eco_operator | gzip > /backups/db_$(date +\%Y\%m\%d).sql.gz
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: eco-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eco_operator}
+      POSTGRES_USER: ${POSTGRES_USER:-eco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eco}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [eco-net]
+
+  minio:
+    image: minio/minio:latest
+    container_name: eco-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Открываем только для админа (по желанию). Закомментировать в проде если не нужен:
+    ports:
+      - "127.0.0.1:9001:9001"   # MinIO console (только с localhost сервера)
+    networks: [eco-net]
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eco-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-eco_operator}
+      DB_USERNAME: ${POSTGRES_USER:-eco}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (openssl rand -base64 64)}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET:-eco-operator}
+      # Внешние интеграции (заполняются в .env)
+      TAX_SERVICE_URL: ${TAX_SERVICE_URL:-}
+      TAX_SERVICE_API_KEY: ${TAX_SERVICE_API_KEY:-}
+      CUSTOMS_SERVICE_URL: ${CUSTOMS_SERVICE_URL:-}
+      CUSTOMS_SERVICE_API_KEY: ${CUSTOMS_SERVICE_API_KEY:-}
+      BANK_SERVICE_URL: ${BANK_SERVICE_URL:-}
+      BANK_SERVICE_API_KEY: ${BANK_SERVICE_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/v1/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks: [eco-net]
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Vite соберёт SPA с этим VITE_API_URL. По умолчанию — относительный путь
+        # (запросы пойдут на тот же домен, nginx их проксирует на backend).
+        VITE_API_URL: ${FRONTEND_API_URL:-/api/v1}
+    container_name: eco-web
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    networks: [eco-net]
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  eco-net:
+    driver: bridge
