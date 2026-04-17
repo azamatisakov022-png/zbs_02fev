@@ -117,6 +117,33 @@ public class NotificationEventListener {
         }
     }
 
+    // ─── Contest Applications ───
+
+    @Async
+    @EventListener
+    @Transactional
+    public void handleContestApplicationStatus(ContestApplicationStatusEvent event) {
+        log.info("Обработка события заявки на конкурс: {} -> {}",
+                event.getApplicationNumber(), event.getNewStatus());
+
+        // Уведомляем сотрудников Эко Оператора, когда поступает новая заявка
+        if ("new".equals(event.getNewStatus())) {
+            String contest = event.getContestTitle() != null
+                    ? " на конкурс «" + event.getContestTitle() + "»" : "";
+            createNotification("Новая заявка на конкурс",
+                    "Поступила заявка " + event.getApplicationNumber() + contest
+                            + ". Требуется рассмотрение.",
+                    NotificationType.INFO, null, RoleEnum.ECO_OPERATOR,
+                    event.getApplicationId(), "contest_application");
+            return;
+        }
+
+        // При смене статуса (approved/rejected/under_review) — фиксируем,
+        // заявителю он сам проверит на публичной странице (SMTP не настроен)
+        log.info("Заявка {} переведена в статус '{}' (заявитель проверит на /contests/status)",
+                event.getApplicationNumber(), event.getNewStatus());
+    }
+
     // ─── Reports ───
 
     @Async

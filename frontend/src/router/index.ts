@@ -57,6 +57,21 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/ContestsView.vue'),
   },
   {
+    path: '/contests/status',
+    name: 'contests-status',
+    component: () => import('../views/ContestStatusView.vue'),
+  },
+  {
+    path: '/contests/:id',
+    name: 'contest-detail',
+    component: () => import('../views/ContestDetailView.vue'),
+  },
+  {
+    path: '/contests/:id/apply',
+    name: 'contest-apply',
+    component: () => import('../views/ContestApplyView.vue'),
+  },
+  {
     path: '/legal-base',
     name: 'legal-base',
     component: () => import('../views/LegalBaseView.vue'),
@@ -515,6 +530,36 @@ const routes: RouteRecordRaw[] = [
     name: 'eco-operator-notifications',
     component: () => import('../views/eco-operator/EcoOperatorNotifications.vue'),
     meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'breadcrumb.ecoOperatorNotifications' },
+  },
+  {
+    path: '/eco-operator/contests',
+    name: 'eco-operator-contests',
+    component: () => import('../views/eco-operator/EcoOperatorContests.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'nav.ecoOperator.contests' },
+  },
+  {
+    path: '/eco-operator/contests/new',
+    name: 'eco-operator-contest-new',
+    component: () => import('../views/eco-operator/EcoOperatorContestEdit.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'contests.employee.createTitle' },
+  },
+  {
+    path: '/eco-operator/contests/applications',
+    name: 'eco-operator-contest-applications',
+    component: () => import('../views/eco-operator/EcoOperatorContestApplications.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'nav.ecoOperator.contestApplications' },
+  },
+  {
+    path: '/eco-operator/contests/applications/:id',
+    name: 'eco-operator-contest-application-detail',
+    component: () => import('../views/eco-operator/EcoOperatorContestApplicationDetail.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'contests.employee.applicationDetail' },
+  },
+  {
+    path: '/eco-operator/contests/:id/edit',
+    name: 'eco-operator-contest-edit',
+    component: () => import('../views/eco-operator/EcoOperatorContestEdit.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator', breadcrumbLabel: 'contests.employee.editTitle' },
   },
 
   // Ministry (МПРЭТН) routes

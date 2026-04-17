@@ -6,6 +6,7 @@ import { refundStore } from '../stores/refunds'
 import { reportStore } from '../stores/reports'
 import { notificationStore } from '../stores/notifications'
 import { feedbackStore } from '../stores/feedback'
+import { contestStore } from '../stores/contests'
 
 export function useBusinessMenu() {
   const { t } = useI18n()
@@ -34,6 +35,7 @@ export function useEcoOperatorMenu() {
     { id: 'incoming-declarations', label: t('nav.ecoOperator.incomingDeclarations'), icon: icons.document, route: '/eco-operator/incoming-declarations' },
     { id: 'incoming-reports', label: t('nav.ecoOperator.incomingReports'), icon: icons.report, route: '/eco-operator/incoming-reports', badge: reportStore.getPendingCount() },
     { id: 'refunds', label: t('nav.ecoOperator.refunds'), icon: icons.refund, route: '/eco-operator/refunds', badge: refundStore.getPendingRefundsCount() },
+    { id: 'contests', label: t('nav.ecoOperator.contests'), icon: icons.trophy, route: '/eco-operator/contests', badge: contestStore.getPendingCount() },
     { id: 'accounts', label: t('nav.ecoOperator.accounts'), icon: icons.money, route: '/eco-operator/accounts' },
     { id: 'analytics', label: t('nav.ecoOperator.analytics'), icon: icons.analytics, route: '/eco-operator/analytics' },
     { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile' },

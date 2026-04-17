@@ -88,6 +88,23 @@ export const FeedbackStatus = {
 } as const
 export type FeedbackStatusType = typeof FeedbackStatus[keyof typeof FeedbackStatus]
 
+// Contest statuses (lifecycle of contest itself)
+export const ContestStatus = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  CLOSED: 'closed',
+} as const
+export type ContestStatusType = typeof ContestStatus[keyof typeof ContestStatus]
+
+// Contest application statuses
+export const ContestApplicationStatus = {
+  NEW: 'new',
+  UNDER_REVIEW: 'under_review',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+} as const
+export type ContestApplicationStatusType = typeof ContestApplicationStatus[keyof typeof ContestApplicationStatus]
+
 // Feedback categories
 export const FeedbackCategory = {
   COMPLAINT: 'complaint',
@@ -127,4 +144,5 @@ export const statusI18nKey: Record<string, string> = {
   completed: 'status.completed',
   in_progress: 'status.inProgress',
   resolved: 'status.resolved',
+  published: 'status.published',
 }
