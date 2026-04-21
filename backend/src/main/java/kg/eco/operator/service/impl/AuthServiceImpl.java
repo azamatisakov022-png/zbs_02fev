@@ -190,6 +190,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(mapRoleToSwagger(user.getRole()))
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .businessType(user.getBusinessType() != null ? user.getBusinessType().getValue() : null)
                 .build();
     }
 

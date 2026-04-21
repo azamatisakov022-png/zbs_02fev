@@ -17,4 +17,7 @@ public class UserProfileResponse {
     private String role;
     private String email;
     private String phone;
+
+    /** Для role='business': payer | applicant | both. Для остальных ролей — null. */
+    private String businessType;
 }
