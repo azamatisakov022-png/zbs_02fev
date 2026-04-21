@@ -1,640 +1,174 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
-import DocumentPreviewModal, { type PreviewDocument } from '../../components/dashboard/DocumentPreviewModal.vue'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
-import { LicenseStatus } from '../../constants/statuses'
-import { AppButton, AppBadge } from '../../components/ui'
-import { getStatusBadgeVariant } from '../../utils/statusVariant'
-import { toastStore } from '../../stores/toast'
+import { licenseStore } from '../../stores/licenses'
+import { licenseRegistryApi } from '../../api/licenses'
+import type { License, LicenseType } from '../../types/licenses'
 
-const { t } = useI18n()
+/**
+ * Реестр выданных лицензий для ЭкоОператора (read-only).
+ * Используется для проверки наличия лицензии у переработчиков,
+ * полигонов и пунктов приёма, с которыми взаимодействуют клиенты.
+ */
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 
-// Document preview
-const previewDoc = ref<PreviewDocument | null>(null)
+const typeFilter = ref<LicenseType | ''>('')
+const search = ref('')
 
-// Tab state
-const activeTab = ref<'licenses' | 'documents'>('licenses')
-
-// Licenses data
-interface License {
-  id: number
-  type: string
-  number: string
-  issuedBy: string
-  issueDate: string
-  expiryDate: string
-  status: 'active' | 'expiring' | 'expired'
-  wasteTypes: string[]
-  activities: string[]
-}
-
-const licenses = ref<License[]>([
-  {
-    id: 1,
-    type: 'Лицензия на сбор и переработку отходов',
-    number: 'ЛЦ-2024/0156',
-    issuedBy: 'Министерство природных ресурсов КР',
-    issueDate: '2024-01-15',
-    expiryDate: '2029-01-15',
-    status: 'active',
-    wasteTypes: ['Пластик (ПЭТ)', 'Пластик (ПП, ПЭ)', 'Бумага и картон'],
-    activities: ['Сбор', 'Сортировка', 'Переработка', 'Хранение'],
-  },
-  {
-    id: 2,
-    type: 'Лицензия на обращение с опасными отходами',
-    number: 'ЛЦ-2023/0089',
-    issuedBy: 'Министерство природных ресурсов КР',
-    issueDate: '2023-06-20',
-    expiryDate: '2025-06-20',
-    status: 'expiring',
-    wasteTypes: ['Батареи и аккумуляторы', 'Электронные отходы'],
-    activities: ['Сбор', 'Транспортировка', 'Обезвреживание'],
-  },
-  {
-    id: 3,
-    type: 'Разрешение на выбросы',
-    number: 'РВ-2022/0234',
-    issuedBy: 'Государственное агентство охраны окружающей среды',
-    issueDate: '2022-03-10',
-    expiryDate: '2024-03-10',
-    status: 'expired',
-    wasteTypes: [],
-    activities: ['Эксплуатация оборудования'],
-  },
-])
-
-// Documents data
-interface Document {
-  id: number
-  name: string
-  type: string
-  uploadDate: string
-  expiryDate: string | null
-  status: 'valid' | 'expiring' | 'expired'
-  fileSize: string
-}
-
-const documents = ref<Document[]>([
-  {
-    id: 1,
-    name: 'Устав организации',
-    type: 'Учредительный документ',
-    uploadDate: '2023-01-10',
-    expiryDate: null,
-    status: 'valid',
-    fileSize: '2.4 MB',
-  },
-  {
-    id: 2,
-    name: 'Свидетельство о регистрации',
-    type: 'Регистрационный документ',
-    uploadDate: '2023-01-10',
-    expiryDate: null,
-    status: 'valid',
-    fileSize: '1.1 MB',
-  },
-  {
-    id: 3,
-    name: 'Сертификат ISO 14001:2015',
-    type: 'Сертификат',
-    uploadDate: '2023-05-15',
-    expiryDate: '2026-05-15',
-    status: 'valid',
-    fileSize: '856 KB',
-  },
-  {
-    id: 4,
-    name: 'Сертификат ISO 9001:2015',
-    type: 'Сертификат',
-    uploadDate: '2023-05-15',
-    expiryDate: '2025-05-15',
-    status: 'expiring',
-    fileSize: '912 KB',
-  },
-  {
-    id: 5,
-    name: 'Договор аренды помещения',
-    type: 'Договор',
-    uploadDate: '2024-01-01',
-    expiryDate: '2025-12-31',
-    status: 'valid',
-    fileSize: '3.2 MB',
-  },
-  {
-    id: 6,
-    name: 'Страховой полис',
-    type: 'Страхование',
-    uploadDate: '2024-02-01',
-    expiryDate: '2025-02-01',
-    status: 'expiring',
-    fileSize: '567 KB',
-  },
-])
-
-// Stats
-const stats = computed(() => ({
-  activeLicenses: licenses.value.filter(l => l.status === 'active').length,
-  expiringLicenses: licenses.value.filter(l => l.status === 'expiring').length,
-  expiredLicenses: licenses.value.filter(l => l.status === 'expired').length,
-  totalDocuments: documents.value.length,
-}))
-
-// Format date
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString()
-}
-
-// Days until expiry
-const daysUntilExpiry = (dateStr: string) => {
-  const expiry = new Date(dateStr)
-  const today = new Date()
-  const diff = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  return diff
-}
-
-// Status badge class
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'active':
-    case 'valid':
-      return 'bg-green-100 text-green-700'
-    case 'expiring':
-      return 'bg-yellow-100 text-yellow-700'
-    case 'expired':
-      return 'bg-red-100 text-red-700'
-    default:
-      return 'bg-gray-100 text-gray-700'
-  }
-}
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'active':
-    case LicenseStatus.VALID:
-      return t('status.valid')
-    case LicenseStatus.EXPIRING:
-      return t('status.expiring')
-    case LicenseStatus.EXPIRED:
-      return t('status.expired')
-    default:
-      return status
-  }
-}
-
-// Modal states
-const showUploadModal = ref(false)
-const showLicenseModal = ref(false)
-const selectedLicense = ref<License | null>(null)
-
-// Upload form
-const uploadForm = ref({
-  name: '',
-  type: t('ecoLicenses.docTypeCertificate'),
-  expiryDate: '',
-  files: [] as File[],
+onMounted(async () => {
+  await licenseStore.loadEnums()
+  await licenseStore.loadRegistry()
 })
 
-const documentTypes = computed(() => [
-  t('ecoLicenses.docTypeFoundation'),
-  t('ecoLicenses.docTypeRegistration'),
-  t('ecoLicenses.docTypeCertificate'),
-  t('ecoLicenses.docTypeContract'),
-  t('ecoLicenses.docTypeInsurance'),
-  t('ecoLicenses.docTypePermit'),
-  t('ecoLicenses.docTypeOther'),
-])
-
-const openLicenseDetails = (license: License) => {
-  selectedLicense.value = license
-  showLicenseModal.value = true
+async function changeType() {
+  await licenseStore.loadRegistry(typeFilter.value || undefined)
 }
 
-const handlePrint = () => {
-  window.print()
+const filtered = computed<License[]>(() => {
+  const s = search.value.toLowerCase().trim()
+  if (!s) return licenseStore.state.adminLicenses
+  return licenseStore.state.adminLicenses.filter(
+    l =>
+      l.licenseNumber.toLowerCase().includes(s) ||
+      l.applicantName.toLowerCase().includes(s) ||
+      l.applicantInn.toLowerCase().includes(s),
+  )
+})
+
+const activeCount = computed(() => filtered.value.filter(l => l.statusLabel === 'active').length)
+const expiringCount = computed(() => filtered.value.filter(l => l.statusLabel === 'expiring').length)
+const expiredCount = computed(() => filtered.value.filter(l => l.statusLabel === 'expired' || l.statusLabel === 'revoked').length)
+
+function statusLabel(l: License) {
+  return {
+    active: 'Действует',
+    expiring: 'Истекает',
+    expired: 'Истекла',
+    revoked: 'Отозвана',
+  }[l.statusLabel]
 }
 
-const handleFileDrop = (event: DragEvent) => {
-  event.preventDefault()
-  const files = event.dataTransfer?.files
-  if (files) {
-    uploadForm.value.files = Array.from(files)
-  }
+function statusClass(l: License) {
+  return {
+    active: 'bg-emerald-100 text-emerald-800',
+    expiring: 'bg-amber-100 text-amber-800',
+    expired: 'bg-gray-100 text-gray-600',
+    revoked: 'bg-rose-100 text-rose-800',
+  }[l.statusLabel]
 }
 
-const handleFileSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files) {
-    uploadForm.value.files = Array.from(target.files)
-  }
+function formatDate(d?: string) {
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
 }
 
-const submitUpload = () => {
-  toastStore.show({ type: 'success', title: t('ecoLicenses.toastDocUploaded') })
-  showUploadModal.value = false
-  uploadForm.value = { name: '', type: t('ecoLicenses.docTypeCertificate'), expiryDate: '', files: [] }
+async function downloadCsv() {
+  const blob = await licenseRegistryApi.exportCsvUrl(typeFilter.value || undefined)
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'licenses-registry.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 </script>
 
 <template>
-  <DashboardLayout
-    role="eco-operator"
-    :roleTitle="roleTitle"
-    :userName="$t('ecoLicenses.userName')"
-    :menuItems="menuItems"
-  >
+  <DashboardLayout role="eco-operator" :role-title="roleTitle" :menu-items="menuItems">
     <div class="space-y-6">
-      <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">{{ $t('pages.ecoOperator.licensesTitle') }}</h1>
-          <p class="text-gray-600 mt-1">{{ $t('pages.ecoOperator.licensesSubtitle') }}</p>
+          <h1 class="text-2xl font-bold text-gray-900">Реестр лицензий</h1>
+          <p class="text-sm text-gray-500 mt-1">
+            Проверка наличия действующих лицензий у переработчиков, полигонов и пунктов приёма.
+            Просмотр только для чтения — выдача и отзыв лицензий производится сотрудниками МПРЭТН.
+          </p>
         </div>
-        <AppButton variant="primary" @click="showUploadModal = true">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          {{ $t('ecoLicenses.uploadDocument') }}
-        </AppButton>
+        <button
+          @click="downloadCsv"
+          class="px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg text-sm font-medium flex items-center gap-2"
+        >
+          📥 Экспорт в CSV
+        </button>
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.activeLicenses }}</p>
-              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statActiveLicenses') }}</p>
-            </div>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-gray-500">Всего</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">{{ filtered.length }}</div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.expiringLicenses }}</p>
-              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statExpiringSoon') }}</p>
-            </div>
-          </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-emerald-700">Действующих</div>
+          <div class="text-2xl font-bold text-emerald-900 mt-1">{{ activeCount }}</div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.expiredLicenses }}</p>
-              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statNeedRenewal') }}</p>
-            </div>
-          </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-amber-700">Истекают скоро</div>
+          <div class="text-2xl font-bold text-amber-900 mt-1">{{ expiringCount }}</div>
         </div>
-        <div class="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.totalDocuments }}</p>
-              <p class="text-sm text-gray-500">{{ $t('ecoLicenses.statTotalDocuments') }}</p>
-            </div>
-          </div>
+        <div class="bg-gray-100 border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-gray-700">Истёкшие / отозваны</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">{{ expiredCount }}</div>
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="border-b border-gray-200">
-        <nav class="flex gap-8">
-          <button
-            @click="activeTab = 'licenses'"
-            :class="[
-              'pb-4 px-1 font-medium text-sm border-b-2 transition-colors',
-              activeTab === 'licenses'
-                ? 'border-lime-600 text-lime-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ $t('ecoLicenses.tabLicenses') }}
-          </button>
-          <button
-            @click="activeTab = 'documents'"
-            :class="[
-              'pb-4 px-1 font-medium text-sm border-b-2 transition-colors',
-              activeTab === 'documents'
-                ? 'border-lime-600 text-lime-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            ]"
-          >
-            {{ $t('ecoLicenses.tabDocuments') }}
-          </button>
-        </nav>
-      </div>
-
-      <!-- Licenses Tab -->
-      <div v-if="activeTab === 'licenses'" class="space-y-4">
-        <div
-          v-for="license in licenses"
-          :key="license.id"
-          class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+      <!-- Filters -->
+      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Поиск по № лицензии, ИНН, наименованию…"
+          class="px-3 py-2 border border-gray-300 rounded-md text-sm md:col-span-2"
+        />
+        <select
+          v-model="typeFilter"
+          @change="changeType"
+          class="px-3 py-2 border border-gray-300 rounded-md text-sm"
         >
-          <div class="p-5">
-            <div class="flex items-start justify-between">
-              <div class="flex items-start gap-4">
-                <div
-                  class="w-12 h-12 rounded-xl flex items-center justify-center"
-                  :class="license.status === 'active' ? 'bg-lime-100' : license.status === 'expiring' ? 'bg-yellow-100' : 'bg-red-100'"
-                >
-                  <svg
-                    class="w-6 h-6"
-                    :class="license.status === 'active' ? 'text-lime-600' : license.status === 'expiring' ? 'text-yellow-600' : 'text-red-600'"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 class="font-semibold text-gray-900">{{ license.type }}</h3>
-                  <p class="text-sm text-gray-500 mt-0.5">№ {{ license.number }}</p>
-                  <p class="text-sm text-gray-500">{{ license.issuedBy }}</p>
-                </div>
-              </div>
-              <AppBadge :variant="getStatusBadgeVariant(license.status)">{{ getStatusText(license.status) }}</AppBadge>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
-              <div>
-                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.issueDate') }}</p>
-                <p class="text-sm font-medium text-gray-900">{{ formatDate(license.issueDate) }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.validUntil') }}</p>
-                <p class="text-sm font-medium" :class="license.status === 'expired' ? 'text-red-600' : 'text-gray-900'">
-                  {{ formatDate(license.expiryDate) }}
-                </p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">{{ $t('ecoLicenses.daysLeft') }}</p>
-                <p
-                  class="text-sm font-medium"
-                  :class="daysUntilExpiry(license.expiryDate) < 0 ? 'text-red-600' : daysUntilExpiry(license.expiryDate) < 90 ? 'text-yellow-600' : 'text-green-600'"
-                >
-                  {{ daysUntilExpiry(license.expiryDate) < 0 ? $t('status.expired') : daysUntilExpiry(license.expiryDate) + ' ' + $t('ecoLicenses.days') }}
-                </p>
-              </div>
-              <div class="flex justify-end items-center">
-                <button
-                  @click="openLicenseDetails(license)"
-                  class="text-lime-600 hover:text-lime-700 font-medium text-sm"
-                >
-                  {{ $t('common.more') }} →
-                </button>
-              </div>
-            </div>
-
-            <!-- Activities tags -->
-            <div class="flex flex-wrap gap-2 mt-4">
-              <span
-                v-for="activity in license.activities"
-                :key="activity"
-                class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-              >
-                {{ activity }}
-              </span>
-            </div>
-          </div>
-        </div>
+          <option value="">Все виды лицензий</option>
+          <option v-for="opt in licenseStore.state.licenseTypesEnum" :key="opt.value" :value="opt.value">{{ opt.labelRu }}</option>
+        </select>
       </div>
 
-      <!-- Documents Tab -->
-      <div v-if="activeTab === 'documents'" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden overflow-x-auto">
-        <table class="w-full">
+      <!-- Table -->
+      <div v-if="licenseStore.state.loading" class="text-center py-12 text-gray-400">Загрузка…</div>
+      <div v-else-if="filtered.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
+        Лицензий не найдено
+      </div>
+      <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thDocument') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thType') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thUploaded') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thValidUntil') }}</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thStatus') }}</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">{{ $t('ecoLicenses.thActions') }}</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">№ лицензии</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Заявитель</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Выдана</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действует до</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Статус</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="doc in documents" :key="doc.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 bg-lime-50 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5 text-lime-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p class="font-medium text-gray-900">{{ doc.name }}</p>
-                    <p class="text-sm text-gray-500">{{ doc.fileSize }}</p>
-                  </div>
-                </div>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="l in filtered" :key="l.id" class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-mono font-medium">{{ l.licenseNumber }}</td>
+              <td class="px-4 py-3">
+                <div class="font-medium">{{ l.applicantName }}</div>
+                <div class="text-xs text-gray-500">ИНН {{ l.applicantInn }}</div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ doc.type }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(doc.uploadDate) }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ doc.expiryDate ? formatDate(doc.expiryDate) : '—' }}</td>
-              <td class="px-6 py-4">
-                <AppBadge :variant="getStatusBadgeVariant(doc.status)">{{ getStatusText(doc.status) }}</AppBadge>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center justify-center gap-2">
-                  <AppButton variant="ghost" size="sm" @click="previewDoc = { name: doc.name, type: doc.type, size: doc.fileSize, date: formatDate(doc.uploadDate), status: getStatusText(doc.status) }">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    {{ $t('common.view') }}
-                  </AppButton>
-                  <AppButton variant="outline" size="sm" @click="toastStore.show({ type: 'info', title: $t('ecoLicenses.toastDownloadTitle'), message: $t('ecoLicenses.toastDownloadMsg') })">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    {{ $t('common.download') }}
-                  </AppButton>
-                  <AppButton variant="danger" size="sm" @click="toastStore.show({ type: 'info', title: $t('ecoLicenses.toastDeleteTitle'), message: $t('ecoLicenses.toastDeleteMsg') })">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    {{ $t('common.delete') }}
-                  </AppButton>
-                </div>
+              <td class="px-4 py-3">{{ licenseStore.labelForLicenseType(l.licenseType) }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.issuedAt) }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.validUntil) }}</td>
+              <td class="px-4 py-3">
+                <span :class="['inline-flex px-2 py-1 text-xs font-medium rounded-full', statusClass(l)]">
+                  {{ statusLabel(l) }}
+                </span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-
-    <!-- License Details Modal -->
-    <Teleport to="body">
-      <div v-if="showLicenseModal && selectedLicense" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.licenseDetails') }}</h3>
-            <button @click="showLicenseModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-6">
-            <div class="flex items-start gap-4">
-              <div class="w-14 h-14 bg-lime-100 rounded-xl flex items-center justify-center">
-                <svg class="w-7 h-7 text-lime-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-              </div>
-              <div>
-                <h4 class="text-xl font-bold text-gray-900">{{ selectedLicense.type }}</h4>
-                <p class="text-gray-500">№ {{ selectedLicense.number }}</p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.issuedBy') }}</p>
-                <p class="font-medium text-gray-900">{{ selectedLicense.issuedBy }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.status') }}</p>
-                <AppBadge :variant="getStatusBadgeVariant(selectedLicense.status)">{{ getStatusText(selectedLicense.status) }}</AppBadge>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.issueDate') }}</p>
-                <p class="font-medium text-gray-900">{{ formatDate(selectedLicense.issueDate) }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-500">{{ $t('ecoLicenses.validUntil') }}</p>
-                <p class="font-medium text-gray-900">{{ formatDate(selectedLicense.expiryDate) }}</p>
-              </div>
-            </div>
-
-            <div>
-              <h5 class="font-medium text-gray-900 mb-2">{{ $t('ecoLicenses.permittedActivities') }}</h5>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="activity in selectedLicense.activities" :key="activity" class="px-3 py-1.5 bg-lime-100 text-lime-700 rounded-lg text-sm font-medium">
-                  {{ activity }}
-                </span>
-              </div>
-            </div>
-
-            <div v-if="selectedLicense.wasteTypes.length > 0">
-              <h5 class="font-medium text-gray-900 mb-2">{{ $t('ecoLicenses.wasteTypes') }}</h5>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="wt in selectedLicense.wasteTypes" :key="wt" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                  {{ wt }}
-                </span>
-              </div>
-            </div>
-
-            <div class="flex gap-3 pt-4 border-t border-gray-200">
-              <AppButton variant="primary" class="flex-1" @click="handlePrint">
-                {{ $t('common.download') }} {{ $t('common.pdf') }}
-              </AppButton>
-              <AppButton variant="secondary" class="flex-1" @click="showLicenseModal = false">
-                {{ $t('common.close') }}
-              </AppButton>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Upload Modal -->
-    <Teleport to="body">
-      <div v-if="showUploadModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full">
-          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">{{ $t('ecoLicenses.uploadDocument') }}</h3>
-            <button @click="showUploadModal = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentName') }}</label>
-              <input
-                v-model="uploadForm.name"
-                type="text"
-                :placeholder="$t('ecoLicenses.enterName')"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.documentType') }}</label>
-              <select
-                v-model="uploadForm.type"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              >
-                <option v-for="type in documentTypes" :key="type" :value="type">{{ type }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.expiryDateOptional') }}</label>
-              <input
-                v-model="uploadForm.expiryDate"
-                type="date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('ecoLicenses.file') }}</label>
-              <div
-                @drop="handleFileDrop"
-                @dragover.prevent
-                class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-lime-500 transition-colors cursor-pointer"
-              >
-                <input type="file" class="hidden" id="file-upload" @change="handleFileSelect" />
-                <label for="file-upload" class="cursor-pointer">
-                  <svg class="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p v-if="uploadForm.files.length === 0" class="text-gray-500">
-                    {{ $t('ecoLicenses.dragFileOr') }} <span class="text-lime-600 font-medium">{{ $t('ecoLicenses.selectFile') }}</span>
-                  </p>
-                  <p v-else class="text-lime-600 font-medium">{{ uploadForm.files[0].name }}</p>
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="px-6 py-4 border-t border-gray-200 flex gap-3">
-            <AppButton variant="secondary" class="flex-1" @click="showUploadModal = false">
-              {{ $t('common.cancel') }}
-            </AppButton>
-            <AppButton
-              variant="primary"
-              class="flex-1"
-              @click="submitUpload"
-              :disabled="!uploadForm.name || uploadForm.files.length === 0"
-            >
-              {{ $t('ecoLicenses.upload') }}
-            </AppButton>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <DocumentPreviewModal :doc="previewDoc" @close="previewDoc = null" />
   </DashboardLayout>
 </template>

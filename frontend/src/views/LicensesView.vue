@@ -1,206 +1,192 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
+import { ref, computed, onMounted, watch } from 'vue'
+import { publicLicensesApi } from '../api/licenses'
+import type { License, LicenseType, EnumItem } from '../types/licenses'
 
-const { t } = useI18n()
+const licenses = ref<License[]>([])
+const totalElements = ref(0)
+const page = ref(0)
+const size = ref(20)
+const loading = ref(false)
+const search = ref('')
+const licenseTypes = ref<EnumItem<LicenseType>[]>([])
 
-interface License {
-  id: string
-  organization: string
-  type: string
-  issueDate: string
-  expiryDate: string
-  status: 'active' | 'pending' | 'expired'
-}
-
-// Statistics
-const stats = {
-  total: 47,
-  active: 38,
-  pending: 6,
-  expired: 3
-}
-
-// Sample data
-const licenses: License[] = [
-  { id: 'ЛИЦ-2024-001', organization: 'ОсОО «ЭкоТранс»', type: 'Сбор и транспортировка', issueDate: '15.01.2024', expiryDate: '15.01.2029', status: 'active' },
-  { id: 'ЛИЦ-2024-002', organization: 'ОсОО «ГринПлюс»', type: 'Переработка отходов', issueDate: '10.01.2024', expiryDate: '10.01.2029', status: 'active' },
-  { id: 'ЛИЦ-2024-003', organization: 'ОсОО «ЭкоСервис»', type: 'Сбор и транспортировка', issueDate: '05.01.2024', expiryDate: '05.01.2029', status: 'pending' },
-  { id: 'ЛИЦ-2023-045', organization: 'ОсОО «РециклКГ»', type: 'Утилизация', issueDate: '20.12.2023', expiryDate: '20.12.2028', status: 'active' },
-  { id: 'ЛИЦ-2023-044', organization: 'ОсОО «КлинСити»', type: 'Сбор и транспортировка', issueDate: '15.12.2023', expiryDate: '15.12.2028', status: 'expired' },
-  { id: 'ЛИЦ-2023-043', organization: 'ОсОО «ВэйстПро»', type: 'Переработка отходов', issueDate: '10.12.2023', expiryDate: '10.12.2028', status: 'active' },
-  { id: 'ЛИЦ-2023-042', organization: 'ОсОО «ЭкоЛайн»', type: 'Сбор и транспортировка', issueDate: '05.12.2023', expiryDate: '05.12.2028', status: 'pending' },
-  { id: 'ЛИЦ-2023-041', organization: 'ОсОО «ГринВэй»', type: 'Утилизация', issueDate: '01.12.2023', expiryDate: '01.12.2028', status: 'active' },
-]
-
-const getStatusLabel = (status: License['status']) => {
-  switch (status) {
-    case 'active': return t('status.valid')
-    case 'pending': return t('status.review')
-    case 'expired': return t('status.expired')
+async function load() {
+  loading.value = true
+  try {
+    const res = await publicLicensesApi.listPublished({
+      search: search.value || undefined,
+      page: page.value,
+      size: size.value,
+    })
+    licenses.value = res.content
+    totalElements.value = res.totalElements
+    page.value = res.number
+    size.value = res.size
+  } finally {
+    loading.value = false
   }
 }
 
-const getStatusClass = (status: License['status']) => {
-  switch (status) {
-    case 'active': return 'bg-[#d4f5d4] text-[#0e888d]'
-    case 'pending': return 'bg-[#fff1d1] text-[#b8860b]'
-    case 'expired': return 'bg-[#ffdddc] text-[#c0392b]'
-  }
+onMounted(async () => {
+  licenseTypes.value = await publicLicensesApi.licenseTypes()
+  await load()
+})
+
+const stats = computed(() => ({
+  total: licenses.value.length,
+  active: licenses.value.filter(l => l.statusLabel === 'active').length,
+  expiring: licenses.value.filter(l => l.statusLabel === 'expiring').length,
+  expired: licenses.value.filter(l => l.statusLabel === 'expired' || l.statusLabel === 'revoked').length,
+}))
+
+function licenseTypeLabel(t: LicenseType) {
+  return licenseTypes.value.find(e => e.value === t)?.labelRu || t
 }
 
-const handleView = (_license: License) => {
-  // TODO: Implement view logic
+function statusLabel(l: License) {
+  return {
+    active: 'Действует',
+    expiring: 'Истекает',
+    expired: 'Истекла',
+    revoked: 'Отозвана',
+  }[l.statusLabel]
 }
 
+function statusClass(l: License) {
+  return {
+    active: 'bg-emerald-100 text-emerald-800',
+    expiring: 'bg-amber-100 text-amber-800',
+    expired: 'bg-gray-100 text-gray-600',
+    revoked: 'bg-rose-100 text-rose-800',
+  }[l.statusLabel]
+}
+
+function formatDate(d?: string) {
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+}
+
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+watch(search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    page.value = 0
+    load()
+  }, 400)
+})
+
+function goto(p: number) {
+  if (p < 0) return
+  const max = Math.ceil(totalElements.value / size.value) - 1
+  if (p > max) return
+  page.value = p
+  load()
+}
 </script>
 
 <template>
-  <div class="py-10 lg:py-[60px]">
-    <!-- Page header with button on same line -->
-    <div class="container-main">
-      <div>
-        <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2 lg:mb-[8px]">
-          {{ $t('publicLicenses.title') }}
-        </h1>
-        <p class="text-base md:text-lg lg:text-[20px] font-medium text-[#415861] mb-6 lg:mb-[30px]">
-          {{ $t('publicLicenses.subtitle') }}
+  <div class="min-h-screen bg-gray-50">
+    <div class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-10">
+      <div class="max-w-6xl mx-auto px-6">
+        <h1 class="text-3xl font-bold mb-2">Реестр лицензий</h1>
+        <p class="text-emerald-100">
+          Публичный реестр лицензий в сфере обращения с отходами Кыргызской Республики.
+          Поиск по номеру, ИНН или наименованию организации.
         </p>
       </div>
     </div>
 
-    <!-- Statistics cards -->
-    <div class="container-main">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-[30px] pb-8 lg:pb-[40px]">
-        <!-- Total -->
-        <div class="bg-white border-2 border-[#e5e5e5] rounded-[30px] p-6 text-center">
-          <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.total }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.totalLicenses') }}</div>
+    <div class="max-w-6xl mx-auto px-6 py-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-gray-500">Всего</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">{{ totalElements }}</div>
         </div>
-        <!-- Active -->
-        <div class="bg-[#fff1d1] rounded-[30px] p-6 text-center">
-          <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.active }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.activeLicenses') }}</div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-emerald-700">Действующих</div>
+          <div class="text-2xl font-bold text-emerald-900 mt-1">{{ stats.active }}</div>
         </div>
-        <!-- Pending -->
-        <div class="bg-[#d4f5e9] rounded-[30px] p-6 text-center">
-          <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.pending }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.pendingLicenses') }}</div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-amber-700">Истекают</div>
+          <div class="text-2xl font-bold text-amber-900 mt-1">{{ stats.expiring }}</div>
         </div>
-        <!-- Expired -->
-        <div class="bg-[#ffdddc] rounded-[30px] p-6 text-center">
-          <div class="text-4xl lg:text-[56px] font-bold text-[#415861] mb-2">{{ stats.expired }}</div>
-          <div class="text-sm lg:text-base font-medium text-[#415861]">{{ $t('publicLicenses.expiredLicenses') }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table section -->
-    <div class="container-main">
-      <!-- Desktop table -->
-      <div class="hidden xl:block">
-        <div class="bg-[#f5f5f5] flex flex-col gap-px">
-          <!-- Table header -->
-          <div class="flex gap-px">
-            <div class="bg-[#f8fafc] flex items-center justify-center px-5 py-4 w-[140px]">
-              <span class="text-[18px] font-medium text-black">№</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center px-5 py-4 w-[200px]">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.organization') }}</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center px-5 py-4 flex-1">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.licenseType') }}</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.issueDate') }}</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.validityPeriod') }}</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[140px]">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.status') }}</span>
-            </div>
-            <div class="bg-[#f8fafc] flex items-center justify-center px-3 py-4 w-[120px]">
-              <span class="text-[18px] font-medium text-black">{{ $t('publicLicenses.actions') }}</span>
-            </div>
-          </div>
-
-          <!-- Table rows -->
-          <div
-            v-for="license in licenses"
-            :key="license.id"
-            class="flex gap-px"
-          >
-            <div class="bg-white flex items-center justify-center px-5 py-4 w-[140px]">
-              <span class="text-[16px] font-medium text-black">{{ license.id }}</span>
-            </div>
-            <div class="bg-white flex items-center px-5 py-4 w-[200px]">
-              <span class="text-[16px] font-medium text-black">{{ license.organization }}</span>
-            </div>
-            <div class="bg-white flex items-center px-5 py-4 flex-1">
-              <span class="text-[16px] font-medium text-black">{{ license.type }}</span>
-            </div>
-            <div class="bg-white flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[16px] font-medium text-black">{{ license.issueDate }}</span>
-            </div>
-            <div class="bg-white flex items-center justify-center px-3 py-4 w-[130px]">
-              <span class="text-[16px] font-medium text-black">{{ license.expiryDate }}</span>
-            </div>
-            <div class="bg-white flex items-center justify-center px-3 py-4 w-[140px]">
-              <span
-                :class="getStatusClass(license.status)"
-                class="text-[12px] font-medium px-3 py-1 rounded-[8px]"
-              >
-                {{ getStatusLabel(license.status) }}
-              </span>
-            </div>
-            <div class="bg-white flex items-center justify-center px-3 py-4 w-[120px]">
-              <button
-                @click="handleView(license)"
-                class="text-[#0e888d] text-[14px] font-medium hover:underline"
-              >
-                {{ $t('publicLicenses.view') }}
-              </button>
-            </div>
-          </div>
+        <div class="bg-gray-100 border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="text-xs text-gray-700">Истекшие / отозваны</div>
+          <div class="text-2xl font-bold text-gray-900 mt-1">{{ stats.expired }}</div>
         </div>
       </div>
 
-      <!-- Mobile/Tablet cards -->
-      <div class="xl:hidden flex flex-col gap-4">
-        <div
-          v-for="license in licenses"
-          :key="license.id"
-          class="bg-white border border-[#f5f5f5] rounded-[20px] p-5 shadow-sm"
-        >
-          <div class="flex items-start justify-between mb-3">
-            <span class="text-[#0e888d] font-bold text-sm">{{ license.id }}</span>
-            <span
-              :class="getStatusClass(license.status)"
-              class="text-[11px] font-medium px-2 py-1 rounded-[6px]"
-            >
-              {{ getStatusLabel(license.status) }}
-            </span>
-          </div>
-          <h3 class="text-[#415861] font-bold text-base mb-2">
-            {{ license.organization }}
-          </h3>
-          <p class="text-[#415861] text-sm mb-3">{{ license.type }}</p>
-          <div class="flex items-center gap-4 text-sm text-[#415861] mb-4">
-            <div>
-              <span class="opacity-60">{{ $t('publicLicenses.issued') }}</span> {{ license.issueDate }}
-            </div>
-            <div>
-              <span class="opacity-60">{{ $t('publicLicenses.until') }}</span> {{ license.expiryDate }}
-            </div>
-          </div>
+      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-4">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Поиск по номеру лицензии (ЛП-2026-0001), ИНН или наименованию…"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+        />
+      </div>
+
+      <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка…</div>
+      <div v-else-if="licenses.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
+        По вашему запросу лицензий не найдено
+      </div>
+      <div v-else class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">№ лицензии</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Организация</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Выдана</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действует до</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Статус</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="l in licenses" :key="l.id" class="hover:bg-gray-50">
+              <td class="px-4 py-3 font-mono font-semibold text-gray-900">{{ l.licenseNumber }}</td>
+              <td class="px-4 py-3">
+                <div class="font-medium">{{ l.applicantName }}</div>
+                <div class="text-xs text-gray-500">ИНН {{ l.applicantInn }}</div>
+              </td>
+              <td class="px-4 py-3">{{ licenseTypeLabel(l.licenseType) }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.issuedAt) }}</td>
+              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.validUntil) }}</td>
+              <td class="px-4 py-3">
+                <span :class="['inline-flex px-2 py-1 text-xs font-medium rounded-full', statusClass(l)]">
+                  {{ statusLabel(l) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="totalElements > size" class="flex items-center justify-between mt-4 px-1">
+        <div class="text-sm text-gray-500">
+          Страница {{ page + 1 }} из {{ Math.ceil(totalElements / size) }}
+        </div>
+        <div class="flex gap-2">
           <button
-            @click="handleView(license)"
-            class="w-full bg-[#0e888d] text-white text-sm font-medium py-2 rounded-[12px] hover:bg-[#0a6d71] transition-colors"
+            @click="goto(page - 1)"
+            :disabled="page === 0"
+            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40"
           >
-            {{ $t('publicLicenses.view') }}
+            ← Назад
+          </button>
+          <button
+            @click="goto(page + 1)"
+            :disabled="page + 1 >= Math.ceil(totalElements / size)"
+            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40"
+          >
+            Вперёд →
           </button>
         </div>
       </div>
+
+      <p class="text-xs text-gray-400 text-center mt-6">
+        Источник: Министерство природных ресурсов, экологии и технического надзора КР.
+        Закон КР № 195 от 19.10.2023 «О лицензионно-разрешительной системе».
+      </p>
     </div>
   </div>
 </template>

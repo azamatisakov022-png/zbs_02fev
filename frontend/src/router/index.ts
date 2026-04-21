@@ -514,7 +514,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/eco-operator/licenses',
-    redirect: '/eco-operator',
+    name: 'eco-operator-licenses',
+    component: () => import('../views/eco-operator/EcoOperatorLicenses.vue'),
+    meta: { requiresAuth: true, role: 'eco-operator' },
   },
   {
     path: '/eco-operator/waste-types',
