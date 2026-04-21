@@ -447,10 +447,36 @@ function onReceiptFile(event: Event) {
           </label>
         </div>
 
-        <div v-if="paymentMode === 'offline'" class="space-y-3 p-4 bg-gray-50 rounded-lg">
+        <div v-if="paymentMode === 'offline'" class="space-y-4 p-4 bg-gray-50 rounded-lg">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Квитанция (скан или фото, до 10 МБ)</label>
-            <input type="file" @change="onReceiptFile" class="text-sm" />
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Квитанция (скан или фото, до 10 МБ) <span class="text-rose-600">*</span>
+            </label>
+            <label
+              :class="[
+                'block cursor-pointer border-2 border-dashed rounded-lg p-6 text-center transition-colors',
+                offlineReceiptFile
+                  ? 'border-emerald-500 bg-emerald-50'
+                  : 'border-gray-300 hover:border-emerald-400 hover:bg-white bg-white'
+              ]"
+            >
+              <div v-if="offlineReceiptFile" class="flex items-center justify-center gap-2">
+                <span class="text-2xl">✓</span>
+                <div class="text-left">
+                  <div class="text-sm font-medium text-emerald-700">{{ offlineReceiptFile.name }}</div>
+                  <div class="text-xs text-gray-500">{{ (offlineReceiptFile.size / 1024).toFixed(0) }} КБ — кликните чтобы заменить</div>
+                </div>
+              </div>
+              <div v-else class="flex flex-col items-center gap-2">
+                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <div class="text-sm font-medium text-gray-700">Нажмите, чтобы выбрать файл</div>
+                <div class="text-xs text-gray-500">или перетащите сюда — PDF, JPG, PNG до 10 МБ</div>
+              </div>
+              <input type="file" accept="application/pdf,image/*" class="hidden" @change="onReceiptFile" />
+            </label>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>

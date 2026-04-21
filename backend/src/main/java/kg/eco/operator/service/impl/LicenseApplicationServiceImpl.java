@@ -120,7 +120,11 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
         }
 
         validateReadyForSubmit(app);
-        validateRequiredDocumentsUploaded(app);
+        // Проверка обязательности документов отключена для демо.
+        // В проде активировать через system_settings.license_require_all_documents=true.
+        if (isDocumentValidationRequired()) {
+            validateRequiredDocumentsUploaded(app);
+        }
 
         LocalDateTime now = LocalDateTime.now();
         int deadlineDays = readIntSetting(DEADLINE_DAYS_SETTING, DEFAULT_DEADLINE_DAYS);
@@ -448,6 +452,17 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
         if (app.getActualAddress() == null || app.getActualAddress().isBlank()) {
             throw new BusinessLogicException("Укажите фактический адрес (Шаг 3)");
         }
+    }
+
+    /**
+     * Флаг из system_settings: требовать ли загрузку всех обязательных документов
+     * при submit. По умолчанию false (для демо и разработки). В продакшене
+     * переключить на true через админку.
+     */
+    private boolean isDocumentValidationRequired() {
+        return systemSettingRepository.findById("license_require_all_documents")
+                .map(s -> "true".equalsIgnoreCase(s.getValue()))
+                .orElse(false);
     }
 
     private void validateRequiredDocumentsUploaded(LicenseApplication app) {
