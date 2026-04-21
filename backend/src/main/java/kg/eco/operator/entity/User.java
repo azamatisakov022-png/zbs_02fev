@@ -2,6 +2,7 @@ package kg.eco.operator.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import kg.eco.operator.entity.enums.BusinessType;
 import kg.eco.operator.entity.enums.RoleEnum;
 import lombok.Data;
 
@@ -29,6 +30,17 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RoleEnum role;
+
+    /**
+     * Тип бизнес-пользователя (только для role=BUSINESS):
+     * PAYER — плательщик утильсбора (существующее поведение);
+     * APPLICANT — заявитель на лицензию (переработчик, полигон и т.п.);
+     * BOTH — редкий случай: и платит, и подаёт на лицензию.
+     * Для не-BUSINESS ролей игнорируется, хранится значение по умолчанию.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_type", nullable = false, length = 10)
+    private BusinessType businessType = BusinessType.PAYER;
 
     @Column(length = 100)
     private String email;
