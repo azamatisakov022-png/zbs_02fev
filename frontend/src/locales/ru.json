@@ -126,7 +126,9 @@
       "normatives": "Нормативы и ставки",
       "account": "Лицевой счёт",
       "refunds": "Возврат утильсбора",
-      "profile": "Профиль компании"
+      "profile": "Профиль компании",
+      "licenseApplications": "Мои заявки",
+      "myLicenses": "Мои лицензии"
     },
     "ecoOperator": {
       "dashboard": "Главная",
@@ -142,7 +144,8 @@
       "payers": "Реестр плательщиков",
       "profile": "Профили компаний",
       "contests": "Конкурсы",
-      "contestApplications": "Заявки на конкурсы"
+      "contestApplications": "Заявки на конкурсы",
+      "licenses": "Реестр лицензий"
     },
     "employee": {
       "dashboard": "Главная",

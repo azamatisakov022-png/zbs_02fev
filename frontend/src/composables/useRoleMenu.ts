@@ -21,9 +21,15 @@ import { authStore } from '../stores/auth'
  */
 export function useBusinessMenu() {
   const { t } = useI18n()
-  const roleTitle = computed(() => t('roles.business'))
 
   const bt = computed(() => authStore.state.user?.businessType || 'payer')
+
+  // Название роли в сайдбаре зависит от типа: APPLICANT = «Заявитель».
+  const roleTitle = computed(() => {
+    if (bt.value === 'applicant') return 'Заявитель'
+    if (bt.value === 'both') return 'Плательщик и заявитель'
+    return t('roles.business')
+  })
 
   const commonItems = computed(() => [
     { id: 'dashboard', label: t('nav.business.dashboard'), icon: icons.dashboard, route: '/business' },

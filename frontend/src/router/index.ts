@@ -686,6 +686,12 @@ router.beforeEach((to, _from, next) => {
     authStore.logout()
   }
 
+  // Для BUSINESS с business_type=APPLICANT дашборд /business не имеет смысла
+  // (разделы утильсбора пустые) — редиректим на список заявок на лицензию.
+  if (to.path === '/business' && authStore.state.user?.businessType === 'applicant') {
+    return next('/business/license-applications')
+  }
+
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated.value) {
       return next({ path: '/login', query: { redirect: to.fullPath } })
