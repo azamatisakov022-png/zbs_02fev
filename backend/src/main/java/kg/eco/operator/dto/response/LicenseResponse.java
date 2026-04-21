@@ -54,4 +54,12 @@ public class LicenseResponse {
 
     /** Вычисляемое: "active" | "expiring" (30 дней до конца) | "expired" | "revoked". */
     private String statusLabel;
+
+    /** true если сотрудник уже загрузил сканированный PDF подписанной лицензии. */
+    private Boolean hasDocument;
+
+    private String documentFileName;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime documentUploadedAt;
 }

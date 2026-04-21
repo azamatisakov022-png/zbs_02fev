@@ -194,6 +194,23 @@ export const licenseRegistryApi = {
     })
     return res.data
   },
+
+  /** Загрузка подписанной PDF-лицензии сотрудником МПРЭТН. */
+  async uploadDocument(licenseId: number, file: File): Promise<License> {
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await api.post<License>(`/licenses/${licenseId}/document`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
+  /** Скачивание PDF-лицензии. Работает для владельца (BUSINESS),
+   *  сотрудников МПРЭТН, а также ECO_OPERATOR. */
+  async downloadDocument(licenseId: number): Promise<Blob> {
+    const res = await api.get<Blob>(`/licenses/${licenseId}/document`, { responseType: 'blob' })
+    return res.data
+  },
 }
 
 // ─── Публичный реестр (без авторизации) ──────────────────────────────
@@ -233,5 +250,14 @@ export const publicLicensesApi = {
       params: licenseType ? { licenseType } : {},
     })
     return data
+  },
+
+  /** Публичное скачивание PDF-лицензии по номеру (без авторизации). */
+  async downloadDocumentByNumber(licenseNumber: string): Promise<Blob> {
+    const res = await api.get<Blob>(
+      `/public/licenses/${encodeURIComponent(licenseNumber)}/document`,
+      { responseType: 'blob' },
+    )
+    return res.data
   },
 }

@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { licenseStore } from '../../stores/licenses'
-import { adminApplicationApi } from '../../api/licenses'
+import { adminApplicationApi, licenseRegistryApi } from '../../api/licenses'
 import type {
+  License,
   LicenseApplication,
   LicenseApplicationStatus,
   RejectionReason,
@@ -16,6 +17,8 @@ const router = useRouter()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 const app = ref<LicenseApplication | null>(null)
+const license = ref<License | null>(null)
+const uploadingDoc = ref(false)
 const loading = ref(true)
 const busy = ref(false)
 const error = ref<string | null>(null)
@@ -40,10 +43,48 @@ async function load() {
     const d = new Date()
     d.setFullYear(d.getFullYear() + 3)
     approveForm.value.validUntil = d.toISOString().slice(0, 10)
+    // Если лицензия уже выдана — подгружаем её, чтобы знать про загруженный PDF
+    if (app.value?.licenseId) {
+      try { license.value = await licenseRegistryApi.getById(app.value.licenseId) } catch {}
+    }
   } catch (e: unknown) {
     error.value = (e as Error).message || 'Не удалось загрузить заявку'
   } finally {
     loading.value = false
+  }
+}
+
+/** Загрузка сотрудником подписанного PDF-скана. */
+async function onUploadLicenseDocument(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0 || !license.value) return
+  const file = input.files[0]
+  uploadingDoc.value = true
+  error.value = null
+  try {
+    license.value = await licenseRegistryApi.uploadDocument(license.value.id, file)
+    success.value = 'Подписанная лицензия загружена. Заявитель может её скачать.'
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } }; message?: string }
+    error.value = err.response?.data?.message || err.message || 'Не удалось загрузить файл'
+  } finally {
+    uploadingDoc.value = false
+    input.value = ''
+  }
+}
+
+async function downloadLicense() {
+  if (!license.value) return
+  try {
+    const blob = await licenseRegistryApi.downloadDocument(license.value.id)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = license.value.documentFileName || license.value.licenseNumber + '.pdf'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    error.value = 'Не удалось скачать файл'
   }
 }
 
@@ -326,10 +367,51 @@ const canConfirmManualPayment = computed(
         </div>
 
         <!-- Статус-блок: одобрено -->
-        <div v-if="app.status === 'approved' && app.licenseNumber" class="bg-emerald-50 border border-emerald-200 rounded-lg p-6 text-center">
-          <div class="text-2xl mb-2">🎉</div>
-          <div class="text-lg font-semibold text-emerald-800">Лицензия выдана</div>
-          <div class="text-2xl font-bold text-emerald-900 my-2">{{ app.licenseNumber }}</div>
+        <div v-if="app.status === 'approved' && app.licenseNumber" class="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
+          <div class="text-center">
+            <div class="text-2xl mb-2">🎉</div>
+            <div class="text-lg font-semibold text-emerald-800">Лицензия выдана</div>
+            <div class="text-2xl font-bold text-emerald-900 my-2">{{ app.licenseNumber }}</div>
+          </div>
+
+          <!-- Блок загрузки/скачивания подписанной копии -->
+          <div class="mt-4 pt-4 border-t border-emerald-200">
+            <div class="text-sm font-medium text-emerald-900 mb-2">📄 Электронная копия подписанной лицензии</div>
+
+            <div v-if="license?.hasDocument" class="flex items-center justify-between bg-white rounded-md p-3 border border-emerald-200">
+              <div class="text-sm">
+                <div class="font-medium text-gray-900">✓ {{ license.documentFileName }}</div>
+                <div class="text-xs text-gray-500">
+                  Загружено: {{ new Date(license.documentUploadedAt!).toLocaleString('ru-RU') }}
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  @click="downloadLicense"
+                  class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium"
+                >
+                  Скачать
+                </button>
+                <label class="cursor-pointer px-3 py-1.5 border border-gray-300 hover:bg-gray-50 rounded-md text-sm">
+                  Заменить
+                  <input type="file" class="hidden" accept="application/pdf,image/*"
+                         :disabled="uploadingDoc" @change="onUploadLicenseDocument" />
+                </label>
+              </div>
+            </div>
+
+            <div v-else class="bg-white rounded-md p-3 border border-dashed border-emerald-300">
+              <p class="text-sm text-gray-600 mb-3">
+                Распечатайте бланк, подпишите у замминистра, поставьте печать, отсканируйте
+                и загрузите PDF — заявитель сможет скачать подписанную копию из своего ЛК.
+              </p>
+              <label class="inline-block cursor-pointer px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium">
+                {{ uploadingDoc ? 'Загрузка…' : 'Загрузить подписанный PDF' }}
+                <input type="file" class="hidden" accept="application/pdf,image/*"
+                       :disabled="uploadingDoc" @change="onUploadLicenseDocument" />
+              </label>
+            </div>
+          </div>
         </div>
 
         <!-- Статус-блок: отклонено -->

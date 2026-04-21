@@ -142,6 +142,11 @@ export interface License {
   revocationReason?: string
   issuedByName?: string
   statusLabel: 'active' | 'expiring' | 'expired' | 'revoked'
+
+  /** true если сотрудник МПРЭТН уже загрузил подписанный PDF-скан лицензии. */
+  hasDocument?: boolean
+  documentFileName?: string
+  documentUploadedAt?: string
 }
 
 export interface PaymentIntent {

@@ -114,7 +114,10 @@ public class LicenseMapper {
                 .revokedAt(l.getRevokedAt())
                 .revocationReason(l.getRevocationReason())
                 .issuedByName(l.getIssuedBy() != null ? l.getIssuedBy().getCompanyName() : null)
-                .statusLabel(computeStatusLabel(l));
+                .statusLabel(computeStatusLabel(l))
+                .hasDocument(l.getLicenseDocumentObjectKey() != null)
+                .documentFileName(l.getLicenseDocumentFileName())
+                .documentUploadedAt(l.getLicenseDocumentUploadedAt());
         return b.build();
     }
 

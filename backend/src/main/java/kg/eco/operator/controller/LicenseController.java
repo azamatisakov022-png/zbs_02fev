@@ -5,6 +5,7 @@ import kg.eco.operator.entity.enums.LicenseType;
 import kg.eco.operator.service.LicenseService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +14,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +78,32 @@ public class LicenseController {
                         "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encoded)
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(bytes);
+    }
+
+    // ─── Загрузка и скачивание электронной копии подписанной лицензии ───
+
+    @PostMapping(value = "/{id}/document", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'MINISTRY', 'ADMIN')")
+    public ResponseEntity<LicenseResponse> uploadDocument(
+            @PathVariable Long id,
+            @RequestPart("file") MultipartFile file,
+            Authentication auth) {
+        return ResponseEntity.ok(licenseService.uploadDocument(id, file, auth.getName()));
+    }
+
+    @GetMapping("/{id}/document")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<InputStreamResource> downloadDocument(
+            @PathVariable Long id,
+            Authentication auth) {
+        var result = licenseService.downloadDocument(id, auth.getName());
+        String filename = result.fileName();
+        String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encoded)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(result.stream()));
     }
 
     @Data

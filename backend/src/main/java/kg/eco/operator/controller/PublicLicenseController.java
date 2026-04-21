@@ -7,10 +7,13 @@ import kg.eco.operator.entity.enums.LicenseType;
 import kg.eco.operator.entity.enums.RejectionReason;
 import kg.eco.operator.service.LicenseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +53,19 @@ public class PublicLicenseController {
     @GetMapping("/licenses/{licenseNumber:.+}")
     public ResponseEntity<LicenseResponse> getByNumber(@PathVariable String licenseNumber) {
         return ResponseEntity.ok(licenseService.getByNumber(licenseNumber));
+    }
+
+    /** Публичное скачивание PDF-скана лицензии по номеру — для проверки подлинности. */
+    @GetMapping("/licenses/{licenseNumber:.+}/document")
+    public ResponseEntity<InputStreamResource> downloadDocument(@PathVariable String licenseNumber) {
+        var result = licenseService.downloadDocumentByNumberPublic(licenseNumber);
+        String filename = result.fileName();
+        String encoded = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + encoded)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(result.stream()));
     }
 
     // ─── справочники (enum'ы) ───

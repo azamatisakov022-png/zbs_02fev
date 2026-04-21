@@ -5,11 +5,13 @@ import kg.eco.operator.dto.response.LicenseResponse;
 import kg.eco.operator.entity.License;
 import kg.eco.operator.entity.User;
 import kg.eco.operator.entity.enums.LicenseType;
+import kg.eco.operator.entity.enums.RoleEnum;
 import kg.eco.operator.exception.BusinessLogicException;
 import kg.eco.operator.exception.ResourceNotFoundException;
 import kg.eco.operator.exception.UnauthorizedException;
 import kg.eco.operator.repository.LicenseRepository;
 import kg.eco.operator.repository.UserRepository;
+import kg.eco.operator.service.FileStorageService;
 import kg.eco.operator.service.LicenseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
@@ -35,9 +38,13 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class LicenseServiceImpl implements LicenseService {
 
+    private static final String MINIO_FOLDER = "licenses/documents";
+    private static final long MAX_DOC_SIZE = 20L * 1024 * 1024; // 20 МБ — PDF-сканы могут быть крупнее
+
     private final LicenseRepository licenseRepository;
     private final UserRepository userRepository;
     private final LicenseMapper mapper;
+    private final FileStorageService fileStorageService;
 
     @Override
     public List<LicenseResponse> listAll(LicenseType typeFilter) {
@@ -152,5 +159,103 @@ public class LicenseServiceImpl implements LicenseService {
         String safe = v.replace("\"", "\"\"").replace("\n", " ").replace("\r", " ");
         if (safe.contains(";") || safe.contains("\"")) return "\"" + safe + "\"";
         return safe;
+    }
+
+    // ─── Загрузка и скачивание PDF подписанной лицензии ───
+
+    @Override
+    @Transactional
+    public LicenseResponse uploadDocument(Long licenseId, MultipartFile file, String actorInn) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessLogicException("Файл не передан");
+        }
+        if (file.getSize() > MAX_DOC_SIZE) {
+            throw new BusinessLogicException("Размер файла превышает 20 МБ");
+        }
+        User actor = userRepository.findByInn(actorInn)
+                .orElseThrow(() -> new UnauthorizedException("Пользователь не найден: " + actorInn));
+        if (actor.getRole() != RoleEnum.EMPLOYEE
+                && actor.getRole() != RoleEnum.MINISTRY
+                && actor.getRole() != RoleEnum.ADMIN) {
+            throw new UnauthorizedException("Загружать документ лицензии могут только сотрудники МПРЭТН");
+        }
+
+        License license = licenseRepository.findById(licenseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Лицензия не найдена: " + licenseId));
+
+        // Если ранее уже был загружен — удаляем старый файл
+        if (license.getLicenseDocumentObjectKey() != null) {
+            try { fileStorageService.delete(license.getLicenseDocumentObjectKey()); }
+            catch (Exception e) {
+                log.warn("Failed to delete old license document {}: {}",
+                        license.getLicenseDocumentObjectKey(), e.getMessage());
+            }
+        }
+
+        String objectKey = fileStorageService.upload(file, MINIO_FOLDER);
+        license.setLicenseDocumentObjectKey(objectKey);
+        license.setLicenseDocumentFileName(file.getOriginalFilename());
+        license.setLicenseDocumentUploadedAt(LocalDateTime.now());
+        license.setLicenseDocumentUploadedBy(actor);
+        licenseRepository.save(license);
+
+        log.info("License document uploaded: licenseNumber={}, by={}, file={}",
+                license.getLicenseNumber(), actorInn, file.getOriginalFilename());
+        return mapper.toResponse(license);
+    }
+
+    @Override
+    public LicenseDocumentDownload downloadDocument(Long licenseId, String actorInn) {
+        License license = licenseRepository.findById(licenseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Лицензия не найдена: " + licenseId));
+
+        User actor = userRepository.findByInn(actorInn)
+                .orElseThrow(() -> new UnauthorizedException("Пользователь не найден: " + actorInn));
+
+        boolean isStaff = actor.getRole() == RoleEnum.EMPLOYEE
+                || actor.getRole() == RoleEnum.MINISTRY
+                || actor.getRole() == RoleEnum.ADMIN
+                || actor.getRole() == RoleEnum.ECO_OPERATOR;
+        boolean isOwner = license.getApplicantInn() != null
+                && license.getApplicantInn().equals(actor.getInn());
+
+        if (!isStaff && !isOwner) {
+            throw new UnauthorizedException("Доступ к этой лицензии запрещён");
+        }
+
+        return fetchFile(license);
+    }
+
+    @Override
+    public LicenseDocumentDownload downloadDocumentByNumberPublic(String licenseNumber) {
+        License license = licenseRepository.findByLicenseNumber(licenseNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Лицензия не найдена: " + licenseNumber));
+
+        // Для публичного доступа — только опубликованные и не отозванные.
+        if (!Boolean.TRUE.equals(license.getIsPublished()) || Boolean.TRUE.equals(license.getIsRevoked())) {
+            throw new ResourceNotFoundException("Лицензия недоступна для публичного скачивания: " + licenseNumber);
+        }
+        return fetchFile(license);
+    }
+
+    private LicenseDocumentDownload fetchFile(License license) {
+        if (license.getLicenseDocumentObjectKey() == null) {
+            throw new ResourceNotFoundException(
+                    "Электронная копия лицензии ещё не загружена сотрудником МПРЭТН");
+        }
+        try {
+            var stream = fileStorageService.download(license.getLicenseDocumentObjectKey());
+            return new LicenseDocumentDownload(
+                    license.getLicenseDocumentFileName() != null
+                            ? license.getLicenseDocumentFileName()
+                            : license.getLicenseNumber() + ".pdf",
+                    stream,
+                    -1 // size unknown from MinIO stream; Content-Length будет transfer-encoding chunked
+            );
+        } catch (Exception e) {
+            log.error("Failed to fetch license document for {}: {}",
+                    license.getLicenseNumber(), e.getMessage());
+            throw new BusinessLogicException("Не удалось получить файл лицензии: " + e.getMessage());
+        }
     }
 }

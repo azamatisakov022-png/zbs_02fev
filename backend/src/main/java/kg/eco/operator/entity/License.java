@@ -84,6 +84,20 @@ public class License {
     @JoinColumn(name = "issued_by_id")
     private User issuedBy;
 
+    // ─── скан подписанной лицензии (загружается сотрудником после выдачи) ───
+    @Column(name = "license_document_object_key", length = 255)
+    private String licenseDocumentObjectKey;
+
+    @Column(name = "license_document_file_name", length = 255)
+    private String licenseDocumentFileName;
+
+    @Column(name = "license_document_uploaded_at")
+    private LocalDateTime licenseDocumentUploadedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "license_document_uploaded_by_id")
+    private User licenseDocumentUploadedBy;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
