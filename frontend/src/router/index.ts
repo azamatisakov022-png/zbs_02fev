@@ -303,6 +303,44 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/business/BusinessDeclarations.vue'),
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.businessDeclarations' },
   },
+  // ─── Модуль «Лицензии» для заявителя (BUSINESS с business_type=APPLICANT|BOTH) ───
+  {
+    path: '/business/license-applications',
+    name: 'business-license-applications',
+    component: () => import('../views/business/BusinessLicenseApplications.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  {
+    path: '/business/license-applications/new',
+    name: 'business-license-application-new',
+    component: () => import('../views/business/BusinessLicenseApplicationForm.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  {
+    path: '/business/license-applications/:id/edit',
+    name: 'business-license-application-edit',
+    component: () => import('../views/business/BusinessLicenseApplicationForm.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  {
+    path: '/business/license-applications/:id',
+    name: 'business-license-application-detail',
+    component: () => import('../views/business/BusinessLicenseApplicationDetail.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  {
+    path: '/business/my-licenses',
+    name: 'business-my-licenses',
+    component: () => import('../views/business/BusinessMyLicenses.vue'),
+    meta: { requiresAuth: true, role: 'business' },
+  },
+  // Mock-страница платёжного шлюза (только для MOCK-провайдера)
+  {
+    path: '/mock-payment/:orderId',
+    name: 'mock-payment',
+    component: () => import('../views/MockPaymentView.vue'),
+    meta: { requiresAuth: false },
+  },
   {
     path: '/business/payments',
     redirect: '/business/account',
