@@ -208,7 +208,18 @@ public class LicenseServiceImpl implements LicenseService {
     public LicenseDocumentDownload downloadDocument(Long licenseId, String actorInn) {
         License license = licenseRepository.findById(licenseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Лицензия не найдена: " + licenseId));
+        ensureCanAccess(license, actorInn);
+        return fetchFile(license);
+    }
 
+    /**
+     * Кто может видеть и скачивать лицензию:
+     *   - сотрудники МПРЭТН (EMPLOYEE/MINISTRY/ADMIN) — любую;
+     *   - ЭкоОператор (ECO_OPERATOR) — любую (read-only реестр);
+     *   - BUSINESS — если INN совпадает с applicant_inn, ИЛИ если он
+     *     подавал заявку на эту лицензию (submitted_by).
+     */
+    private void ensureCanAccess(License license, String actorInn) {
         User actor = userRepository.findByInn(actorInn)
                 .orElseThrow(() -> new UnauthorizedException("Пользователь не найден: " + actorInn));
 
@@ -216,14 +227,17 @@ public class LicenseServiceImpl implements LicenseService {
                 || actor.getRole() == RoleEnum.MINISTRY
                 || actor.getRole() == RoleEnum.ADMIN
                 || actor.getRole() == RoleEnum.ECO_OPERATOR;
-        boolean isOwner = license.getApplicantInn() != null
-                && license.getApplicantInn().equals(actor.getInn());
+        if (isStaff) return;
 
-        if (!isStaff && !isOwner) {
+        boolean isOwnerByInn = license.getApplicantInn() != null
+                && license.getApplicantInn().equals(actor.getInn());
+        boolean isSubmitter = license.getApplication() != null
+                && license.getApplication().getSubmittedBy() != null
+                && license.getApplication().getSubmittedBy().getId().equals(actor.getId());
+
+        if (!isOwnerByInn && !isSubmitter) {
             throw new UnauthorizedException("Доступ к этой лицензии запрещён");
         }
-
-        return fetchFile(license);
     }
 
     @Override

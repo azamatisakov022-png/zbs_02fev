@@ -5,14 +5,13 @@ import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { licenseStore } from '../../stores/licenses'
 import { applicantApi, licenseRegistryApi } from '../../api/licenses'
-import type { License, LicenseApplication, LicenseApplicationStatus } from '../../types/licenses'
+import type { LicenseApplication, LicenseApplicationStatus } from '../../types/licenses'
 
 const route = useRoute()
 const router = useRouter()
 const { roleTitle, menuItems } = useBusinessMenu()
 
 const app = ref<LicenseApplication | null>(null)
-const license = ref<License | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const reopening = ref(false)
@@ -25,10 +24,6 @@ async function load() {
   try {
     await licenseStore.loadEnums()
     app.value = await applicantApi.getMyApplication(appId.value)
-    // Если лицензия уже выдана — подгружаем её, чтобы знать про загруженный PDF
-    if (app.value?.licenseId) {
-      try { license.value = await licenseRegistryApi.getById(app.value.licenseId) } catch {}
-    }
   } catch (e: unknown) {
     error.value = (e as Error).message || 'Не удалось загрузить заявку'
   } finally {
@@ -37,13 +32,13 @@ async function load() {
 }
 
 async function downloadLicense() {
-  if (!license.value) return
+  if (!app.value?.licenseId) return
   try {
-    const blob = await licenseRegistryApi.downloadDocument(license.value.id)
+    const blob = await licenseRegistryApi.downloadDocument(app.value.licenseId)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = license.value.documentFileName || license.value.licenseNumber + '.pdf'
+    a.download = app.value.licenseDocumentFileName || (app.value.licenseNumber || 'license') + '.pdf'
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   } catch (e) {
@@ -131,11 +126,11 @@ function formatDate(d?: string) {
           </div>
 
           <!-- Электронная копия подписанной лицензии -->
-          <div v-if="license" class="mt-4 pt-4 border-t border-emerald-200">
-            <div v-if="license.hasDocument" class="flex items-center justify-between bg-white rounded-md p-3 border border-emerald-200">
+          <div class="mt-4 pt-4 border-t border-emerald-200">
+            <div v-if="app.licenseHasDocument" class="flex items-center justify-between bg-white rounded-md p-3 border border-emerald-200">
               <div class="text-sm">
                 <div class="font-medium text-gray-900">📄 Подписанная лицензия (PDF)</div>
-                <div class="text-xs text-gray-500">{{ license.documentFileName }}</div>
+                <div class="text-xs text-gray-500">{{ app.licenseDocumentFileName }}</div>
               </div>
               <button
                 @click="downloadLicense"

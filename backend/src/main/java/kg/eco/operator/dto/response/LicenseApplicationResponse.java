@@ -75,6 +75,8 @@ public class LicenseApplicationResponse {
     // выданная лицензия (если APPROVED)
     private Long licenseId;
     private String licenseNumber;
+    private Boolean licenseHasDocument;
+    private String licenseDocumentFileName;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;

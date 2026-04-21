@@ -78,7 +78,10 @@ public class LicenseMapper {
         }
 
         if (license != null) {
-            b.licenseId(license.getId()).licenseNumber(license.getLicenseNumber());
+            b.licenseId(license.getId())
+                    .licenseNumber(license.getLicenseNumber())
+                    .licenseHasDocument(license.getLicenseDocumentObjectKey() != null)
+                    .licenseDocumentFileName(license.getLicenseDocumentFileName());
         }
 
         return b.build();

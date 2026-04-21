@@ -117,6 +117,8 @@ export interface LicenseApplication {
 
   licenseId?: number
   licenseNumber?: string
+  licenseHasDocument?: boolean
+  licenseDocumentFileName?: string
 
   createdAt: string
   updatedAt: string

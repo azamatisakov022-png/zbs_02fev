@@ -6,7 +6,6 @@ import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import { licenseStore } from '../../stores/licenses'
 import { adminApplicationApi, licenseRegistryApi } from '../../api/licenses'
 import type {
-  License,
   LicenseApplication,
   LicenseApplicationStatus,
   RejectionReason,
@@ -17,7 +16,6 @@ const router = useRouter()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 const app = ref<LicenseApplication | null>(null)
-const license = ref<License | null>(null)
 const uploadingDoc = ref(false)
 const loading = ref(true)
 const busy = ref(false)
@@ -43,10 +41,6 @@ async function load() {
     const d = new Date()
     d.setFullYear(d.getFullYear() + 3)
     approveForm.value.validUntil = d.toISOString().slice(0, 10)
-    // Если лицензия уже выдана — подгружаем её, чтобы знать про загруженный PDF
-    if (app.value?.licenseId) {
-      try { license.value = await licenseRegistryApi.getById(app.value.licenseId) } catch {}
-    }
   } catch (e: unknown) {
     error.value = (e as Error).message || 'Не удалось загрузить заявку'
   } finally {
@@ -57,12 +51,13 @@ async function load() {
 /** Загрузка сотрудником подписанного PDF-скана. */
 async function onUploadLicenseDocument(event: Event) {
   const input = event.target as HTMLInputElement
-  if (!input.files || input.files.length === 0 || !license.value) return
+  if (!input.files || input.files.length === 0 || !app.value?.licenseId) return
   const file = input.files[0]
   uploadingDoc.value = true
   error.value = null
   try {
-    license.value = await licenseRegistryApi.uploadDocument(license.value.id, file)
+    await licenseRegistryApi.uploadDocument(app.value.licenseId, file)
+    await load() // обновим app.licenseHasDocument
     success.value = 'Подписанная лицензия загружена. Заявитель может её скачать.'
   } catch (e: unknown) {
     const err = e as { response?: { data?: { message?: string } }; message?: string }
@@ -74,13 +69,13 @@ async function onUploadLicenseDocument(event: Event) {
 }
 
 async function downloadLicense() {
-  if (!license.value) return
+  if (!app.value?.licenseId) return
   try {
-    const blob = await licenseRegistryApi.downloadDocument(license.value.id)
+    const blob = await licenseRegistryApi.downloadDocument(app.value.licenseId)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = license.value.documentFileName || license.value.licenseNumber + '.pdf'
+    a.download = app.value.licenseDocumentFileName || (app.value.licenseNumber || 'license') + '.pdf'
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   } catch (e) {
@@ -378,12 +373,10 @@ const canConfirmManualPayment = computed(
           <div class="mt-4 pt-4 border-t border-emerald-200">
             <div class="text-sm font-medium text-emerald-900 mb-2">📄 Электронная копия подписанной лицензии</div>
 
-            <div v-if="license?.hasDocument" class="flex items-center justify-between bg-white rounded-md p-3 border border-emerald-200">
+            <div v-if="app.licenseHasDocument" class="flex items-center justify-between bg-white rounded-md p-3 border border-emerald-200">
               <div class="text-sm">
-                <div class="font-medium text-gray-900">✓ {{ license.documentFileName }}</div>
-                <div class="text-xs text-gray-500">
-                  Загружено: {{ new Date(license.documentUploadedAt!).toLocaleString('ru-RU') }}
-                </div>
+                <div class="font-medium text-gray-900">✓ {{ app.licenseDocumentFileName }}</div>
+                <div class="text-xs text-gray-500">Файл загружен. Заявитель может скачать.</div>
               </div>
               <div class="flex gap-2">
                 <button
