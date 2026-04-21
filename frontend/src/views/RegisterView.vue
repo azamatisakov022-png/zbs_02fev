@@ -229,6 +229,9 @@ const activityTypes = computed(() => [
   { value: 'producer', label: t('register.activityTypes.producer') },
   { value: 'both', label: t('register.activityTypes.both') },
   { value: 'recycler', label: t('register.activityTypes.recycler') },
+  // Смешанный — плательщик утильсбора, который также сам перерабатывает свои товары.
+  // Редкий сценарий (BusinessType=BOTH на бэке).
+  { value: 'mixed', label: t('register.activityTypes.mixed') || 'Смешанный (импортёр/производитель + переработчик)' },
 ])
 
 const formData = reactive({
@@ -478,6 +481,32 @@ const isSubmitting = ref(false)
 const isSuccess = ref(false)
 const registrationNumber = ref('')
 
+/**
+ * Маппинг activityType фронт-формы → businessType + PayerCategory бэка.
+ *   importer / producer / both → PAYER (плательщик утильсбора)
+ *   recycler                   → APPLICANT (только лицензия)
+ *   mixed                      → BOTH (редкий гибрид: платит + перерабатывает сам)
+ */
+function mapActivityToBusinessType(activityType: string): {
+  businessType: 'payer' | 'applicant' | 'both'
+  payerCategory: 'importer' | 'producer' | 'importer_producer' | null
+} {
+  switch (activityType) {
+    case 'recycler':
+      return { businessType: 'applicant', payerCategory: null }
+    case 'importer':
+      return { businessType: 'payer', payerCategory: 'importer' }
+    case 'producer':
+      return { businessType: 'payer', payerCategory: 'producer' }
+    case 'both':
+      return { businessType: 'payer', payerCategory: 'importer_producer' }
+    case 'mixed':
+      return { businessType: 'both', payerCategory: 'importer_producer' }
+    default:
+      return { businessType: 'payer', payerCategory: 'importer' }
+  }
+}
+
 const submitRegistration = async () => {
   if (!formData.confirmData) {
     toastStore.show({ type: 'warning', title: t('register.toast.confirmDataTitle'), message: t('register.toast.confirmDataMessage') })
@@ -488,11 +517,35 @@ const submitRegistration = async () => {
     return
   }
   isSubmitting.value = true
-  await new Promise(resolve => setTimeout(resolve, 2000))
-  const num = String(Math.floor(Math.random() * 9000) + 1000)
-  registrationNumber.value = `РЕГ-2026-${num}`
-  isSubmitting.value = false
-  isSuccess.value = true
+
+  try {
+    const { businessType, payerCategory } = mapActivityToBusinessType(formData.activityType)
+    const payload = {
+      inn: formData.inn,
+      companyName: formData.fullName || formData.shortName || formData.companyName,
+      legalForm: formData.orgType || 'ОсОО',
+      category: payerCategory,
+      businessType,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password || 'changeme123',
+    }
+    const response = await api.post('/auth/register', payload)
+    const num = response.data?.user?.id
+      ? String(response.data.user.id).padStart(4, '0')
+      : String(Math.floor(Math.random() * 9000) + 1000)
+    registrationNumber.value = `РЕГ-2026-${num}`
+    isSuccess.value = true
+  } catch (e: unknown) {
+    const err = e as { response?: { data?: { message?: string } }; message?: string }
+    toastStore.show({
+      type: 'error',
+      title: t('register.toast.errorTitle') || 'Ошибка регистрации',
+      message: err.response?.data?.message || err.message || 'Не удалось отправить данные',
+    })
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 const getOrgTypeLabel = (value: string) => {

@@ -91,36 +91,53 @@ public class AuthServiceImpl implements AuthService {
         company.setPhone(request.getPhone());
         company = companyRepository.save(company);
 
+        // Определяем тип бизнес-пользователя.
+        // PAYER — плательщик утильсбора (по умолчанию, существующее поведение).
+        // APPLICANT — заявитель на лицензию (переработчик и т.п., не платит утильсбор).
+        // BOTH — редкий гибрид.
+        kg.eco.operator.entity.enums.BusinessType businessType = request.getBusinessType() != null
+                ? request.getBusinessType()
+                : kg.eco.operator.entity.enums.BusinessType.PAYER;
+
         // Create user
         User user = new User();
         user.setInn(request.getInn());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setCompanyName(request.getCompanyName());
         user.setRole(RoleEnum.BUSINESS);
+        user.setBusinessType(businessType);
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setCompany(company);
         user = userRepository.save(user);
 
-        // Create payer record
-        Payer payer = new Payer();
-        payer.setCompany(company);
-        payer.setCategory(request.getCategory() != null ? request.getCategory() : PayerCategory.IMPORTER);
-        payer.setRegistrationDate(LocalDate.now());
-        payer.setReportingStatus(ReportingStatus.ACTIVE);
-        payer.setSettlementStatus(SettlementStatus.SETTLED);
-        payer.setSystemStatus(SystemStatus.ACTIVE);
-        payer.setPaymentStatus(PaymentStatus.UNPAID);
-        payerRepository.save(payer);
+        // Create payer record — только для PAYER и BOTH.
+        // APPLICANT не платит утильсбор и Payer-запись ему не создаётся.
+        boolean needPayerRecord = businessType == kg.eco.operator.entity.enums.BusinessType.PAYER
+                || businessType == kg.eco.operator.entity.enums.BusinessType.BOTH;
 
-        // Create account
-        Account account = new Account();
-        account.setCompany(company);
-        account.setBalance(BigDecimal.ZERO);
-        account.setTotalCharged(BigDecimal.ZERO);
-        account.setTotalPaid(BigDecimal.ZERO);
-        account.setTotalOffset(BigDecimal.ZERO);
-        accountRepository.save(account);
+        if (needPayerRecord) {
+            Payer payer = new Payer();
+            payer.setCompany(company);
+            payer.setCategory(request.getCategory() != null ? request.getCategory() : PayerCategory.IMPORTER);
+            payer.setRegistrationDate(LocalDate.now());
+            payer.setReportingStatus(ReportingStatus.ACTIVE);
+            payer.setSettlementStatus(SettlementStatus.SETTLED);
+            payer.setSystemStatus(SystemStatus.ACTIVE);
+            payer.setPaymentStatus(PaymentStatus.UNPAID);
+            payerRepository.save(payer);
+
+            // Create account — также только для платящих
+            Account account = new Account();
+            account.setCompany(company);
+            account.setBalance(BigDecimal.ZERO);
+            account.setTotalCharged(BigDecimal.ZERO);
+            account.setTotalPaid(BigDecimal.ZERO);
+            account.setTotalOffset(BigDecimal.ZERO);
+            accountRepository.save(account);
+        } else {
+            log.info("APPLICANT-пользователь зарегистрирован без Payer-записи: {}", request.getInn());
+        }
 
         // Если компания была выявлена через ГТС/ГНС — обновляем статус
         detectedCompanyRepository.findByInn(request.getInn()).ifPresent(detected -> {

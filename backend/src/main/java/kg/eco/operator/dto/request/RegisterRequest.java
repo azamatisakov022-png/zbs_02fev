@@ -3,6 +3,7 @@ package kg.eco.operator.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import kg.eco.operator.entity.enums.BusinessType;
 import kg.eco.operator.entity.enums.PayerCategory;
 import lombok.Data;
 
@@ -20,6 +21,14 @@ public class RegisterRequest {
     private String legalForm;
 
     private PayerCategory category;
+
+    /**
+     * Тип бизнес-пользователя: PAYER | APPLICANT | BOTH.
+     * Если не указан — по умолчанию PAYER (существующее поведение).
+     * Определяется фронтом на основании activityType (importer/producer/both → PAYER,
+     * recycler → APPLICANT, смешанный → BOTH).
+     */
+    private BusinessType businessType;
 
     @NotBlank(message = "Email обязателен")
     @Email(message = "Некорректный формат email")
