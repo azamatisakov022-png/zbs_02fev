@@ -110,7 +110,7 @@ async function onFileSelected(docType: LicenseDocumentType, event: Event) {
     currentApp.value = updated
     uploadedDocTypes.value = new Set((updated.documents || []).map(d => d.docType))
   } catch (e: unknown) {
-    error.value = (e as Error).message || 'Не удалось загрузить файл'
+    error.value = extractErrorMessage(e, 'Не удалось загрузить файл')
   } finally {
     input.value = ''
   }
@@ -147,7 +147,7 @@ async function saveDraftAndNext() {
     }
     step.value++
   } catch (e: unknown) {
-    error.value = (e as Error).message || 'Не удалось сохранить'
+    error.value = extractErrorMessage(e, 'Не удалось сохранить')
   } finally {
     saving.value = false
   }
@@ -187,10 +187,22 @@ async function submit() {
       window.location.href = intent.paymentUrl
     }
   } catch (e: unknown) {
-    error.value = (e as Error).message || 'Ошибка отправки'
+    error.value = extractErrorMessage(e, 'Ошибка отправки')
   } finally {
     saving.value = false
   }
+}
+
+/** Достаёт осмысленное сообщение из axios-ошибки: приоритет response.data.message. */
+function extractErrorMessage(e: unknown, fallback: string): string {
+  const err = e as {
+    response?: { data?: { message?: string; error?: string } }
+    message?: string
+  }
+  return err.response?.data?.message
+    || err.response?.data?.error
+    || err.message
+    || fallback
 }
 
 function onReceiptFile(event: Event) {
