@@ -18,6 +18,24 @@ const quickLoginAs = async (role: TestRole) => {
   }
 }
 
+/**
+ * Быстрый вход в ЛК заявителя (APPLICANT) через реального seed-пользователя
+ * из V22 (ИНН 20000000000001, «ОсОО Чистый Мир»). Отличается от quickLoginAs
+ * тем, что идёт через настоящий /auth/login → JWT → полноценный доступ к
+ * /license-applications, /licenses и т.п.
+ */
+const quickLoginAsApplicant = async () => {
+  loginError.value = ''
+  loginForm.value.inn = '20000000000001'
+  loginForm.value.password = 'test123'
+  try {
+    const user = await authStore.login('20000000000001', 'test123')
+    await router.push(authStore.getRoleDashboard(user.role))
+  } catch (err: any) {
+    loginError.value = err?.message ?? 'Ошибка входа'
+  }
+}
+
 const router = useRouter()
 const { t } = useI18n()
 
@@ -173,6 +191,13 @@ const goBack = () => {
               </button>
               <button type="button" @click="quickLoginAs('admin')" class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm font-medium text-emerald-800 transition-colors">
                 ЛК администратора
+              </button>
+              <button
+                type="button"
+                @click="quickLoginAsApplicant"
+                class="col-span-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 rounded-lg text-sm font-medium text-white transition-colors"
+              >
+                🎯 ЛК Заявителя на лицензию (Чистый Мир)
               </button>
             </div>
           </div>

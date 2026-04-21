@@ -134,6 +134,11 @@ function removeActivity(index: number) {
 // ─── навигация по шагам ───
 
 async function saveDraftAndNext() {
+  // Auto-commit pending activity from input, чтобы пользователь не забывал
+  // нажимать «Добавить» перед «Далее». Распространённая UX-ошибка.
+  if (newActivity.value.trim()) {
+    addActivity()
+  }
   saving.value = true
   error.value = null
   try {
@@ -162,6 +167,15 @@ const offlineDate = ref<string>(new Date().toISOString().slice(0, 16))
 
 async function submit() {
   if (!currentApp.value) return
+  // Тот же guard: если пользователь на Шаге 2 вписал вид деятельности,
+  // но не нажал «Добавить» — на финальном submit всё равно добавим.
+  if (newActivity.value.trim()) {
+    addActivity()
+    // Нужно сохранить черновик с обновлённым activityTypes перед submit:
+    try {
+      currentApp.value = await applicantApi.updateDraft(currentApp.value.id, form.value)
+    } catch {}
+  }
   saving.value = true
   error.value = null
   try {
