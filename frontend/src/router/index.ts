@@ -341,6 +341,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/MockPaymentView.vue'),
     meta: { requiresAuth: false },
   },
+  // Страница рассмотрения заявки на лицензию для сотрудника МПРЭТН
+  {
+    path: '/employee/license-applications/:id',
+    name: 'employee-license-application-detail',
+    component: () => import('../views/employee/EmployeeLicenseApplicationDetail.vue'),
+    meta: { requiresAuth: true, role: 'employee' },
+  },
   {
     path: '/business/payments',
     redirect: '/business/account',
