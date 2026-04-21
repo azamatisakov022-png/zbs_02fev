@@ -93,14 +93,15 @@ CREATE TABLE license_application_revisions (
 CREATE UNIQUE INDEX idx_lar_app_rev ON license_application_revisions (application_id, revision_number);
 
 
--- ─── РАЗМЕР ГОСПОШЛИНЫ ───
--- Размер хранится в system_settings (таблица из миграции V11), чтобы менять без деплоя.
--- Используется ключ 'license_fee_kgs'. Начальное значение задаст сотрудник через админку.
--- Для удобства первого запуска seed'им дефолт 1000 сом (уточнить актуальное значение).
-INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES ('license_fee_kgs', '1000', 'Размер госпошлины за лицензию (сом)')
+-- ─── НАСТРОЙКИ МОДУЛЯ ЛИЦЕНЗИЙ ───
+-- Таблица system_settings создана в V11 (setting_key PK, setting_value TEXT, updated_at).
+-- Колонки description в ней нет — инсертим только key+value.
+-- license_fee_kgs — размер пошлины в сомах; уточнить фактическое значение у заказчика.
+-- license_review_deadline_days — срок рассмотрения по ст. 14 Закона № 195.
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('license_fee_kgs', '1000')
 ON CONFLICT (setting_key) DO NOTHING;
 
-INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES ('license_review_deadline_days', '30', 'Нормативный срок рассмотрения заявки (календарные дни), ст. 14 Закона № 195')
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('license_review_deadline_days', '30')
 ON CONFLICT (setting_key) DO NOTHING;

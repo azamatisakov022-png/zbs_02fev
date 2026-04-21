@@ -3,7 +3,7 @@ package kg.eco.operator.service.payment;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kg.eco.operator.entity.LicenseApplication;
-import kg.eco.operator.entity.Payment;
+import kg.eco.operator.entity.LicensePayment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +29,7 @@ import java.util.UUID;
  *         "receiptUrl": "http://localhost/mock-receipt.pdf"
  *       }
  *
- * Активируется, если system_settings.payment_provider_active = 'MOCK'.
+ * Активируется, если system_settings.license_payment_provider_active = 'MOCK'.
  * Для продакшена замените на реального провайдера (не удаляйте — используется в тестах).
  */
 @Slf4j
@@ -112,7 +112,7 @@ public class MockPaymentProvider implements PaymentProvider {
     }
 
     @Override
-    public PaymentStatus fetchStatus(Payment payment) {
+    public PaymentStatus fetchStatus(LicensePayment payment) {
         // В mock-режиме всегда возвращаем текущий статус из БД.
         // В проде — HTTP-запрос к API провайдера.
         try {

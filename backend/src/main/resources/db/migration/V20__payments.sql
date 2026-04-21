@@ -3,12 +3,15 @@
 -- через интерфейс PaymentProvider. До выбора провайдера используется MOCK.
 --
 -- Правила:
---   - Один LicenseApplication = максимум один успешный Payment (одна квитанция на заявку).
---   - При переоткрытии заявки после отказа payment НЕ пересоздаётся.
+--   - Один LicenseApplication = максимум один успешный LicensePayment (одна квитанция на заявку).
+--   - При переоткрытии заявки после отказа платёж НЕ пересоздаётся.
 --   - Срок давности квитанции не ограничен (действительна до выдачи лицензии).
 --   - Возврат через АИС не реализуется (письменное обращение в МПРЭТН вне системы).
+--
+-- Таблица называется license_payments, чтобы не конфликтовать с существующей
+-- таблицей payments (утильсборные платежи из V1__init_schema.sql).
 
-CREATE TABLE payments (
+CREATE TABLE license_payments (
     id                      BIGSERIAL PRIMARY KEY,
     application_id          BIGINT        NOT NULL REFERENCES license_applications(id) ON DELETE CASCADE,
 
@@ -40,21 +43,21 @@ CREATE TABLE payments (
 
 -- Одна заявка = максимум один НЕотменённый платёж (успешный или ожидающий).
 -- Частичный уникальный индекс: failed/expired платежи можно создавать повторно.
-CREATE UNIQUE INDEX idx_pay_app_active
-    ON payments (application_id)
+CREATE UNIQUE INDEX idx_lpay_app_active
+    ON license_payments (application_id)
     WHERE status IN ('PENDING', 'SUCCESS', 'MANUAL_CONFIRMED');
 
-CREATE INDEX idx_pay_app      ON payments (application_id);
-CREATE INDEX idx_pay_status   ON payments (status);
-CREATE INDEX idx_pay_order    ON payments (provider, provider_order_id);
+CREATE INDEX idx_lpay_app      ON license_payments (application_id);
+CREATE INDEX idx_lpay_status   ON license_payments (status);
+CREATE INDEX idx_lpay_order    ON license_payments (provider, provider_order_id);
 
 
--- ─── ЛОГ СОБЫТИЙ ПЛАТЕЖЕЙ ───
+-- ─── ЛОГ СОБЫТИЙ ПЛАТЕЖЕЙ ЛИЦЕНЗИЙ ───
 -- Для аудита webhook'ов от провайдеров (включая невалидные/неопознанные).
 -- Помогает разбирать инциденты и защищаться от подделки webhook'ов.
-CREATE TABLE payment_events (
+CREATE TABLE license_payment_events (
     id                  BIGSERIAL PRIMARY KEY,
-    payment_id          BIGINT REFERENCES payments(id),
+    payment_id          BIGINT REFERENCES license_payments(id),
     provider            VARCHAR(30)  NOT NULL,
     event_type          VARCHAR(50)  NOT NULL,  -- payment.success, payment.failed, ...
     raw_payload         JSONB        NOT NULL,  -- сырой body от провайдера
@@ -64,16 +67,18 @@ CREATE TABLE payment_events (
     received_at         TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_pe_payment  ON payment_events (payment_id);
-CREATE INDEX idx_pe_provider ON payment_events (provider);
-CREATE INDEX idx_pe_received ON payment_events (received_at);
+CREATE INDEX idx_lpe_payment  ON license_payment_events (payment_id);
+CREATE INDEX idx_lpe_provider ON license_payment_events (provider);
+CREATE INDEX idx_lpe_received ON license_payment_events (received_at);
 
 
--- ─── НАСТРОЙКИ ПЛАТЕЖНОГО МОДУЛЯ ───
-INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES ('payment_provider_active', 'MOCK', 'Активный платёжный провайдер (MOCK|ELDIK|GNS|AGGREGATOR)')
+-- ─── НАСТРОЙКИ ПЛАТЕЖНОГО МОДУЛЯ ЛИЦЕНЗИЙ ───
+-- Таблица system_settings создана в V11 (setting_key PK, setting_value TEXT, updated_at).
+-- Колонки description в ней нет — инсертим только key+value.
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('license_payment_provider_active', 'MOCK')
 ON CONFLICT (setting_key) DO NOTHING;
 
-INSERT INTO system_settings (setting_key, setting_value, description)
-VALUES ('payment_pending_timeout_hours', '24', 'Таймаут ожидания онлайн-оплаты (часы). По истечении заявка возвращается в DRAFT.')
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('license_payment_pending_timeout_hours', '24')
 ON CONFLICT (setting_key) DO NOTHING;

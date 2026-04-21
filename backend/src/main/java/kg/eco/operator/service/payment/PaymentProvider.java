@@ -1,7 +1,7 @@
 package kg.eco.operator.service.payment;
 
 import kg.eco.operator.entity.LicenseApplication;
-import kg.eco.operator.entity.Payment;
+import kg.eco.operator.entity.LicensePayment;
 
 import java.math.BigDecimal;
 
@@ -14,14 +14,14 @@ import java.math.BigDecimal;
  *   - GnsPaymentProvider   — если пойдём через Единый платёжный шлюз ГНС (TBD).
  *   - AggregatorPaymentProvider — для внешнего агрегатора (FreedomPay, O!Pay, …).
  *
- * Активный провайдер выбирается через system_settings.payment_provider_active
+ * Активный провайдер выбирается через system_settings.license_payment_provider_active
  * и резолвится фабрикой PaymentProviderFactory.
  */
 public interface PaymentProvider {
 
     /**
-     * Код провайдера, совпадает со значением в system_settings.payment_provider_active
-     * и с полем payments.provider.
+     * Код провайдера, совпадает со значением в system_settings.license_payment_provider_active
+     * и с полем license_payments.provider.
      */
     String code();
 
@@ -55,5 +55,5 @@ public interface PaymentProvider {
      * Запрос актуального статуса платежа у провайдера (fallback на случай потери webhook'а).
      * Используется для reconciliation-джобы и polling'а на странице "Спасибо".
      */
-    PaymentStatus fetchStatus(Payment payment);
+    PaymentStatus fetchStatus(LicensePayment payment);
 }
