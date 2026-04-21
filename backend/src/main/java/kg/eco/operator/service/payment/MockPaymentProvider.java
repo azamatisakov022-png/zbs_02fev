@@ -115,8 +115,9 @@ public class MockPaymentProvider implements PaymentProvider {
     public PaymentStatus fetchStatus(LicensePayment payment) {
         // В mock-режиме всегда возвращаем текущий статус из БД.
         // В проде — HTTP-запрос к API провайдера.
+        if (payment.getStatus() == null) return PaymentStatus.UNKNOWN;
         try {
-            return PaymentStatus.valueOf(payment.getStatus());
+            return PaymentStatus.valueOf(payment.getStatus().name());
         } catch (IllegalArgumentException e) {
             return PaymentStatus.UNKNOWN;
         }

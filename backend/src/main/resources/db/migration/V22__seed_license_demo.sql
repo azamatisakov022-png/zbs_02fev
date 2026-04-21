@@ -7,10 +7,10 @@
 
 -- ─── Компания и пользователь-заявитель ───
 -- ИНН 20000000000001 — тестовый заявитель «Чистый Мир»
-INSERT INTO companies (id, company_name, inn, legal_form, region, address, director, contact_person, phone, email, is_eco_operator)
+INSERT INTO companies (id, company_name, inn, legal_form, region, address, director, contact_person, phone, email)
 VALUES (100, 'ОсОО «Чистый Мир»', '20000000000001', 'ОсОО', 'Бишкек',
         'г. Бишкек, ул. Токтогула, 154', 'Асанов Б.А.', 'Асанов Б.А.',
-        '+996 555 100100', 'info@cleanworld.kg', FALSE)
+        '+996 555 100100', 'info@cleanworld.kg')
 ON CONFLICT (inn) DO NOTHING;
 
 -- Пароль: test123 (тот же BCrypt-хэш, что у существующих тестовых пользователей)
@@ -147,6 +147,29 @@ VALUES (2006, 1006, 'MOCK', 'MOCK-DEMO-006', 1000, 'KGS', 'SUCCESS', 'CARD',
         NOW() - INTERVAL '45 days', NOW() - INTERVAL '45 days', NOW() - INTERVAL '45 days')
 ON CONFLICT (id) DO NOTHING;
 
+-- ─── Ещё одна APPROVED заявка для второй лицензии (наполняем реестр) ───
+INSERT INTO license_applications (
+    id, applicant_type, applicant_entity, applicant_name, applicant_inn,
+    license_type, activity_types, legal_address, actual_address,
+    contact_phone, contact_email, contact_person, status, submitted_at, deadline,
+    site_visit_done, site_visit_date, site_visit_inspector, site_visit_comment,
+    submitted_by_id, created_at, updated_at
+) VALUES (
+    1007, 'LANDFILL', 'LEGAL_ENTITY', 'ОсОО «Тазалык»', '02012345678910',
+    'STORAGE_DISPOSAL', ARRAY['Захоронение ТБО'],
+    'г. Бишкек, ул. Фучика, 5', 'Чуйская обл., полигон «Беш-Кунгей»',
+    '+996 312 554455', 'office@tazalyk.kg', 'Мамбетов С.М.',
+    'APPROVED', NOW() - INTERVAL '75 days', NOW() - INTERVAL '45 days',
+    TRUE, CURRENT_DATE - INTERVAL '65 days', 'Алымов Ж.Т., инспектор МПРЭТН',
+    'Полигон оборудован по нормам, замечаний нет.',
+    100, NOW() - INTERVAL '75 days', NOW() - INTERVAL '60 days'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO license_payments (id, application_id, provider, provider_order_id, amount, currency, status, payment_method, paid_at, created_at, updated_at)
+VALUES (2007, 1007, 'MOCK', 'MOCK-DEMO-007', 1000, 'KGS', 'SUCCESS', 'CARD',
+        NOW() - INTERVAL '75 days', NOW() - INTERVAL '75 days', NOW() - INTERVAL '75 days')
+ON CONFLICT (id) DO NOTHING;
+
 -- ─── Выданные лицензии ───
 -- #1: Первая лицензия 2026 года — выдана по заявке 1006
 INSERT INTO licenses (id, license_number, application_id,
@@ -162,13 +185,13 @@ VALUES (3001, 'ЛП-2026-0001', 1006,
     TRUE, FALSE, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days')
 ON CONFLICT (license_number) DO NOTHING;
 
--- #2: Вторая лицензия — выдана ранее, для демонстрации реестра
+-- #2: Вторая лицензия — выдана ранее, по заявке 1007
 INSERT INTO licenses (id, license_number, application_id,
     applicant_type, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
     issued_at, valid_until, is_published, is_revoked,
     created_at, updated_at)
-VALUES (3002, 'ЛП-2026-0002', 1006,
+VALUES (3002, 'ЛП-2026-0002', 1007,
     'LANDFILL', 'ОсОО «Тазалык»', '02012345678910',
     'STORAGE_DISPOSAL', ARRAY['Захоронение ТБО'],
     'г. Бишкек, ул. Фучика, 5', 'Чуйская обл., полигон «Беш-Кунгей»',

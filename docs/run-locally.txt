@@ -1,0 +1,126 @@
+КАК ЗАПУСТИТЬ АИС «ГП ЭКО ОПЕРАТОР» ЛОКАЛЬНО
+=============================================
+
+Требования: Docker Desktop, Java 17+, Maven, Node.js 18+.
+
+┌──────────────────────────────────────────────────────────┐
+│ ШАГ 1. БД и MinIO — через Docker (постоянные контейнеры) │
+└──────────────────────────────────────────────────────────┘
+
+  cd C:\Projects\zbs_02fev
+  docker compose up -d postgres minio
+
+Проверка: docker ps
+  → должны быть "eco-postgres" (:5433) и "eco-minio" (:9002, :9003)
+  Контейнеры имеют restart: unless-stopped — переживут перезагрузку.
+
+┌────────────────────────────────────────────────────────────┐
+│ ШАГ 2. БЭКЕНД (Spring Boot) — через Maven                  │
+└────────────────────────────────────────────────────────────┘
+
+В НОВОМ окне терминала:
+
+  cd C:\Projects\zbs_02fev\backend
+  set JWT_SECRET=jGmiw24N8ufe0HU9s0JtVoqxhp94YeHN1u4VUFyhebqx40utDYXDCvxvBgN/AkAVUNwIrZG+OzGPPbm7wA/m5g==
+  set DB_USERNAME=eco
+  set DB_PASSWORD=eco123
+  set MINIO_ACCESS_KEY=minioadmin
+  set MINIO_SECRET_KEY=minioadmin
+  set MINIO_ENDPOINT=http://localhost:9002
+  set MINIO_BUCKET=eco-operator
+  mvn spring-boot:run
+
+Ждать ~20 секунд. Сигнал готовности — строка в логе:
+  "Started EcoOperatorApplication in XX.XXX seconds"
+
+Порт: 8080.
+Swagger: http://localhost:8080/swagger-ui/index.html
+Проверка: curl http://localhost:8080/api/v1/public/landfills
+
+При первом запуске Flyway применит все миграции V1..V22
+и засеет демо-данные (6 заявок + 2 лицензии).
+
+┌─────────────────────────────────────────────────┐
+│ ШАГ 3. ФРОНТЕНД (Vite dev-сервер)               │
+└─────────────────────────────────────────────────┘
+
+В ТРЕТЬЕМ окне терминала:
+
+  cd C:\Projects\zbs_02fev\frontend
+  npm install   (только в первый раз)
+  npm run dev
+
+Ждать ~2 секунды. Сигнал готовности:
+  "VITE v7.x.x  ready in XXXX ms"
+  "Local:   http://localhost:5173/"
+
+┌─────────────────────────────────────────────────┐
+│ ШАГ 4. ОТКРЫТЬ В БРАУЗЕРЕ                       │
+└─────────────────────────────────────────────────┘
+
+  http://localhost:5173/           — главная страница АИС
+  http://localhost:5173/licenses   — публичный реестр лицензий
+  http://localhost:5173/login      — страница входа
+
+Тестовые учётные записи (пароль везде: test123):
+
+  ИНН                    Роль              Что показать
+  ────────────────────────────────────────────────────────────
+  20000000000001         BUSINESS          ЛК заявителя
+                         (APPLICANT)       (6 заявок в разных
+                                            статусах, кнопка
+                                            «Подать заявку»)
+
+  02312200210134         BUSINESS          ЛК плательщика
+                         (PAYER)           утильсбора
+                                           (для сравнения:
+                                            меню другое)
+
+  (см. V5__seed_test_users.sql для других сид-пользователей:
+   EMPLOYEE, ECO_OPERATOR, ADMIN, MINISTRY)
+
+┌─────────────────────────────────────────────────┐
+│ СЦЕНАРИИ ДЕМО                                   │
+└─────────────────────────────────────────────────┘
+
+Смотрите docs/demo-scenarios-licenses.txt —
+6 подробных сценариев (подача, рассмотрение, отказ+переоткрытие,
+публичный реестр, ЭкоОператор, офлайн-оплата).
+
+┌─────────────────────────────────────────────────┐
+│ ОСТАНОВКА                                       │
+└─────────────────────────────────────────────────┘
+
+  В окнах backend / frontend: Ctrl+C
+  Контейнеры можно не останавливать — держат данные между сессиями.
+
+  Если нужно полностью остановить:
+    docker compose stop postgres minio
+
+  Для сброса БД и пересева (применить новые миграции с нуля):
+    docker compose down -v
+    docker compose up -d postgres minio
+    (затем заново mvn spring-boot:run)
+
+┌─────────────────────────────────────────────────┐
+│ ЧАСТЫЕ ПРОБЛЕМЫ                                 │
+└─────────────────────────────────────────────────┘
+
+"Port 5433 is already in use" — другая Postgres уже занимает порт.
+  Посмотреть: docker ps; остановить ненужную: docker stop <name>
+
+"Illegal base64 character: '_' " — не задан или некорректен JWT_SECRET.
+  Используйте точную строку из шага 2 (она валидная base64).
+
+"FATAL: password authentication failed for user '${DB_USERNAME}'"
+  → не задан DB_USERNAME/DB_PASSWORD. Переменные из шага 2 обязательны.
+
+"CORS error" в браузере при логине:
+  → бэкенд не запущен или слушает не на :8080. Проверьте шаг 2.
+
+────────────────────────────────────────────────────────────
+При возникновении ошибок — смотреть логи:
+  backend: окно где запущен mvn spring-boot:run
+  frontend: окно где запущен npm run dev
+  postgres: docker logs eco-postgres --tail 50
+  minio: docker logs eco-minio --tail 50
