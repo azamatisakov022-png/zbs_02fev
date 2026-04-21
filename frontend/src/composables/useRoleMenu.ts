@@ -7,22 +7,58 @@ import { reportStore } from '../stores/reports'
 import { notificationStore } from '../stores/notifications'
 import { feedbackStore } from '../stores/feedback'
 import { contestStore } from '../stores/contests'
+import { authStore } from '../stores/auth'
 
+/**
+ * Меню для BUSINESS-пользователя.
+ * Состав меню определяется полем business_type:
+ *   - PAYER     — плательщик утильсбора, видит декларации, расчёты, баланс. Раздел «Лицензии» скрыт.
+ *   - APPLICANT — заявитель на лицензию (переработчик, полигон, пункт приёма).
+ *                 Видит только профиль, уведомления и раздел «Лицензии».
+ *                 Разделы утильсбора скрыты, т.к. он не платит РОП.
+ *   - BOTH      — редкий гибрид (плательщик, одновременно подающий на лицензию).
+ *                 Видит оба набора.
+ */
 export function useBusinessMenu() {
   const { t } = useI18n()
   const roleTitle = computed(() => t('roles.business'))
-  const menuItems = computed(() => [
+
+  const bt = computed(() => authStore.state.user?.businessType || 'payer')
+
+  const commonItems = computed(() => [
     { id: 'dashboard', label: t('nav.business.dashboard'), icon: icons.dashboard, route: '/business' },
     { id: 'notifications', label: t('notifications.title'), icon: icons.notification, route: '/business/notifications', badge: notificationStore.getUnreadCount('business') },
+  ])
+
+  const payerItems = computed(() => [
     { id: 'account', label: t('nav.business.account'), icon: icons.money, route: '/business/account' },
     { id: 'calculator', label: t('nav.business.calculator'), icon: icons.calculator, route: '/business/calculator' },
     { id: 'reports', label: t('nav.business.reports'), icon: icons.report, route: '/business/reports' },
     { id: 'declarations', label: t('nav.business.declarations'), icon: icons.document, route: '/business/declarations' },
-{ id: 'documents', label: t('nav.business.documents'), icon: icons.folder, route: '/business/documents' },
+    { id: 'documents', label: t('nav.business.documents'), icon: icons.folder, route: '/business/documents' },
     { id: 'normatives', label: t('nav.business.normatives'), icon: icons.registries, route: '/business/normatives' },
-    { id: 'profile', label: t('nav.business.profile'), icon: icons.building, route: '/business/profile' },
   ])
-  return { roleTitle, menuItems }
+
+  const licenseItems = computed(() => [
+    { id: 'license-applications', label: t('nav.business.licenseApplications') || 'Мои заявки', icon: icons.document, route: '/business/license-applications' },
+    { id: 'my-licenses', label: t('nav.business.myLicenses') || 'Мои лицензии', icon: icons.license, route: '/business/my-licenses' },
+  ])
+
+  const profileItem = computed(() => ({
+    id: 'profile', label: t('nav.business.profile'), icon: icons.building, route: '/business/profile',
+  }))
+
+  const menuItems = computed(() => {
+    const items: Array<{ id: string; label: string; icon: unknown; route: string; badge?: number }> = [
+      ...commonItems.value,
+    ]
+    if (bt.value === 'payer' || bt.value === 'both') items.push(...payerItems.value)
+    if (bt.value === 'applicant' || bt.value === 'both') items.push(...licenseItems.value)
+    items.push(profileItem.value)
+    return items
+  })
+
+  return { roleTitle, menuItems, businessType: bt }
 }
 
 export function useEcoOperatorMenu() {
@@ -41,6 +77,7 @@ export function useEcoOperatorMenu() {
     { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile' },
     { id: 'payers', label: t('nav.ecoOperator.payers'), icon: icons.registries, route: '/eco-operator/payers' },
     { id: 'recyclers-registry', label: t('nav.ecoOperator.recyclers'), icon: icons.recycle, route: '/eco-operator/recyclers' },
+    { id: 'licenses-registry', label: t('nav.ecoOperator.licenses') || 'Реестр лицензий', icon: icons.license, route: '/eco-operator/licenses' },
   ])
   return { roleTitle, menuItems }
 }

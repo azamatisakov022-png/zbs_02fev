@@ -9,6 +9,8 @@ export interface AuthUser {
   role: string
   email: string
   phone: string
+  /** Для role='business': PAYER (утильсбор), APPLICANT (только лицензии), BOTH. */
+  businessType?: 'payer' | 'applicant' | 'both'
 }
 
 interface AuthState {
