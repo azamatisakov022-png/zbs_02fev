@@ -1,7 +1,6 @@
 package kg.eco.operator.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import kg.eco.operator.entity.enums.ApplicantEntity;
@@ -15,6 +14,11 @@ import java.util.List;
  * Создание или обновление черновика заявки на лицензию (DRAFT).
  * Используется для POST /api/license-applications и
  * PUT /api/license-applications/{id} (только для DRAFT).
+ *
+ * ВАЛИДАЦИЯ: мягкая — пользователь может сохранять черновик по ходу
+ * заполнения мастера (Шаг 1 сохраняет только заявителя, остальные
+ * поля ещё пустые). Полная проверка обязательности происходит на
+ * submit() в LicenseApplicationServiceImpl.
  */
 @Data
 public class CreateLicenseApplicationRequest {
@@ -39,13 +43,13 @@ public class CreateLicenseApplicationRequest {
     @NotNull
     private LicenseType licenseType;
 
-    @NotEmpty
+    /** На шаге 2. Может быть пустым в DRAFT — проверится на submit. */
     private List<String> activityTypes;
 
-    @NotBlank
+    /** Шаг 3. Может быть пустым в DRAFT — проверится на submit. */
     private String legalAddress;
 
-    @NotBlank
+    /** Шаг 3. Может быть пустым в DRAFT — проверится на submit. */
     private String actualAddress;
 
     @Size(max = 30)

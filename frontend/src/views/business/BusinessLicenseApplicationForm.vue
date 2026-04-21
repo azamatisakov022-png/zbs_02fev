@@ -193,16 +193,25 @@ async function submit() {
   }
 }
 
-/** Достаёт осмысленное сообщение из axios-ошибки: приоритет response.data.message. */
+/** Достаёт осмысленное сообщение из axios-ошибки.
+ *  Поддерживает: BusinessLogicException (message), VALIDATION_ERROR (details). */
 function extractErrorMessage(e: unknown, fallback: string): string {
   const err = e as {
-    response?: { data?: { message?: string; error?: string } }
+    response?: {
+      data?: {
+        message?: string
+        error?: string
+        details?: Array<{ field?: string; message?: string }>
+      }
+    }
     message?: string
   }
-  return err.response?.data?.message
-    || err.response?.data?.error
-    || err.message
-    || fallback
+  const data = err.response?.data
+  if (data?.details && data.details.length > 0) {
+    const lines = data.details.map(d => `• ${d.field || ''}: ${d.message || ''}`)
+    return (data.message || 'Ошибка валидации') + '\n' + lines.join('\n')
+  }
+  return data?.message || data?.error || err.message || fallback
 }
 
 function onReceiptFile(event: Event) {
@@ -235,7 +244,7 @@ function onReceiptFile(event: Event) {
         />
       </div>
 
-      <div v-if="error" class="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-lg mb-4 text-sm">
+      <div v-if="error" class="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-lg mb-4 text-sm whitespace-pre-line">
         {{ error }}
       </div>
 
@@ -362,9 +371,17 @@ function onReceiptFile(event: Event) {
               <div class="text-xs text-gray-500 mt-0.5">{{ doc.extra?.required ? 'Обязательный' : 'Опциональный' }}</div>
             </div>
             <div class="flex items-center gap-2">
-              <span v-if="isUploaded(doc.value)" class="text-xs text-emerald-600 font-medium">✓ Загружен</span>
-              <label class="cursor-pointer px-3 py-1.5 text-xs border border-gray-300 hover:bg-gray-100 rounded-md">
-                {{ isUploaded(doc.value) ? 'Заменить' : 'Загрузить' }}
+              <span v-if="isUploaded(doc.value)" class="text-xs text-emerald-600 font-medium whitespace-nowrap">✓ Загружен</span>
+              <label
+                :class="[
+                  'cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap',
+                  isUploaded(doc.value)
+                    ? 'border border-gray-300 hover:bg-gray-100 text-gray-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white',
+                  !currentApp ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+                ]"
+              >
+                📎 {{ isUploaded(doc.value) ? 'Заменить' : 'Загрузить' }}
                 <input
                   type="file"
                   class="hidden"

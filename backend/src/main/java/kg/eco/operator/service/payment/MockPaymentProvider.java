@@ -6,7 +6,6 @@ import kg.eco.operator.entity.LicenseApplication;
 import kg.eco.operator.entity.LicensePayment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -41,9 +40,6 @@ public class MockPaymentProvider implements PaymentProvider {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${app.base-url:http://localhost:3000}")
-    private String appBaseUrl;
-
     @Override
     public String code() {
         return CODE;
@@ -52,10 +48,15 @@ public class MockPaymentProvider implements PaymentProvider {
     @Override
     public PaymentIntent createIntent(LicenseApplication application, BigDecimal amount, String returnUrl) {
         String orderId = "MOCK-" + UUID.randomUUID();
-        String paymentUrl = appBaseUrl + "/mock-payment/" + orderId
+        // Относительный путь — браузер сам подставит текущий origin (http://localhost:5173).
+        // В проде заменится на абсолютный URL реального платёжного шлюза.
+        String encodedReturn = java.net.URLEncoder.encode(
+                returnUrl != null ? returnUrl : "/",
+                java.nio.charset.StandardCharsets.UTF_8);
+        String paymentUrl = "/mock-payment/" + orderId
                 + "?amount=" + amount
                 + "&applicationId=" + application.getId()
-                + "&returnUrl=" + returnUrl;
+                + "&returnUrl=" + encodedReturn;
 
         log.info("Mock payment intent created: orderId={}, amount={}, applicationId={}",
                 orderId, amount, application.getId());

@@ -119,6 +119,7 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
             throw new BusinessLogicException("Отправить можно только заявку в статусе DRAFT");
         }
 
+        validateReadyForSubmit(app);
         validateRequiredDocumentsUploaded(app);
 
         LocalDateTime now = LocalDateTime.now();
@@ -430,6 +431,22 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
         }
         if (file.getSize() > MAX_DOC_SIZE) {
             throw new BusinessLogicException("Размер файла превышает 10 МБ");
+        }
+    }
+
+    /**
+     * Полная проверка заявки перед отправкой (все поля, которые DTO делает
+     * опциональными для DRAFT-сохранения, становятся обязательными здесь).
+     */
+    private void validateReadyForSubmit(LicenseApplication app) {
+        if (app.getActivityTypes() == null || app.getActivityTypes().length == 0) {
+            throw new BusinessLogicException("Укажите хотя бы один вид деятельности (Шаг 2)");
+        }
+        if (app.getLegalAddress() == null || app.getLegalAddress().isBlank()) {
+            throw new BusinessLogicException("Укажите юридический адрес (Шаг 3)");
+        }
+        if (app.getActualAddress() == null || app.getActualAddress().isBlank()) {
+            throw new BusinessLogicException("Укажите фактический адрес (Шаг 3)");
         }
     }
 
