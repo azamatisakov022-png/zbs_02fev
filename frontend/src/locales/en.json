@@ -6384,7 +6384,17 @@
     "quickActions": "Quick actions",
     "pieChartTitle": "Recycling Share by Waste Type",
     "landfillMonitoring": "Landfill Monitoring",
-    "allLandfills": "All Landfills"
+    "allLandfills": "All Landfills",
+    "statPendingApplications": "Applications under review",
+    "statNewFeedback": "New citizen requests",
+    "statCriticalLandfills": "Landfills at critical fill",
+    "statExpiringLicenses": "Licenses expiring (≤30 days)",
+    "alertPendingApplications": "Applications awaiting review",
+    "alertNewFeedback": "New citizen requests",
+    "alertCriticalLandfills": "Landfills at critical fill (≥85%)",
+    "alertExpiringLicenses": "Licenses expiring in the next 30 days",
+    "noAlerts": "No tasks need attention",
+    "noLandfills": "No landfill data"
   },
   "legislation": {
     "title": "Legislation",

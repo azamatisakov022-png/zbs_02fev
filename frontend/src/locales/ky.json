@@ -6515,7 +6515,17 @@
     "quickActions": "Тез аракеттер",
     "pieChartTitle": "Калдык түрлөрү боюнча кайра иштетүү үлүшү",
     "landfillMonitoring": "Полигондорду мониторинг кылуу",
-    "allLandfills": "Бардык полигондор"
+    "allLandfills": "Бардык полигондор",
+    "statPendingApplications": "Каралып жаткан арыздар",
+    "statNewFeedback": "Жаңы жарандардын кайрылуулары",
+    "statCriticalLandfills": "Критикалык толтурулган полигондор",
+    "statExpiringLicenses": "Мөөнөтү аяктай турган лицензиялар (≤30 күн)",
+    "alertPendingApplications": "Арыздар каралууну күтүүдө",
+    "alertNewFeedback": "Жаңы жарандардын кайрылуулары",
+    "alertCriticalLandfills": "Критикалык толтурулган полигондор (≥85%)",
+    "alertExpiringLicenses": "Лицензиялардын мөөнөтү 30 күндүн ичинде аяктайт",
+    "noAlerts": "Көңүл буруучу тапшырмалар жок",
+    "noLandfills": "Полигондор боюнча маалымат жок"
   },
   "legislation": {
     "title": "Мыйзамдар",

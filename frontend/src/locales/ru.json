@@ -6387,7 +6387,17 @@
     "quickActions": "Быстрые действия",
     "pieChartTitle": "Доля переработки по видам отходов",
     "landfillMonitoring": "Мониторинг полигонов",
-    "allLandfills": "Все полигоны"
+    "allLandfills": "Все полигоны",
+    "statPendingApplications": "Заявок на рассмотрении",
+    "statNewFeedback": "Новых обращений граждан",
+    "statCriticalLandfills": "Полигонов в критичном заполнении",
+    "statExpiringLicenses": "Лицензий истекают (≤30 дней)",
+    "alertPendingApplications": "Заявки ожидают рассмотрения",
+    "alertNewFeedback": "Новых обращений граждан",
+    "alertCriticalLandfills": "Полигоны в критичном заполнении (≥85%)",
+    "alertExpiringLicenses": "Лицензии истекают в ближайшие 30 дней",
+    "noAlerts": "Нет задач, требующих внимания",
+    "noLandfills": "Нет данных о полигонах"
   },
   "legislation": {
     "title": "Законодательство",

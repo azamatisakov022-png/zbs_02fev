@@ -4,57 +4,98 @@ import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import SkeletonLoader from '../../components/dashboard/SkeletonLoader.vue'
 import StatsCard from '../../components/dashboard/StatsCard.vue'
-import PieChart from '../../components/charts/PieChart.vue'
-import { icons, statsIcons } from '../../utils/menuIcons'
+import { statsIcons } from '../../utils/menuIcons'
 import { useEmployeeMenu } from '../../composables/useRoleMenu'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import { authStore } from '../../stores/auth'
+import { licenseStore } from '../../stores/licenses'
+import { feedbackStore } from '../../stores/feedback'
+import { landfillStore, getFillPercent, type Landfill } from '../../stores/landfills'
 
 const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
+// Имя пользователя берём из authStore (заполняется при логине).
+const userName = computed(() => authStore.state.user?.companyName || '—')
+
+// ─── Реальные метрики из stores ───────────────────────────────────
+
+// Заявки в работе: суммируем status counts по «живым» статусам.
+const pendingApplicationsCount = computed(() => {
+  const counts = licenseStore.state.statusCounts || {}
+  return (counts.submitted || 0) + (counts.under_review || 0) + (counts.site_visit_done || 0)
+})
+
+// Новые обращения граждан.
+const newFeedbackCount = computed(() => feedbackStore.getNewCount())
+
+// Полигоны в критичном заполнении (≥85%).
+const criticalLandfillsCount = computed(() =>
+  landfillStore.state.landfills.filter(l => getFillPercent(l) >= 85).length,
+)
+
+// Лицензии, у которых validUntil в ближайшие 30 дней (и ещё не истёк).
+const expiringLicensesCount = computed(() => {
+  const now = new Date()
+  const in30 = new Date()
+  in30.setDate(in30.getDate() + 30)
+  return licenseStore.state.adminLicenses.filter(l => {
+    if (!l.validUntil) return false
+    const until = new Date(l.validUntil)
+    return until >= now && until <= in30
+  }).length
+})
+
+// ─── Stat-карточки ────────────────────────────────────────────────
+
 const stats = computed(() => [
-  { title: t('employeeDashboard.registeredOrgs'), value: '342', icon: statsIcons.users, color: 'blue' as const },
-  { title: t('employeeDashboard.activeLicenses'), value: '48', icon: statsIcons.approved, color: 'green' as const },
-  { title: t('employeeDashboard.landfillsMonitored'), value: '12', icon: statsIcons.capacity, color: 'purple' as const },
-  { title: t('employeeDashboard.wasteTypesInRegistry'), value: '24', icon: statsIcons.waste, color: 'orange' as const },
+  { title: t('employeeDashboard.statPendingApplications'), value: String(pendingApplicationsCount.value), icon: statsIcons.users, color: 'blue' as const },
+  { title: t('employeeDashboard.statNewFeedback'), value: String(newFeedbackCount.value), icon: statsIcons.approved, color: 'green' as const },
+  { title: t('employeeDashboard.statCriticalLandfills'), value: String(criticalLandfillsCount.value), icon: statsIcons.capacity, color: 'purple' as const },
+  { title: t('employeeDashboard.statExpiringLicenses'), value: String(expiringLicensesCount.value), icon: statsIcons.waste, color: 'orange' as const },
 ])
 
-const alerts = computed(() => [
-  { text: t('employeeDashboard.alertLicensesExpiring'), severity: 'red', route: '/employee/licenses', count: 2 },
-  { text: t('employeeDashboard.alertLandfillOverload'), severity: 'red', route: '/employee/landfills', count: 1 },
-  { text: t('employeeDashboard.alertLandfillsFull'), severity: 'red', route: '/employee/landfills', count: 3 },
-  { text: t('employeeDashboard.alertLicensesRenewal'), severity: 'orange', route: '/employee/licenses', count: 4 },
-  { text: t('employeeDashboard.alertWasteNoNorms'), severity: 'blue', route: '/employee/waste-types', count: 2 },
-])
+// ─── Блок «Требуют внимания» ──────────────────────────────────────
 
-const quickActions = computed(() => [
-  { label: t('employeeDashboard.complianceControl'), subtitle: t('employeeDashboard.normsAndLicenses'), icon: icons.compliance, color: '#0e888d', route: '/employee/compliance' },
-  { label: t('employeeDashboard.licenses'), subtitle: t('employeeDashboard.licensesExpiring'), icon: icons.license, color: '#f59e0b', route: '/employee/licenses' },
-  { label: t('employeeDashboard.landfillsAndDumps'), subtitle: t('employeeDashboard.objectsCount'), icon: icons.landfill, color: '#7c3aed', route: '/employee/landfills' },
-])
-
-const wasteTypePie = computed(() => [
-  { label: t('employeeDashboard.piePlastic'), value: 189, color: '#2563eb' },
-  { label: t('employeeDashboard.piePaperCardboard'), value: 124, color: '#10b981' },
-  { label: t('employeeDashboard.pieGlass'), value: 52, color: '#f59e0b' },
-  { label: t('employeeDashboard.pieMetal'), value: 22, color: '#6366f1' },
-  { label: t('employeeDashboard.pieOther'), value: 14, color: '#94a3b8' },
-])
-
-const landfillMonitoring = [
-  { name: 'Полигон «Бишкек-Север»', region: 'Бишкек', fillPercent: 65, status: 'Норма' },
-  { name: 'Полигон «Бишкек-Юг»', region: 'Бишкек', fillPercent: 86, status: 'Внимание' },
-  { name: 'Полигон «Ош»', region: 'Ош', fillPercent: 70, status: 'Норма' },
-  { name: 'Свалка «Ош-2»', region: 'Ош', fillPercent: 90, status: 'Критично' },
-]
-
-const getLandfillStatusClass = (status: string) => {
-  switch (status) {
-    case 'Норма': return 'bg-green-100 text-green-700'
-    case 'Внимание': return 'bg-amber-100 text-amber-700'
-    case 'Критично': return 'bg-red-100 text-red-700'
-    default: return 'bg-gray-100 text-gray-700'
+const alerts = computed(() => {
+  const list: { text: string; severity: 'red' | 'orange' | 'blue'; route: string; count: number }[] = []
+  if (pendingApplicationsCount.value > 0) {
+    list.push({ text: t('employeeDashboard.alertPendingApplications'), severity: 'orange', route: '/employee/licenses', count: pendingApplicationsCount.value })
   }
+  if (newFeedbackCount.value > 0) {
+    list.push({ text: t('employeeDashboard.alertNewFeedback'), severity: 'blue', route: '/employee/feedback', count: newFeedbackCount.value })
+  }
+  if (criticalLandfillsCount.value > 0) {
+    list.push({ text: t('employeeDashboard.alertCriticalLandfills'), severity: 'red', route: '/ministry/landfills', count: criticalLandfillsCount.value })
+  }
+  if (expiringLicensesCount.value > 0) {
+    list.push({ text: t('employeeDashboard.alertExpiringLicenses'), severity: 'red', route: '/employee/licenses', count: expiringLicensesCount.value })
+  }
+  return list
+})
+
+// ─── Таблица полигонов: топ-5 по заполнению ───────────────────────
+
+const topLandfills = computed(() => {
+  const withPercent = landfillStore.state.landfills.map(l => ({
+    landfill: l,
+    fillPercent: getFillPercent(l),
+  }))
+  return withPercent
+    .sort((a, b) => b.fillPercent - a.fillPercent)
+    .slice(0, 5)
+})
+
+const getLandfillStatusLabel = (percent: number): string => {
+  if (percent >= 85) return 'Критично'
+  if (percent >= 70) return 'Внимание'
+  return 'Норма'
+}
+
+const getLandfillStatusClass = (percent: number) => {
+  if (percent >= 85) return 'bg-red-100 text-red-700'
+  if (percent >= 70) return 'bg-amber-100 text-amber-700'
+  return 'bg-green-100 text-green-700'
 }
 
 const getLandfillBarColor = (percent: number) => {
@@ -81,9 +122,22 @@ const alertBadgeClass = (severity: string) => {
   }
 }
 
+// ─── Загрузка данных при монтировании ─────────────────────────────
+
 const isLoading = ref(true)
-onMounted(() => {
-  setTimeout(() => { isLoading.value = false }, 500)
+onMounted(async () => {
+  try {
+    // Параллельная загрузка. При ошибке любого stora — просто покажем 0,
+    // dashboard не должен ломаться из-за одного неотвечающего эндпоинта.
+    await Promise.allSettled([
+      licenseStore.loadStatusCounts(),
+      licenseStore.loadRegistry(),
+      landfillStore.fetchAll(),
+      feedbackStore.fetchAll(),
+    ])
+  } finally {
+    isLoading.value = false
+  }
 })
 </script>
 
@@ -91,7 +145,7 @@ onMounted(() => {
   <DashboardLayout
     role="employee"
     :roleTitle="roleTitle"
-    userName="Мамытова Айгуль"
+    :userName="userName"
     :menuItems="menuItems"
   >
     <div class="content__header mb-8">
@@ -110,9 +164,6 @@ onMounted(() => {
     <template v-if="isLoading">
       <div class="mb-8">
         <SkeletonLoader variant="card" />
-      </div>
-      <div class="mb-8">
-        <SkeletonLoader variant="chart" />
       </div>
       <SkeletonLoader variant="table" />
     </template>
@@ -135,7 +186,10 @@ onMounted(() => {
         <div class="px-6 py-4 border-b border-[#f1f5f9]">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('employeeDashboard.requireAttention') }}</h2>
         </div>
-        <div class="divide-y divide-[#f1f5f9]">
+        <div v-if="alerts.length === 0" class="px-6 py-8 text-center text-sm text-[#64748b]">
+          {{ $t('employeeDashboard.noAlerts') }}
+        </div>
+        <div v-else class="divide-y divide-[#f1f5f9]">
           <router-link
             v-for="(alert, idx) in alerts"
             :key="idx"
@@ -154,73 +208,40 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Quick Actions & Pie Chart -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-[#e2e8f0]">
-          <h3 class="text-lg font-semibold text-[#1e293b] mb-4">{{ $t('employeeDashboard.quickActions') }}</h3>
-          <div class="space-y-3">
-            <router-link
-              v-for="action in quickActions"
-              :key="action.route"
-              :to="action.route"
-              class="flex items-center gap-3 p-4 rounded-xl bg-[#f8fafc] hover:bg-[#e8f5f5] transition-colors group"
-            >
-              <div
-                class="w-10 h-10 rounded-lg flex items-center justify-center text-white flex-shrink-0"
-                :style="{ backgroundColor: action.color }"
-                v-html="action.icon"
-              ></div>
-              <div class="min-w-0">
-                <span class="font-medium text-[#1e293b] block group-hover:text-[#0e888d] transition-colors">{{ action.label }}</span>
-                <span class="text-sm text-[#64748b]">{{ action.subtitle }}</span>
-              </div>
-              <svg class="w-4 h-4 text-[#94a3b8] ml-auto flex-shrink-0 group-hover:text-[#0e888d] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </router-link>
-          </div>
-        </div>
-
-        <!-- Pie Chart -->
-        <PieChart
-          :data="wasteTypePie"
-          :size="200"
-          :title="$t('employeeDashboard.pieChartTitle')"
-        />
-      </div>
-
-      <!-- Мониторинг полигонов -->
+      <!-- Мониторинг полигонов: топ-5 по % заполнения -->
       <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#e2e8f0] flex items-center justify-between">
           <h2 class="text-lg font-semibold text-[#1e293b]">{{ $t('employeeDashboard.landfillMonitoring') }}</h2>
-          <router-link to="/employee/landfills" class="text-[#0e888d] text-sm font-medium hover:underline">
+          <router-link to="/ministry/landfills" class="text-[#0e888d] text-sm font-medium hover:underline">
             {{ $t('employeeDashboard.allLandfills') }} &rarr;
           </router-link>
         </div>
-        <div class="divide-y divide-[#f1f5f9]">
+        <div v-if="topLandfills.length === 0" class="px-6 py-8 text-center text-sm text-[#64748b]">
+          {{ $t('employeeDashboard.noLandfills') }}
+        </div>
+        <div v-else class="divide-y divide-[#f1f5f9]">
           <div
-            v-for="landfill in landfillMonitoring"
-            :key="landfill.name"
+            v-for="item in topLandfills"
+            :key="item.landfill.id"
             class="px-6 py-4 hover:bg-[#f8fafc] transition-colors"
           >
             <div class="flex items-center justify-between mb-2">
               <div>
-                <p class="font-medium text-[#1e293b]">{{ landfill.name }}</p>
-                <p class="text-sm text-[#64748b]">{{ landfill.region }}</p>
+                <p class="font-medium text-[#1e293b]">{{ item.landfill.name }}</p>
+                <p class="text-sm text-[#64748b]">{{ item.landfill.region }}</p>
               </div>
-              <span :class="['text-xs px-2.5 py-1 rounded-full font-medium', getLandfillStatusClass(landfill.status)]">
-                {{ landfill.status }}
+              <span :class="['text-xs px-2.5 py-1 rounded-full font-medium', getLandfillStatusClass(item.fillPercent)]">
+                {{ getLandfillStatusLabel(item.fillPercent) }}
               </span>
             </div>
             <div class="flex items-center gap-3">
               <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  :class="['h-full rounded-full transition-all', getLandfillBarColor(landfill.fillPercent)]"
-                  :style="{ width: landfill.fillPercent + '%' }"
+                  :class="['h-full rounded-full transition-all', getLandfillBarColor(item.fillPercent)]"
+                  :style="{ width: Math.min(item.fillPercent, 100) + '%' }"
                 ></div>
               </div>
-              <span class="text-sm font-medium text-[#64748b] w-10 text-right">{{ landfill.fillPercent }}%</span>
+              <span class="text-sm font-medium text-[#64748b] w-10 text-right">{{ item.fillPercent }}%</span>
             </div>
           </div>
         </div>
