@@ -243,8 +243,8 @@ const breadcrumbs = computed(() => {
         </div>
       </header>
 
-      <!-- Page Content (капаем ширину для читаемости на широких мониторах) -->
-      <div id="main-content" class="p-4 lg:p-8 pt-20 lg:pt-8 max-w-[1400px] mx-auto" role="main">
+      <!-- Page Content -->
+      <div id="main-content" class="p-4 lg:p-8 pt-20 lg:pt-8" role="main">
         <BreadcrumbNav :items="breadcrumbs" />
         <slot></slot>
       </div>
