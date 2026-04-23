@@ -146,8 +146,9 @@ function getOverfilledCount(): number {
 }
 
 export function getFillPercent(l: Landfill): number {
-  if (l.designCapacity === 0) return 0
-  return Math.round((l.currentVolume / l.designCapacity) * 100)
+  if (!l || !l.designCapacity) return 0
+  const percent = ((l.currentVolume || 0) / l.designCapacity) * 100
+  return Number.isFinite(percent) ? Math.round(percent) : 0
 }
 
 export function getFillColor(percent: number): string {

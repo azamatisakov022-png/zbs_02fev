@@ -81,17 +81,17 @@ watch(() => props.value, () => {
 </script>
 
 <template>
-  <div class="stats-card dash-card dash-card-hover relative overflow-hidden p-6">
+  <div class="stats-card dash-card dash-card-hover relative overflow-hidden p-5">
     <div class="stats-accent" :style="{ background: accentColors[color] }"></div>
-    <div class="flex items-start justify-between">
-      <div>
-        <p class="text-[#6B7280] text-sm font-medium mb-2">{{ title }}</p>
-        <p class="text-3xl font-bold text-[#111827] tracking-tight">{{ displayValue || value }}</p>
-        <p v-if="subtitle" class="text-sm text-[#6B7280] mt-1">{{ subtitle }}</p>
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-[#6B7280] text-xs font-medium mb-1.5">{{ title }}</p>
+        <p class="text-2xl font-bold text-[#111827] tracking-tight">{{ displayValue || value }}</p>
+        <p v-if="subtitle" class="text-xs text-[#6B7280] mt-1">{{ subtitle }}</p>
       </div>
       <div
         v-if="icon"
-        :class="['stats-icon w-12 h-12 rounded-xl flex items-center justify-center', colorClasses[color]]"
+        :class="['stats-icon w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0', colorClasses[color]]"
         v-html="icon"
       ></div>
     </div>

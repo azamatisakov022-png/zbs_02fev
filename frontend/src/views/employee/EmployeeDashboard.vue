@@ -170,7 +170,7 @@ onMounted(async () => {
 
     <template v-else>
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard
           v-for="stat in stats"
           :key="stat.title"
