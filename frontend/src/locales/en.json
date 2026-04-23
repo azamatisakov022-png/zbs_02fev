@@ -159,7 +159,13 @@
       "profile": "My profile",
       "feedback": "Citizen Requests",
       "audit": "Activity Log",
-      "detectedCompanies": "Detected Companies"
+      "detectedCompanies": "Detected Companies",
+      "sections": {
+        "applications": "Applications and Appeals",
+        "registries": "Registries",
+        "analytics": "Analytics",
+        "system": "System"
+      }
     },
     "admin": {
       "dashboard": "Home",

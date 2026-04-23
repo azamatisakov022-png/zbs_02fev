@@ -159,7 +159,13 @@
       "profile": "Менин профилим",
       "feedback": "Жарандардын кайрылуулары",
       "audit": "Аракеттер журналы",
-      "detectedCompanies": "Аныкталган компаниялар"
+      "detectedCompanies": "Аныкталган компаниялар",
+      "sections": {
+        "applications": "Арыздар жана кайрылуулар",
+        "registries": "Реестрлер",
+        "analytics": "Аналитика",
+        "system": "Система"
+      }
     },
     "admin": {
       "dashboard": "Башкы бет",

@@ -162,7 +162,13 @@
       "profile": "Мой профиль",
       "feedback": "Обращения граждан",
       "detectedCompanies": "Выявленные компании",
-      "audit": "Журнал действий"
+      "audit": "Журнал действий",
+      "sections": {
+        "applications": "Заявления и обращения",
+        "registries": "Реестры",
+        "analytics": "Аналитика",
+        "system": "Система"
+      }
     },
     "admin": {
       "dashboard": "Главная",
