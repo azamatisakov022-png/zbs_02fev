@@ -22,6 +22,7 @@ dist
 .claude
 .mcp.json
 
-# MD files (except README.md)
+# MD files (except README.md and design docs)
 *.md
 !README.md
+!docs/plans/**
