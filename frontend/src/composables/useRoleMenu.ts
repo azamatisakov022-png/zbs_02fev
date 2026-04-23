@@ -97,7 +97,6 @@ export function useEmployeeMenu() {
     // Секция: Заявления и обращения
     { id: 'licenses', label: t('nav.employee.licenses'), icon: icons.license, route: '/employee/licenses', groupTitle: t('nav.employee.sections.applications') },
     { id: 'feedback', label: t('nav.employee.feedback'), icon: icons.feedback, route: '/employee/feedback', badge: feedbackStore.getNewCount() },
-    { id: 'compliance', label: t('nav.employee.compliance'), icon: icons.compliance, route: '/employee/compliance' },
 
     // Секция: Реестры
     { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills', groupTitle: t('nav.employee.sections.registries') },
