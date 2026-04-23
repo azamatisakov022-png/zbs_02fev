@@ -154,13 +154,13 @@ const breadcrumbs = computed(() => {
       <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
         <template v-for="item in menuItems" :key="item.id">
           <hr
-            v-if="item.groupDivider"
+            v-if="item.groupTitle || item.groupDivider"
             class="my-2 mx-4 border-0 border-t border-[rgba(0,0,0,0.08)]"
             aria-hidden="true"
           />
           <div
             v-if="item.groupTitle"
-            class="px-4 pt-3 pb-1 text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wider select-none"
+            class="px-4 pt-3 pb-1 text-[11px] font-semibold text-[#475569] uppercase tracking-wider select-none"
           >
             {{ item.groupTitle }}
           </div>
