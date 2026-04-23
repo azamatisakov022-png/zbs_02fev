@@ -93,18 +93,27 @@ export function useEmployeeMenu() {
   const roleTitle = computed(() => t('roles.employee'))
   const menuItems = computed(() => [
     { id: 'dashboard', label: t('nav.employee.dashboard'), icon: icons.dashboard, route: '/employee' },
-    { id: 'notifications', label: t('notifications.title'), icon: icons.notification, route: '/employee/notifications', badge: notificationStore.getUnreadCount('employee') },
-    { id: 'analytics', label: t('nav.employee.analytics'), icon: icons.analytics, route: '/ministry/analytics' },
-    { id: 'compliance', label: t('nav.employee.compliance'), icon: icons.compliance, route: '/employee/compliance' },
-    { id: 'licenses', label: t('nav.employee.licenses'), icon: icons.license, route: '/employee/licenses' },
-    { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
-    { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills' },
-    { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
+
+    // Секция: Заявления и обращения
+    { id: 'licenses', label: t('nav.employee.licenses'), icon: icons.license, route: '/employee/licenses', groupTitle: t('nav.employee.sections.applications') },
     { id: 'feedback', label: t('nav.employee.feedback'), icon: icons.feedback, route: '/employee/feedback', badge: feedbackStore.getNewCount() },
+    { id: 'compliance', label: t('nav.employee.compliance'), icon: icons.compliance, route: '/employee/compliance' },
+
+    // Секция: Реестры
+    { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills', groupTitle: t('nav.employee.sections.registries') },
+    { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
+    { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
+
+    // Секция: Аналитика
+    { id: 'analytics', label: t('nav.employee.analytics'), icon: icons.analytics, route: '/ministry/analytics', groupTitle: t('nav.employee.sections.analytics') },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
-    { id: 'detected-companies', label: t('nav.employee.detectedCompanies'), icon: icons.search, route: '/employee/detected-companies' },
-    { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit' },
     { id: 'map', label: t('nav.employee.map'), icon: icons.map, route: '/employee/map' },
+
+    // Секция: Система
+    { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit', groupTitle: t('nav.employee.sections.system') },
+
+    // Нижний блок (отделён линией, без текстового заголовка)
+    { id: 'notifications', label: t('notifications.title'), icon: icons.notification, route: '/employee/notifications', badge: notificationStore.getUnreadCount('employee'), groupDivider: true },
     { id: 'profile', label: t('nav.employee.profile'), icon: icons.profile, route: '/employee/profile' },
   ])
   return { roleTitle, menuItems }
