@@ -27,10 +27,34 @@ interface Props {
   menuItems: MenuItem[]
 }
 
+interface NavSection {
+  title?: string
+  items: MenuItem[]
+}
+
 const props = defineProps<Props>()
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+
+/**
+ * Группируем плоский menuItems в секции для визуального выделения:
+ * каждый пункт с groupTitle или groupDivider начинает новую секцию.
+ * Пункты между ними (без этих флагов) накапливаются в текущую секцию.
+ */
+const groupedSections = computed<NavSection[]>(() => {
+  const result: NavSection[] = []
+  let current: NavSection | null = null
+  for (const item of props.menuItems) {
+    const startsNew = item.groupTitle || item.groupDivider
+    if (startsNew || !current) {
+      current = { title: item.groupTitle, items: [] }
+      result.push(current)
+    }
+    current.items.push(item)
+  }
+  return result
+})
 
 const sidebarOpen = ref(false)
 const currentLocale = computed(() => getLocale())
@@ -151,26 +175,27 @@ const breadcrumbs = computed(() => {
       </div>
 
       <!-- Navigation -->
-      <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
-        <template v-for="item in menuItems" :key="item.id">
-          <hr
-            v-if="item.groupTitle || item.groupDivider"
-            class="my-2 mx-4 border-0 border-t border-[rgba(0,0,0,0.08)]"
-            aria-hidden="true"
-          />
+      <nav class="p-3 space-y-2 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
+        <div
+          v-for="(section, sIdx) in groupedSections"
+          :key="sIdx"
+          class="bg-[#f8fafc] rounded-lg p-1"
+        >
           <div
-            v-if="item.groupTitle"
-            class="px-4 pt-3 pb-1 text-[11px] font-semibold text-[#475569] uppercase tracking-wider select-none"
+            v-if="section.title"
+            class="px-3 pt-2 pb-1 text-[11px] font-semibold text-[#475569] uppercase tracking-wider select-none"
           >
-            {{ item.groupTitle }}
+            {{ section.title }}
           </div>
           <button
+            v-for="item in section.items"
+            :key="item.id"
             @click="navigateTo(item.route)"
             :class="[
-              'nav-item w-full flex items-center gap-3 px-4 py-3 text-left transition-all',
+              'nav-item w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all',
               isActive(item.route)
                 ? 'nav-item-active bg-[rgba(45,139,78,0.12)] text-[#2D8B4E] font-semibold border-l-[3px] border-[#2D8B4E]'
-                : 'text-[#4B5563] hover:bg-[rgba(45,139,78,0.06)] hover:text-[#2D8B4E] border-l-[3px] border-transparent'
+                : 'text-[#4B5563] hover:bg-white hover:text-[#2D8B4E] border-l-[3px] border-transparent'
             ]"
             style="border-radius: var(--radius-sm)"
             :aria-current="isActive(item.route) ? 'page' : undefined"
@@ -183,7 +208,7 @@ const breadcrumbs = computed(() => {
               :aria-label="t('notifications.unreadCount', { count: item.badge })"
             >{{ item.badge }}</span>
           </button>
-        </template>
+        </div>
       </nav>
 
       <!-- User section -->
