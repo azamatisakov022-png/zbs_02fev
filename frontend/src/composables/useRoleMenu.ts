@@ -101,12 +101,12 @@ export function useEmployeeMenu() {
     // Секция: Реестры
     { id: 'landfills-tbo', label: t('nav.employee.landfillsTbo'), icon: icons.landfill, route: '/ministry/landfills', groupTitle: t('nav.employee.sections.registries') },
     { id: 'collection-points', label: t('nav.employee.collectionPoints'), icon: icons.landfill, route: '/ministry/collection-points' },
+    { id: 'recyclers-registry', label: t('nav.employee.recyclers'), icon: icons.recycle, route: '/employee/recyclers-registry' },
     { id: 'waste-types', label: t('nav.employee.wasteTypes'), icon: icons.recycle, route: '/employee/waste-types' },
 
     // Секция: Аналитика
     { id: 'analytics', label: t('nav.employee.analytics'), icon: icons.analytics, route: '/ministry/analytics', groupTitle: t('nav.employee.sections.analytics') },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
-    { id: 'map', label: t('nav.employee.map'), icon: icons.map, route: '/employee/map' },
 
     // Секция: Система
     { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit', groupTitle: t('nav.employee.sections.system') },

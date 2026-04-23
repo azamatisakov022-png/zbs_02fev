@@ -217,7 +217,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/employee/recyclers-registry',
-    redirect: '/eco-operator/recyclers',
+    name: 'employee-recyclers-registry',
+    component: () => import('../views/employee/EmployeeRecyclersRegistry.vue'),
+    meta: { requiresAuth: true, role: 'employee', breadcrumbLabel: 'breadcrumb.employeeRecyclers' },
   },
   {
     path: '/employee/waste-types',
