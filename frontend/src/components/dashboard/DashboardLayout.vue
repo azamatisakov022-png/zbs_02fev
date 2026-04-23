@@ -152,27 +152,38 @@ const breadcrumbs = computed(() => {
 
       <!-- Navigation -->
       <nav class="p-3 space-y-0.5 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
-        <button
-          v-for="item in menuItems"
-          :key="item.id"
-          @click="navigateTo(item.route)"
-          :class="[
-            'nav-item w-full flex items-center gap-3 px-4 py-3 text-left transition-all',
-            isActive(item.route)
-              ? 'nav-item-active bg-[rgba(45,139,78,0.12)] text-[#2D8B4E] font-semibold border-l-[3px] border-[#2D8B4E]'
-              : 'text-[#4B5563] hover:bg-[rgba(45,139,78,0.06)] hover:text-[#2D8B4E] border-l-[3px] border-transparent'
-          ]"
-          style="border-radius: var(--radius-sm)"
-          :aria-current="isActive(item.route) ? 'page' : undefined"
-        >
-          <span class="nav-icon w-6 h-6 flex items-center justify-center transition-transform" v-html="item.icon" aria-hidden="true"></span>
-          <span class="text-[15px]">{{ item.label }}</span>
-          <span
-            v-if="item.badge && item.badge > 0"
-            class="badge badge-danger ml-auto text-[10px] px-1.5 py-0.5"
-            :aria-label="t('notifications.unreadCount', { count: item.badge })"
-          >{{ item.badge }}</span>
-        </button>
+        <template v-for="item in menuItems" :key="item.id">
+          <hr
+            v-if="item.groupDivider"
+            class="my-2 mx-4 border-0 border-t border-[rgba(0,0,0,0.08)]"
+            aria-hidden="true"
+          />
+          <div
+            v-if="item.groupTitle"
+            class="px-4 pt-3 pb-1 text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wider select-none"
+          >
+            {{ item.groupTitle }}
+          </div>
+          <button
+            @click="navigateTo(item.route)"
+            :class="[
+              'nav-item w-full flex items-center gap-3 px-4 py-3 text-left transition-all',
+              isActive(item.route)
+                ? 'nav-item-active bg-[rgba(45,139,78,0.12)] text-[#2D8B4E] font-semibold border-l-[3px] border-[#2D8B4E]'
+                : 'text-[#4B5563] hover:bg-[rgba(45,139,78,0.06)] hover:text-[#2D8B4E] border-l-[3px] border-transparent'
+            ]"
+            style="border-radius: var(--radius-sm)"
+            :aria-current="isActive(item.route) ? 'page' : undefined"
+          >
+            <span class="nav-icon w-6 h-6 flex items-center justify-center transition-transform" v-html="item.icon" aria-hidden="true"></span>
+            <span class="text-[15px]">{{ item.label }}</span>
+            <span
+              v-if="item.badge && item.badge > 0"
+              class="badge badge-danger ml-auto text-[10px] px-1.5 py-0.5"
+              :aria-label="t('notifications.unreadCount', { count: item.badge })"
+            >{{ item.badge }}</span>
+          </button>
+        </template>
       </nav>
 
       <!-- User section -->
