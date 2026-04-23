@@ -14,6 +14,10 @@ interface MenuItem {
   icon: string
   route: string
   badge?: number
+  /** Если задан — перед этим пунктом отрисовать заголовок секции (UPPERCASE, мелкий, серый). */
+  groupTitle?: string
+  /** Если true — перед этим пунктом отрисовать тонкую горизонтальную линию (отделение нижнего блока). */
+  groupDivider?: boolean
 }
 
 interface Props {
