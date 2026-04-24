@@ -31,9 +31,15 @@ const isDashboard = computed(() => {
     </template>
 
     <main class="flex-1">
-      <router-view v-slot="{ Component }">
+      <router-view v-slot="{ Component, route }">
         <Transition name="page" mode="out-in">
-          <component :is="Component" />
+          <!--
+            :key="route.fullPath" — Vue пересоздаёт компонент при каждой смене маршрута
+            (в т.ч. при возврате на уже посещённую страницу). Это лечит «пустая страница
+            при повторном заходе» в разделах с Leaflet-картами (Полигоны ТБО, Пункты приёма,
+            ГИС-карта): vue-leaflet иногда держит битые ссылки на DOM при re-mount без key.
+          -->
+          <component :is="Component" :key="route.fullPath" />
         </Transition>
       </router-view>
     </main>
