@@ -193,9 +193,10 @@ const isClosedOrRecultivation = computed(() => {
 })
 
 // --- Block 3: Waste acceptance ---
-function wasteUsagePercent(accepted: number, limit: number): number {
-  if (limit === 0) return 0
-  return Math.round((accepted / limit) * 100)
+function wasteUsagePercent(accepted: number | null | undefined, limit: number | null | undefined): number {
+  if (!limit || !Number.isFinite(limit)) return 0
+  const a = Number.isFinite(accepted) ? (accepted as number) : 0
+  return Math.round((a / limit) * 100)
 }
 
 function wasteUsageColor(percent: number): string {
@@ -210,7 +211,8 @@ function wasteUsageTextColor(percent: number): string {
   return 'text-green-600'
 }
 
-function formatNumber(n: number): string {
+function formatNumber(n: number | null | undefined): string {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '—'
   return n.toLocaleString()
 }
 
