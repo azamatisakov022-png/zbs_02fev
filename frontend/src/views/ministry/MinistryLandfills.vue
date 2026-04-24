@@ -170,14 +170,15 @@ const activeCount = computed(() =>
 )
 
 const criticalFillCount = computed(() =>
-  landfillStore.state.landfills.filter(l => {
-    if (l.designCapacity === 0) return false
-    return l.currentVolume / l.designCapacity > 0.85
-  }).length
+  landfillStore.state.landfills.filter(l => getFillPercent(l) >= 85).length
 )
 
 const totalCapacity = computed(() => {
-  const sum = landfillStore.state.landfills.reduce((s, l) => s + l.designCapacity, 0)
+  const sum = landfillStore.state.landfills.reduce(
+    (s, l) => s + (Number.isFinite(l.designCapacity) ? l.designCapacity : 0),
+    0,
+  )
+  if (!Number.isFinite(sum) || sum === 0) return '—'
   return (sum / 1000).toFixed(1)
 })
 

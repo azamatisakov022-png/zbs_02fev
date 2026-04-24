@@ -699,7 +699,14 @@ const coordsText = computed(() => {
         <p v-else class="text-sm text-gray-400">{{ $t('ministryLandfillDetail.noDocsAttached') }}</p>
       </div>
 
-      <!-- ==================== BLOCK 6: Location Map ==================== -->
+      <!-- ==================== BLOCK 6: Location (без LMap) ==================== -->
+      <!--
+        Embedded Leaflet-карта убрана перед демо: vue-leaflet ломает последующую
+        навигацию при unmount. Координаты и адрес доступны, а кнопка «Показать
+        на карте» ведёт на публичный реестр где карта работает стабильно.
+        Вернуть блок LMap можно одним блоком из git history когда разберёмся
+        с leaflet cleanup.
+      -->
       <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-bold text-gray-900">{{ $t('ministryLandfillDetail.mapTitle') }}</h2>
@@ -713,36 +720,17 @@ const coordsText = computed(() => {
             {{ $t('ministryLandfillDetail.showOnMap') }}
           </router-link>
         </div>
-        <div class="rounded-xl overflow-hidden border border-gray-200">
-          <LMap
-            :center="[landfill.lat, landfill.lng]"
-            :zoom="15"
-            :min-zoom="KG_MIN_ZOOM"
-            :max-zoom="KG_MAX_ZOOM"
-            :max-bounds="KG_BOUNDS"
-            :max-bounds-viscosity="1.0"
-            :world-copy-jump="false"
-            style="height: 300px;"
-            :use-global-leaflet="false"
-          >
-            <LTileLayer
-              :url="KG_TILE_URL"
-              :attribution="KG_TILE_ATTRIBUTION"
-              :subdomains="KG_TILE_SUBDOMAINS"
-            />
-            <LMarker :lat-lng="[landfill.lat, landfill.lng]" :icon="markerIcon">
-              <LPopup :options="{ maxWidth: 280 }">
-                <div style="font-family: system-ui, sans-serif;">
-                  <p style="font-weight: 600; font-size: 14px; margin: 0 0 4px 0; color: #1e293b;">{{ landfill.name }}</p>
-                  <p style="font-size: 12px; margin: 0; color: #64748b;">{{ landfill.address }}</p>
-                </div>
-              </LPopup>
-            </LMarker>
-          </LMap>
-        </div>
-        <div class="mt-3 flex items-center justify-between">
-          <p class="text-sm text-gray-500">{{ landfill.address }}</p>
-          <p class="text-xs text-gray-400 font-mono">{{ coordsText }}</p>
+        <div class="rounded-xl bg-gray-50 p-6 border border-gray-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p class="text-xs text-gray-500 mb-1">Адрес</p>
+              <p class="font-medium text-gray-800">{{ landfill.address || '—' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 mb-1">Координаты</p>
+              <p class="font-mono text-gray-700">{{ coordsText }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </template>
