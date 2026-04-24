@@ -236,7 +236,7 @@ const canConfirmManualPayment = computed(
 
 <template>
   <DashboardLayout :role-title="roleTitle" :menu-items="menuItems">
-    <div class="px-6 py-6 max-w-6xl mx-auto">
+    <div class="px-6 py-6">
       <div class="flex items-center gap-2 mb-6 text-sm text-gray-500">
         <router-link to="/employee/licenses" class="hover:text-emerald-600">Лицензии</router-link>
         <span>›</span>
