@@ -10,7 +10,6 @@ import { generatedSubgroups } from '../../data/product-subgroups-generated'
 import { AppButton, AppBadge } from '../../components/ui'
 import { getStatusBadgeVariant } from '../../utils/statusVariant'
 import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
-import SectionGuide from '../../components/common/SectionGuide.vue'
 
 const { t } = useI18n()
 
@@ -401,13 +400,6 @@ const resetAllFilters = () => {
         {{ $t('ecoRecyclersRegistry.addRecycler') }}
       </AppButton>
     </div>
-
-    <SectionGuide
-      :title="$t('ecoRecyclersRegistry.guideTitle')"
-      :description="$t('ecoRecyclersRegistry.guideDescription')"
-      :actions="[$t('ecoRecyclersRegistry.guideAction1'), $t('ecoRecyclersRegistry.guideAction2'), $t('ecoRecyclersRegistry.guideAction3'), $t('ecoRecyclersRegistry.guideAction4')]"
-      storageKey="eco-recyclers"
-    />
 
     <!-- Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
