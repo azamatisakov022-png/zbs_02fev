@@ -142,8 +142,9 @@ const filteredLandfills = computed(() => {
 
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
-    result = result.filter(
-      l => l.name.toLowerCase().includes(q) || l.region.toLowerCase().includes(q)
+    result = result.filter(l =>
+      (l.name || '').toLowerCase().includes(q) ||
+      (l.region || '').toLowerCase().includes(q),
     )
   }
 
@@ -157,6 +158,29 @@ const filteredLandfills = computed(() => {
 
   if (filterStatus.value) {
     result = result.filter(l => l.status === filterStatus.value)
+  }
+
+  // Диагностика фильтров перед демо — если фильтры не работают,
+  // смотрим в console что реально в данных и что в фильтрах.
+  if (import.meta.env.DEV && (filterRegion.value || filterType.value || filterStatus.value || searchQuery.value)) {
+    console.log('[landfills filter debug]', {
+      total: landfillStore.state.landfills.length,
+      afterFilter: result.length,
+      filters: {
+        search: searchQuery.value,
+        region: filterRegion.value,
+        type: filterType.value,
+        status: filterStatus.value,
+      },
+      sampleItem: landfillStore.state.landfills[0]
+        ? {
+            name: landfillStore.state.landfills[0].name,
+            region: landfillStore.state.landfills[0].region,
+            type: landfillStore.state.landfills[0].type,
+            status: landfillStore.state.landfills[0].status,
+          }
+        : null,
+    })
   }
 
   return result
