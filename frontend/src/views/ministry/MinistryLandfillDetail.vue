@@ -160,9 +160,10 @@ const monthNames = computed(() => [
 
 const monthlyChartData = computed(() => {
   if (!landfill.value) return []
-  return landfill.value.monthlyIntake.map((val, i) => ({
+  const intake = landfill.value.monthlyIntake || []
+  return intake.map((val, i) => ({
     label: monthNames.value[i],
-    value: val,
+    value: Number.isFinite(val) ? val : 0,
     color: '#0e888d',
   }))
 })
@@ -170,14 +171,18 @@ const monthlyChartData = computed(() => {
 // Forecast
 const avgMonthlyIntake = computed(() => {
   if (!landfill.value) return 0
-  const intake = landfill.value.monthlyIntake
-  const total = intake.reduce((s, v) => s + v, 0)
+  const intake = landfill.value.monthlyIntake || []
+  if (intake.length === 0) return 0
+  const total = intake.reduce((s, v) => s + (Number.isFinite(v) ? v : 0), 0)
   return Math.round(total / intake.length)
 })
 
 const yearsLeft = computed(() => {
   if (!landfill.value || avgMonthlyIntake.value === 0) return 0
-  const remainingTons = (landfill.value.designCapacity - landfill.value.currentVolume) * 1000
+  const capacity = landfill.value.designCapacity || 0
+  const current = landfill.value.currentVolume || 0
+  const remainingTons = (capacity - current) * 1000
+  if (remainingTons <= 0) return 0
   const monthsLeft = remainingTons / avgMonthlyIntake.value
   return Math.round(monthsLeft / 12)
 })
@@ -232,7 +237,8 @@ const infraItems = computed(() => infraItemDefs.map(item => ({
 
 const infraCount = computed(() => {
   if (!landfill.value) return 0
-  return infraItemDefs.filter(item => landfill.value!.infrastructure[item.key]).length
+  const infra = landfill.value.infrastructure || ({} as Record<string, boolean>)
+  return infraItemDefs.filter(item => infra[item.key as keyof typeof infra]).length
 })
 
 const infraPercent = computed(() => Math.round((infraCount.value / infraItemDefs.length) * 100))
@@ -276,9 +282,10 @@ const markerIcon = computed(() => {
 // --- Coordinates formatting ---
 const coordsText = computed(() => {
   if (!landfill.value) return ''
-  const lat = landfill.value.lat.toFixed(4)
-  const lng = landfill.value.lng.toFixed(4)
-  return `${lat}\u00B0 N, ${lng}\u00B0 E`
+  const latN = landfill.value.lat
+  const lngN = landfill.value.lng
+  if (!Number.isFinite(latN) || !Number.isFinite(lngN)) return '—'
+  return `${latN.toFixed(4)}\u00B0 N, ${lngN.toFixed(4)}\u00B0 E`
 })
 </script>
 
@@ -433,7 +440,7 @@ const coordsText = computed(() => {
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
             <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelHazardClass') }}</span>
-            <span class="text-sm font-medium text-gray-900">{{ landfill.hazardClasses.join(', ') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ (landfill.hazardClasses || []).join(', ') || '—' }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
             <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelRegion') }}</span>
@@ -594,7 +601,7 @@ const coordsText = computed(() => {
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.infraTitle') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <div v-for="item in infraItems" :key="item.key" class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50">
-            <svg v-if="landfill.infrastructure[item.key]" class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg v-if="(landfill.infrastructure || {})[item.key]" class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
             <svg v-else class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -659,10 +666,10 @@ const coordsText = computed(() => {
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-sm font-semibold text-gray-800">{{ $t('ministryLandfillDetail.operationPermit') }}</h3>
-              <span v-if="landfill.permits.operationPermit.expiry && isPermitExpired(landfill.permits.operationPermit.expiry)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{{ $t('ministryLandfillDetail.permitExpired') }}</span>
-              <span v-else-if="landfill.permits.operationPermit.number" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">{{ $t('ministryLandfillDetail.permitValid') }}</span>
+              <span v-if="landfill.permits?.operationPermit?.expiry && isPermitExpired(landfill.permits.operationPermit.expiry)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{{ $t('ministryLandfillDetail.permitExpired') }}</span>
+              <span v-else-if="landfill.permits?.operationPermit?.number" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">{{ $t('ministryLandfillDetail.permitValid') }}</span>
             </div>
-            <div v-if="landfill.permits.operationPermit.number" class="space-y-1 text-sm">
+            <div v-if="landfill.permits?.operationPermit?.number" class="space-y-1 text-sm">
               <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitNumber') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.number }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitDate') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.operationPermit.date }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitValidUntil') }}</span><span class="font-medium" :class="isPermitExpired(landfill.permits.operationPermit.expiry) ? 'text-red-600' : 'text-gray-900'">{{ landfill.permits.operationPermit.expiry }}</span></div>
@@ -671,7 +678,7 @@ const coordsText = computed(() => {
           </div>
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <h3 class="text-sm font-semibold text-gray-800 mb-2">{{ $t('ministryLandfillDetail.ecoConclusion') }}</h3>
-            <div v-if="landfill.permits.ecoConclusion.number" class="space-y-1 text-sm">
+            <div v-if="landfill.permits?.ecoConclusion?.number" class="space-y-1 text-sm">
               <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitNumber') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.number }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">{{ $t('ministryLandfillDetail.permitDate') }}</span><span class="font-medium text-gray-900">{{ landfill.permits.ecoConclusion.date }}</span></div>
             </div>
@@ -679,7 +686,7 @@ const coordsText = computed(() => {
           </div>
         </div>
         <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.attachedDocs') }}</h3>
-        <div v-if="landfill.documents.length > 0" class="space-y-2">
+        <div v-if="(landfill.documents || []).length > 0" class="space-y-2">
           <div v-for="(doc, idx) in landfill.documents" :key="idx" class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
             <div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
               <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
