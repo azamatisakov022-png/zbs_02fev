@@ -38,10 +38,21 @@ async function loadLicenses() {
   await licenseStore.loadRegistry(typeFilter.value || undefined)
 }
 
+/**
+ * Сотрудник МПРЭТН видит только РЕАЛЬНО ПОДАННЫЕ заявки.
+ * Черновики (draft) и заявки, ожидающие оплаты госпошлины (payment_pending),
+ * принадлежат заявителю — сотруднику их видеть не положено до факта подачи.
+ */
+const visibleApps = computed<LicenseApplication[]>(() =>
+  licenseStore.state.adminApplications.filter(
+    a => a.status !== 'draft' && a.status !== 'payment_pending',
+  ),
+)
+
 const filteredApps = computed<LicenseApplication[]>(() => {
   const s = search.value.toLowerCase().trim()
-  if (!s) return licenseStore.state.adminApplications
-  return licenseStore.state.adminApplications.filter(
+  if (!s) return visibleApps.value
+  return visibleApps.value.filter(
     a =>
       a.applicantName.toLowerCase().includes(s) ||
       a.applicantInn.toLowerCase().includes(s),
@@ -163,7 +174,7 @@ function openApp(a: LicenseApplication) {
               : 'border-transparent text-gray-500 hover:text-gray-700',
           ]"
         >
-          Заявки ({{ licenseStore.state.adminApplications.length }})
+          Заявки ({{ visibleApps.length }})
         </button>
         <button
           @click="activeTab = 'licenses'"

@@ -32,6 +32,51 @@ const approveForm = ref({ validUntil: '' })
 
 const appId = computed(() => Number(route.params.id))
 
+// ─── Локализация бэкенд-значений (быстро, без доп. API) ──────────
+// Эти enum'ы бэк возвращает в raw-формате; пока нет отдельного API справочников —
+// переводим локально. При необходимости можно вынести в i18n.
+function labelApplicantEntity(v?: string): string {
+  const map: Record<string, string> = {
+    legal_entity: 'Юридическое лицо',
+    individual: 'Физическое лицо',
+    ip: 'Индивидуальный предприниматель',
+    LEGAL_ENTITY: 'Юридическое лицо',
+    INDIVIDUAL: 'Физическое лицо',
+    IP: 'Индивидуальный предприниматель',
+  }
+  return v ? map[v] || v : '—'
+}
+
+function labelPaymentProvider(v?: string): string {
+  const map: Record<string, string> = {
+    MANUAL: 'Ручная оплата (квитанция)',
+    BANK_KG: 'Банковский перевод',
+    ELSOM: 'Элсом',
+    MBANK: 'MBANK',
+    ODENGI: 'О!Деньги',
+    BAKAI: 'Bakai Online',
+  }
+  return v ? map[v] || v : '—'
+}
+
+function labelPaymentStatus(v?: string): string {
+  const map: Record<string, string> = {
+    PENDING: 'Ожидает оплаты',
+    SUCCESS: 'Оплачено',
+    MANUAL_CONFIRMED: 'Оплачено (подтверждено вручную)',
+    FAILED: 'Ошибка оплаты',
+    REFUNDED: 'Возврат средств',
+    CANCELED: 'Отменено',
+  }
+  return v ? map[v] || v : '—'
+}
+
+function labelApplicantType(v?: string): string {
+  if (!v) return '—'
+  const fromEnum = licenseStore.state.licenseTypesEnum.find(e => e.value === v)?.labelRu
+  return fromEnum || v
+}
+
 async function load() {
   loading.value = true
   try {
@@ -233,8 +278,8 @@ const canConfirmManualPayment = computed(
           <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             <div><dt class="text-gray-500">Наименование</dt><dd class="font-medium">{{ app.applicantName }}</dd></div>
             <div><dt class="text-gray-500">ИНН</dt><dd>{{ app.applicantInn }}</dd></div>
-            <div><dt class="text-gray-500">Тип</dt><dd>{{ app.applicantType }}</dd></div>
-            <div><dt class="text-gray-500">Орг.-правовая форма</dt><dd>{{ app.applicantEntity }}</dd></div>
+            <div><dt class="text-gray-500">Тип</dt><dd>{{ labelApplicantType(app.applicantType) }}</dd></div>
+            <div><dt class="text-gray-500">Орг.-правовая форма</dt><dd>{{ labelApplicantEntity(app.applicantEntity) }}</dd></div>
             <div class="md:col-span-2"><dt class="text-gray-500">Юридический адрес</dt><dd>{{ app.legalAddress }}</dd></div>
             <div class="md:col-span-2"><dt class="text-gray-500">Фактический адрес</dt><dd>{{ app.actualAddress }}</dd></div>
             <div><dt class="text-gray-500">Контакт</dt><dd>{{ app.contactPerson || '—' }}</dd></div>
@@ -276,8 +321,8 @@ const canConfirmManualPayment = computed(
             </button>
           </div>
           <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div><dt class="text-gray-500">Провайдер</dt><dd>{{ app.payment.provider }}</dd></div>
-            <div><dt class="text-gray-500">Статус</dt><dd class="font-medium">{{ app.payment.status }}</dd></div>
+            <div><dt class="text-gray-500">Провайдер</dt><dd>{{ labelPaymentProvider(app.payment.provider) }}</dd></div>
+            <div><dt class="text-gray-500">Статус</dt><dd class="font-medium">{{ labelPaymentStatus(app.payment.status) }}</dd></div>
             <div v-if="app.payment.paidAt"><dt class="text-gray-500">Оплачено</dt><dd>{{ formatDate(app.payment.paidAt) }}</dd></div>
             <div v-if="app.payment.receiptFileName"><dt class="text-gray-500">Квитанция</dt><dd>{{ app.payment.receiptFileName }}</dd></div>
           </dl>
