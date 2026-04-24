@@ -232,6 +232,16 @@ function newCalculation() {
 // ─── Live-итоги для sticky-панели (новый дизайн) ───
 // В отличие от старой кнопки «Рассчитать», в новом дизайне сумма обновляется
 // сразу при изменении полей — как в Apple Card / Revolut калькуляторах.
+
+// Строки готовые к показу в таблице результатов (для PDF-экспорта).
+// Вычисляются на лету — не нужен флаг showResult и кнопка «Рассчитать».
+const displayResultRows = computed<CalcRow[]>(() =>
+  rows.value.filter(r => r.group && parseFloat(String(r.volume)) > 0),
+)
+const displayTotalAmount = computed(() =>
+  displayResultRows.value.reduce((s, r) => s + r.amount, 0),
+)
+
 const liveTotal = computed(() =>
   rows.value.reduce((sum, r) => sum + (Number.isFinite(r.amount) ? r.amount : 0), 0),
 )
@@ -288,13 +298,8 @@ function getSubgroupLabel(row: CalcRow): string {
 const pdfLoading = ref(false)
 
 async function downloadPdf() {
-  // В новом дизайне показ результата — live, но PDF-экспорт требует
-  // зафиксированный DOM-узел с таблицей. Если пользователь ещё не нажал
-  // «Рассчитать» — сначала вызываем calculate() чтобы сгенерировать таблицу.
-  if (!showResult.value) {
-    calculate()
-    await nextTick()
-  }
+  // Блок #calculation-result всегда в DOM (спрятан off-screen),
+  // computed displayResultRows держит его актуальным. Просто делаем снимок.
   const el = document.getElementById('calculation-result')
   if (!el) return
 
@@ -706,10 +711,16 @@ async function downloadPdf() {
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
-    <!-- HIDDEN: legacy result block for PDF export                -->
-    <!-- (используется downloadPdf — renders off-screen таблица)   -->
+    <!-- ТЕХНИЧЕСКИЙ БЛОК ДЛЯ PDF-ЭКСПОРТА — СПРЯТАН OFF-SCREEN -->
+    <!-- Пользователь его не видит, но html2canvas/jsPDF может     -->
+    <!-- снять с него снимок когда кликают «Скачать PDF».          -->
+    <!-- aria-hidden чтобы screen readers его игнорировали.        -->
     <!-- ═══════════════════════════════════════════════════════ -->
-    <div v-if="showResult" id="calc-result" class="max-w-[1360px] mx-auto px-6 lg:px-8 pb-20">
+    <div
+      id="calc-result"
+      aria-hidden="true"
+      style="position:absolute;left:-99999px;top:0;width:1360px;"
+    >
       <div id="calculation-result" class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
         <h3 class="text-lg font-bold text-[#065f46] mb-4">{{ $t('calculatorPage.result') }}</h3>
         <div class="overflow-x-auto mb-4">
@@ -726,7 +737,7 @@ async function downloadPdf() {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="r in resultRows" :key="r.id" class="border-b border-[#bbf7d0]">
+              <tr v-for="r in displayResultRows" :key="r.id" class="border-b border-[#bbf7d0]">
                 <td class="px-3 py-2.5 text-[#1e293b] text-xs">{{ getGroupLabel(r.group) }}</td>
                 <td class="px-3 py-2.5 text-[#64748b] text-xs max-w-[200px] truncate" :title="getSubgroupLabel(r)">{{ getSubgroupLabel(r) }}</td>
                 <td class="px-3 py-2.5 text-right font-medium text-[#1e293b]">{{ fmtDec(parseFloat(String(r.volume)) || 0) }}</td>
@@ -739,7 +750,7 @@ async function downloadPdf() {
             <tfoot>
               <tr class="bg-[#dcfce7]">
                 <td class="px-3 py-3 font-bold text-[#065f46] rounded-bl-lg" colspan="6">{{ $t('calculatorPage.total') }}</td>
-                <td class="px-3 py-3 text-right font-bold text-[#065f46] rounded-br-lg text-lg">{{ fmtDec(totalAmount) }}</td>
+                <td class="px-3 py-3 text-right font-bold text-[#065f46] rounded-br-lg text-lg">{{ fmtDec(displayTotalAmount) }}</td>
               </tr>
             </tfoot>
           </table>
