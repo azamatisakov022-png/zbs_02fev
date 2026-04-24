@@ -506,14 +506,19 @@ async function downloadPdf() {
               ></div>
             </div>
             <!-- Row footer with rate + share -->
-            <div v-if="row.amount > 0" class="px-5 py-2 bg-ink-50/60 flex items-center justify-between text-[11px]">
-              <div class="text-ink-500">
+            <div
+              v-if="row.amount > 0"
+              class="px-5 py-3 flex items-center justify-between flex-wrap gap-2 text-[13px]"
+              style="background:rgba(241,245,249,0.6)"
+            >
+              <div style="color:#475569">
                 {{ $t('calculatorPage.rowRate') }}
-                <span class="font-mono font-semibold text-ink-700">{{ row.rate.toLocaleString('ru-RU') }} {{ $t('calculatorPage.somT') }}</span>
+                <span class="font-mono font-semibold tabular-nums" style="color:#0f172a">{{ row.rate.toLocaleString('ru-RU') }}</span>
+                <span class="font-mono" style="color:#475569">{{ $t('calculatorPage.somT') }}</span>
               </div>
-              <div class="text-ink-400">
+              <div style="color:#475569">
                 {{ $t('calculatorPage.rowShare') }}
-                <span class="font-semibold text-ink-700 tabular-nums">{{ rowShare(row).toFixed(1) }}%</span>
+                <span class="font-semibold tabular-nums" style="color:#0f172a">{{ rowShare(row).toFixed(1) }}%</span>
                 <span class="ml-1">{{ $t('calculatorPage.rowOfTotal') }}</span>
               </div>
             </div>
