@@ -495,8 +495,20 @@ const coordsText = computed(() => {
         </div>
       </div>
 
+      <!-- ==================== 2-КОЛОНОЧНЫЙ LAYOUT ==================== -->
+      <!--
+        Левая колонка (col-span-2): основной контент — ёмкость, таблица отходов,
+        инфраструктура. Занимает 2/3 ширины.
+        Правая колонка (col-span-1): боковая панель — морфология, документы,
+        локация. Занимает 1/3 ширины.
+        На мониторах <lg — всё в одну колонку, стандартный mobile flow.
+      -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- ========== ЛЕВАЯ КОЛОНКА ========== -->
+        <div class="lg:col-span-2 space-y-6">
+
       <!-- ==================== BLOCK 2: Capacity & Fill Level ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.capacityTitle') }}</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -560,7 +572,7 @@ const coordsText = computed(() => {
       </div>
 
       <!-- ==================== BLOCK 3: Waste Types Table ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.wasteTypesTitle') }}</h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm border-collapse">
@@ -599,7 +611,7 @@ const coordsText = computed(() => {
       </div>
 
       <!-- ==================== BLOCK 4: Infrastructure ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.infraTitle') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <div v-for="item in infraItems" :key="item.key" class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 bg-gray-50">
@@ -645,8 +657,12 @@ const coordsText = computed(() => {
         </div>
       </div>
 
+        </div>
+        <!-- ========== ПРАВАЯ КОЛОНКА ========== -->
+        <div class="space-y-6">
+
       <!-- ==================== BLOCK 4.5: Morphological Composition ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.morphologyTitle') }}</h2>
         <div class="space-y-3">
           <div v-for="item in morphologyItems" :key="item.label">
@@ -662,9 +678,9 @@ const coordsText = computed(() => {
       </div>
 
       <!-- ==================== BLOCK 5: Documents & Permits ==================== -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.docsTitle') }}</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="grid grid-cols-1 gap-3 mb-6">
           <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-sm font-semibold text-gray-800">{{ $t('ministryLandfillDetail.operationPermit') }}</h3>
@@ -713,35 +729,34 @@ const coordsText = computed(() => {
         Embedded Leaflet-карта убрана перед демо: vue-leaflet ломает последующую
         навигацию при unmount. Координаты и адрес доступны, а кнопка «Показать
         на карте» ведёт на публичный реестр где карта работает стабильно.
-        Вернуть блок LMap можно одним блоком из git history когда разберёмся
-        с leaflet cleanup.
       -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-900">{{ $t('ministryLandfillDetail.mapTitle') }}</h2>
-          <router-link
-            :to="{ path: '/registries', query: { lat: String(landfill.lat), lng: String(landfill.lng), zoom: '15' } }"
-            class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
-          >
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            {{ $t('ministryLandfillDetail.showOnMap') }}
-          </router-link>
-        </div>
-        <div class="rounded-xl bg-gray-50 p-6 border border-gray-200">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p class="text-xs text-gray-500 mb-1">Адрес</p>
-              <p class="font-medium text-gray-800">{{ landfill.address || '—' }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500 mb-1">Координаты</p>
-              <p class="font-mono text-gray-700">{{ coordsText }}</p>
-            </div>
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">{{ $t('ministryLandfillDetail.mapTitle') }}</h2>
+        <div class="rounded-xl bg-gray-50 p-4 border border-gray-200 space-y-3">
+          <div>
+            <p class="text-xs text-gray-500 mb-1">Адрес</p>
+            <p class="text-sm font-medium text-gray-800">{{ landfill.address || '—' }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 mb-1">Координаты</p>
+            <p class="text-sm font-mono text-gray-700">{{ coordsText }}</p>
           </div>
         </div>
+        <router-link
+          :to="{ path: '/registries', query: { lat: String(landfill.lat), lng: String(landfill.lng), zoom: '15' } }"
+          class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          {{ $t('ministryLandfillDetail.showOnMap') }}
+        </router-link>
       </div>
+
+        </div>
+        <!-- ========== КОНЕЦ ПРАВОЙ КОЛОНКИ ========== -->
+      </div>
+      <!-- ========== КОНЕЦ 2-КОЛОНОЧНОГО LAYOUT ========== -->
     </template>
     <MapCoordinatePicker
       :visible="showCoordPicker"
