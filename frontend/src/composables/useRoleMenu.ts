@@ -83,7 +83,8 @@ export function useEcoOperatorMenu() {
     { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile' },
     { id: 'payers', label: t('nav.ecoOperator.payers'), icon: icons.registries, route: '/eco-operator/payers' },
     { id: 'recyclers-registry', label: t('nav.ecoOperator.recyclers'), icon: icons.recycle, route: '/eco-operator/recyclers' },
-    { id: 'licenses-registry', label: t('nav.ecoOperator.licenses') || 'Реестр лицензий', icon: icons.license, route: '/eco-operator/licenses' },
+    // Пункт «Реестр лицензий» убран: лицензия — атрибут переработчика, а не отдельная сущность
+    // для Эко Оператора. Статус лицензии теперь виден в реестре переработчиков.
   ])
   return { roleTitle, menuItems }
 }

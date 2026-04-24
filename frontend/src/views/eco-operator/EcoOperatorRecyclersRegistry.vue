@@ -28,6 +28,75 @@ const searchQuery = ref('')
 const filterStatus = ref('')
 const filterWasteType = ref('')
 
+// Фильтр по статусу лицензии — главная добавленная фича для Эко Оператора:
+// одним кликом найти нарушителей (нет лицензии / истекла).
+type LicenseStatus = 'active' | 'expiring' | 'expired' | 'missing'
+type LicenseFilter = '' | LicenseStatus | 'violations'
+const filterLicense = ref<LicenseFilter>('')
+
+/**
+ * Вычисление статуса лицензии переработчика.
+ * - missing: лицензии нет / невалидная дата — это НАРУШЕНИЕ
+ * - expired: дата истечения уже в прошлом
+ * - expiring: истекает в ближайшие 30 дней — требует внимания
+ * - active: всё в порядке
+ */
+function getLicenseStatus(r: Recycler): LicenseStatus {
+  if (!r.licenseNumber || !r.licenseExpiry) return 'missing'
+  const expiry = new Date(r.licenseExpiry)
+  if (!Number.isFinite(expiry.getTime())) return 'missing'
+  const now = new Date()
+  const daysLeft = Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  if (daysLeft < 0) return 'expired'
+  if (daysLeft <= 30) return 'expiring'
+  return 'active'
+}
+
+function licenseDaysLeft(r: Recycler): number | null {
+  if (!r.licenseExpiry) return null
+  const expiry = new Date(r.licenseExpiry)
+  if (!Number.isFinite(expiry.getTime())) return null
+  return Math.floor((expiry.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+}
+
+function licenseStatusLabel(s: LicenseStatus): string {
+  switch (s) {
+    case 'active': return 'Действует'
+    case 'expiring': return 'Истекает'
+    case 'expired': return 'Истекла'
+    case 'missing': return 'Нет лицензии'
+  }
+}
+
+function licenseStatusBadgeClass(s: LicenseStatus): string {
+  switch (s) {
+    case 'active': return 'bg-green-100 text-green-700 ring-1 ring-green-200'
+    case 'expiring': return 'bg-amber-100 text-amber-800 ring-1 ring-amber-200'
+    case 'expired': return 'bg-red-100 text-red-700 ring-1 ring-red-200'
+    case 'missing': return 'bg-red-600 text-white ring-1 ring-red-700'
+  }
+}
+
+function licenseStatusDotClass(s: LicenseStatus): string {
+  switch (s) {
+    case 'active': return 'bg-green-500'
+    case 'expiring': return 'bg-amber-500'
+    case 'expired': return 'bg-red-500'
+    case 'missing': return 'bg-white'
+  }
+}
+
+// Счётчики по статусам лицензий (для чипов-фильтров сверху)
+const licenseCounts = computed(() => {
+  const counts = { active: 0, expiring: 0, expired: 0, missing: 0 }
+  for (const r of recyclerStore.state.recyclers) {
+    counts[getLicenseStatus(r)]++
+  }
+  return counts
+})
+
+const violationsCount = computed(() => licenseCounts.value.expired + licenseCounts.value.missing)
+
 // Counts
 const counts = computed(() => recyclerStore.getCounts())
 
@@ -43,6 +112,17 @@ const filteredRecyclers = computed(() => {
   }
   if (filterWasteType.value) {
     result = result.filter(r => r.wasteTypes.includes(filterWasteType.value))
+  }
+  if (filterLicense.value) {
+    if (filterLicense.value === 'violations') {
+      // «Нарушения» = истекла ИЛИ нет лицензии
+      result = result.filter(r => {
+        const s = getLicenseStatus(r)
+        return s === 'expired' || s === 'missing'
+      })
+    } else {
+      result = result.filter(r => getLicenseStatus(r) === filterLicense.value)
+    }
   }
   return result
 })
@@ -576,6 +656,68 @@ const resetAllFilters = () => {
       </div>
     </div>
 
+    <!-- Чипы-фильтры по статусу лицензии (главный инструмент Эко Оператора) -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button
+        @click="filterLicense = ''"
+        :class="[
+          'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
+          filterLicense === ''
+            ? 'bg-slate-800 text-white border-slate-800'
+            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+        ]"
+      >
+        Все
+        <span :class="['text-xs px-1.5 py-0.5 rounded-full', filterLicense === '' ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-500']">{{ recyclerStore.state.recyclers.length }}</span>
+      </button>
+
+      <button
+        @click="filterLicense = 'active'"
+        :class="[
+          'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
+          filterLicense === 'active'
+            ? 'bg-green-600 text-white border-green-600'
+            : 'bg-white text-slate-600 border-slate-200 hover:border-green-300'
+        ]"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+        Действует
+        <span :class="['text-xs px-1.5 py-0.5 rounded-full', filterLicense === 'active' ? 'bg-green-700 text-green-100' : 'bg-slate-100 text-slate-500']">{{ licenseCounts.active }}</span>
+      </button>
+
+      <button
+        @click="filterLicense = 'expiring'"
+        :class="[
+          'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
+          filterLicense === 'expiring'
+            ? 'bg-amber-600 text-white border-amber-600'
+            : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300'
+        ]"
+      >
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+        Истекают (≤30 дн.)
+        <span :class="['text-xs px-1.5 py-0.5 rounded-full', filterLicense === 'expiring' ? 'bg-amber-700 text-amber-100' : 'bg-slate-100 text-slate-500']">{{ licenseCounts.expiring }}</span>
+      </button>
+
+      <button
+        @click="filterLicense = 'violations'"
+        :class="[
+          'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
+          filterLicense === 'violations'
+            ? 'bg-red-600 text-white border-red-600'
+            : violationsCount > 0
+              ? 'bg-red-50 text-red-700 border-red-200 hover:border-red-400'
+              : 'bg-white text-slate-400 border-slate-200'
+        ]"
+      >
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        Нарушения
+        <span :class="['text-xs px-1.5 py-0.5 rounded-full', filterLicense === 'violations' ? 'bg-red-700 text-red-100' : 'bg-red-100 text-red-700']">{{ violationsCount }}</span>
+      </button>
+    </div>
+
     <!-- Filters -->
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e2e8f0] mb-6">
       <div class="flex flex-wrap gap-4">
@@ -621,7 +763,12 @@ const resetAllFilters = () => {
             <tr
               v-for="recycler in filteredRecyclers"
               :key="recycler.id"
-              class="border-t border-[#e2e8f0] hover:bg-[#f0fdf4] cursor-pointer transition-all duration-150 hover:shadow-sm"
+              :class="[
+                'border-t cursor-pointer transition-all duration-150 hover:shadow-sm',
+                (getLicenseStatus(recycler) === 'missing' || getLicenseStatus(recycler) === 'expired')
+                  ? 'border-red-100 bg-red-50/40 hover:bg-red-50'
+                  : 'border-[#e2e8f0] hover:bg-[#f0fdf4]'
+              ]"
               @click="goToDetail(recycler)"
             >
               <td class="px-4 py-3">
@@ -632,8 +779,23 @@ const resetAllFilters = () => {
               </td>
               <td class="px-4 py-3 font-mono text-xs">{{ recycler.inn }}</td>
               <td class="px-4 py-3">
-                <p class="font-mono text-xs">{{ recycler.licenseNumber }}</p>
-                <p class="text-xs text-[#64748b]">{{ $t('ecoRecyclersRegistry.until') }} {{ recycler.licenseExpiry }}</p>
+                <div class="space-y-1.5">
+                  <!-- Цветной бейдж со статусом лицензии — главный сигнал для Эко Оператора -->
+                  <span :class="['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', licenseStatusBadgeClass(getLicenseStatus(recycler))]">
+                    <span :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', licenseStatusDotClass(getLicenseStatus(recycler))]"></span>
+                    <template v-if="getLicenseStatus(recycler) === 'expiring'">
+                      Истекает через {{ licenseDaysLeft(recycler) }} дн.
+                    </template>
+                    <template v-else-if="getLicenseStatus(recycler) === 'missing'">
+                      ⚠ Нет лицензии — нарушение
+                    </template>
+                    <template v-else>
+                      {{ licenseStatusLabel(getLicenseStatus(recycler)) }}
+                    </template>
+                  </span>
+                  <p v-if="recycler.licenseNumber" class="font-mono text-xs text-slate-600">{{ recycler.licenseNumber }}</p>
+                  <p v-if="recycler.licenseExpiry" class="text-[11px] text-slate-400">до {{ recycler.licenseExpiry }}</p>
+                </div>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1">
