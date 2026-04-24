@@ -313,7 +313,7 @@ async function downloadPdf() {
 </script>
 
 <template>
-  <div class="bg-ink-50 min-h-screen">
+  <div class="min-h-screen" style="background:#f8fafc">
     <!-- ═══════════════════════════════════════════════════════ -->
     <!-- HERO + TABS                                              -->
     <!-- ═══════════════════════════════════════════════════════ -->
@@ -340,20 +340,16 @@ async function downloadPdf() {
           </p>
         </div>
         <!-- Tab switcher -->
-        <div class="flex items-center gap-1 bg-white p-1.5 rounded-full border border-ink-200 shadow-sm w-fit">
+        <div class="flex items-center gap-1 bg-white p-1.5 rounded-full shadow-sm w-fit" style="border: 1px solid #e2e8f0;">
           <button
             @click="activeTab = 'calculator'"
-            :class="[
-              'px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors',
-              activeTab === 'calculator' ? 'bg-ink-900 text-white' : 'text-ink-500 hover:text-ink-800'
-            ]"
+            class="px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors"
+            :style="activeTab === 'calculator' ? 'background:#0f172a;color:#fff' : 'background:transparent;color:#64748b'"
           >{{ $t('calculatorPage.tabFeeCalculator') }}</button>
           <button
             @click="activeTab = 'penalty'"
-            :class="[
-              'px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors',
-              activeTab === 'penalty' ? 'bg-ink-900 text-white' : 'text-ink-500 hover:text-ink-800'
-            ]"
+            class="px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors"
+            :style="activeTab === 'penalty' ? 'background:#0f172a;color:#fff' : 'background:transparent;color:#64748b'"
           >{{ $t('calculatorPage.tabPenaltyCalculator') }}</button>
         </div>
       </div>
@@ -375,22 +371,22 @@ async function downloadPdf() {
               <div class="grid grid-cols-2 gap-2">
                 <button
                   @click="operationType = 'import'"
-                  :class="[
-                    'px-4 py-3 rounded-lg border text-left transition-all',
-                    operationType === 'import' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-ink-200 hover:border-ink-300 text-ink-700'
-                  ]"
+                  class="px-4 py-3 rounded-lg text-left transition-all"
+                  :style="operationType === 'import'
+                    ? 'border:1px solid #0e888d;background:#effafa;color:#0c6267'
+                    : 'border:1px solid #e2e8f0;color:#334155'"
                 >
-                  <div class="text-[11px] uppercase tracking-[0.1em] text-ink-400 font-semibold">↓</div>
+                  <div class="text-[11px] uppercase tracking-[0.1em] font-semibold" style="color:#94a3b8">↓</div>
                   <div class="text-[14px] font-semibold mt-0.5">{{ $t('calculatorPage.import') }}</div>
                 </button>
                 <button
                   @click="operationType = 'production'"
-                  :class="[
-                    'px-4 py-3 rounded-lg border text-left transition-all',
-                    operationType === 'production' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-ink-200 hover:border-ink-300 text-ink-700'
-                  ]"
+                  class="px-4 py-3 rounded-lg text-left transition-all"
+                  :style="operationType === 'production'
+                    ? 'border:1px solid #0e888d;background:#effafa;color:#0c6267'
+                    : 'border:1px solid #e2e8f0;color:#334155'"
                 >
-                  <div class="text-[11px] uppercase tracking-[0.1em] text-ink-400 font-semibold">⚙</div>
+                  <div class="text-[11px] uppercase tracking-[0.1em] font-semibold" style="color:#94a3b8">⚙</div>
                   <div class="text-[14px] font-semibold mt-0.5">{{ $t('calculatorPage.production') }}</div>
                 </button>
               </div>
@@ -404,10 +400,10 @@ async function downloadPdf() {
                   v-for="y in [2025, 2026, 2027, 2028, 2029, 2030]"
                   :key="y"
                   @click="year = y"
-                  :class="[
-                    'flex-1 min-w-[56px] px-3 py-3 rounded-lg border text-[13px] font-semibold transition-all tabular-nums',
-                    year === y ? 'border-brand-600 bg-brand-600 text-white' : 'border-ink-200 text-ink-600 hover:border-ink-300'
-                  ]"
+                  class="flex-1 min-w-[56px] px-3 py-3 rounded-lg text-[13px] font-semibold transition-all tabular-nums"
+                  :style="year === y
+                    ? 'border:1px solid #0e888d;background:#0e888d;color:#fff'
+                    : 'border:1px solid #e2e8f0;color:#475569'"
                 >{{ y }}</button>
               </div>
             </div>
@@ -495,10 +491,10 @@ async function downloadPdf() {
             </div>
 
             <!-- Progress bar of row share in total -->
-            <div v-if="row.amount > 0" class="h-1 bg-ink-100">
+            <div v-if="row.amount > 0" class="h-1" style="background:#f1f5f9">
               <div
-                class="h-full bg-gradient-to-r from-brand-500 to-emerald2-500 transition-all duration-500"
-                :style="{ width: rowShare(row) + '%' }"
+                class="h-full transition-all duration-500"
+                :style="{ width: rowShare(row) + '%', background: 'linear-gradient(to right, #228e95, #10b981)' }"
               ></div>
             </div>
             <!-- Row footer with rate + share -->
@@ -531,7 +527,10 @@ async function downloadPdf() {
       <aside class="col-span-12 lg:col-span-4">
         <div class="lg:sticky lg:top-6 space-y-4">
           <!-- Main sticky panel -->
-          <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-ink-900 via-ink-800 to-brand-800 text-white p-7 relative">
+          <div
+            class="rounded-2xl overflow-hidden text-white p-7 relative"
+            style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0e4f54 100%);"
+          >
             <div class="flex items-center justify-between mb-6">
               <div class="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold font-mono">
                 {{ $t('calculatorPage.totalDue') }}
@@ -659,7 +658,10 @@ async function downloadPdf() {
 
       <!-- ───────────── RIGHT: RED STICKY RESULT ───────────── -->
       <aside class="col-span-12 lg:col-span-5">
-        <div class="lg:sticky lg:top-6 rounded-2xl bg-gradient-to-br from-red-900 via-red-800 to-ink-900 text-white p-7">
+        <div
+          class="lg:sticky lg:top-6 rounded-2xl text-white p-7"
+          style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 55%, #0f172a 100%);"
+        >
           <div class="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold font-mono mb-4">
             {{ $t('calculatorPage.penaltyAmount') }}
           </div>
