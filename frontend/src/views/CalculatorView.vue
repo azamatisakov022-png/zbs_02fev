@@ -323,16 +323,19 @@ async function downloadPdf() {
           <div class="text-[11px] uppercase tracking-[0.22em] text-brand-600 font-semibold mb-3 font-mono">
             {{ activeTab === 'calculator' ? $t('calculatorPage.heroKicker') : $t('calculatorPage.penaltyKicker') }}
           </div>
-          <h1 class="text-[38px] lg:text-[46px] leading-[1.05] font-light text-ink-900 tracking-tight">
+          <h1
+            class="text-[38px] lg:text-[46px] leading-[1.08] font-semibold tracking-tight"
+            style="color:#0f172a"
+          >
             <template v-if="activeTab === 'calculator'">
               {{ $t('calculatorPage.heroTitleA') }}
               <br/>
-              <span class="italic font-normal text-brand-700">{{ $t('calculatorPage.heroTitleB') }}</span>.
+              <span style="color:#0c6267">{{ $t('calculatorPage.heroTitleB') }}</span>.
             </template>
             <template v-else>
               {{ $t('calculatorPage.penaltyHeroA') }}
               <br/>
-              <span class="italic font-normal text-red-700">{{ $t('calculatorPage.penaltyHeroB') }}</span>.
+              <span style="color:#b91c1c">{{ $t('calculatorPage.penaltyHeroB') }}</span>.
             </template>
           </h1>
           <p v-if="activeTab === 'calculator'" class="text-[15px] text-ink-500 mt-4 max-w-[540px]">
@@ -570,13 +573,17 @@ async function downloadPdf() {
               <button
                 @click="downloadPdf"
                 :disabled="pdfLoading || !isFormValid"
-                class="px-4 py-3 rounded-xl bg-white text-ink-900 text-[13px] font-semibold disabled:bg-white/20 disabled:text-white/40 disabled:cursor-not-allowed hover:bg-white/90 transition-colors"
+                class="px-4 py-3 rounded-xl text-[13px] font-semibold transition-colors"
+                :style="isFormValid
+                  ? 'background:#fff;color:#0f172a'
+                  : 'background:rgba(255,255,255,0.2);color:rgba(255,255,255,0.5);cursor:not-allowed'"
               >
                 {{ $t('calculatorPage.downloadPdf') }}
               </button>
               <button
                 @click="clearForm"
-                class="px-4 py-3 rounded-xl bg-white/10 text-white text-[13px] font-semibold hover:bg-white/20 transition-colors"
+                class="px-4 py-3 rounded-xl text-[13px] font-semibold transition-colors"
+                style="background:rgba(255,255,255,0.1);color:#fff"
               >
                 {{ $t('calculatorPage.clear') }}
               </button>
