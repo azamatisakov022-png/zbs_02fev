@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
@@ -112,6 +112,22 @@ onMounted(async () => {
   } catch (err) {
     console.warn('[MinistryLandfills] Failed to load Kyrgyzstan oblasts GeoJSON:', err)
   }
+})
+
+// Явный cleanup Leaflet-слоёв при размонтировании компонента.
+// Без этого vue-leaflet может держать битые ссылки на DOM и при повторном
+// монтировании рендер молча прерывается.
+onBeforeUnmount(() => {
+  if (maskLayer) {
+    try {
+      maskLayer.remove()
+    } catch {
+      /* layer мог быть уже на уничтоженной карте — игнорируем */
+    }
+    maskLayer = null
+  }
+  mapReady.value = false
+  oblastsGeo.value = null
 })
 
 // ==================== COMPUTED ====================
