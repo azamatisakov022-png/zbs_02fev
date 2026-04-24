@@ -384,37 +384,14 @@ const guideActions = computed(() => [
         </div>
 
         <div class="flex items-center gap-3 flex-shrink-0">
-          <!-- View mode toggle -->
-          <div class="inline-flex rounded-lg border border-[#e2e8f0] overflow-hidden">
-            <button
-              @click="viewMode = 'list'"
-              :class="[
-                'px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2',
-                viewMode === 'list'
-                  ? 'bg-[#2563eb] text-white'
-                  : 'bg-white text-[#64748b] hover:bg-[#f8fafc]',
-              ]"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              {{ $t('ministryLandfills.viewList') }}
-            </button>
-            <button
-              @click="viewMode = 'map'"
-              :class="[
-                'px-4 py-2 text-sm font-medium transition-colors flex items-center gap-2',
-                viewMode === 'map'
-                  ? 'bg-[#2563eb] text-white'
-                  : 'bg-white text-[#64748b] hover:bg-[#f8fafc]',
-              ]"
-            >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              {{ $t('ministryLandfills.viewMap') }}
-            </button>
-          </div>
+          <!--
+            Переключатель List/Map убран перед демо:
+            vue-leaflet при втором монтировании LMap ломает сессию (ссылки на
+            уничтоженный DOM блокируют последующие navigation). ГИС-карта
+            доступна на публичной стороне. Вернуть можно после демо,
+            если разберёмся с корневой причиной leaflet'а.
+            Смотри коммит-историю: view-mode toggle был здесь.
+          -->
 
           <!-- Add button -->
           <button
