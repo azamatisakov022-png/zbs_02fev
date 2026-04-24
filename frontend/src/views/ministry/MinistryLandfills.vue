@@ -160,29 +160,6 @@ const filteredLandfills = computed(() => {
     result = result.filter(l => l.status === filterStatus.value)
   }
 
-  // Диагностика фильтров перед демо — если фильтры не работают,
-  // смотрим в console что реально в данных и что в фильтрах.
-  if (import.meta.env.DEV && (filterRegion.value || filterType.value || filterStatus.value || searchQuery.value)) {
-    console.log('[landfills filter debug]', {
-      total: landfillStore.state.landfills.length,
-      afterFilter: result.length,
-      filters: {
-        search: searchQuery.value,
-        region: filterRegion.value,
-        type: filterType.value,
-        status: filterStatus.value,
-      },
-      sampleItem: landfillStore.state.landfills[0]
-        ? {
-            name: landfillStore.state.landfills[0].name,
-            region: landfillStore.state.landfills[0].region,
-            type: landfillStore.state.landfills[0].type,
-            status: landfillStore.state.landfills[0].status,
-          }
-        : null,
-    })
-  }
-
   return result
 })
 
@@ -560,13 +537,13 @@ const guideActions = computed(() => [
       <template v-if="viewMode === 'list'">
         <div
           v-if="filteredLandfills.length > 0"
-          class="grid grid-cols-1 lg:grid-cols-2 gap-4"
+          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"
         >
           <div
             v-for="landfill in filteredLandfills"
             :key="landfill.id"
             @click="goToDetail(landfill)"
-            class="border border-gray-200 rounded-xl bg-white p-5 hover:shadow-md transition-shadow cursor-pointer"
+            class="border border-gray-200 rounded-xl bg-white p-4 hover:shadow-md transition-shadow cursor-pointer"
           >
             <!-- Badges row -->
             <div class="flex items-center gap-2 mb-3">
