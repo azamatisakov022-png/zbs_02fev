@@ -233,7 +233,8 @@ const getFillBarColorClass = (percent: number): string => {
   return 'bg-green-500'
 }
 
-const formatCapacity = (val: number): string => {
+const formatCapacity = (val: number | null | undefined): string => {
+  if (val === null || val === undefined || !Number.isFinite(val)) return '—'
   return val.toLocaleString()
 }
 
@@ -636,7 +637,7 @@ const guideActions = computed(() => [
 
             <!-- Bottom info -->
             <div class="flex items-center justify-between text-xs text-[#64748b] pt-3 border-t border-[#f1f5f9]">
-              <span>{{ $t('ministryLandfills.hazardClass') }} {{ landfill.hazardClasses.join(', ') }}</span>
+              <span>{{ $t('ministryLandfills.hazardClass') }} {{ (landfill.hazardClasses || []).join(', ') || '—' }}</span>
               <span>{{ $t('ministryLandfills.expiryLabel') }} {{ landfill.expiryYear }} {{ $t('ministryLandfills.yearSuffix') }}</span>
             </div>
           </div>
