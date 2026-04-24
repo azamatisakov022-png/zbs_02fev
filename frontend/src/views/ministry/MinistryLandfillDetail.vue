@@ -245,11 +245,11 @@ const infraPercent = computed(() => Math.round((infraCount.value / infraItemDefs
 
 // --- Block 4.5: Morphology ---
 const morphologyItems = computed(() => [
-  { label: t('ministryLandfillDetail.morphPlastic'), value: landfill.value?.morphology.plastic ?? 0, color: '#2563eb' },
-  { label: t('ministryLandfillDetail.morphPaper'), value: landfill.value?.morphology.paper ?? 0, color: '#f59e0b' },
-  { label: t('ministryLandfillDetail.morphGlass'), value: landfill.value?.morphology.glass ?? 0, color: '#10b981' },
-  { label: t('ministryLandfillDetail.morphFood'), value: landfill.value?.morphology.food ?? 0, color: '#8b5cf6' },
-  { label: t('ministryLandfillDetail.morphOther'), value: landfill.value?.morphology.other ?? 0, color: '#94a3b8' },
+  { label: t('ministryLandfillDetail.morphPlastic'), value: landfill.value?.morphology?.plastic ?? 0, color: '#2563eb' },
+  { label: t('ministryLandfillDetail.morphPaper'), value: landfill.value?.morphology?.paper ?? 0, color: '#f59e0b' },
+  { label: t('ministryLandfillDetail.morphGlass'), value: landfill.value?.morphology?.glass ?? 0, color: '#10b981' },
+  { label: t('ministryLandfillDetail.morphFood'), value: landfill.value?.morphology?.food ?? 0, color: '#8b5cf6' },
+  { label: t('ministryLandfillDetail.morphOther'), value: landfill.value?.morphology?.other ?? 0, color: '#94a3b8' },
 ])
 
 // --- Block 5: Permits & Documents ---
@@ -572,7 +572,7 @@ const coordsText = computed(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, idx) in landfill.wasteAcceptance" :key="idx" class="hover:bg-gray-50 transition-colors">
+              <tr v-for="(item, idx) in (landfill.wasteAcceptance || [])" :key="idx" class="hover:bg-gray-50 transition-colors">
                 <td class="px-4 py-3 font-medium text-gray-900 border-b border-gray-100">{{ item.category }}</td>
                 <td class="px-4 py-3 text-gray-600 border-b border-gray-100">{{ item.hazardClass }}</td>
                 <td class="px-4 py-3 text-right font-medium text-gray-900 border-b border-gray-100">{{ formatNumber(item.acceptedPerYear) }}</td>
@@ -625,19 +625,19 @@ const coordsText = computed(() => {
         <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.equipmentTitle') }}</h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.trucks }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.trucks ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTrucks') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.excavators }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.excavators ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipExcavators') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.tractors }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.tractors ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTractors') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment.bulldozers }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.bulldozers ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipBulldozers') }}</p>
           </div>
         </div>
