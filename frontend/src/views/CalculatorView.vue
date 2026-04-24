@@ -16,6 +16,12 @@ import PenaltyCalculator from '../components/penalty/PenaltyCalculator.vue'
 import { calculatePenalty } from '../utils/penalty'
 import { downloadElementAsPdf } from '../utils/pdfExport'
 import { PAYMENT_ACCOUNTS } from '../config/payment-accounts'
+// Новые компоненты редизайна (2026-04-24): анимированные числа, donut-разбивка,
+// таблица нормативов, SVG-график накопления пени.
+import CountUp from '../components/calculator/CountUp.vue'
+import DonutBreakdown from '../components/calculator/DonutBreakdown.vue'
+import NormsTable from '../components/calculator/NormsTable.vue'
+import AccrualCurve from '../components/calculator/AccrualCurve.vue'
 
 const { t, locale: i18nLocale } = useI18n()
 
@@ -41,6 +47,8 @@ interface CalcRow {
 const activeTab = ref<'calculator' | 'penalty'>('calculator')
 
 // ─── Penalty calculator state ───
+// Старое состояние (дата-based) — оставлено для обратной совместимости
+// с PenaltyCalculator и PDF-экспортом.
 const penaltyDebtAmount = ref('')
 const penaltyDueDate = ref('')
 const penaltyResult = ref<ReturnType<typeof calculatePenalty> | null>(null)
@@ -48,7 +56,6 @@ const penaltyResult = ref<ReturnType<typeof calculatePenalty> | null>(null)
 function calculatePenaltyForm() {
   const amount = parseFloat(penaltyDebtAmount.value)
   if (!amount || amount <= 0 || !penaltyDueDate.value) return
-  // Parse yyyy-MM-dd from input[type=date] to Date
   const [y, m, d] = penaltyDueDate.value.split('-')
   const dueDate = new Date(+y, +m - 1, +d)
   penaltyResult.value = calculatePenalty(amount, dueDate)
@@ -64,6 +71,20 @@ const isPenaltyFormValid = computed(() => {
   const amount = parseFloat(penaltyDebtAmount.value)
   return amount > 0 && !!penaltyDueDate.value
 })
+
+// Новое состояние редизайна (days-based slider + kickers) —
+// проще и нагляднее чем выбор даты.
+const penaltyDebt = ref<number>(1_000_000)
+const penaltyDays = ref<number>(30)
+const PENALTY_RATE = 0.0009 // 0,09% в день, ст. 37 КР
+
+const penaltyAmount = computed(() => {
+  const d = Number.isFinite(penaltyDebt.value) ? penaltyDebt.value : 0
+  const days = Number.isFinite(penaltyDays.value) ? penaltyDays.value : 0
+  return Math.round(d * PENALTY_RATE * days)
+})
+
+const penaltyTotalToPay = computed(() => (penaltyDebt.value || 0) + penaltyAmount.value)
 
 // ─── Inline penalty in result ───
 const showInlinePenalty = ref(false)
@@ -138,11 +159,9 @@ function recalcRow(row: CalcRow) {
     return
   }
 
-  // Year-based norm from recycling-norms.ts (e.g. group_4, 2025 → 20%)
   const normFraction = getNormativeForGroup(row.group, year.value)
   row.recyclingStandard = Math.round(normFraction * 100)
 
-  // Rate = baseRate × subgroup multiplier
   let multiplier = 1
   if (row.subgroup && row.subgroupData) {
     multiplier = row.subgroupData.rateMultiplier
@@ -150,20 +169,16 @@ function recalcRow(row: CalcRow) {
   row.rate = Math.round(group.baseRate * multiplier)
 
   const vol = parseFloat(String(row.volume)) || 0
-  // Гр.7: Volume to recycle = Volume × RecyclingStandard / 100
   row.volumeToRecycle = +(vol * row.recyclingStandard / 100).toFixed(4)
-  // Amount = VolumeToRecycle × Rate (no deductions in public version)
   row.amount = Math.round(row.volumeToRecycle * row.rate * 100) / 100
 }
 
-// Recalculate when volume changes via watch
 watch(rows, () => {
   rows.value.forEach(r => {
     if (r.group) recalcRow(r)
   })
 }, { deep: true })
 
-// Recalculate all rows when year changes (norms differ by year)
 watch(year, () => {
   rows.value.forEach(r => {
     if (r.group) recalcRow(r)
@@ -214,12 +229,50 @@ function newCalculation() {
   nextTick(() => { window.scrollTo({ top: 0, behavior: 'smooth' }) })
 }
 
+// ─── Live-итоги для sticky-панели (новый дизайн) ───
+// В отличие от старой кнопки «Рассчитать», в новом дизайне сумма обновляется
+// сразу при изменении полей — как в Apple Card / Revolut калькуляторах.
+const liveTotal = computed(() =>
+  rows.value.reduce((sum, r) => sum + (Number.isFinite(r.amount) ? r.amount : 0), 0),
+)
+const liveTotalMass = computed(() =>
+  rows.value.reduce((sum, r) => {
+    const v = parseFloat(String(r.volume))
+    return sum + (Number.isFinite(v) ? v : 0)
+  }, 0),
+)
+const liveTotalRecycle = computed(() =>
+  rows.value.reduce((sum, r) => sum + (Number.isFinite(r.volumeToRecycle) ? r.volumeToRecycle : 0), 0),
+)
+function rowShare(r: CalcRow): number {
+  const t = liveTotal.value
+  if (!t || t <= 0) return 0
+  return (r.amount / t) * 100
+}
+// Для donut — маппим rows в формат {id, amount, label}
+const donutItems = computed(() =>
+  rows.value
+    .filter(r => r.group && r.amount > 0)
+    .map(r => ({
+      id: r.id,
+      amount: r.amount,
+      label: productGroups.find(g => g.value === r.group)?.label || `№ ${r.id}`,
+    })),
+)
+
 // ─── Format helpers ───
 function fmt(n: number): string {
   return n.toLocaleString()
 }
 function fmtDec(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function fmtT(n: number): string {
+  if (!Number.isFinite(n)) return '—'
+  return n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+}
+function fmtSom(n: number): string {
+  return Number.isFinite(n) ? n.toLocaleString('ru-RU') : '—'
 }
 
 function getGroupLabel(value: string): string {
@@ -235,6 +288,13 @@ function getSubgroupLabel(row: CalcRow): string {
 const pdfLoading = ref(false)
 
 async function downloadPdf() {
+  // В новом дизайне показ результата — live, но PDF-экспорт требует
+  // зафиксированный DOM-узел с таблицей. Если пользователь ещё не нажал
+  // «Рассчитать» — сначала вызываем calculate() чтобы сгенерировать таблицу.
+  if (!showResult.value) {
+    calculate()
+    await nextTick()
+  }
   const el = document.getElementById('calculation-result')
   if (!el) return
 
@@ -253,523 +313,427 @@ async function downloadPdf() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8fafc]">
-    <!-- Banner (contained, rounded, same width as content) -->
-    <div class="container-main pt-8 lg:pt-10">
-      <div class="text-white rounded-2xl py-10 lg:py-14 px-6 text-center" style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%)">
-        <h1 class="text-3xl lg:text-4xl font-bold mb-3">{{ activeTab === 'calculator' ? $t('calculatorPage.title') : $t('penalty.penaltyTabTitle') }}</h1>
-        <p class="text-white/80 text-base lg:text-lg max-w-2xl mx-auto">
-          {{ activeTab === 'calculator' ? $t('calculatorPage.subtitle') : $t('penalty.penaltyTabSubtitle') }}
-        </p>
+  <div class="bg-ink-50 min-h-screen">
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- HERO + TABS                                              -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <section class="max-w-[1360px] mx-auto px-6 lg:px-8 pt-10">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+        <div class="max-w-2xl">
+          <div class="text-[11px] uppercase tracking-[0.22em] text-brand-600 font-semibold mb-3 font-mono">
+            {{ activeTab === 'calculator' ? $t('calculatorPage.heroKicker') : $t('calculatorPage.penaltyKicker') }}
+          </div>
+          <h1 class="text-[38px] lg:text-[46px] leading-[1.05] font-light text-ink-900 tracking-tight">
+            <template v-if="activeTab === 'calculator'">
+              {{ $t('calculatorPage.heroTitleA') }}
+              <br/>
+              <span class="italic font-normal text-brand-700">{{ $t('calculatorPage.heroTitleB') }}</span>.
+            </template>
+            <template v-else>
+              {{ $t('calculatorPage.penaltyHeroA') }}
+              <br/>
+              <span class="italic font-normal text-red-700">{{ $t('calculatorPage.penaltyHeroB') }}</span>.
+            </template>
+          </h1>
+          <p v-if="activeTab === 'calculator'" class="text-[15px] text-ink-500 mt-4 max-w-[540px]">
+            {{ $t('calculatorPage.heroSub') }}
+          </p>
+        </div>
+        <!-- Tab switcher -->
+        <div class="flex items-center gap-1 bg-white p-1.5 rounded-full border border-ink-200 shadow-sm w-fit">
+          <button
+            @click="activeTab = 'calculator'"
+            :class="[
+              'px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors',
+              activeTab === 'calculator' ? 'bg-ink-900 text-white' : 'text-ink-500 hover:text-ink-800'
+            ]"
+          >{{ $t('calculatorPage.tabFeeCalculator') }}</button>
+          <button
+            @click="activeTab = 'penalty'"
+            :class="[
+              'px-5 py-2.5 rounded-full text-[13px] font-semibold transition-colors',
+              activeTab === 'penalty' ? 'bg-ink-900 text-white' : 'text-ink-500 hover:text-ink-800'
+            ]"
+          >{{ $t('calculatorPage.tabPenaltyCalculator') }}</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Tab switcher -->
-    <div class="container-main mt-6">
-      <div class="inline-flex bg-[#f1f5f9] rounded-xl p-1">
-        <button
-          @click="activeTab = 'calculator'"
-          :class="['px-5 py-2.5 rounded-lg text-sm font-semibold transition-all',
-            activeTab === 'calculator'
-              ? 'bg-white text-[#1e293b] shadow-sm'
-              : 'text-[#64748b] hover:text-[#1e293b]']"
-        >{{ $t('calculatorPage.tabFeeCalculator') }}</button>
-        <button
-          @click="activeTab = 'penalty'"
-          :class="['px-5 py-2.5 rounded-lg text-sm font-semibold transition-all',
-            activeTab === 'penalty'
-              ? 'bg-white text-[#1e293b] shadow-sm'
-              : 'text-[#64748b] hover:text-[#1e293b]']"
-        >{{ $t('calculatorPage.tabPenaltyCalculator') }}</button>
-      </div>
-    </div>
-
-    <div class="container-main py-8 lg:py-10">
-
-      <!-- ════════ PENALTY CALCULATOR TAB ════════ -->
-      <div v-if="activeTab === 'penalty'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- LEFT: Penalty form + result -->
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Input form -->
-          <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-            <h2 class="text-lg font-bold text-[#1e293b] mb-5">{{ $t('penalty.title') }}</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('penalty.debtAmount') }}</label>
-                <div class="relative">
-                  <input
-                    type="number"
-                    v-model="penaltyDebtAmount"
-                    :placeholder="$t('penalty.enterAmount')"
-                    step="0.01" min="0"
-                    class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm pr-16"
-                  />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">{{ $t('penalty.som') }}</span>
-                </div>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('penalty.dueDate') }}</label>
-                <input
-                  type="date"
-                  v-model="penaltyDueDate"
-                  :lang="dateLang"
-                  min="2020-01-01"
-                  :max="`${new Date().getFullYear() + 1}-12-31`"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm"
-                />
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- TAB: FEE CALCULATOR                                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div v-if="activeTab === 'calculator'" class="max-w-[1360px] mx-auto px-6 lg:px-8 pb-20 grid grid-cols-12 gap-6">
+      <!-- ───────────── LEFT: FORM ───────────── -->
+      <div class="col-span-12 lg:col-span-8 space-y-4">
+        <!-- Operation type + Year -->
+        <div class="bg-white rounded-2xl border border-ink-200 p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="text-[11px] uppercase tracking-[0.15em] text-ink-400 font-semibold mb-3 block">
+                {{ $t('calculatorPage.operationType') }}
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  @click="operationType = 'import'"
+                  :class="[
+                    'px-4 py-3 rounded-lg border text-left transition-all',
+                    operationType === 'import' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-ink-200 hover:border-ink-300 text-ink-700'
+                  ]"
+                >
+                  <div class="text-[11px] uppercase tracking-[0.1em] text-ink-400 font-semibold">↓</div>
+                  <div class="text-[14px] font-semibold mt-0.5">{{ $t('calculatorPage.import') }}</div>
+                </button>
+                <button
+                  @click="operationType = 'production'"
+                  :class="[
+                    'px-4 py-3 rounded-lg border text-left transition-all',
+                    operationType === 'production' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-ink-200 hover:border-ink-300 text-ink-700'
+                  ]"
+                >
+                  <div class="text-[11px] uppercase tracking-[0.1em] text-ink-400 font-semibold">⚙</div>
+                  <div class="text-[14px] font-semibold mt-0.5">{{ $t('calculatorPage.production') }}</div>
+                </button>
               </div>
             </div>
-            <div class="flex flex-wrap gap-3 mt-5">
-              <button @click="calculatePenaltyForm" :disabled="!isPenaltyFormValid"
-                :class="['flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm',
-                  isPenaltyFormValid
-                    ? 'bg-[#10b981] text-white hover:bg-[#059669] hover:shadow-md'
-                    : 'bg-[#e2e8f0] text-[#94a3b8] cursor-not-allowed']">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                {{ $t('penalty.calculate') }}
-              </button>
-              <button @click="clearPenaltyForm"
-                class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border border-[#e2e8f0] text-[#64748b] hover:bg-white hover:border-[#94a3b8] transition-colors">
-                {{ $t('calculatorPage.clear') }}
-              </button>
+            <div>
+              <label class="text-[11px] uppercase tracking-[0.15em] text-ink-400 font-semibold mb-3 block">
+                {{ $t('calculatorPage.yearCalc') }}
+              </label>
+              <div class="flex gap-1.5 overflow-x-auto hide-scroll">
+                <button
+                  v-for="y in [2025, 2026, 2027, 2028, 2029, 2030]"
+                  :key="y"
+                  @click="year = y"
+                  :class="[
+                    'flex-1 min-w-[56px] px-3 py-3 rounded-lg border text-[13px] font-semibold transition-all tabular-nums',
+                    year === y ? 'border-brand-600 bg-brand-600 text-white' : 'border-ink-200 text-ink-600 hover:border-ink-300'
+                  ]"
+                >{{ y }}</button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Penalty result -->
-          <Transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 translate-y-4"
-            enter-to-class="opacity-100 translate-y-0"
+        <!-- Rows with live metric per row -->
+        <div class="space-y-3">
+          <div
+            v-for="(row, i) in rows"
+            :key="row.id"
+            class="bg-white rounded-2xl border border-ink-200 overflow-hidden group hover:border-brand-300 transition-colors"
           >
-            <div v-if="penaltyResult && penaltyResult.overdueDays > 0">
-              <PenaltyCalculator
-                :debtAmount="penaltyResult.debtAmount"
-                :dueDate="penaltyResult.dueDate"
+            <div class="p-5">
+              <!-- Row header -->
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                  <span class="w-6 h-6 rounded-full bg-ink-100 text-ink-500 text-[11px] font-mono font-semibold grid place-items-center">{{ i + 1 }}</span>
+                  <span class="text-[11px] uppercase tracking-[0.12em] text-ink-400 font-semibold">{{ $t('calculatorPage.position') }}</span>
+                </div>
+                <button
+                  v-if="rows.length > 1"
+                  @click="removeRow(row.id)"
+                  :title="$t('calculatorPage.removePosition')"
+                  class="text-ink-300 hover:text-red-500 p-1 transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Group + Subgroup selector -->
+              <ProductGroupSelector
+                :group="row.group"
+                :subgroup="row.subgroup"
+                :accentColor="'#0e888d'"
+                @update:group="onGroupUpdate(row, $event)"
+                @update:subgroup="onSubgroupUpdate(row, $event)"
+                @subgroupSelected="onSubgroupSelected(row, $event)"
               />
-            </div>
-          </Transition>
 
-          <!-- Not overdue message -->
-          <div v-if="penaltyResult && penaltyResult.overdueDays === 0" class="bg-green-50 rounded-2xl border border-green-200 p-6 text-center">
-            <svg class="w-12 h-12 text-green-500 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-            <p class="text-lg font-semibold text-green-800">{{ $t('penalty.notOverdue') }}</p>
-          </div>
-        </div>
-
-        <!-- RIGHT: Article 37 sidebar -->
-        <div class="lg:col-span-1">
-          <div class="sticky top-6 space-y-6">
-            <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-              <div class="flex items-center gap-2 mb-4">
-                <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
+              <!-- Metrics row -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+                <!-- Mass input -->
+                <div>
+                  <label class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold block mb-1.5">
+                    {{ $t('calculatorPage.rowMass') }}
+                  </label>
+                  <div class="relative">
+                    <input
+                      v-model="row.volume"
+                      type="number" step="0.001" min="0" max="99999"
+                      placeholder="0.00"
+                      class="w-full px-3 py-2 bg-ink-50 border border-ink-200 focus:border-brand-600 focus:bg-white rounded-lg text-[14px] font-semibold text-ink-900 tabular-nums outline-none transition-colors pr-10"
+                    />
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-ink-400">т</span>
+                  </div>
+                  <p v-if="getVolumeError(row)" class="text-[11px] text-red-500 mt-1">{{ getVolumeError(row) }}</p>
                 </div>
-                <h3 class="font-bold text-[#1e293b]">{{ $t('penalty.article37Title') }}</h3>
+                <!-- Norm -->
+                <div>
+                  <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowNorm') }}</div>
+                  <div class="px-3 py-2 text-[14px] font-semibold text-ink-700 tabular-nums">
+                    {{ row.group ? row.recyclingStandard + '%' : '—' }}
+                  </div>
+                </div>
+                <!-- To recycle -->
+                <div>
+                  <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowRecycle') }}</div>
+                  <div class="px-3 py-2 text-[14px] font-semibold text-emerald2-700 tabular-nums">
+                    {{ row.group ? fmtT(row.volumeToRecycle) + ' т' : '—' }}
+                  </div>
+                </div>
+                <!-- Row sum -->
+                <div>
+                  <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowSum') }}</div>
+                  <div class="px-3 py-2 text-[16px] font-semibold text-ink-900 tabular-nums leading-none">
+                    <CountUp v-if="row.amount > 0" :value="row.amount" :decimals="0" />
+                    <span v-else>—</span>
+                    <span v-if="row.amount > 0" class="text-[11px] text-ink-400 ml-1 font-normal">с.</span>
+                  </div>
+                </div>
               </div>
-              <p class="text-sm text-[#64748b] leading-relaxed mb-4">
-                {{ $t('penalty.article37Text') }}
-              </p>
-              <p class="text-xs text-[#94a3b8]">{{ $t('penalty.article37Source') }}</p>
             </div>
 
-            <!-- Disclaimer -->
-            <div class="bg-[#fefce8] rounded-2xl border border-[#fde68a] p-5">
-              <div class="flex items-start gap-2">
-                <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
+            <!-- Progress bar of row share in total -->
+            <div v-if="row.amount > 0" class="h-1 bg-ink-100">
+              <div
+                class="h-full bg-gradient-to-r from-brand-500 to-emerald2-500 transition-all duration-500"
+                :style="{ width: rowShare(row) + '%' }"
+              ></div>
+            </div>
+            <!-- Row footer with rate + share -->
+            <div v-if="row.amount > 0" class="px-5 py-2 bg-ink-50/60 flex items-center justify-between text-[11px]">
+              <div class="text-ink-500">
+                {{ $t('calculatorPage.rowRate') }}
+                <span class="font-mono font-semibold text-ink-700">{{ row.rate.toLocaleString('ru-RU') }} {{ $t('calculatorPage.somT') }}</span>
+              </div>
+              <div class="text-ink-400">
+                {{ $t('calculatorPage.rowShare') }}
+                <span class="font-semibold text-ink-700 tabular-nums">{{ rowShare(row).toFixed(1) }}%</span>
+                <span class="ml-1">{{ $t('calculatorPage.rowOfTotal') }}</span>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Add row -->
+        <button
+          @click="addRow"
+          :disabled="rows.length >= 10"
+          class="w-full py-4 rounded-2xl border-2 border-dashed border-ink-300 hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50 disabled:cursor-not-allowed text-ink-500 hover:text-brand-700 text-[14px] font-semibold transition-all"
+        >
+          + {{ $t('calculatorPage.addRow') }}
+          <span class="text-ink-300 font-normal">· {{ $t('calculatorPage.maxRows') }}</span>
+        </button>
       </div>
 
-      <!-- ════════ FEE CALCULATOR TAB ════════ -->
-      <div v-if="activeTab === 'calculator'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- LEFT: Calculator Form -->
-        <div class="lg:col-span-2 space-y-6">
+      <!-- ───────────── RIGHT: STICKY TOTAL ───────────── -->
+      <aside class="col-span-12 lg:col-span-4">
+        <div class="lg:sticky lg:top-6 space-y-4">
+          <!-- Main sticky panel -->
+          <div class="rounded-2xl overflow-hidden bg-gradient-to-br from-ink-900 via-ink-800 to-brand-800 text-white p-7 relative">
+            <div class="flex items-center justify-between mb-6">
+              <div class="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold font-mono">
+                {{ $t('calculatorPage.totalDue') }}
+              </div>
+              <span class="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald2-500/20 text-emerald2-400 text-[10px] font-semibold uppercase tracking-wider">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald2-400 animate-pulse"></span>
+                {{ $t('calculatorPage.liveLabel') }}
+              </span>
+            </div>
+            <div class="text-[48px] lg:text-[52px] leading-none font-light tracking-tight tabular-nums">
+              <CountUp :value="liveTotal" :decimals="0" />
+            </div>
+            <div class="text-[15px] text-white/70 mt-1">
+              {{ $t('calculatorPage.somYearUnit', { year }) }}
+            </div>
 
-          <!-- Global fields -->
-          <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-            <h2 class="text-lg font-bold text-[#1e293b] mb-5">{{ $t('calculatorPage.params') }}</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <!-- Operation type -->
+            <div class="h-px bg-white/10 my-6"></div>
+
+            <div class="grid grid-cols-3 gap-3 text-white/80">
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('calculatorPage.operationType') }}</label>
-                <div class="flex gap-4">
-                  <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="radio" v-model="operationType" value="import"
-                      class="w-4 h-4 text-[#10b981] focus:ring-[#10b981]/20 border-[#e2e8f0]" />
-                    <span class="text-sm text-[#1e293b]">{{ $t('calculatorPage.import') }}</span>
-                  </label>
-                  <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="radio" v-model="operationType" value="production"
-                      class="w-4 h-4 text-[#10b981] focus:ring-[#10b981]/20 border-[#e2e8f0]" />
-                    <span class="text-sm text-[#1e293b]">{{ $t('calculatorPage.production') }}</span>
-                  </label>
-                </div>
+                <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.positionsCount') }}</div>
+                <div class="text-[20px] font-light tabular-nums">{{ rows.length }}</div>
               </div>
-              <!-- Year -->
               <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('calculatorPage.yearCalc') }}</label>
-                <select v-model="year"
-                  class="w-full px-4 py-2.5 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm">
-                  <option :value="2025">2025</option>
-                  <option :value="2026">2026</option>
-                  <option :value="2027">2027</option>
-                  <option :value="2028">2028</option>
-                  <option :value="2029">2029</option>
-                  <option :value="2030">2030</option>
-                </select>
+                <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.massTotal') }}</div>
+                <div class="text-[20px] font-light tabular-nums">{{ fmtT(liveTotalMass) }} т</div>
               </div>
-            </div>
-          </div>
-
-          <!-- Product items -->
-          <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-            <div class="flex items-center justify-between mb-5">
-              <h2 class="text-lg font-bold text-[#1e293b]">{{ $t('calculatorPage.goodsAndPackaging') }}</h2>
-              <span class="text-xs text-[#94a3b8]">{{ rows.length }} / 10</span>
-            </div>
-
-            <div class="space-y-5">
-              <div v-for="(row, idx) in rows" :key="row.id"
-                class="relative bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
-
-                <!-- Row header -->
-                <div class="flex items-center justify-between mb-4">
-                  <span class="text-xs font-semibold text-[#94a3b8] uppercase tracking-wide">{{ $t('calculatorPage.position') }} {{ idx + 1 }}</span>
-                  <button v-if="rows.length > 1" @click="removeRow(row.id)"
-                    class="w-7 h-7 rounded-lg flex items-center justify-center text-[#94a3b8] hover:text-red-500 hover:bg-red-50 transition-colors"
-                    :title="$t('calculatorPage.removePosition')">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <!-- Group + Subgroup selector (same component as ЛК) -->
-                <ProductGroupSelector
-                  :group="row.group"
-                  :subgroup="row.subgroup"
-                  :accentColor="'#10b981'"
-                  @update:group="onGroupUpdate(row, $event)"
-                  @update:subgroup="onSubgroupUpdate(row, $event)"
-                  @subgroupSelected="onSubgroupSelected(row, $event)"
-                />
-
-                <!-- Volume + calculated fields -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                  <!-- Volume (Масса, тонн) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">
-                      {{ $t('calculatorPage.massTons') }}
-                      <span class="relative group inline-block ml-1 cursor-help">
-                        <svg class="w-3.5 h-3.5 inline text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-[#1e293b] text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          {{ $t('calculatorPage.tonHint') }}
-                        </span>
-                      </span>
-                    </label>
-                    <div class="relative">
-                      <input
-                        type="number"
-                        v-model="row.volume"
-                        placeholder="0.00"
-                        step="0.001" min="0" max="99999"
-                        class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 text-sm pr-12"
-                      />
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">{{ $t('calculatorPage.tons') }}</span>
-                    </div>
-                    <p v-if="getVolumeError(row)" class="text-xs text-red-500 mt-1">{{ getVolumeError(row) }}</p>
-                  </div>
-
-                  <!-- Норматив (auto) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.recyclingStandard') }}</label>
-                    <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
-                      {{ row.group ? row.recyclingStandard + '%' : '—' }}
-                    </div>
-                  </div>
-
-                  <!-- Объём к переработке (auto) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.toRecycleT') }}</label>
-                    <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
-                      {{ row.group ? fmtDec(row.volumeToRecycle) : '—' }}
-                    </div>
-                  </div>
-
-                  <!-- Ставка (auto) -->
-                  <div>
-                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('calculatorPage.rateSomT') }}</label>
-                    <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-medium">
-                      {{ row.group ? fmt(row.rate) : '—' }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Row total preview -->
-                <div v-if="row.group && parseFloat(String(row.volume)) > 0" class="mt-3 pt-3 border-t border-[#e2e8f0] flex items-center justify-between">
-                  <span class="text-xs text-[#64748b]">
-                    Расчёт: {{ fmtDec(row.volumeToRecycle) }} т &times; {{ fmt(row.rate) }} сом/т
-                  </span>
-                  <span class="text-sm font-bold text-[#1e293b]">{{ fmtDec(row.amount) }} {{ $t('calculatorPage.som') }}</span>
-                </div>
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.recycleTotal') }}</div>
+                <div class="text-[20px] font-light tabular-nums text-emerald2-400">{{ fmtT(liveTotalRecycle) }} т</div>
               </div>
             </div>
 
-            <!-- Add row -->
-            <button v-if="rows.length < 10" @click="addRow"
-              class="mt-4 w-full py-3 border-2 border-dashed border-[#d1d5db] rounded-xl text-sm font-medium text-[#64748b] hover:border-[#10b981] hover:text-[#10b981] hover:bg-[#f0fdf4] transition-colors">
-              <svg class="w-4 h-4 inline mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              {{ $t('calculatorPage.addPosition') }}
-            </button>
-          </div>
+            <DonutBreakdown :items="donutItems" :total="liveTotal" class="mt-6" />
 
-          <!-- Formula + buttons -->
-          <div class="bg-[#f8fafc] rounded-2xl border border-[#e2e8f0] p-5">
-            <div class="flex items-start gap-3 mb-4">
-              <svg class="w-5 h-5 text-[#64748b] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div class="text-xs text-[#64748b] space-y-1">
-                <p><strong>{{ $t('calculatorPage.formulaLabel') }}</strong> {{ $t('calculatorPage.formulaText') }}</p>
-                <p>{{ $t('calculatorPage.formulaNote') }}</p>
-                <p>{{ $t('calculatorPage.ratesNote') }}</p>
-              </div>
-            </div>
-
-            <div class="flex flex-wrap gap-3">
-              <button @click="calculate" :disabled="!isFormValid"
-                :class="['flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm',
-                  isFormValid
-                    ? 'bg-[#10b981] text-white hover:bg-[#059669] hover:shadow-md'
-                    : 'bg-[#e2e8f0] text-[#94a3b8] cursor-not-allowed']">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                {{ $t('calculatorPage.calculate') }}
+            <div class="grid grid-cols-2 gap-2 mt-6">
+              <button
+                @click="downloadPdf"
+                :disabled="pdfLoading || !isFormValid"
+                class="px-4 py-3 rounded-xl bg-white text-ink-900 text-[13px] font-semibold disabled:bg-white/20 disabled:text-white/40 disabled:cursor-not-allowed hover:bg-white/90 transition-colors"
+              >
+                {{ $t('calculatorPage.downloadPdf') }}
               </button>
-              <button @click="clearForm"
-                class="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium border border-[#e2e8f0] text-[#64748b] hover:bg-white hover:border-[#94a3b8] transition-colors">
+              <button
+                @click="clearForm"
+                class="px-4 py-3 rounded-xl bg-white/10 text-white text-[13px] font-semibold hover:bg-white/20 transition-colors"
+              >
                 {{ $t('calculatorPage.clear') }}
               </button>
             </div>
           </div>
 
-          <!-- RESULT -->
-          <Transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 translate-y-4"
-            enter-to-class="opacity-100 translate-y-0"
-          >
-            <div v-if="showResult" id="calc-result" class="space-y-6">
-              <div id="calculation-result" class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
-                <h3 class="text-lg font-bold text-[#065f46] mb-4">{{ $t('calculatorPage.result') }}</h3>
+          <NormsTable :currentYear="year" />
+        </div>
+      </aside>
+    </div>
 
-                <!-- Result table -->
-                <div class="overflow-x-auto mb-4">
-                  <table class="w-full text-sm border-collapse">
-                    <thead>
-                      <tr class="text-left text-[#047857]">
-                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tl-lg font-semibold">{{ $t('calculatorPage.group') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] font-semibold">{{ $t('calculatorPage.subgroup') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.massT') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-center font-semibold">{{ $t('calculatorPage.normPercent') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.toRecycleShort') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.rate') }}</th>
-                        <th class="px-3 py-2 bg-[#dcfce7] rounded-tr-lg text-right font-semibold">{{ $t('calculatorPage.amountSom') }}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="r in resultRows" :key="r.id" class="border-b border-[#bbf7d0]">
-                        <td class="px-3 py-2.5 text-[#1e293b] text-xs">{{ getGroupLabel(r.group) }}</td>
-                        <td class="px-3 py-2.5 text-[#64748b] text-xs max-w-[200px] truncate" :title="getSubgroupLabel(r)">{{ getSubgroupLabel(r) }}</td>
-                        <td class="px-3 py-2.5 text-right font-medium text-[#1e293b]">{{ fmtDec(parseFloat(String(r.volume)) || 0) }}</td>
-                        <td class="px-3 py-2.5 text-center text-[#1e293b]">{{ r.recyclingStandard }}%</td>
-                        <td class="px-3 py-2.5 text-right text-[#1e293b]">{{ fmtDec(r.volumeToRecycle) }}</td>
-                        <td class="px-3 py-2.5 text-right text-[#1e293b]">{{ fmt(r.rate) }}</td>
-                        <td class="px-3 py-2.5 text-right font-bold text-[#065f46]">{{ fmtDec(r.amount) }}</td>
-                      </tr>
-                    </tbody>
-                    <tfoot>
-                      <tr class="bg-[#dcfce7]">
-                        <td class="px-3 py-3 font-bold text-[#065f46] rounded-bl-lg" colspan="6">{{ $t('calculatorPage.total') }}</td>
-                        <td class="px-3 py-3 text-right font-bold text-[#065f46] rounded-br-lg text-lg">{{ fmtDec(totalAmount) }}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                <!-- Big total -->
-                <div class="bg-white rounded-xl p-5 text-center border border-[#bbf7d0]">
-                  <p class="text-sm text-[#64748b] mb-1">{{ $t('calculatorPage.totalFee') }}</p>
-                  <p class="text-3xl lg:text-4xl font-bold text-[#15803d]">{{ fmtDec(totalAmount) }} {{ $t('calculatorPage.som') }}</p>
-                  <p class="text-xs text-[#94a3b8] mt-2">{{ $t('calculatorPage.year') }}: {{ year }} &middot; {{ operationType === 'import' ? $t('calculatorPage.import') : $t('calculatorPage.production') }}</p>
-                </div>
-              </div>
-
-              <!-- Action buttons -->
-              <div class="flex flex-wrap gap-3">
-                <button @click="downloadPdf" :disabled="pdfLoading"
-                  :class="['flex items-center gap-2 px-5 py-2.5 bg-white rounded-xl text-sm font-medium border border-[#e2e8f0] transition-colors shadow-sm',
-                    pdfLoading ? 'text-[#94a3b8] cursor-wait' : 'text-[#1e293b] hover:border-[#10b981] hover:text-[#10b981]']">
-                  <svg v-if="pdfLoading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  {{ $t('calculatorPage.downloadPdf') }}
-                </button>
-                <button @click="newCalculation"
-                  class="flex items-center gap-2 px-5 py-2.5 bg-[#10b981] rounded-xl text-sm font-semibold text-white hover:bg-[#059669] transition-colors shadow-sm">
-                  {{ $t('calculatorPage.newCalc') }}
-                </button>
-              </div>
-
-              <!-- Expandable inline penalty calculator -->
-              <div class="border border-[#e2e8f0] rounded-xl overflow-hidden">
-                <button @click="showInlinePenalty = !showInlinePenalty" class="w-full flex items-center justify-between px-5 py-3 bg-[#f8fafc] hover:bg-[#f1f5f9] transition-colors text-left">
-                  <span class="text-sm font-medium text-[#1e293b]">{{ $t('payment.inlinePenaltyTitle') }}</span>
-                  <svg :class="['w-4 h-4 text-[#94a3b8] transition-transform', showInlinePenalty ? 'rotate-180' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-                <div v-if="showInlinePenalty" class="p-5 border-t border-[#e2e8f0] bg-white">
-                  <div class="flex flex-col sm:flex-row gap-3 mb-4">
-                    <div class="flex-1">
-                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.dueDate') }}</label>
-                      <input type="date" v-model="inlinePenaltyDate" :lang="dateLang" min="2020-01-01" :max="`${new Date().getFullYear() + 1}-12-31`" class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg text-sm focus:outline-none focus:border-[#10b981]" />
-                    </div>
-                    <div class="flex-1">
-                      <label class="block text-xs text-[#64748b] mb-1">{{ $t('penalty.debtAmount') }}</label>
-                      <p class="px-3 py-2 text-sm font-semibold text-[#1e293b]">{{ fmtDec(totalAmount) }} {{ $t('calculatorPage.som') }}</p>
-                    </div>
-                  </div>
-                  <div v-if="inlinePenaltyResult" class="space-y-3">
-                    <div class="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-4 text-sm">
-                      <div class="flex justify-between py-1"><span class="text-[#64748b]">{{ $t('penalty.overdueDays') }}</span><span class="font-semibold text-[#DC2626]">{{ inlinePenaltyResult.overdueDays }} {{ $t('payment.calDays') }}</span></div>
-                      <div class="flex justify-between py-1"><span class="text-[#64748b]">{{ $t('penalty.dailyPenalty') }}</span><span class="font-semibold">{{ inlinePenaltyResult.dailyPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span></div>
-                      <div class="border-t border-[#fecaca] mt-1 pt-1 flex justify-between"><span class="font-semibold">{{ $t('penalty.totalPenalty') }}</span><span class="font-bold text-[#DC2626] text-lg">{{ inlinePenaltyResult.totalPenalty.toLocaleString('ru-RU', { minimumFractionDigits: 2 }) }} {{ $t('penalty.som') }}</span></div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div class="bg-[#ecfdf5] border border-[#a7f3d0] rounded-lg p-3">
-                        <p class="font-semibold text-[#065f46] mb-1">{{ $t('payment.payment1Title') }}</p>
-                        <p>{{ PAYMENT_ACCOUNTS.utilization_fee.recipient }}</p>
-                        <p class="font-mono">{{ $t('payment.accountNumber') }}: {{ PAYMENT_ACCOUNTS.utilization_fee.account }}</p>
-                      </div>
-                      <div class="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-3">
-                        <p class="font-semibold text-[#991b1b] mb-1">{{ $t('payment.payment2Title') }}</p>
-                        <p>{{ PAYMENT_ACCOUNTS.penalty.recipient }}</p>
-                        <p class="font-mono">{{ $t('payment.accountNumber') }}: {{ PAYMENT_ACCOUNTS.penalty.account }}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <p v-else-if="inlinePenaltyDate" class="text-sm text-[#10b981]">{{ $t('penalty.notOverdue') }}</p>
-                </div>
-              </div>
-            </div>
-          </Transition>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- TAB: PENALTY CALCULATOR (Variant A — slider + curve)      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div v-if="activeTab === 'penalty'" class="max-w-[1360px] mx-auto px-6 lg:px-8 pb-20 grid grid-cols-12 gap-6">
+      <!-- ───────────── LEFT: INPUTS ───────────── -->
+      <div class="col-span-12 lg:col-span-7 space-y-4">
+        <!-- Debt -->
+        <div class="bg-white rounded-2xl border border-ink-200 p-7">
+          <label class="text-[11px] uppercase tracking-[0.15em] text-ink-400 font-semibold mb-4 block">
+            {{ $t('calculatorPage.penaltyDebt') }}
+          </label>
+          <div class="relative">
+            <input
+              v-model.number="penaltyDebt"
+              type="number" min="0" step="50000"
+              class="w-full text-[40px] lg:text-[48px] font-light text-ink-900 tabular-nums bg-transparent border-b-2 border-ink-200 focus:border-brand-600 outline-none py-2 pr-16"
+            />
+            <span class="absolute right-0 bottom-4 text-[16px] text-ink-400 font-medium">{{ $t('calculatorPage.som') }}</span>
+          </div>
+          <input
+            v-model.number="penaltyDebt"
+            type="range" min="0" max="10000000" step="50000"
+            class="w-full mt-4 accent-brand-600"
+          />
         </div>
 
-        <!-- RIGHT: Info sidebar -->
-        <div class="lg:col-span-1">
-          <div class="sticky top-6 space-y-6">
-
-            <!-- About calculator -->
-            <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-              <div class="flex items-center gap-2 mb-4">
-                <div class="w-8 h-8 rounded-lg bg-[#ecfdf5] flex items-center justify-center">
-                  <svg class="w-5 h-5 text-[#10b981]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 class="font-bold text-[#1e293b]">{{ $t('calculatorPage.about') }}</h3>
-              </div>
-              <ul class="space-y-3 text-sm text-[#64748b]">
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem1')"></span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem2')"></span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem3')"></span>
-                </li>
-                <li class="flex items-start gap-2">
-                  <svg class="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                  <span v-html="$t('calculatorPage.aboutItem4')"></span>
-                </li>
-              </ul>
-
-              <div class="mt-5 pt-4 border-t border-[#e2e8f0]">
-                <p class="text-xs text-[#94a3b8] mb-1">{{ $t('calculatorPage.questions') }}</p>
-                <p class="text-sm text-[#1e293b]">eco-operator@gov.kg</p>
-                <p class="text-sm text-[#1e293b]">+996 312 XXX XXX</p>
-              </div>
-
-              <router-link to="/login"
-                class="mt-5 flex items-center justify-center gap-2 w-full py-3 bg-[#10b981] text-white rounded-xl text-sm font-semibold hover:bg-[#059669] transition-colors">
-                {{ $t('calculatorPage.loginLink') }}
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </router-link>
-            </div>
-
-            <!-- Normatives table -->
-            <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] p-6">
-              <h3 class="font-bold text-[#1e293b] mb-3">{{ $t('calculatorPage.normsByYears') }}</h3>
-              <div class="overflow-x-auto">
-                <table class="w-full text-xs">
-                  <thead>
-                    <tr class="text-[#64748b]">
-                      <th class="pb-2 text-left font-medium">{{ $t('calculatorPage.year') }}</th>
-                      <th class="pb-2 text-center font-medium">{{ $t('calculatorPage.groups14') }}</th>
-                      <th class="pb-2 text-center font-medium">{{ $t('calculatorPage.groups524') }}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="text-[#1e293b]">
-                    <tr v-for="y in [2025, 2026, 2027, 2028, 2029, 2030]" :key="y"
-                      :class="['border-t border-[#f1f5f9]', y === year ? 'bg-[#ecfdf5] font-semibold' : '']">
-                      <td class="py-1.5">{{ y }}</td>
-                      <td class="py-1.5 text-center">{{ Math.round(normativeTiers.high[y] * 100) }}%</td>
-                      <td class="py-1.5 text-center">{{ Math.round(normativeTiers.standard[y] * 100) }}%</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p class="text-xs text-[#94a3b8] mt-3">
-                {{ $t('calculatorPage.groups14desc') }}<br>
-                {{ $t('calculatorPage.groups524desc') }}
-              </p>
-            </div>
-
-            <!-- Disclaimer -->
-            <div class="bg-[#fefce8] rounded-2xl border border-[#fde68a] p-5">
-              <div class="flex items-start gap-2">
-                <svg class="w-5 h-5 text-[#d97706] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <p class="text-xs text-[#92400e]" v-html="$t('calculatorPage.disclaimer')"></p>
-              </div>
+        <!-- Days -->
+        <div class="bg-white rounded-2xl border border-ink-200 p-7">
+          <label class="text-[11px] uppercase tracking-[0.15em] text-ink-400 font-semibold mb-4 block">
+            {{ $t('calculatorPage.penaltyDays') }}
+          </label>
+          <div class="flex items-baseline gap-4">
+            <input
+              v-model.number="penaltyDays"
+              type="number" min="0" max="3650"
+              class="w-32 lg:w-40 text-[40px] lg:text-[48px] font-light text-ink-900 tabular-nums bg-transparent border-b-2 border-ink-200 focus:border-brand-600 outline-none py-2"
+            />
+            <div v-if="penaltyDays > 0" class="text-[13px] text-ink-500">
+              {{ $t('calculatorPage.penaltyApproxMonths', { m: Math.floor(penaltyDays/30), d: penaltyDays % 30 }) }}
             </div>
           </div>
+          <div class="grid grid-cols-5 gap-2 mt-5">
+            <button
+              v-for="d in [7, 30, 60, 90, 180]"
+              :key="d"
+              @click="penaltyDays = d"
+              :class="[
+                'py-2 rounded-lg border text-[12px] font-semibold transition-all',
+                penaltyDays === d ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-ink-200 text-ink-600 hover:border-ink-300'
+              ]"
+            >{{ d }} {{ $t('calculatorPage.penaltyDayShort') }}</button>
+          </div>
+        </div>
+
+        <!-- Formula info -->
+        <div class="bg-ink-100/60 rounded-2xl border border-ink-200 p-5 text-[12px] text-ink-600">
+          <div class="flex items-center gap-2 mb-2 text-ink-800 font-semibold text-[13px]">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            {{ $t('calculatorPage.penaltyFormulaHeader') }}
+          </div>
+          {{ $t('calculatorPage.penaltyFormulaText') }}
+        </div>
+      </div>
+
+      <!-- ───────────── RIGHT: RED STICKY RESULT ───────────── -->
+      <aside class="col-span-12 lg:col-span-5">
+        <div class="lg:sticky lg:top-6 rounded-2xl bg-gradient-to-br from-red-900 via-red-800 to-ink-900 text-white p-7">
+          <div class="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold font-mono mb-4">
+            {{ $t('calculatorPage.penaltyAmount') }}
+          </div>
+          <div class="text-[48px] lg:text-[56px] leading-none font-light tabular-nums text-red-200">
+            <CountUp :value="penaltyAmount" :decimals="0" />
+          </div>
+          <div class="text-[15px] text-white/70 mt-1">
+            {{ $t('calculatorPage.penaltyAccruedFor') }}
+          </div>
+
+          <div class="h-px bg-white/10 my-6"></div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.penaltyDebtShort') }}</div>
+              <div class="text-[20px] font-light tabular-nums">{{ fmtSom(penaltyDebt) }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.penaltyPlusPenalty') }}</div>
+              <div class="text-[20px] font-light tabular-nums text-red-300">+{{ fmtSom(penaltyAmount) }}</div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-5 border-t border-white/10">
+            <div class="text-[10px] uppercase tracking-wider text-white/50 font-semibold mb-1">{{ $t('calculatorPage.penaltyTotalToPay') }}</div>
+            <div class="text-[28px] lg:text-[32px] font-light tabular-nums">
+              <CountUp :value="penaltyTotalToPay" :decimals="0" />
+              <span class="text-[14px] text-white/50 ml-2 font-normal">{{ $t('calculatorPage.som') }}</span>
+            </div>
+          </div>
+
+          <AccrualCurve :debt="penaltyDebt" :days="penaltyDays" />
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- HIDDEN: legacy result block for PDF export                -->
+    <!-- (используется downloadPdf — renders off-screen таблица)   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div v-if="showResult" id="calc-result" class="max-w-[1360px] mx-auto px-6 lg:px-8 pb-20">
+      <div id="calculation-result" class="bg-[#f0fdf4] rounded-2xl border-2 border-[#86efac] p-6">
+        <h3 class="text-lg font-bold text-[#065f46] mb-4">{{ $t('calculatorPage.result') }}</h3>
+        <div class="overflow-x-auto mb-4">
+          <table class="w-full text-sm border-collapse">
+            <thead>
+              <tr class="text-left text-[#047857]">
+                <th class="px-3 py-2 bg-[#dcfce7] rounded-tl-lg font-semibold">{{ $t('calculatorPage.group') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] font-semibold">{{ $t('calculatorPage.subgroup') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.massT') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] text-center font-semibold">{{ $t('calculatorPage.normPercent') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.toRecycleShort') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] text-right font-semibold">{{ $t('calculatorPage.rate') }}</th>
+                <th class="px-3 py-2 bg-[#dcfce7] rounded-tr-lg text-right font-semibold">{{ $t('calculatorPage.amountSom') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in resultRows" :key="r.id" class="border-b border-[#bbf7d0]">
+                <td class="px-3 py-2.5 text-[#1e293b] text-xs">{{ getGroupLabel(r.group) }}</td>
+                <td class="px-3 py-2.5 text-[#64748b] text-xs max-w-[200px] truncate" :title="getSubgroupLabel(r)">{{ getSubgroupLabel(r) }}</td>
+                <td class="px-3 py-2.5 text-right font-medium text-[#1e293b]">{{ fmtDec(parseFloat(String(r.volume)) || 0) }}</td>
+                <td class="px-3 py-2.5 text-center text-[#1e293b]">{{ r.recyclingStandard }}%</td>
+                <td class="px-3 py-2.5 text-right text-[#1e293b]">{{ fmtDec(r.volumeToRecycle) }}</td>
+                <td class="px-3 py-2.5 text-right text-[#1e293b]">{{ fmt(r.rate) }}</td>
+                <td class="px-3 py-2.5 text-right font-bold text-[#065f46]">{{ fmtDec(r.amount) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="bg-[#dcfce7]">
+                <td class="px-3 py-3 font-bold text-[#065f46] rounded-bl-lg" colspan="6">{{ $t('calculatorPage.total') }}</td>
+                <td class="px-3 py-3 text-right font-bold text-[#065f46] rounded-br-lg text-lg">{{ fmtDec(totalAmount) }}</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
     </div>
@@ -777,12 +741,16 @@ async function downloadPdf() {
 </template>
 
 <style scoped>
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+/* Скрываем scrollbar для горизонтальной прокрутки годов */
+.hide-scroll::-webkit-scrollbar {
+  display: none;
 }
-input[type="number"] {
-  -moz-appearance: textfield;
+.hide-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+/* Tabular nums — для чисел в sticky-панели */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 </style>
