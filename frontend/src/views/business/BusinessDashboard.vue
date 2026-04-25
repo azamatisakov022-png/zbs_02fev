@@ -17,22 +17,28 @@ const today = new Date()
 const currentYear = today.getFullYear()
 const todayLabel = today.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
 
-const myCalcs = computed(() => calculationStore.getBusinessCalculations(userName))
-const isEmpty = computed(() => myCalcs.value.length === 0)
+const realCalcs = computed(() => calculationStore.getBusinessCalculations(userName))
+const hasRealData = computed(() => realCalcs.value.length > 0)
+// Empty-state скрыт: для демо всегда показываем populated с mock-fallback.
+const isEmpty = false
 
 // Тип плательщика — выводится из payerType расчётов.
 // Производитель сдаёт ежеквартально; импортёр — по факту ввоза.
 type PayerKind = 'importer' | 'producer' | 'both' | 'unknown'
 const payerKind = computed<PayerKind>(() => {
+  if (!hasRealData.value) return 'producer' // mock — показываем как производителя
   const types = new Set<string>()
-  myCalcs.value.forEach(c => { if (c.payerType) types.add(c.payerType) })
+  realCalcs.value.forEach(c => { if (c.payerType) types.add(c.payerType) })
   if (types.has('importer') && types.has('producer')) return 'both'
   if (types.has('importer')) return 'importer'
   if (types.has('producer')) return 'producer'
   return 'unknown'
 })
 
-const currentBalance = computed(() => accountStore.getCurrentBalance())
+const currentBalance = computed(() => {
+  const real = accountStore.getCurrentBalance()
+  return real !== 0 ? real : 85000
+})
 const balanceTone = computed(() => {
   const b = currentBalance.value
   if (b > 0) return { pill: 'bd-pill--success', label: 'Положительный' }
@@ -40,9 +46,14 @@ const balanceTone = computed(() => {
   return { pill: 'bd-pill--neutral', label: 'Нулевой' }
 })
 
-// Последние 3 платежа из транзакций (тип 'payment').
+// Последние 3 платежа из транзакций (тип 'payment') — fallback на mock.
+const mockPayments = [
+  { date: '12 апр 2026', amount: 257480, label: 'Платёж со счёта ОсОО «АКБ»' },
+  { date: '28 фев 2026', amount: 180000, label: 'Платёж со счёта Демир Банк' },
+  { date: '20 янв 2026', amount: 95000,  label: 'Платёж со счёта Кыргызкоммерцбанк' },
+]
 const recentPayments = computed(() => {
-  return accountStore.getTransactions()
+  const real = accountStore.getTransactions()
     .filter(tx => tx.type === 'payment')
     .slice(-3).reverse()
     .map(tx => ({
@@ -50,6 +61,7 @@ const recentPayments = computed(() => {
       amount: tx.paymentAmount,
       label: tx.description || `Платёж по ${tx.calculationNumber}`,
     }))
+  return real.length > 0 ? real : mockPayments
 })
 
 // Срочное действие зависит от типа плательщика.
@@ -57,28 +69,28 @@ const recentPayments = computed(() => {
 // Производитель сдаёт квартальный расчёт → срочно если приближается 15 мая.
 // Декларация (годовая) подаётся до 1 апреля.
 const urgent = computed(() => {
-  const overdue = myCalcs.value.find(c =>
-    c.status === CalcStatus.SUBMITTED || c.status === CalcStatus.UNDER_REVIEW
-  )
-  // Производитель — Q1 расчёт до 15 мая
+  // Производитель — Q1 расчёт до 15 мая.
   if (payerKind.value === 'producer' || payerKind.value === 'both') {
-    const deadline = new Date(currentYear, 4, 15) // 15 мая
-    const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / 86400000)
-    if (daysLeft > 0 && daysLeft <= 30) {
-      return {
-        title: `Подайте расчёт за Q1 ${currentYear}`,
-        body: 'Срок подачи — до 15 мая. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
-        daysLabel: `${daysLeft} дн. до начисления пени`,
-        cta: '/business/calculator',
-      }
+    const deadline = new Date(currentYear, 4, 15)
+    const daysLeft = Math.max(1, Math.ceil((deadline.getTime() - today.getTime()) / 86400000))
+    return {
+      title: `Подайте расчёт за Q1 ${currentYear}`,
+      body: 'Срок подачи — до 15 мая. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
+      daysLabel: `${daysLeft} дн. до начисления пени`,
+      cta: '/business/calculator',
     }
   }
-  if (payerKind.value === 'importer' && overdue) {
-    return {
-      title: `Оплатите расчёт ${overdue.number}`,
-      body: 'Срок оплаты после ввоза партии истекает. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
-      daysLabel: 'Срочно',
-      cta: '/business/calculations',
+  if (payerKind.value === 'importer') {
+    const overdue = realCalcs.value.find(c =>
+      c.status === CalcStatus.SUBMITTED || c.status === CalcStatus.UNDER_REVIEW
+    )
+    if (overdue) {
+      return {
+        title: `Оплатите расчёт ${overdue.number}`,
+        body: 'Срок оплаты после ввоза партии истекает. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
+        daysLabel: 'Срочно',
+        cta: '/business/calculations',
+      }
     }
   }
   return null
@@ -109,14 +121,14 @@ const obligationGroups = computed<ObligationGroup[]>(() => {
 
   // Декларация — годовая, до 1 апреля.
   groups.push({
-    title: 'Декларация (годовая)', done: 1, total: 1,
+    title: 'Декларации', done: 1, total: 1,
     items: [
-      { status: 'success', title: `Декларация за ${currentYear - 1} год`, meta: `Принята · 20.01.${currentYear} · до 1 апреля` },
+      { status: 'success', title: `Декларация за ${currentYear - 1} год`, meta: `Принята · 20.01.${currentYear} · ДЕК-${currentYear - 1}-Q4` },
     ],
   })
 
   // Расчёты — для производителя ежеквартально, для импортёра по партиям.
-  const calcs = myCalcs.value.slice(-3).reverse()
+  const calcs = realCalcs.value.slice(-3).reverse()
   if (calcs.length > 0) {
     const items: ObligationItem[] = calcs.map(c => {
       let s: ObligationItem['status'] = 'draft'
@@ -143,6 +155,16 @@ const obligationGroups = computed<ObligationGroup[]>(() => {
       total: items.length,
       items,
     })
+  } else {
+    // Mock fallback для демо.
+    groups.push({
+      title: 'Расчёты утильсбора', done: 3, total: 3,
+      items: [
+        { status: 'info',    title: 'Расчёт за март 2026',    meta: 'На проверке · 02.04.2026 · 245 000 сом' },
+        { status: 'success', title: 'Расчёт за февраль 2026', meta: 'Принят · 14.03.2026 · 218 750 сом' },
+        { status: 'success', title: 'Расчёт за январь 2026',  meta: 'Принят · 12.02.2026 · 268 730 сом' },
+      ],
+    })
   }
 
   // Отчёт о переработке — Q1 до 15 мая.
@@ -159,16 +181,29 @@ const totalDone = computed(() => obligationGroups.value.reduce((s, g) => s + g.d
 const totalAll  = computed(() => obligationGroups.value.reduce((s, g) => s + g.total, 0))
 
 // Норматив переработки — рассчитывается от того, что плательщик САМ ввёл в расчётах.
+// При пустом store — mock fallback для демо.
+const mockNormative = {
+  overallPct: 78,
+  done: 25.2,
+  target: 30.0,
+  remain: 4.8,
+  monthsLeft: 8,
+  fractions: [
+    { name: 'Пластик', done: 11.2, target: 12.5, pct: 84  },
+    { name: 'Бумага',  done: 8.3,  target: 8.3,  pct: 100 },
+    { name: 'Стекло',  done: 3.2,  target: 5.2,  pct: 60  },
+  ],
+}
 const normative = computed(() => {
-  // Норматив = сумма volumeToRecycle по всем расчётам этого года.
-  const items = myCalcs.value.flatMap(c => c.items || [])
+  const items = realCalcs.value.flatMap(c => c.items || [])
   const target = items.reduce((s, p) => s + (p.volumeToRecycle || 0), 0)
+  if (target === 0) return mockNormative
+
   const done = items.reduce((s, p) => s + (parseFloat(p.transferredToRecycling || '0') || 0), 0)
-  const overallPct = target > 0 ? Math.min(100, Math.round((done / target) * 100)) : 0
+  const overallPct = Math.min(100, Math.round((done / target) * 100))
   const remain = Math.max(0, target - done)
   const monthsLeft = Math.max(0, 12 - today.getMonth())
 
-  // По фракциям — группируем по полю group.
   const byGroup: Record<string, { done: number; target: number }> = {}
   items.forEach(p => {
     const g = p.group || 'Прочее'
