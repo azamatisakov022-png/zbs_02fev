@@ -238,20 +238,32 @@ const calendar = computed(() => {
     const y = d.getFullYear()
     const items: CalChip[] = []
 
-    // Производитель — расчёт за прошлый месяц + квартальные срезы.
+    // Декларация — апрель. Если уже в текущем месяце или прошла — значит принята.
+    if (m === 3) {
+      items.push({
+        tone: i === 0 ? 'success' : 'planned',
+        label: i === 0 ? 'Декларация принята' : 'Декларация (до 1 апр)',
+      })
+    }
+
     if (payerKind.value === 'producer' || payerKind.value === 'both') {
-      // Q-end месяцы (мар, июн, сен, дек) — в следующий месяц подача расчёта Q.
+      // Q1: апрель — в работе, май — дедлайн.
+      if (m === 3) items.push({ tone: 'inwork', label: 'Расчёт Q1 — в работе' })
       if (m === 4) items.push({ tone: 'danger', label: 'Расчёт Q1 (до 15 мая)' })
+      if (m === 4) items.push({ tone: 'inwork', label: 'Отчёт Q1 (до 15 мая)' })
+      // Q2: июль — старт, август — дедлайн.
+      if (m === 6) items.push({ tone: 'planned', label: 'Расчёт Q2 — старт' })
       if (m === 7) items.push({ tone: 'planned', label: 'Расчёт Q2 (до 15 авг)' })
-      // Декларация — апрель (за прошлый год).
-      if (m === 3) items.push({ tone: i === 0 ? 'success' : 'planned', label: 'Декларация (до 1 апр)' })
+      if (m === 7) items.push({ tone: 'planned', label: 'Отчёт Q2 (до 15 авг)' })
+      // Q3: октябрь — старт, ноябрь — дедлайн.
+      if (m === 9) items.push({ tone: 'planned', label: 'Расчёт Q3 — старт' })
+      if (m === 10) items.push({ tone: 'planned', label: 'Расчёт Q3 (до 15 ноя)' })
     }
-    if (payerKind.value === 'importer' || payerKind.value === 'both') {
-      if (m === 3) items.push({ tone: i === 0 ? 'success' : 'planned', label: 'Декларация (до 1 апр)' })
+
+    if (payerKind.value === 'importer') {
+      // Импортёр платит по партиям — события генерируются по факту ввоза.
+      // Здесь показываем только декларацию.
     }
-    // Отчёт о переработке Q1 — до 15 мая.
-    if (m === 4) items.push({ tone: 'planned', label: 'Отчёт Q1' })
-    if (m === 7) items.push({ tone: 'planned', label: 'Отчёт Q2' })
 
     arr.push({
       month: monthShort[m],
@@ -436,7 +448,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
             <div class="bd-account__actions">
               <router-link to="/business/account" class="bd-btn bd-btn--primary">
                 <svg class="bd-ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                Реквизиты
+                Реквизиты для оплаты
               </router-link>
               <router-link to="/business/account" class="bd-btn bd-btn--ghost">
                 История
@@ -544,7 +556,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
                     :key="ii"
                     :class="['bd-chip', `bd-chip--${it.tone}`]"
                   >{{ it.label }}</span>
-                  <span v-if="!mo.items.length" class="bd-cal__empty">—</span>
+                  <span v-if="!mo.items.length" class="bd-cal__free">Без обязательств</span>
                 </div>
               </div>
             </div>
@@ -607,7 +619,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
 }
 
 .bd-grid--primary {
-  display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px;
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start;
 }
 @media (max-width: 1024px) {
   .bd-grid--primary { grid-template-columns: 1fr; }
@@ -783,6 +795,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
 .bd-cal__cell--current .bd-cal__head { color: #0e888d; }
 .bd-cal__items { display: grid; gap: 4px; }
 .bd-cal__empty { color: #cbd5e1; font-size: 12px; }
+.bd-cal__free  { color: #94a3b8; font-size: 11px; font-style: italic; padding: 4px 0; }
 .bd-chip {
   font-size: 10px; font-weight: 600; padding: 3px 6px; border-radius: 4px;
   border: 1px solid; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
