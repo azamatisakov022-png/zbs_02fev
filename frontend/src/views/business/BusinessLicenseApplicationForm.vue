@@ -484,23 +484,22 @@ const savedLabel = computed(() => {
             <template v-if="licenseCategory === 'complex'">
               <SectionLabel mt>Подвиды деятельности</SectionLabel>
               <p class="lf-activity__hint">Отметьте все подвиды, которыми вы планируете заниматься. Можно несколько.</p>
-              <div class="lf-activity-grid">
+              <div class="lf-activity-list">
                 <label
                   v-for="ak in ACTIVITY_KINDS"
                   :key="ak.value"
-                  class="lf-activity-card"
-                  :class="{ 'lf-activity-card--active': isActivityChecked(ak.value) }"
+                  class="lf-activity-row"
+                  :class="{ 'lf-activity-row--active': isActivityChecked(ak.value) }"
                 >
                   <input
                     type="checkbox"
                     :checked="isActivityChecked(ak.value)"
                     @change="toggleActivityKind(ak.value)"
-                    class="lf-activity-card__check"
+                    class="lf-activity-row__check"
                   />
-                  <div class="lf-activity-card__body">
-                    <div class="lf-activity-card__title">{{ ak.label }}</div>
-                    <div class="lf-activity-card__desc">{{ ak.desc }}</div>
-                  </div>
+                  <span class="lf-activity-row__title">{{ ak.label }}</span>
+                  <span class="lf-activity-row__sep">—</span>
+                  <span class="lf-activity-row__desc">{{ ak.desc }}</span>
                 </label>
               </div>
             </template>
@@ -1056,49 +1055,66 @@ const savedLabel = computed(() => {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-.lf-activity-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.lf-activity-card {
+.lf-activity-list {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 10px;
+  flex-direction: column;
+  gap: 6px;
+}
+.lf-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
   border: 1px solid var(--lf-line);
   background: #fff;
   cursor: pointer;
   transition: border-color 0.12s ease, background 0.12s ease;
 }
-.lf-activity-card:hover {
+.lf-activity-row:hover {
   border-color: var(--lf-brand);
 }
-.lf-activity-card--active {
+.lf-activity-row--active {
   border-color: var(--lf-brand);
   background: var(--lf-brand-050);
 }
-.lf-activity-card__check {
-  margin-top: 2px;
+.lf-activity-row__check {
   width: 16px;
   height: 16px;
   accent-color: var(--lf-brand);
   flex-shrink: 0;
 }
-.lf-activity-card__body {
+.lf-activity-row__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--lf-ink);
+  width: 130px;
+  flex-shrink: 0;
+}
+.lf-activity-row__sep {
+  color: var(--lf-ink-4);
+  flex-shrink: 0;
+}
+.lf-activity-row__desc {
+  font-size: 12.5px;
+  color: var(--lf-ink-3);
   flex: 1;
   min-width: 0;
 }
-.lf-activity-card__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--lf-ink);
-}
-.lf-activity-card__desc {
-  font-size: 12px;
-  color: var(--lf-ink-3);
-  margin-top: 2px;
+@media (max-width: 560px) {
+  .lf-activity-row {
+    flex-wrap: wrap;
+  }
+  .lf-activity-row__title {
+    width: auto;
+  }
+  .lf-activity-row__sep {
+    display: none;
+  }
+  .lf-activity-row__desc {
+    flex-basis: 100%;
+    margin-left: 26px;
+  }
 }
 .lf-term-grid {
   display: flex;
@@ -1125,11 +1141,6 @@ const savedLabel = computed(() => {
   background: var(--lf-brand);
   border-color: var(--lf-brand);
   color: #fff;
-}
-@media (max-width: 640px) {
-  .lf-activity-grid {
-    grid-template-columns: 1fr;
-  }
 }
 .lf-kind {
   text-align: left;
