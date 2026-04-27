@@ -185,25 +185,25 @@ const totalCapacity = computed(() => {
 
 // ==================== HELPERS ====================
 
-const getTypeLabel = (type: LandfillType): string => {
+const getTypeLabel = (type: string): string => {
   switch (type) {
     case 'sanitary':
       return t('ministryLandfills.typeSanitary')
     case 'unauthorized':
       return t('ministryLandfills.typeUnauthorized')
-    case 'sorting':
-      return t('ministryLandfills.typeSorting')
+    default:
+      return type
   }
 }
 
-const getTypeBadgeClass = (type: LandfillType): string => {
+const getTypeBadgeClass = (type: string): string => {
   switch (type) {
     case 'sanitary':
       return 'bg-blue-100 text-blue-800'
     case 'unauthorized':
       return 'bg-red-100 text-red-800'
-    case 'sorting':
-      return 'bg-purple-100 text-purple-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
   }
 }
 
@@ -510,7 +510,6 @@ const guideActions = computed(() => [
             <option value="">{{ $t('ministryLandfills.allTypes') }}</option>
             <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
             <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
-            <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
           </select>
 
           <select
@@ -778,7 +777,6 @@ const guideActions = computed(() => [
               >
                 <option value="sanitary">{{ $t('ministryLandfills.typeSanitary') }}</option>
                 <option value="unauthorized">{{ $t('ministryLandfills.typeUnauthorizedFull') }}</option>
-                <option value="sorting">{{ $t('ministryLandfills.typeSortingFull') }}</option>
               </select>
             </div>
 

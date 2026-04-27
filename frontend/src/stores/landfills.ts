@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import api, { silentApi } from '../api/client'
 
-export type LandfillType = 'sanitary' | 'unauthorized' | 'sorting'
+export type LandfillType = 'sanitary' | 'unauthorized'
 export type LandfillStatus = 'active' | 'closed' | 'recultivation'
 
 export interface WasteAcceptance {
@@ -197,7 +197,7 @@ function getForGisMap() {
     address: l.address,
     phone: '',
     region: l.region,
-    landfillType: l.type === 'sanitary' ? 'Санитарный полигон' : 'Несанитарный полигон',
+    landfillType: l.type === 'sanitary' ? 'Санкционированный полигон' : 'Несанкционированный полигон',
     area: l.designCapacity + ' тыс. т',
     capacity: (l.designCapacity * 1000).toLocaleString('ru-RU') + ' т',
     fillLevel: getFillPercent(l) + '%',

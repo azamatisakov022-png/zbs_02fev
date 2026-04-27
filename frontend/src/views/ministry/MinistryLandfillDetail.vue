@@ -88,7 +88,6 @@ const onPickerConfirm = (coords: { lat: number; lng: number }) => {
 const typeLabels = computed<Record<string, string>>(() => ({
   sanitary: t('ministryLandfillDetail.typeSanitary'),
   unauthorized: t('ministryLandfillDetail.typeUnauthorized'),
-  sorting: t('ministryLandfillDetail.typeSorting'),
 }))
 
 const statusLabelKey: Record<string, string> = {
@@ -107,7 +106,6 @@ const typeBadgeClass = computed(() => {
   const cls: Record<string, string> = {
     sanitary: 'bg-blue-100 text-blue-800',
     unauthorized: 'bg-red-100 text-red-800',
-    sorting: 'bg-purple-100 text-purple-800',
   }
   return cls[landfill.value.type] || 'bg-gray-100 text-gray-800'
 })
@@ -564,7 +562,6 @@ function formatPhotoDate(iso: string): string {
               <select v-model="editData.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm">
                 <option value="sanitary">{{ $t('ministryLandfillDetail.typeSanitary') }}</option>
                 <option value="unauthorized">{{ $t('ministryLandfillDetail.typeUnauthorized') }}</option>
-                <option value="sorting">{{ $t('ministryLandfillDetail.typeSorting') }}</option>
               </select>
             </div>
             <div>
