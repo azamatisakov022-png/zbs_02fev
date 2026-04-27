@@ -19,6 +19,10 @@ export interface LandfillInfrastructure {
   leachateCollection: boolean
   fireSafety: boolean
   ecoMonitoring: boolean
+  // Опциональные расширения (запрос заказчика 2026-04-27)
+  lighting?: boolean
+  videoSurveillance?: boolean
+  sortingStation?: boolean
 }
 
 export interface LandfillEquipment {
@@ -26,6 +30,16 @@ export interface LandfillEquipment {
   excavators: number
   tractors: number
   bulldozers: number
+  // Опциональные (запрос заказчика 2026-04-27)
+  loaders?: number
+  graders?: number
+}
+
+export interface LandfillTariffs {
+  passengerCar?: number   // легковой автомобиль, сом/рейс
+  lightTruck?: number     // малотоннажный грузовой, сом/рейс
+  truck?: number          // грузовой, сом/рейс
+  garbageTruck?: number   // мусоровоз, сом/рейс
 }
 
 export interface MorphologicalComposition {
@@ -80,6 +94,8 @@ export interface Landfill {
   equipment: LandfillEquipment
   morphology: MorphologicalComposition
   landCategory: string
+  area?: number                // Площадь полигона, га
+  tariffs?: LandfillTariffs    // Тарифы по типам транспорта
 }
 
 let nextId = 1

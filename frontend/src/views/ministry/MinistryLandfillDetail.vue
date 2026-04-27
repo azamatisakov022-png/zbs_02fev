@@ -222,6 +222,9 @@ interface InfraItem {
 
 const infraItemDefs: InfraItem[] = [
   { key: 'fencing', labelKey: 'ministryLandfillDetail.infraFencing' },
+  { key: 'lighting', labelKey: 'ministryLandfillDetail.infraLighting' },
+  { key: 'videoSurveillance', labelKey: 'ministryLandfillDetail.infraVideo' },
+  { key: 'sortingStation', labelKey: 'ministryLandfillDetail.infraSorting' },
   { key: 'weighControl', labelKey: 'ministryLandfillDetail.infraWeighControl' },
   { key: 'monitoring', labelKey: 'ministryLandfillDetail.infraMonitoring' },
   { key: 'drainage', labelKey: 'ministryLandfillDetail.infraDrainage' },
@@ -689,6 +692,10 @@ function formatPhotoDate(iso: string): string {
             <span class="text-sm font-medium text-gray-900">{{ landfill.tariffLegal }} {{ $t('ministryLandfillDetail.somUnit') }}</span>
           </div>
           <div class="flex justify-between py-2 border-b border-gray-100">
+            <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelArea') }}</span>
+            <span class="text-sm font-medium text-gray-900">{{ landfill.area != null ? landfill.area + ' ' + $t('ministryLandfillDetail.areaUnit') : '—' }}</span>
+          </div>
+          <div class="flex justify-between py-2 border-b border-gray-100">
             <span class="text-sm text-gray-500">{{ $t('ministryLandfillDetail.labelDailyVolume') }}</span>
             <span class="text-sm font-medium text-gray-900">{{ landfill.dailyVolume }} {{ $t('ministryLandfillDetail.dailyVolumeUnit') }}</span>
           </div>
@@ -841,10 +848,22 @@ function formatPhotoDate(iso: string): string {
         </div>
 
         <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.equipmentTitle') }}</h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.trucks ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTrucks') }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.bulldozers ?? '—' }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipBulldozers') }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.loaders ?? '—' }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipLoaders') }}</p>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.graders ?? '—' }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipGraders') }}</p>
           </div>
           <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.excavators ?? '—' }}</p>
@@ -854,9 +873,32 @@ function formatPhotoDate(iso: string): string {
             <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.tractors ?? '—' }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipTractors') }}</p>
           </div>
-          <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-            <p class="text-2xl font-bold text-gray-900">{{ landfill.equipment?.bulldozers ?? '—' }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.equipBulldozers') }}</p>
+        </div>
+
+        <!-- Tariffs -->
+        <div v-if="landfill.tariffs && (landfill.tariffs.passengerCar || landfill.tariffs.lightTruck || landfill.tariffs.truck || landfill.tariffs.garbageTruck)" class="mt-6">
+          <h3 class="text-sm font-semibold text-gray-800 mb-3">{{ $t('ministryLandfillDetail.tariffsTitle') }}</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+              <p class="text-lg font-bold text-gray-900 tabular-nums">{{ landfill.tariffs.passengerCar ?? '—' }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.tariffPassengerCar') }}</p>
+              <p class="text-[10px] text-gray-400">{{ $t('ministryLandfillDetail.tariffUnit') }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+              <p class="text-lg font-bold text-gray-900 tabular-nums">{{ landfill.tariffs.lightTruck ?? '—' }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.tariffLightTruck') }}</p>
+              <p class="text-[10px] text-gray-400">{{ $t('ministryLandfillDetail.tariffUnit') }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+              <p class="text-lg font-bold text-gray-900 tabular-nums">{{ landfill.tariffs.truck ?? '—' }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.tariffTruck') }}</p>
+              <p class="text-[10px] text-gray-400">{{ $t('ministryLandfillDetail.tariffUnit') }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+              <p class="text-lg font-bold text-gray-900 tabular-nums">{{ landfill.tariffs.garbageTruck ?? '—' }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ $t('ministryLandfillDetail.tariffGarbageTruck') }}</p>
+              <p class="text-[10px] text-gray-400">{{ $t('ministryLandfillDetail.tariffUnit') }}</p>
+            </div>
           </div>
         </div>
       </div>

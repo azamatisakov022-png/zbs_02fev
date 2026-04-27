@@ -263,78 +263,198 @@ const goToDetail = (landfill: Landfill) => {
 
 // ==================== ADD FORM ====================
 
-const newLandfill = ref({
-  name: '',
-  type: 'sanitary' as LandfillType,
-  region: '',
-  district: '',
-  settlement: '',
-  operator: '',
-  designCapacity: 0,
-  currentVolume: 0,
-  openYear: new Date().getFullYear(),
-  expiryYear: new Date().getFullYear() + 20,
-  lat: 0,
-  lng: 0,
-})
+// «МП» подставляется автоматически — оператор всегда МП.
+const OPERATOR_PREFIX = 'МП '
 
-const isFormValid = computed(() => {
-  return newLandfill.value.name.trim() !== '' && newLandfill.value.region.trim() !== ''
-})
+interface PendingPhoto { dataUrl: string; fileName: string }
 
-const resetForm = () => {
-  newLandfill.value = {
+interface NewLandfillForm {
+  name: string
+  type: LandfillType
+  region: string
+  district: string
+  settlement: string
+  operatorSuffix: string  // оператор без префикса «МП »
+  area: number
+  designCapacity: number
+  currentVolume: number
+  openYear: number
+  expiryYear: number
+  lat: number
+  lng: number
+  // Чекбоксы оснащения
+  infFencing: boolean
+  infLighting: boolean
+  infVideo: boolean
+  infSorting: boolean
+  infScales: boolean
+  // Чекбоксы спец.техники
+  eqBulldozer: boolean
+  eqLoader: boolean
+  eqGarbageTruck: boolean
+  eqGrader: boolean
+  // Тарифы (сом/рейс)
+  tariffPassengerCar: number
+  tariffLightTruck: number
+  tariffTruck: number
+  tariffGarbageTruck: number
+}
+
+function emptyForm(): NewLandfillForm {
+  return {
     name: '',
     type: 'sanitary',
     region: '',
     district: '',
     settlement: '',
-    operator: '',
+    operatorSuffix: '',
+    area: 0,
     designCapacity: 0,
     currentVolume: 0,
     openYear: new Date().getFullYear(),
     expiryYear: new Date().getFullYear() + 20,
     lat: 0,
     lng: 0,
+    infFencing: false,
+    infLighting: false,
+    infVideo: false,
+    infSorting: false,
+    infScales: false,
+    eqBulldozer: false,
+    eqLoader: false,
+    eqGarbageTruck: false,
+    eqGrader: false,
+    tariffPassengerCar: 0,
+    tariffLightTruck: 0,
+    tariffTruck: 0,
+    tariffGarbageTruck: 0,
   }
+}
+
+const newLandfill = ref<NewLandfillForm>(emptyForm())
+const pendingPhotos = ref<PendingPhoto[]>([])
+const photoFormError = ref<string | null>(null)
+const MAX_FORM_PHOTO_BYTES = 5 * 1024 * 1024
+
+const isFormValid = computed(() => {
+  return newLandfill.value.name.trim() !== '' && newLandfill.value.region.trim() !== ''
+})
+
+const resetForm = () => {
+  newLandfill.value = emptyForm()
+  pendingPhotos.value = []
+  photoFormError.value = null
+}
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onFormPhotoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = input.files
+  if (!files || files.length === 0) return
+  photoFormError.value = null
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) {
+      photoFormError.value = t('ministryLandfills.photoErrorType')
+      continue
+    }
+    if (file.size > MAX_FORM_PHOTO_BYTES) {
+      photoFormError.value = t('ministryLandfills.photoErrorSize', { mb: 5 })
+      continue
+    }
+    try {
+      const dataUrl = await readFileAsDataURL(file)
+      pendingPhotos.value.push({ dataUrl, fileName: file.name })
+    } catch {
+      photoFormError.value = t('ministryLandfills.photoErrorRead')
+    }
+  }
+  input.value = ''
+}
+
+function removePendingPhoto(idx: number) {
+  pendingPhotos.value.splice(idx, 1)
 }
 
 const saveLandfill = () => {
   if (!isFormValid.value) return
+  const f = newLandfill.value
 
-  landfillStore.addLandfill({
-    name: newLandfill.value.name,
-    type: newLandfill.value.type,
+  const operatorName = f.operatorSuffix.trim()
+    ? OPERATOR_PREFIX + f.operatorSuffix.trim()
+    : ''
+
+  const created = landfillStore.addLandfill({
+    name: f.name,
+    type: f.type,
     status: 'active',
-    operator: newLandfill.value.operator,
-    region: newLandfill.value.region,
-    district: newLandfill.value.district,
-    settlement: newLandfill.value.settlement,
+    operator: operatorName,
+    region: f.region,
+    district: f.district,
+    settlement: f.settlement,
     address: '',
-    lat: newLandfill.value.lat || 42.87,
-    lng: newLandfill.value.lng || 74.59,
-    openYear: newLandfill.value.openYear,
-    expiryYear: newLandfill.value.expiryYear,
+    lat: f.lat || 42.87,
+    lng: f.lng || 74.59,
+    openYear: f.openYear,
+    expiryYear: f.expiryYear,
     hazardClasses: ['IV', 'V'],
-    designCapacity: newLandfill.value.designCapacity,
-    currentVolume: newLandfill.value.currentVolume,
+    designCapacity: f.designCapacity,
+    currentVolume: f.currentVolume,
     monthlyIntake: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     wasteAcceptance: [],
     infrastructure: {
-      fencing: false,
-      weighControl: false,
+      fencing: f.infFencing,
+      weighControl: f.infScales,
       monitoring: false,
       drainage: false,
       leachateCollection: false,
       fireSafety: false,
       ecoMonitoring: false,
+      lighting: f.infLighting,
+      videoSurveillance: f.infVideo,
+      sortingStation: f.infSorting,
     },
     permits: {
       operationPermit: { number: '', date: '', expiry: '' },
       ecoConclusion: { number: '', date: '' },
     },
     documents: [],
+    population: 0,
+    servicedPopulation: 0,
+    tariffPhysical: 0,
+    tariffLegal: 0,
+    dailyVolume: 0,
+    wasteSchedule: '',
+    equipment: {
+      trucks: f.eqGarbageTruck ? 1 : 0,
+      excavators: 0,
+      tractors: 0,
+      bulldozers: f.eqBulldozer ? 1 : 0,
+      loaders: f.eqLoader ? 1 : 0,
+      graders: f.eqGrader ? 1 : 0,
+    },
+    morphology: { plastic: 0, paper: 0, glass: 0, food: 0, other: 0 },
+    landCategory: '',
+    area: f.area || undefined,
+    tariffs: {
+      passengerCar: f.tariffPassengerCar || undefined,
+      lightTruck: f.tariffLightTruck || undefined,
+      truck: f.tariffTruck || undefined,
+      garbageTruck: f.tariffGarbageTruck || undefined,
+    },
   })
+
+  // Загружаем накопленные фото в созданный полигон.
+  for (const photo of pendingPhotos.value) {
+    landfillStore.addLandfillPhoto(created.id, { dataUrl: photo.dataUrl, fileName: photo.fileName })
+  }
 
   resetForm()
   showAddModal.value = false
@@ -813,19 +933,36 @@ const guideActions = computed(() => [
               </div>
             </div>
 
-            <!-- Operator -->
+            <!-- Operator (prefix МП) -->
             <div>
               <label class="block text-sm font-medium text-[#1e293b] mb-1">{{ $t('ministryLandfills.labelOperator') }}</label>
-              <input
-                v-model="newLandfill.operator"
-                type="text"
-                :placeholder="$t('ministryLandfills.operatorPlaceholder')"
-                class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
-              />
+              <div class="flex">
+                <span class="px-3 py-2 bg-[#f1f5f9] border border-r-0 border-[#e2e8f0] rounded-l-lg text-sm font-semibold text-[#475569] select-none">МП</span>
+                <input
+                  v-model="newLandfill.operatorSuffix"
+                  type="text"
+                  :placeholder="$t('ministryLandfills.operatorSuffixPlaceholder')"
+                  class="flex-1 px-3 py-2 border border-[#e2e8f0] rounded-r-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                />
+              </div>
+              <p class="text-xs text-[#94a3b8] mt-1">{{ $t('ministryLandfills.operatorHint') }}</p>
             </div>
 
-            <!-- Capacity row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Area + Capacity row -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[#1e293b] mb-1">
+                  {{ $t('ministryLandfills.labelArea') }}
+                </label>
+                <input
+                  v-model.number="newLandfill.area"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder="0"
+                  class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                />
+              </div>
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-1">
                   {{ $t('ministryLandfills.labelDesignCapacity') }}
@@ -907,6 +1044,156 @@ const guideActions = computed(() => [
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   {{ $t('ministryLandfills.pickOnMap') }}
                 </button>
+              </div>
+            </div>
+
+            <!-- Infrastructure checkboxes -->
+            <div>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ministryLandfills.labelInfrastructure') }}</label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.infFencing" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.infraFencing') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.infLighting" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.infraLighting') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.infVideo" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.infraVideo') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.infSorting" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.infraSorting') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.infScales" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.infraScales') }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Equipment checkboxes -->
+            <div>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ministryLandfills.labelEquipment') }}</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.eqBulldozer" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.eqBulldozer') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.eqLoader" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.eqLoader') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.eqGarbageTruck" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.eqGarbageTruck') }}</span>
+                </label>
+                <label class="flex items-center gap-2 px-3 py-2 border border-[#e2e8f0] rounded-lg cursor-pointer hover:bg-[#f8fafc] transition-colors">
+                  <input v-model="newLandfill.eqGrader" type="checkbox" class="w-4 h-4 text-[#2563eb] rounded border-[#cbd5e1] focus:ring-[#2563eb]" />
+                  <span class="text-sm text-[#1e293b]">{{ $t('ministryLandfills.eqGrader') }}</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tariffs -->
+            <div>
+              <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('ministryLandfills.labelTariffs') }}</label>
+              <p class="text-xs text-[#94a3b8] mb-2">{{ $t('ministryLandfills.tariffsHint') }}</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-[#64748b] mb-1">{{ $t('ministryLandfills.tariffPassengerCar') }}</label>
+                  <input
+                    v-model.number="newLandfill.tariffPassengerCar"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-[#64748b] mb-1">{{ $t('ministryLandfills.tariffLightTruck') }}</label>
+                  <input
+                    v-model.number="newLandfill.tariffLightTruck"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-[#64748b] mb-1">{{ $t('ministryLandfills.tariffTruck') }}</label>
+                  <input
+                    v-model.number="newLandfill.tariffTruck"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs text-[#64748b] mb-1">{{ $t('ministryLandfills.tariffGarbageTruck') }}</label>
+                  <input
+                    v-model.number="newLandfill.tariffGarbageTruck"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Photos -->
+            <div>
+              <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                <label class="block text-sm font-medium text-[#1e293b]">
+                  {{ $t('ministryLandfills.labelPhotos') }}
+                  <span v-if="pendingPhotos.length" class="ml-1 text-xs text-[#64748b]">({{ pendingPhotos.length }})</span>
+                </label>
+                <label class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 cursor-pointer transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  {{ $t('ministryLandfills.photoAddBtn') }}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="hidden"
+                    @change="onFormPhotoSelected"
+                  />
+                </label>
+              </div>
+              <p v-if="photoFormError" class="mb-2 text-xs text-red-600">{{ photoFormError }}</p>
+              <div
+                v-if="pendingPhotos.length === 0"
+                class="border-2 border-dashed border-[#e2e8f0] rounded-lg py-6 text-center text-xs text-[#94a3b8]"
+              >
+                {{ $t('ministryLandfills.photoEmptyHint') }}
+              </div>
+              <div
+                v-else
+                class="grid grid-cols-3 sm:grid-cols-5 gap-2"
+              >
+                <div
+                  v-for="(photo, i) in pendingPhotos"
+                  :key="i"
+                  class="relative group aspect-square rounded-lg overflow-hidden border border-[#e2e8f0] bg-[#f8fafc]"
+                >
+                  <img :src="photo.dataUrl" :alt="photo.fileName" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    class="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-white transition-opacity flex items-center justify-center shadow-sm"
+                    :title="$t('ministryLandfills.photoRemove')"
+                    @click="removePendingPhoto(i)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
