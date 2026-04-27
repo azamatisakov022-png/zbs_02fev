@@ -4550,7 +4550,19 @@
     "monthSep": "Сен",
     "monthOct": "Окт",
     "monthNov": "Ноя",
-    "monthDec": "Дек"
+    "monthDec": "Дек",
+    "photosTitle": "Фото полигона",
+    "photoUploadBtn": "Загрузить фото",
+    "photoEmptyTitle": "Фото пока не добавлены",
+    "photoEmptyHint": "Загрузите фотографии полигона: общий вид, инфраструктура, состояние участка. JPG, PNG до 5 МБ.",
+    "photoUploadedTitle": "Фото загружено",
+    "photoUploadedMessage": "Фотография добавлена в карточку полигона",
+    "photoErrorType": "Допустимы только изображения (JPG, PNG, WEBP)",
+    "photoErrorSize": "Размер файла превышает {mb} МБ",
+    "photoErrorRead": "Не удалось прочитать файл",
+    "photoDeleteTitle": "Удалить фото",
+    "photoDeleteConfirm": "Удалить эту фотографию?",
+    "photoLightboxClose": "Закрыть"
   },
   "employeeAnalytics": {
     "title": "Аналитика",

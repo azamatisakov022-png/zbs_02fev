@@ -36,6 +36,14 @@ export interface MorphologicalComposition {
   other: number
 }
 
+export interface LandfillPhoto {
+  id: string
+  dataUrl: string       // base64 для локального state; в проде заменится URL'ом
+  fileName: string
+  uploadedAt: string    // ISO date
+  caption?: string
+}
+
 export interface Landfill {
   id: number
   name: string
@@ -61,6 +69,7 @@ export interface Landfill {
     ecoConclusion: { number: string; date: string }
   }
   documents: { name: string; date: string; size: string }[]
+  photos?: LandfillPhoto[]
   // Extended fields (from EmployeeLandfills)
   population: number           // тыс. чел.
   servicedPopulation: number   // тыс. чел.
@@ -105,6 +114,28 @@ function updateLandfill(id: number, updates: Partial<Landfill>) {
     state.landfills[idx] = { ...state.landfills[idx], ...updates }
   }
   silentApi.put(`/landfills/${id}`, updates).catch(() => {})
+}
+
+function addLandfillPhoto(id: number, photo: Omit<LandfillPhoto, 'id' | 'uploadedAt'>): LandfillPhoto | null {
+  const idx = state.landfills.findIndex(l => l.id === id)
+  if (idx === -1) return null
+  const newPhoto: LandfillPhoto = {
+    ...photo,
+    id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    uploadedAt: new Date().toISOString(),
+  }
+  const photos = [...(state.landfills[idx].photos || []), newPhoto]
+  state.landfills[idx] = { ...state.landfills[idx], photos }
+  silentApi.post(`/landfills/${id}/photos`, { fileName: photo.fileName, caption: photo.caption }).catch(() => {})
+  return newPhoto
+}
+
+function removeLandfillPhoto(id: number, photoId: string): void {
+  const idx = state.landfills.findIndex(l => l.id === id)
+  if (idx === -1) return
+  const photos = (state.landfills[idx].photos || []).filter(p => p.id !== photoId)
+  state.landfills[idx] = { ...state.landfills[idx], photos }
+  silentApi.delete(`/landfills/${id}/photos/${photoId}`).catch(() => {})
 }
 
 function getLandfillById(id: number): Landfill | undefined {
@@ -179,6 +210,8 @@ export const landfillStore = {
   fetchAll,
   addLandfill,
   updateLandfill,
+  addLandfillPhoto,
+  removeLandfillPhoto,
   getLandfillById,
   getActiveLandfills,
   getLandfillsByRegion,

@@ -4678,7 +4678,19 @@
     "monthSep": "Сен",
     "monthOct": "Окт",
     "monthNov": "Ноя",
-    "monthDec": "Дек"
+    "monthDec": "Дек",
+    "photosTitle": "Полигондун сүрөттөрү",
+    "photoUploadBtn": "Сүрөт жүктөө",
+    "photoEmptyTitle": "Сүрөттөр азырынча кошулган жок",
+    "photoEmptyHint": "Полигондун сүрөттөрүн жүктөңүз: жалпы көрүнүш, инфраструктура, аймактын абалы. JPG, PNG 5 МБга чейин.",
+    "photoUploadedTitle": "Сүрөт жүктөлдү",
+    "photoUploadedMessage": "Сүрөт полигондун карточкасына кошулду",
+    "photoErrorType": "Сүрөттөр гана уруксат (JPG, PNG, WEBP)",
+    "photoErrorSize": "Файлдын өлчөмү {mb} МБдан ашык",
+    "photoErrorRead": "Файлды окуу мүмкүн болгон жок",
+    "photoDeleteTitle": "Сүрөттү өчүрүү",
+    "photoDeleteConfirm": "Бул сүрөттү өчүрөсүзбү?",
+    "photoLightboxClose": "Жабуу"
   },
   "employeeAnalytics": {
     "title": "Аналитика",

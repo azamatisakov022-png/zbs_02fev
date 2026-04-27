@@ -4547,7 +4547,19 @@
     "monthSep": "Sep",
     "monthOct": "Oct",
     "monthNov": "Nov",
-    "monthDec": "Dec"
+    "monthDec": "Dec",
+    "photosTitle": "Landfill photos",
+    "photoUploadBtn": "Upload photo",
+    "photoEmptyTitle": "No photos yet",
+    "photoEmptyHint": "Upload landfill photos: overall view, infrastructure, site condition. JPG, PNG up to 5 MB.",
+    "photoUploadedTitle": "Photo uploaded",
+    "photoUploadedMessage": "The photo has been added to the landfill record",
+    "photoErrorType": "Only image files are allowed (JPG, PNG, WEBP)",
+    "photoErrorSize": "File size exceeds {mb} MB",
+    "photoErrorRead": "Failed to read the file",
+    "photoDeleteTitle": "Delete photo",
+    "photoDeleteConfirm": "Delete this photo?",
+    "photoLightboxClose": "Close"
   },
   "employeeAnalytics": {
     "title": "Analytics",

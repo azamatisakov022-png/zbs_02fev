@@ -289,6 +289,85 @@ const coordsText = computed(() => {
   if (!Number.isFinite(latN) || !Number.isFinite(lngN)) return '—'
   return `${latN.toFixed(4)}\u00B0 N, ${lngN.toFixed(4)}\u00B0 E`
 })
+
+// --- Photos ---
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024 // 5 MB
+const photos = computed(() => landfill.value?.photos || [])
+const photoInput = ref<HTMLInputElement | null>(null)
+const lightboxIndex = ref<number | null>(null)
+const photoError = ref<string | null>(null)
+
+function readFileAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onPhotoSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = input.files
+  if (!files || files.length === 0 || !landfill.value) return
+  photoError.value = null
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) {
+      photoError.value = t('ministryLandfillDetail.photoErrorType')
+      continue
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      photoError.value = t('ministryLandfillDetail.photoErrorSize', { mb: 5 })
+      continue
+    }
+    try {
+      const dataUrl = await readFileAsDataURL(file)
+      landfillStore.addLandfillPhoto(landfill.value.id, { dataUrl, fileName: file.name })
+    } catch {
+      photoError.value = t('ministryLandfillDetail.photoErrorRead')
+    }
+  }
+  input.value = ''
+  if (!photoError.value) {
+    toastStore.show({
+      type: 'success',
+      title: t('ministryLandfillDetail.photoUploadedTitle'),
+      message: t('ministryLandfillDetail.photoUploadedMessage'),
+    })
+  }
+}
+
+function deletePhoto(photoId: string) {
+  if (!landfill.value) return
+  if (!window.confirm(t('ministryLandfillDetail.photoDeleteConfirm'))) return
+  landfillStore.removeLandfillPhoto(landfill.value.id, photoId)
+  if (lightboxIndex.value !== null && lightboxIndex.value >= photos.value.length) {
+    lightboxIndex.value = null
+  }
+}
+
+function openLightbox(i: number) {
+  lightboxIndex.value = i
+}
+function closeLightbox() {
+  lightboxIndex.value = null
+}
+function lightboxPrev() {
+  if (lightboxIndex.value === null) return
+  lightboxIndex.value = (lightboxIndex.value - 1 + photos.value.length) % photos.value.length
+}
+function lightboxNext() {
+  if (lightboxIndex.value === null) return
+  lightboxIndex.value = (lightboxIndex.value + 1) % photos.value.length
+}
+
+function formatPhotoDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch {
+    return ''
+  }
+}
 </script>
 
 <template>
@@ -340,6 +419,134 @@ const coordsText = computed(() => {
             {{ getStatusLabel(landfill.status) }}
           </span>
         </div>
+      </div>
+
+      <!-- ==================== BLOCK 0: Photos ==================== -->
+      <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h2 class="text-lg font-bold text-gray-900">
+            {{ $t('ministryLandfillDetail.photosTitle') }}
+            <span v-if="photos.length" class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+              {{ photos.length }}
+            </span>
+          </h2>
+          <label class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 cursor-pointer transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            {{ $t('ministryLandfillDetail.photoUploadBtn') }}
+            <input
+              ref="photoInput"
+              type="file"
+              accept="image/*"
+              multiple
+              class="hidden"
+              @change="onPhotoSelected"
+            />
+          </label>
+        </div>
+
+        <p v-if="photoError" class="mb-3 text-sm text-red-600">{{ photoError }}</p>
+
+        <!-- Empty state -->
+        <div
+          v-if="photos.length === 0"
+          class="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center"
+        >
+          <div class="mx-auto w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7a2 2 0 012-2h3l2-2h4l2 2h3a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+              <circle cx="12" cy="13" r="3.5" stroke-width="1.5" />
+            </svg>
+          </div>
+          <p class="text-sm text-gray-500 mb-1">{{ $t('ministryLandfillDetail.photoEmptyTitle') }}</p>
+          <p class="text-xs text-gray-400">{{ $t('ministryLandfillDetail.photoEmptyHint') }}</p>
+        </div>
+
+        <!-- Gallery -->
+        <div
+          v-else
+          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
+        >
+          <div
+            v-for="(photo, i) in photos"
+            :key="photo.id"
+            class="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50"
+          >
+            <img
+              :src="photo.dataUrl"
+              :alt="photo.fileName"
+              class="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 group-hover:scale-105"
+              @click="openLightbox(i)"
+            />
+            <div class="absolute inset-x-0 bottom-0 px-2 py-1.5 bg-gradient-to-t from-black/70 to-transparent">
+              <p class="text-[11px] text-white/90 truncate" :title="photo.fileName">{{ photo.fileName }}</p>
+              <p class="text-[10px] text-white/70">{{ formatPhotoDate(photo.uploadedAt) }}</p>
+            </div>
+            <button
+              type="button"
+              class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 text-red-600 opacity-0 group-hover:opacity-100 hover:bg-white transition-opacity flex items-center justify-center shadow-sm"
+              :title="$t('ministryLandfillDetail.photoDeleteTitle')"
+              @click.stop="deletePhoto(photo.id)"
+            >
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== Lightbox ==================== -->
+      <div
+        v-if="lightboxIndex !== null && photos[lightboxIndex]"
+        class="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4"
+        @click.self="closeLightbox"
+      >
+        <button
+          type="button"
+          class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+          :title="$t('ministryLandfillDetail.photoLightboxClose')"
+          @click="closeLightbox"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <button
+          v-if="photos.length > 1"
+          type="button"
+          class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+          @click="lightboxPrev"
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          v-if="photos.length > 1"
+          type="button"
+          class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors"
+          @click="lightboxNext"
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <figure class="max-w-5xl w-full max-h-full flex flex-col items-center">
+          <img
+            :src="photos[lightboxIndex].dataUrl"
+            :alt="photos[lightboxIndex].fileName"
+            class="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl"
+          />
+          <figcaption class="mt-3 text-center text-white/85 text-sm">
+            <span class="font-medium">{{ photos[lightboxIndex].fileName }}</span>
+            <span class="mx-2 text-white/50">·</span>
+            <span>{{ formatPhotoDate(photos[lightboxIndex].uploadedAt) }}</span>
+            <span class="mx-2 text-white/50">·</span>
+            <span>{{ lightboxIndex + 1 }} / {{ photos.length }}</span>
+          </figcaption>
+        </figure>
       </div>
 
       <!-- ==================== BLOCK 1: General Info ==================== -->
