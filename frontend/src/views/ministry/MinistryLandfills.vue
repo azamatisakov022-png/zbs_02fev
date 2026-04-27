@@ -179,7 +179,7 @@ const totalCapacity = computed(() => {
     (s, l) => s + (Number.isFinite(l.designCapacity) ? l.designCapacity : 0),
     0,
   )
-  if (!Number.isFinite(sum) || sum === 0) return '—'
+  if (!Number.isFinite(sum) || sum === 0) return '-'
   return (sum / 1000).toFixed(1)
 })
 
@@ -950,8 +950,8 @@ const guideActions = computed(() => [
 
             <!-- Area + Capacity row -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              <div class="flex flex-col">
+                <label class="block text-sm font-medium text-[#1e293b] mb-1 min-h-[2.5rem]">
                   {{ $t('ministryLandfills.labelArea') }}
                 </label>
                 <input
@@ -963,8 +963,8 @@ const guideActions = computed(() => [
                   class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              <div class="flex flex-col">
+                <label class="block text-sm font-medium text-[#1e293b] mb-1 min-h-[2.5rem]">
                   {{ $t('ministryLandfills.labelDesignCapacity') }}
                 </label>
                 <input
@@ -975,8 +975,8 @@ const guideActions = computed(() => [
                   class="w-full px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#2563eb] text-sm"
                 />
               </div>
-              <div>
-                <label class="block text-sm font-medium text-[#1e293b] mb-1">
+              <div class="flex flex-col">
+                <label class="block text-sm font-medium text-[#1e293b] mb-1 min-h-[2.5rem]">
                   {{ $t('ministryLandfills.labelCurrentVolume') }}
                 </label>
                 <input
