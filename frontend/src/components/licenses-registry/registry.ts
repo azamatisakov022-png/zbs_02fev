@@ -9,13 +9,16 @@ import type { License, LicenseType } from '../../types/licenses'
 
 export type Variant = 'dashboard' | 'timeline' | 'cards'
 
-// 5 подвидов деятельности (ст. 20 Закона № 181):
+// 6 видов деятельности (5 подвидов + транспортировка):
+// «размещение» из ст. 20 Закона № 181 разделено на «хранение» и «захоронение»
+// по уточнению заказчика 2026-04-27.
 //  - transport     транспортирование (включая трансграничное)
 //  - treatment     обработка (сортировка, разборка, очистка)
-//  - recycle       переработка (производство продукции/энергии)
 //  - neutralization уничтожение (= обезвреживание: сжигание, обеззараживание)
-//  - disposal      хранение и захоронение (= размещение)
-export type KindId = 'transport' | 'treatment' | 'recycle' | 'neutralization' | 'disposal'
+//  - recycle       переработка (производство продукции/энергии)
+//  - storage       хранение (срок до 11 мес — накопление в спецхранилищах)
+//  - burial        захоронение (изоляция в спецхранилищах безвозвратно)
+export type KindId = 'transport' | 'treatment' | 'neutralization' | 'recycle' | 'storage' | 'burial'
 
 export interface KindMeta {
   id: KindId
@@ -25,11 +28,12 @@ export interface KindMeta {
 }
 
 export const KINDS: Record<KindId, KindMeta> = {
-  transport: { id: 'transport', label: 'Транспортировка', short: 'Т', hue: 205 },
-  treatment: { id: 'treatment', label: 'Обработка', short: 'О', hue: 260 },
-  recycle: { id: 'recycle', label: 'Переработка', short: 'П', hue: 140 },
-  neutralization: { id: 'neutralization', label: 'Уничтожение', short: 'У', hue: 0 },
-  disposal: { id: 'disposal', label: 'Хранение и захоронение', short: 'Х', hue: 28 },
+  transport:      { id: 'transport',      label: 'Транспортировка',  short: 'Т', hue: 205 },
+  treatment:      { id: 'treatment',      label: 'Обработка',        short: 'О', hue: 260 },
+  neutralization: { id: 'neutralization', label: 'Уничтожение',      short: 'У', hue: 0   },
+  recycle:        { id: 'recycle',        label: 'Переработка',      short: 'П', hue: 140 },
+  storage:        { id: 'storage',        label: 'Хранение',         short: 'Х', hue: 28  },
+  burial:         { id: 'burial',         label: 'Захоронение',      short: 'З', hue: 45  },
 }
 
 // Категория лицензии по бизнес-модели заказчика:
@@ -44,7 +48,7 @@ const LEGACY_LICENSE_TYPE_TO_KIND: Partial<Record<LicenseType, KindId>> = {
   collection: 'treatment',          // legacy «сбор» в новой схеме относим к обработке
   processing: 'recycle',            // legacy processing = переработка
   neutralization: 'neutralization', // обезвреживание = уничтожение
-  storage_disposal: 'disposal',     // хранение/захоронение = размещение
+  storage_disposal: 'burial',       // legacy storage_disposal → захоронение (более жёсткое из двух)
 }
 
 // Маппинг activityTypes (мультивыбор подвидов в complex-заявке) на KindId.
@@ -55,9 +59,11 @@ const ACTIVITY_TO_KIND: Record<string, KindId> = {
   recycle: 'recycle',
   neutralization: 'neutralization',
   destruction: 'neutralization',
-  disposal: 'disposal',
-  storage: 'disposal',
-  storage_disposal: 'disposal',
+  storage: 'storage',
+  burial: 'burial',
+  // legacy alias: disposal раньше означал «хранение и захоронение»
+  disposal: 'burial',
+  storage_disposal: 'burial',
   transportation: 'transport',
   transport: 'transport',
 }
@@ -82,9 +88,9 @@ export function licenseToKinds(l: License): KindId[] {
   const legacy = LEGACY_LICENSE_TYPE_TO_KIND[l.licenseType]
   if (legacy) return [legacy]
 
-  // complex без activityTypes — показываем все 4 подвида.
+  // complex без activityTypes — показываем все 5 подвидов.
   if (l.licenseType === 'complex') {
-    return ['treatment', 'recycle', 'neutralization', 'disposal']
+    return ['treatment', 'neutralization', 'recycle', 'storage', 'burial']
   }
 
   return []
@@ -95,11 +101,13 @@ export function licenseCategory(l: License): LicenseCategory {
 }
 
 // Все activity-значения, которые форма заявления складывает в complex-лицензию.
+// Порядок согласован с заказчиком 2026-04-27.
 export const ACTIVITY_OPTIONS: { value: string; kind: KindId; label: string }[] = [
   { value: 'treatment',      kind: 'treatment',      label: 'Обработка' },
-  { value: 'recycling',      kind: 'recycle',        label: 'Переработка' },
   { value: 'neutralization', kind: 'neutralization', label: 'Уничтожение' },
-  { value: 'disposal',       kind: 'disposal',       label: 'Хранение и захоронение' },
+  { value: 'recycling',      kind: 'recycle',        label: 'Переработка' },
+  { value: 'storage',        kind: 'storage',        label: 'Хранение' },
+  { value: 'burial',         kind: 'burial',         label: 'Захоронение' },
 ]
 
 export type StatusKey = 'active' | 'expiring' | 'expired'

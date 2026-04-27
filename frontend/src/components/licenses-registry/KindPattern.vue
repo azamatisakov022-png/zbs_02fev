@@ -62,7 +62,7 @@ const treatmentDotsList = treatmentDots()
     <circle cx="150" cy="86" r="2.5" fill="white" />
   </svg>
 
-  <svg v-else-if="shape === 'disposal'" width="100%" height="100%" viewBox="0 0 300 120" preserveAspectRatio="xMidYMid slice">
+  <svg v-else-if="shape === 'storage'" width="100%" height="100%" viewBox="0 0 300 120" preserveAspectRatio="xMidYMid slice">
     <rect
       v-for="i in 6"
       :key="i"
@@ -74,5 +74,19 @@ const treatmentDotsList = treatmentDots()
       :stroke="strokeS"
       stroke-width="1"
     />
+  </svg>
+
+  <svg v-else-if="shape === 'burial'" width="100%" height="100%" viewBox="0 0 300 120" preserveAspectRatio="xMidYMid slice">
+    <!-- Слои земли над захоронением -->
+    <path
+      v-for="i in 5"
+      :key="i"
+      :d="`M 0 ${30 + (i - 1) * 18} Q 75 ${22 + (i - 1) * 18} 150 ${30 + (i - 1) * 18} T 300 ${30 + (i - 1) * 18}`"
+      fill="none"
+      :stroke="strokeS"
+      stroke-width="1.2"
+    />
+    <!-- Контур ямы захоронения -->
+    <path d="M 100 60 L 130 100 L 170 100 L 200 60" :fill="bg" :stroke="strokeS" stroke-width="1.5" />
   </svg>
 </template>

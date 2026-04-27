@@ -121,12 +121,13 @@ function setCategory(cat: LicenseCategory) {
   if (cat === 'transportation') form.value.activityTypes = []
 }
 
-// 4 подвида деятельности для complex (ст. 20 Закона № 181):
+// 5 подвидов деятельности для complex (порядок согласован с заказчиком 2026-04-27):
 const ACTIVITY_KINDS = [
-  { value: 'treatment',      label: 'Обработка',              desc: 'Сортировка, разборка, очистка отходов' },
-  { value: 'recycling',      label: 'Переработка',            desc: 'Производство продукции / получение энергии' },
-  { value: 'neutralization', label: 'Уничтожение',            desc: 'Сжигание, обеззараживание, снижение массы' },
-  { value: 'disposal',       label: 'Хранение и захоронение', desc: 'Размещение в специализированных хранилищах' },
+  { value: 'treatment',      label: 'Обработка',     desc: 'Сортировка, разборка, очистка отходов' },
+  { value: 'neutralization', label: 'Уничтожение',   desc: 'Сжигание, обеззараживание, снижение массы' },
+  { value: 'recycling',      label: 'Переработка',   desc: 'Производство продукции / получение энергии' },
+  { value: 'storage',        label: 'Хранение',      desc: 'Накопление в спецхранилищах (срок до 11 мес.)' },
+  { value: 'burial',         label: 'Захоронение',   desc: 'Безвозвратная изоляция в спецхранилищах' },
 ] as const
 function toggleActivityKind(value: string) {
   const idx = form.value.activityTypes.indexOf(value)
@@ -468,7 +469,7 @@ const savedLabel = computed(() => {
               >
                 <div class="lf-kind__body">
                   <div class="lf-kind__title">Вся деятельность с отходами</div>
-                  <div class="lf-kind__fee">Обработка, переработка, уничтожение, хранение и захоронение — выберите подвиды ниже</div>
+                  <div class="lf-kind__fee">Обработка, уничтожение, переработка, хранение, захоронение — выберите подвиды ниже</div>
                 </div>
                 <svg
                   v-if="licenseCategory === 'complex'"
