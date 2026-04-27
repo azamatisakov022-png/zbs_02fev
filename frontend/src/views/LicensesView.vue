@@ -22,7 +22,7 @@ function setVariant(v: Variant) {
 }
 
 const query = ref('')
-const filters = ref<{ status: StatusKey | 'all'; kinds: KindId[]; regions: string[] }>({ status: 'all', kinds: [], regions: [] })
+const filters = ref<{ status: StatusKey | 'all'; kinds: KindId[]; region: string }>({ status: 'all', kinds: [], region: '' })
 const selected = ref<LicenseUI | null>(null)
 
 async function load() {
@@ -56,14 +56,11 @@ function toggleKind(k: KindId) {
     : [...filters.value.kinds, k]
   filters.value = { ...filters.value, kinds }
 }
-function toggleRegion(r: string) {
-  const regions = filters.value.regions.includes(r)
-    ? filters.value.regions.filter(x => x !== r)
-    : [...filters.value.regions, r]
-  filters.value = { ...filters.value, regions }
+function setRegion(r: string) {
+  filters.value = { ...filters.value, region: r }
 }
 function reset() {
-  filters.value = { status: 'all', kinds: [], regions: [] }
+  filters.value = { status: 'all', kinds: [], region: '' }
   query.value = ''
 }
 
@@ -142,7 +139,7 @@ onUnmounted(() => document.documentElement.classList.remove('has-licenses-regist
             @open="openDetail"
             @set-status="setStatus"
             @toggle-kind="toggleKind"
-            @toggle-region="toggleRegion"
+            @set-region="setRegion"
             @reset="reset"
           />
           <TimelineVariant
@@ -156,7 +153,7 @@ onUnmounted(() => document.documentElement.classList.remove('has-licenses-regist
             @open="openDetail"
             @set-status="setStatus"
             @toggle-kind="toggleKind"
-            @toggle-region="toggleRegion"
+            @set-region="setRegion"
             @reset="reset"
           />
           <CardsVariant
@@ -170,7 +167,7 @@ onUnmounted(() => document.documentElement.classList.remove('has-licenses-regist
             @open="openDetail"
             @set-status="setStatus"
             @toggle-kind="toggleKind"
-            @toggle-region="toggleRegion"
+            @set-region="setRegion"
             @reset="reset"
           />
         </template>

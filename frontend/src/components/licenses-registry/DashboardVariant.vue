@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { fmt, ruPlural, type LicenseUI, type StatusKey, type KindId } from './registry'
+import { fmt, ruPlural, KG_REGIONS, type LicenseUI, type StatusKey, type KindId } from './registry'
 import StatCard from './StatCard.vue'
 import MiniIcon from './MiniIcon.vue'
 import BigStat from './BigStat.vue'
@@ -13,17 +13,17 @@ import EmptyState from './EmptyState.vue'
 const props = defineProps<{
   data: LicenseUI[]
   query: string
-  filters: { status: StatusKey | 'all'; kinds: KindId[]; regions: string[] }
+  filters: { status: StatusKey | 'all'; kinds: KindId[]; region: string }
   counts: { all: number; active: number; expiring: number; expired: number }
   today: Date
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'update:query', v: string): void
   (e: 'open', lic: LicenseUI): void
   (e: 'setStatus', s: StatusKey | 'all'): void
   (e: 'toggleKind', k: KindId): void
-  (e: 'toggleRegion', r: string): void
+  (e: 'setRegion', r: string): void
   (e: 'reset'): void
 }>()
 
@@ -37,23 +37,28 @@ const filtered = computed(() => {
     if (q && !`${l.num} ${l.inn} ${l.org}`.toLowerCase().includes(q)) return false
     if (props.filters.status !== 'all' && l.status.key !== props.filters.status) return false
     if (props.filters.kinds.length && !l.kinds.some(k => props.filters.kinds.includes(k))) return false
-    if (props.filters.regions.length && !props.filters.regions.includes(l.region)) return false
+    if (props.filters.region && l.region !== props.filters.region) return false
     return true
   })
 })
 
-// Уникальные регионы из данных + count организаций по каждому.
-// Считаем уникальные ИНН в каждом регионе — это «количество организаций».
+// Количество организаций (уникальный ИНН) по каждому из 8 регионов КР.
+// Регионы фиксированы, даже если в данных их 0 — показываем «(0)».
 const regionStats = computed(() => {
   const byRegion: Record<string, Set<string>> = {}
   for (const l of props.data) {
     if (!byRegion[l.region]) byRegion[l.region] = new Set()
     byRegion[l.region].add(l.inn)
   }
-  return Object.entries(byRegion)
-    .map(([region, set]) => ({ region, count: set.size }))
-    .sort((a, b) => b.count - a.count)
+  return KG_REGIONS.map(region => ({
+    region,
+    count: byRegion[region]?.size || 0,
+  }))
 })
+
+const totalRegionCount = computed(() =>
+  regionStats.value.reduce((s, r) => s + r.count, 0)
+)
 
 // Подсчёт по подвидам деятельности (для блока «Виды деятельности»).
 const kindStats = computed(() => {
@@ -115,7 +120,7 @@ function barColor(lic: LicenseUI) {
 }
 
 const hasFilters = computed(
-  () => props.query || props.filters.status !== 'all' || props.filters.kinds.length > 0 || props.filters.regions.length > 0
+  () => props.query || props.filters.status !== 'all' || props.filters.kinds.length > 0 || props.filters.region !== ''
 )
 </script>
 
@@ -172,24 +177,27 @@ const hasFilters = computed(
       />
     </div>
 
-    <!-- Regions block -->
-    <div v-if="regionStats.length" class="dashboard__regions">
+    <!-- Regions filter -->
+    <div class="dashboard__regions">
       <div class="dashboard__regions-head">
         <span class="dashboard__regions-title">По областям</span>
         <span class="dashboard__regions-sub">количество организаций с лицензиями</span>
       </div>
-      <div class="dashboard__regions-chips">
-        <button
+      <select
+        :value="filters.region"
+        class="dashboard__regions-select"
+        @change="$emit('setRegion', ($event.target as HTMLSelectElement).value)"
+      >
+        <option value="">Регион: Все ({{ totalRegionCount }})</option>
+        <option
           v-for="rs in regionStats"
           :key="rs.region"
-          class="dashboard__region-chip"
-          :class="{ 'dashboard__region-chip--active': filters.regions.includes(rs.region) }"
-          @click="$emit('toggleRegion', rs.region)"
+          :value="rs.region"
+          :disabled="rs.count === 0"
         >
-          <span class="dashboard__region-name">{{ rs.region }}</span>
-          <span class="dashboard__region-count">{{ rs.count }}</span>
-        </button>
-      </div>
+          {{ rs.region }} ({{ rs.count }})
+        </option>
+      </select>
     </div>
 
     <!-- Summary -->
@@ -342,8 +350,9 @@ const hasFilters = computed(
   border-radius: 16px;
   padding: 16px 18px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   box-shadow: 0 1px 2px rgba(12, 23, 19, 0.03);
 }
 .dashboard__regions-head {
@@ -351,6 +360,8 @@ const hasFilters = computed(
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 .dashboard__regions-title {
   font-size: 13px;
@@ -363,46 +374,34 @@ const hasFilters = computed(
   font-size: 12px;
   color: var(--lr-ink-3);
 }
-.dashboard__regions-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.dashboard__region-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
+.dashboard__regions-select {
+  min-width: 240px;
+  padding: 9px 36px 9px 14px;
+  border-radius: 10px;
   border: 1px solid var(--lr-line);
   background: #fff;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 500;
   color: var(--lr-ink);
   cursor: pointer;
-  transition: all 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.12s ease;
 }
-.dashboard__region-chip:hover {
+.dashboard__regions-select:hover {
   border-color: var(--lr-brand);
-  color: var(--lr-brand);
 }
-.dashboard__region-chip--active {
-  background: var(--lr-brand);
+.dashboard__regions-select:focus {
+  outline: none;
   border-color: var(--lr-brand);
-  color: #fff;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
 }
-.dashboard__region-count {
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.08);
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  min-width: 22px;
-  text-align: center;
-}
-.dashboard__region-chip--active .dashboard__region-count {
-  background: rgba(255, 255, 255, 0.25);
+.dashboard__regions-select option:disabled {
+  color: #cbd5e1;
 }
 .dashboard__summary {
   display: flex;

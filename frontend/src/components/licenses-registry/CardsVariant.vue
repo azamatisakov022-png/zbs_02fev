@@ -13,7 +13,7 @@ import KindPattern from './KindPattern.vue'
 const props = defineProps<{
   data: LicenseUI[]
   query: string
-  filters: { status: StatusKey | 'all'; kinds: KindId[]; regions: string[] }
+  filters: { status: StatusKey | 'all'; kinds: KindId[]; region: string }
   counts: { all: number; active: number; expiring: number; expired: number }
   today: Date
 }>()
@@ -23,7 +23,7 @@ defineEmits<{
   (e: 'open', lic: LicenseUI): void
   (e: 'setStatus', s: StatusKey | 'all'): void
   (e: 'toggleKind', k: KindId): void
-  (e: 'toggleRegion', r: string): void
+  (e: 'setRegion', r: string): void
   (e: 'reset'): void
 }>()
 
@@ -33,7 +33,7 @@ const filtered = computed(() => {
     if (q && !`${l.num} ${l.inn} ${l.org}`.toLowerCase().includes(q)) return false
     if (props.filters.status !== 'all' && l.status.key !== props.filters.status) return false
     if (props.filters.kinds.length && !l.kinds.some(k => props.filters.kinds.includes(k))) return false
-    if (props.filters.regions.length && !props.filters.regions.includes(l.region)) return false
+    if (props.filters.region && l.region !== props.filters.region) return false
     return true
   })
 })

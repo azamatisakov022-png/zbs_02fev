@@ -162,11 +162,44 @@ export function ruPlural(n: number, forms: [string, string, string]): string {
   return forms[2]
 }
 
-function extractRegion(legalAddress?: string): string {
+// Все регионы КР, как они отображаются в реестре (8 значений согласовано с
+// заказчиком 2026-04-27: г. Ош отнесён к Ошской, отдельно не выделяем).
+export const KG_REGIONS = [
+  'Бишкек',
+  'Чуйская',
+  'Ошская',
+  'Джалал-Абадская',
+  'Иссык-Кульская',
+  'Нарынская',
+  'Таласская',
+  'Баткенская',
+] as const
+
+export type RegionKg = typeof KG_REGIONS[number]
+
+// Нормализация legalAddress → один из 8 регионов. Маппится по ключевым
+// словам и крупным населённым пунктам каждой области. Если адрес не
+// распознан — возвращаем «—».
+export function addressToRegion(legalAddress?: string): RegionKg | '—' {
   if (!legalAddress) return '—'
-  // "г. Бишкек, ул. ..." -> "Бишкек"; "с. Маевка, ..." -> "Маевка"
-  const firstChunk = legalAddress.split(',')[0].trim()
-  return firstChunk.replace(/^(г\.|гор\.|с\.|пгт\.|п\.|обл\.|Чуйская|Ошская)\s*/i, '').trim() || firstChunk
+  const a = legalAddress.toLowerCase()
+  // Бишкек — по г. Бишкек.
+  if (/бишкек/.test(a)) return 'Бишкек'
+  // Иссык-Кульская — Каракол, Балыкчы, Чолпон-Ата + явная «иссык-куль».
+  if (/иссык[-\s]?куль|каракол|балыкчы|чолпон[-\s]?ата/.test(a)) return 'Иссык-Кульская'
+  // Чуйская — Кара-Балта, Сокулук, Токмок, Кант + явная «чуйск».
+  if (/чуйск|чуй\b|сокулук|кант\b|токмок|кара[-\s]?балта|кара[-\s]?балт/.test(a)) return 'Чуйская'
+  // Нарынская.
+  if (/нарын/.test(a)) return 'Нарынская'
+  // Таласская.
+  if (/талас/.test(a)) return 'Таласская'
+  // Джалал-Абадская — Джалал-Абад, Таш-Кумыр, Майлы-Сай, Кара-Куль.
+  if (/джалал[-\s]?абад|таш[-\s]?кумыр|майлы[-\s]?сай|кара[-\s]?куль/.test(a)) return 'Джалал-Абадская'
+  // Баткенская.
+  if (/баткен|сулюкта|кызыл[-\s]?кия/.test(a)) return 'Баткенская'
+  // Ошская — Ош (город включаем сюда), Узген, Ноокат, Кара-Суу.
+  if (/ошск|\bош\b|узген|ноокат|кара[-\s]?суу/.test(a)) return 'Ошская'
+  return '—'
 }
 
 function statusFromLicense(l: License, today: Date): StatusInfo {
@@ -194,7 +227,7 @@ export function toLicenseUI(l: License, today: Date = new Date()): LicenseUI {
     category: licenseCategory(l),
     issued: parseISO(l.issuedAt),
     expires: parseISO(l.validUntil),
-    region: extractRegion(l.legalAddress),
+    region: addressToRegion(l.legalAddress),
     address: l.legalAddress || '—',
     issuedByName: l.issuedByName,
     isRevoked: l.isRevoked,
