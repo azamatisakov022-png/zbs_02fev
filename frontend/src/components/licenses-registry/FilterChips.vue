@@ -1,24 +1,18 @@
 <script setup lang="ts">
-import { KINDS, type KindId, type StatusKey } from './registry'
+import { KINDS, KG_REGIONS, type KindId } from './registry'
 
 defineProps<{
   activeKinds: KindId[]
-  activeStatus: StatusKey | 'all'
-  counts: { all: number; active: number; expiring: number; expired: number }
+  activeRegion: string
   kindStats?: Record<string, number>
+  regionStats?: { region: string; count: number }[]
+  totalRegionCount?: number
 }>()
 
 defineEmits<{
   (e: 'toggleKind', k: KindId): void
-  (e: 'setStatus', s: StatusKey | 'all'): void
+  (e: 'setRegion', r: string): void
 }>()
-
-const statusOpts: { k: StatusKey | 'all'; label: string; key: 'all' | 'active' | 'expiring' | 'expired' }[] = [
-  { k: 'all', label: 'Все', key: 'all' },
-  { k: 'active', label: 'Действующие', key: 'active' },
-  { k: 'expiring', label: 'Истекают', key: 'expiring' },
-  { k: 'expired', label: 'Истёкшие', key: 'expired' },
-]
 
 const kindsList = Object.values(KINDS)
 
@@ -44,38 +38,47 @@ function chipStyle(active: boolean, hue?: number) {
   }
 }
 
-function countFor(k: 'all' | 'active' | 'expiring' | 'expired', counts: { all: number; active: number; expiring: number; expired: number }) {
-  return counts[k]
+function countForRegion(region: string, stats?: { region: string; count: number }[]): number {
+  if (!stats) return 0
+  const s = stats.find(r => r.region === region)
+  return s ? s.count : 0
 }
 </script>
 
 <template>
   <div class="filter-chips">
     <div class="filter-chips__row">
-      <span class="filter-chips__label">Статус</span>
-      <button
-        v-for="o in statusOpts"
-        :key="o.k"
-        class="chip"
-        :style="chipStyle(activeStatus === o.k)"
-        @click="$emit('setStatus', o.k)"
+      <div class="filter-chips__chips">
+        <span class="filter-chips__label">Вид деятельности</span>
+        <button
+          v-for="k in kindsList"
+          :key="k.id"
+          class="chip"
+          :style="chipStyle(activeKinds.includes(k.id), k.hue)"
+          @click="$emit('toggleKind', k.id)"
+        >
+          <span class="chip__swatch" :style="{ background: `oklch(62% 0.14 ${k.hue})` }" />
+          {{ k.label }}
+          <span v-if="kindStats && kindStats[k.id]" class="chip__count">{{ kindStats[k.id] }}</span>
+        </button>
+      </div>
+      <select
+        :value="activeRegion"
+        class="filter-chips__select"
+        @change="$emit('setRegion', ($event.target as HTMLSelectElement).value)"
       >
-        {{ o.label }} <span class="chip__count">{{ countFor(o.key, counts) }}</span>
-      </button>
-    </div>
-    <div class="filter-chips__row">
-      <span class="filter-chips__label">Вид деятельности</span>
-      <button
-        v-for="k in kindsList"
-        :key="k.id"
-        class="chip"
-        :style="chipStyle(activeKinds.includes(k.id), k.hue)"
-        @click="$emit('toggleKind', k.id)"
-      >
-        <span class="chip__swatch" :style="{ background: `oklch(62% 0.14 ${k.hue})` }" />
-        {{ k.label }}
-        <span v-if="kindStats && kindStats[k.id]" class="chip__count">{{ kindStats[k.id] }}</span>
-      </button>
+        <option value="">
+          Регион: Все<template v-if="totalRegionCount != null"> ({{ totalRegionCount }})</template>
+        </option>
+        <option
+          v-for="r in KG_REGIONS"
+          :key="r"
+          :value="r"
+          :disabled="countForRegion(r, regionStats) === 0"
+        >
+          {{ r }}<template v-if="regionStats"> ({{ countForRegion(r, regionStats) }})</template>
+        </option>
+      </select>
     </div>
   </div>
 </template>
@@ -89,8 +92,17 @@ function countFor(k: 'all' | 'active' | 'expiring' | 'expired', counts: { all: n
 .filter-chips__row {
   display: flex;
   align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.filter-chips__chips {
+  display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 .filter-chips__label {
   font-size: 11px;
@@ -121,5 +133,35 @@ function countFor(k: 'all' | 'active' | 'expiring' | 'expired', counts: { all: n
   width: 8px;
   height: 8px;
   border-radius: 3px;
+}
+.filter-chips__select {
+  flex-shrink: 0;
+  min-width: 220px;
+  padding: 8px 36px 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--lr-line);
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lr-ink);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.12s ease;
+}
+.filter-chips__select:hover {
+  border-color: var(--lr-brand);
+}
+.filter-chips__select:focus {
+  outline: none;
+  border-color: var(--lr-brand);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+.filter-chips__select option:disabled {
+  color: #cbd5e1;
 }
 </style>

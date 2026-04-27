@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { fmt, ruPlural, type LicenseUI, type StatusKey, type KindId } from './registry'
+import { fmt, ruPlural, computeRegionStats, computeKindStats, type LicenseUI, type StatusKey, type KindId } from './registry'
 import StatCard from './StatCard.vue'
 import MiniIcon from './MiniIcon.vue'
 import SearchBar from './SearchBar.vue'
@@ -34,6 +34,10 @@ const filtered = computed(() => {
     return true
   })
 })
+
+const regionStats = computed(() => computeRegionStats(props.data))
+const totalRegionCount = computed(() => regionStats.value.reduce((s, r) => s + r.count, 0))
+const kindStats = computed(() => computeKindStats(props.data))
 
 const sorted = computed(() =>
   [...filtered.value].sort((a, b) => a.expires.getTime() - b.expires.getTime())
@@ -136,10 +140,12 @@ function barFor(lic: LicenseUI) {
       <SearchBar :model-value="query" @update:model-value="$emit('update:query', $event)" :results="filtered.length" />
       <FilterChips
         :active-kinds="filters.kinds"
-        :active-status="filters.status"
-        :counts="counts"
+        :active-region="filters.region"
+        :kind-stats="kindStats"
+        :region-stats="regionStats"
+        :total-region-count="totalRegionCount"
         @toggle-kind="$emit('toggleKind', $event)"
-        @set-status="$emit('setStatus', $event)"
+        @set-region="$emit('setRegion', $event)"
       />
     </div>
 

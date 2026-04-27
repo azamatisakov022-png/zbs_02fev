@@ -213,6 +213,32 @@ function statusFromLicense(l: License, today: Date): StatusInfo {
   return { key: 'active', label: 'Действует', days: d }
 }
 
+// Подсчёт количества организаций (уникальный ИНН) в каждом из 8 регионов КР.
+// Регионы фиксированы — даже если в данных их 0, в результате будет «(0)».
+export function computeRegionStats(data: LicenseUI[]): { region: string; count: number }[] {
+  const byRegion: Record<string, Set<string>> = {}
+  for (const l of data) {
+    if (!byRegion[l.region]) byRegion[l.region] = new Set()
+    byRegion[l.region].add(l.inn)
+  }
+  return KG_REGIONS.map(region => ({
+    region,
+    count: byRegion[region]?.size || 0,
+  }))
+}
+
+// Подсчёт количества лицензий по каждому подвиду деятельности.
+// Одна complex-лицензия попадает сразу в несколько ключей.
+export function computeKindStats(data: LicenseUI[]): Record<string, number> {
+  const byKind: Record<string, number> = {}
+  for (const l of data) {
+    for (const k of l.kinds) {
+      byKind[k] = (byKind[k] || 0) + 1
+    }
+  }
+  return byKind
+}
+
 export function toLicenseUI(l: License, today: Date = new Date()): LicenseUI {
   const kinds = licenseToKinds(l)
   const primaryKind: KindId = kinds[0] || 'treatment'

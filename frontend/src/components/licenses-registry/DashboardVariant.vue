@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { fmt, ruPlural, KG_REGIONS, type LicenseUI, type StatusKey, type KindId } from './registry'
+import { fmt, ruPlural, computeRegionStats, computeKindStats, type LicenseUI, type StatusKey, type KindId } from './registry'
 import StatCard from './StatCard.vue'
 import MiniIcon from './MiniIcon.vue'
 import BigStat from './BigStat.vue'
@@ -42,34 +42,9 @@ const filtered = computed(() => {
   })
 })
 
-// Количество организаций (уникальный ИНН) по каждому из 8 регионов КР.
-// Регионы фиксированы, даже если в данных их 0 — показываем «(0)».
-const regionStats = computed(() => {
-  const byRegion: Record<string, Set<string>> = {}
-  for (const l of props.data) {
-    if (!byRegion[l.region]) byRegion[l.region] = new Set()
-    byRegion[l.region].add(l.inn)
-  }
-  return KG_REGIONS.map(region => ({
-    region,
-    count: byRegion[region]?.size || 0,
-  }))
-})
-
-const totalRegionCount = computed(() =>
-  regionStats.value.reduce((s, r) => s + r.count, 0)
-)
-
-// Подсчёт по подвидам деятельности (для блока «Виды деятельности»).
-const kindStats = computed(() => {
-  const byKind: Record<string, number> = {}
-  for (const l of props.data) {
-    for (const k of l.kinds) {
-      byKind[k] = (byKind[k] || 0) + 1
-    }
-  }
-  return byKind
-})
+const regionStats = computed(() => computeRegionStats(props.data))
+const totalRegionCount = computed(() => regionStats.value.reduce((s, r) => s + r.count, 0))
+const kindStats = computed(() => computeKindStats(props.data))
 
 const sorted = computed(() => {
   const arr = [...filtered.value]
@@ -164,40 +139,18 @@ const hasFilters = computed(
       </StatCard>
     </div>
 
-    <!-- Search + filters -->
+    <!-- Search + filters (объединено: вид деятельности + регион в одном ряду) -->
     <div class="dashboard__panel">
       <SearchBar :model-value="query" @update:model-value="$emit('update:query', $event)" :results="filtered.length" />
       <FilterChips
         :active-kinds="filters.kinds"
-        :active-status="filters.status"
-        :counts="counts"
+        :active-region="filters.region"
         :kind-stats="kindStats"
+        :region-stats="regionStats"
+        :total-region-count="totalRegionCount"
         @toggle-kind="$emit('toggleKind', $event)"
-        @set-status="$emit('setStatus', $event)"
+        @set-region="$emit('setRegion', $event)"
       />
-    </div>
-
-    <!-- Regions filter -->
-    <div class="dashboard__regions">
-      <div class="dashboard__regions-head">
-        <span class="dashboard__regions-title">По областям</span>
-        <span class="dashboard__regions-sub">количество организаций с лицензиями</span>
-      </div>
-      <select
-        :value="filters.region"
-        class="dashboard__regions-select"
-        @change="$emit('setRegion', ($event.target as HTMLSelectElement).value)"
-      >
-        <option value="">Регион: Все ({{ totalRegionCount }})</option>
-        <option
-          v-for="rs in regionStats"
-          :key="rs.region"
-          :value="rs.region"
-          :disabled="rs.count === 0"
-        >
-          {{ rs.region }} ({{ rs.count }})
-        </option>
-      </select>
     </div>
 
     <!-- Summary -->

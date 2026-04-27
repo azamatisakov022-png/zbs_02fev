@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { fmt, type LicenseUI, type StatusKey, type KindId } from './registry'
+import { fmt, computeRegionStats, computeKindStats, type LicenseUI, type StatusKey, type KindId } from './registry'
 import StatCard from './StatCard.vue'
 import MiniIcon from './MiniIcon.vue'
 import SearchBar from './SearchBar.vue'
@@ -37,6 +37,10 @@ const filtered = computed(() => {
     return true
   })
 })
+
+const regionStats = computed(() => computeRegionStats(props.data))
+const totalRegionCount = computed(() => regionStats.value.reduce((s, r) => s + r.count, 0))
+const kindStats = computed(() => computeKindStats(props.data))
 </script>
 
 <template>
@@ -90,10 +94,12 @@ const filtered = computed(() => {
       <SearchBar :model-value="query" @update:model-value="$emit('update:query', $event)" :results="filtered.length" />
       <FilterChips
         :active-kinds="filters.kinds"
-        :active-status="filters.status"
-        :counts="counts"
+        :active-region="filters.region"
+        :kind-stats="kindStats"
+        :region-stats="regionStats"
+        :total-region-count="totalRegionCount"
         @toggle-kind="$emit('toggleKind', $event)"
-        @set-status="$emit('setStatus', $event)"
+        @set-region="$emit('setRegion', $event)"
       />
     </div>
 
