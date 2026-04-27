@@ -1,192 +1,290 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { publicLicensesApi } from '../api/licenses'
-import type { License, LicenseType, EnumItem } from '../types/licenses'
+import { toLicenseUI, type LicenseUI, type StatusKey, type KindId, type Variant } from '../components/licenses-registry/registry'
+import LicensesHero from '../components/licenses-registry/LicensesHero.vue'
+import DashboardVariant from '../components/licenses-registry/DashboardVariant.vue'
+import TimelineVariant from '../components/licenses-registry/TimelineVariant.vue'
+import CardsVariant from '../components/licenses-registry/CardsVariant.vue'
+import LicenseDetailModal from '../components/licenses-registry/LicenseDetailModal.vue'
 
-const licenses = ref<License[]>([])
-const totalElements = ref(0)
-const page = ref(0)
-const size = ref(20)
+const today = new Date()
+
+const licenses = ref<LicenseUI[]>([])
 const loading = ref(false)
-const search = ref('')
-const licenseTypes = ref<EnumItem<LicenseType>[]>([])
+const loadError = ref('')
+
+const STORAGE_KEY = 'licenses-registry.variant'
+const variant = ref<Variant>((localStorage.getItem(STORAGE_KEY) as Variant) || 'dashboard')
+function setVariant(v: Variant) {
+  variant.value = v
+  localStorage.setItem(STORAGE_KEY, v)
+}
+
+const query = ref('')
+const filters = ref<{ status: StatusKey | 'all'; kinds: KindId[]; regions: string[] }>({ status: 'all', kinds: [], regions: [] })
+const selected = ref<LicenseUI | null>(null)
 
 async function load() {
   loading.value = true
+  loadError.value = ''
   try {
-    const res = await publicLicensesApi.listPublished({
-      search: search.value || undefined,
-      page: page.value,
-      size: size.value,
-    })
-    licenses.value = res.content
-    totalElements.value = res.totalElements
-    page.value = res.number
-    size.value = res.size
+    const res = await publicLicensesApi.listPublished({ page: 0, size: 1000 })
+    licenses.value = res.content.map(l => toLicenseUI(l, today))
+  } catch (e) {
+    loadError.value = 'Не удалось загрузить реестр'
   } finally {
     loading.value = false
   }
 }
 
-onMounted(async () => {
-  licenseTypes.value = await publicLicensesApi.licenseTypes()
-  await load()
-})
+onMounted(load)
 
-const stats = computed(() => ({
-  total: licenses.value.length,
-  active: licenses.value.filter(l => l.statusLabel === 'active').length,
-  expiring: licenses.value.filter(l => l.statusLabel === 'expiring').length,
-  expired: licenses.value.filter(l => l.statusLabel === 'expired' || l.statusLabel === 'revoked').length,
+const counts = computed(() => ({
+  all: licenses.value.length,
+  active: licenses.value.filter(l => l.status.key === 'active').length,
+  expiring: licenses.value.filter(l => l.status.key === 'expiring').length,
+  expired: licenses.value.filter(l => l.status.key === 'expired').length,
 }))
 
-function licenseTypeLabel(t: LicenseType) {
-  return licenseTypes.value.find(e => e.value === t)?.labelRu || t
+function setStatus(s: StatusKey | 'all') {
+  filters.value = { ...filters.value, status: s }
+}
+function toggleKind(k: KindId) {
+  const kinds = filters.value.kinds.includes(k)
+    ? filters.value.kinds.filter(x => x !== k)
+    : [...filters.value.kinds, k]
+  filters.value = { ...filters.value, kinds }
+}
+function toggleRegion(r: string) {
+  const regions = filters.value.regions.includes(r)
+    ? filters.value.regions.filter(x => x !== r)
+    : [...filters.value.regions, r]
+  filters.value = { ...filters.value, regions }
+}
+function reset() {
+  filters.value = { status: 'all', kinds: [], regions: [] }
+  query.value = ''
 }
 
-function statusLabel(l: License) {
-  return {
-    active: 'Действует',
-    expiring: 'Истекает',
-    expired: 'Истекла',
-    revoked: 'Отозвана',
-  }[l.statusLabel]
+function openDetail(lic: LicenseUI) {
+  selected.value = lic
+}
+function closeDetail() {
+  selected.value = null
 }
 
-function statusClass(l: License) {
-  return {
-    active: 'bg-emerald-100 text-emerald-800',
-    expiring: 'bg-amber-100 text-amber-800',
-    expired: 'bg-gray-100 text-gray-600',
-    revoked: 'bg-rose-100 text-rose-800',
-  }[l.statusLabel]
-}
+const variants: { id: Variant; label: string; icon: 'grid' | 'time' | 'card' }[] = [
+  { id: 'dashboard', label: 'Панель', icon: 'grid' },
+  { id: 'timeline', label: 'Таймлайн', icon: 'time' },
+  { id: 'cards', label: 'Карточки', icon: 'card' },
+]
 
-function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') selected.value = null
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    const input = document.querySelector<HTMLInputElement>('.licenses-registry input[type=text]')
+    input?.focus()
+  }
 }
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-watch(search, () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    page.value = 0
-    load()
-  }, 400)
-})
-
-function goto(p: number) {
-  if (p < 0) return
-  const max = Math.ceil(totalElements.value / size.value) - 1
-  if (p > max) return
-  page.value = p
-  load()
-}
+onMounted(() => document.documentElement.classList.add('has-licenses-registry'))
+onUnmounted(() => document.documentElement.classList.remove('has-licenses-registry'))
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <div class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-10">
-      <div class="max-w-6xl mx-auto px-6">
-        <h1 class="text-3xl font-bold mb-2">Реестр лицензий</h1>
-        <p class="text-emerald-100">
-          Публичный реестр лицензий в сфере обращения с отходами Кыргызской Республики.
-          Поиск по номеру, ИНН или наименованию организации.
-        </p>
-      </div>
-    </div>
+  <div class="licenses-registry">
+    <div class="container-main">
+      <LicensesHero />
 
-    <div class="max-w-6xl mx-auto px-6 py-8">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div class="text-xs text-gray-500">Всего</div>
-          <div class="text-2xl font-bold text-gray-900 mt-1">{{ totalElements }}</div>
-        </div>
-        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
-          <div class="text-xs text-emerald-700">Действующих</div>
-          <div class="text-2xl font-bold text-emerald-900 mt-1">{{ stats.active }}</div>
-        </div>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
-          <div class="text-xs text-amber-700">Истекают</div>
-          <div class="text-2xl font-bold text-amber-900 mt-1">{{ stats.expiring }}</div>
-        </div>
-        <div class="bg-gray-100 border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div class="text-xs text-gray-700">Истекшие / отозваны</div>
-          <div class="text-2xl font-bold text-gray-900 mt-1">{{ stats.expired }}</div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-4">
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Поиск по номеру лицензии (ЛП-2026-0001), ИНН или наименованию…"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-        />
-      </div>
-
-      <div v-if="loading" class="text-center py-12 text-gray-400">Загрузка…</div>
-      <div v-else-if="licenses.length === 0" class="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-500 shadow-sm">
-        По вашему запросу лицензий не найдено
-      </div>
-      <div v-else class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">№ лицензии</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Организация</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Вид</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Выдана</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действует до</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Статус</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="l in licenses" :key="l.id" class="hover:bg-gray-50">
-              <td class="px-4 py-3 font-mono font-semibold text-gray-900">{{ l.licenseNumber }}</td>
-              <td class="px-4 py-3">
-                <div class="font-medium">{{ l.applicantName }}</div>
-                <div class="text-xs text-gray-500">ИНН {{ l.applicantInn }}</div>
-              </td>
-              <td class="px-4 py-3">{{ licenseTypeLabel(l.licenseType) }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.issuedAt) }}</td>
-              <td class="px-4 py-3 text-gray-600">{{ formatDate(l.validUntil) }}</td>
-              <td class="px-4 py-3">
-                <span :class="['inline-flex px-2 py-1 text-xs font-medium rounded-full', statusClass(l)]">
-                  {{ statusLabel(l) }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-if="totalElements > size" class="flex items-center justify-between mt-4 px-1">
-        <div class="text-sm text-gray-500">
-          Страница {{ page + 1 }} из {{ Math.ceil(totalElements / size) }}
-        </div>
-        <div class="flex gap-2">
+      <div class="licenses-registry__toolbar">
+        <div class="licenses-registry__switch">
           <button
-            @click="goto(page - 1)"
-            :disabled="page === 0"
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40"
+            v-for="v in variants"
+            :key="v.id"
+            class="licenses-registry__switch-btn"
+            :class="{ 'licenses-registry__switch-btn--active': variant === v.id }"
+            @click="setVariant(v.id)"
           >
-            ← Назад
-          </button>
-          <button
-            @click="goto(page + 1)"
-            :disabled="page + 1 >= Math.ceil(totalElements / size)"
-            class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40"
-          >
-            Вперёд →
+            <svg v-if="v.icon === 'grid'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="8" height="8" rx="1.5" /><rect x="13" y="3" width="8" height="8" rx="1.5" />
+              <rect x="3" y="13" width="8" height="8" rx="1.5" /><rect x="13" y="13" width="8" height="8" rx="1.5" />
+            </svg>
+            <svg v-else-if="v.icon === 'time'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+            </svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 10h18" />
+            </svg>
+            {{ v.label }}
           </button>
         </div>
       </div>
 
-      <p class="text-xs text-gray-400 text-center mt-6">
-        Источник: Министерство природных ресурсов, экологии и технического надзора КР.
-        Закон КР № 195 от 19.10.2023 «О лицензионно-разрешительной системе».
-      </p>
+      <main class="licenses-registry__main">
+        <div v-if="loading" class="licenses-registry__state">Загрузка реестра…</div>
+        <div v-else-if="loadError" class="licenses-registry__state licenses-registry__state--error">
+          {{ loadError }}
+          <button class="licenses-registry__retry" @click="load">Повторить</button>
+        </div>
+        <template v-else>
+          <DashboardVariant
+            v-if="variant === 'dashboard'"
+            :data="licenses"
+            :query="query"
+            :filters="filters"
+            :counts="counts"
+            :today="today"
+            @update:query="query = $event"
+            @open="openDetail"
+            @set-status="setStatus"
+            @toggle-kind="toggleKind"
+            @toggle-region="toggleRegion"
+            @reset="reset"
+          />
+          <TimelineVariant
+            v-else-if="variant === 'timeline'"
+            :data="licenses"
+            :query="query"
+            :filters="filters"
+            :counts="counts"
+            :today="today"
+            @update:query="query = $event"
+            @open="openDetail"
+            @set-status="setStatus"
+            @toggle-kind="toggleKind"
+            @toggle-region="toggleRegion"
+            @reset="reset"
+          />
+          <CardsVariant
+            v-else
+            :data="licenses"
+            :query="query"
+            :filters="filters"
+            :counts="counts"
+            :today="today"
+            @update:query="query = $event"
+            @open="openDetail"
+            @set-status="setStatus"
+            @toggle-kind="toggleKind"
+            @toggle-region="toggleRegion"
+            @reset="reset"
+          />
+        </template>
+      </main>
     </div>
+
+    <LicenseDetailModal v-if="selected" :lic="selected" :today="today" @close="closeDetail" />
   </div>
 </template>
+
+<style>
+/* Reserve scrollbar space on both sides so contained layout stays optically centered. */
+html.has-licenses-registry {
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Scoped through the .licenses-registry class to avoid leaking to the rest of the AIS. */
+.licenses-registry {
+  /* Palette */
+  --lr-brand: #10b981;
+  --lr-brand-600: #0d9488;
+  --lr-brand-700: #0f766e;
+  --lr-brand-050: #ecfdf5;
+  --lr-brand-025: #f0fdf4;
+  --lr-accent: #f59a2e;
+  --lr-accent-050: #fff4e4;
+  --lr-ink: #0c1713;
+  --lr-ink-2: #2b3a34;
+  --lr-ink-3: #566560;
+  --lr-ink-4: #8a9691;
+  --lr-line: #e6ebe8;
+  --lr-line-2: #f0f3f1;
+  --lr-bg: #f8fafc;
+  --lr-amber: #c98116;
+  --lr-amber-050: #fff6e3;
+  --lr-rose: #b23b3b;
+  --lr-rose-050: #fbecec;
+
+  background: var(--lr-bg);
+  color: var(--lr-ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+.licenses-registry * {
+  box-sizing: border-box;
+}
+.licenses-registry .mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+</style>
+
+<style scoped>
+.licenses-registry__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+}
+.licenses-registry__switch {
+  display: inline-flex;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+.licenses-registry__switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--lr-ink-2);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+.licenses-registry__switch-btn:hover:not(.licenses-registry__switch-btn--active) {
+  color: var(--lr-ink);
+}
+.licenses-registry__switch-btn--active {
+  background: #fff;
+  color: var(--lr-brand-700);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.licenses-registry__main {
+  padding: 24px 0 0;
+}
+.licenses-registry__state {
+  background: #fff;
+  border: 1px solid var(--lr-line);
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--lr-ink-3);
+  font-size: 14px;
+}
+.licenses-registry__state--error {
+  color: var(--lr-rose);
+}
+.licenses-registry__retry {
+  display: block;
+  margin: 16px auto 0;
+  padding: 8px 16px;
+  border: 1px solid var(--lr-line);
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+</style>
