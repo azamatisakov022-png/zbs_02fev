@@ -17,7 +17,7 @@ import { toastStore } from '../../stores/toast'
 const router = useRouter()
 const { t } = useI18n()
 
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const handlePrint = () => { window.print() }
 

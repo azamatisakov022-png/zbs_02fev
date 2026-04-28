@@ -14,7 +14,7 @@ import { CalcStatus } from '../../constants/statuses'
 
 const { t } = useI18n()
 const router = useRouter()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const showInstruction = ref(false)
 const formSubmitted = ref(false)

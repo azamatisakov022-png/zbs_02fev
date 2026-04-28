@@ -30,7 +30,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import PaymentPanel from '../../components/payment/PaymentPanel.vue'
 import PenaltyInfo from '../../components/PenaltyInfo.vue'
 
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 const { t, locale: i18nLocale } = useI18n()
 
 const dateLang = computed(() => {

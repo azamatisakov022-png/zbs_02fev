@@ -1,20 +1,26 @@
 <script setup lang="ts">
 const systemGoal = {
   title: 'Цель системы',
-  description: 'Снижение барьеров при выдаче лицензий, обеспечение прозрачности деятельности предприятий, эффективное взаимодействие с плательщиками утилизационного сбора и публикация открытых данных.'
+  description: 'АИС помогает перевести ключевые процессы обращения с отходами в электронный формат: от подачи документов и ведения реестров до получения информации о лицензиях, объектах инфраструктуры и открытых данных.',
+  highlights: [
+    'повышение прозрачности процессов и доступности данных',
+    'сокращение бумажного документооборота и сроков рассмотрения',
+    'единые правила взаимодействия для организаций, ведомств и граждан',
+  ],
 }
 
 const mainFunctions = {
   title: 'Основные функции',
   items: [
-    'Ведение реестров плательщиков и переработчиков',
-    'Онлайн-калькулятор утилизационного сбора',
-    'Выдача и контроль лицензий',
-    'Интерактивная ГИС-карта объектов',
-    'Проведение конкурсов и грантов',
-    'Публикация открытых данных'
-  ]
+    'электронное оформление расчётов, деклараций, отчётов и заявлений',
+    'цифровое сопровождение лицензирования и контроль статусов документов',
+    'ведение реестров участников, объектов обращения с отходами и инфраструктуры',
+    'интерактивная карта объектов, пунктов приёма и перерабатывающих организаций',
+    'аналитика, мониторинг показателей, уведомления и журнал действий',
+    'публикация правовой базы, справочных материалов, конкурсов и открытых данных',
+  ],
 }
+
 </script>
 
 <template>
@@ -24,93 +30,71 @@ const mainFunctions = {
       <h1 class="text-3xl md:text-4xl lg:text-[50px] lg:leading-[68px] font-bold text-[#415861] uppercase mb-4 lg:mb-[22px]">
         О портале АИС «ГП Эко Оператор»
       </h1>
-      <p class="text-lg md:text-2xl lg:text-[30px] lg:leading-[41px] font-medium text-[#415861] max-w-[601px] mx-auto mb-10 lg:mb-[50px]">
-        Автоматизированная информационная система «ГП Эко Оператор»
+      <p class="text-lg md:text-2xl lg:text-[30px] lg:leading-[41px] font-medium text-[#415861] max-w-[780px] mx-auto mb-10 lg:mb-[50px]">
+        Единая цифровая платформа для обращения с отходами, лицензирования, открытых данных и межведомственного взаимодействия
       </p>
     </div>
 
     <!-- Cards section -->
     <div class="container-main">
-      <!-- CSS Grid with equal columns and stretch -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-[30px] items-stretch">
+      <div class="about-grid">
 
         <!-- System Goal Card -->
         <div class="about-card">
-          <!-- Top accent - centered, 160px wide -->
           <div class="about-card-accent-top"></div>
 
-          <!-- Illustration - 267x267px, centered, top: 38px -->
-          <div class="about-card-illustration">
-            <div class="w-[267px] h-[267px] relative overflow-hidden">
-              <!-- Background -->
-              <img src="/images/about/goal-bg.svg" alt="" class="absolute" style="inset: 15.24% 12.23% 19.71% 13.77%;" />
-              <!-- Shadow -->
-              <img src="/images/about/goal-shadow.svg" alt="" class="absolute" style="inset: 80.21% 11.22% 15.26% 11.22%;" />
-              <!-- Device 4 -->
-              <img src="/images/about/goal-device4.svg" alt="" class="absolute" style="inset: 23.46% 49.34% 53.09% 36.65%;" />
-              <!-- Device 3 -->
-              <img src="/images/about/goal-device3.svg" alt="" class="absolute" style="inset: 49.37% 37.11% 17.08% 25.5%;" />
-              <!-- Device 2 -->
-              <img src="/images/about/goal-device2.svg" alt="" class="absolute" style="inset: 27.75% 64.71% 46.69% 13.99%;" />
-              <!-- Device 1 -->
-              <img src="/images/about/goal-device1.svg" alt="" class="absolute" style="inset: 64.76% 50.4% 17.1% 14.22%;" />
-              <!-- Character -->
-              <img src="/images/about/goal-character.svg" alt="" class="absolute" style="inset: 36.18% 12.79% 17.44% 56.25%;" />
-              <!-- Target -->
-              <img src="/images/about/goal-target.svg" alt="" class="absolute" style="inset: 30.56% 31.43% 54.75% 53.68%;" />
+          <div class="about-card-illustration" aria-hidden="true">
+            <div class="portal-illustration portal-illustration-goal">
+              <img
+                src="/images/about/goal-system-premium.png"
+                alt=""
+                class="portal-image"
+                loading="lazy"
+              />
             </div>
           </div>
 
-          <!-- Content - centered text -->
           <div class="about-card-content">
-            <h3 class="text-[#415861] text-xl lg:text-[24px] leading-[31px] font-medium uppercase mb-[25px]">
+            <h3 class="text-[#415861] text-xl lg:text-[24px] leading-[31px] font-medium uppercase mb-4">
               {{ systemGoal.title }}
             </h3>
-            <p class="text-[#415861] text-sm lg:text-[14px] leading-normal text-center">
+            <p class="text-[#415861] text-sm lg:text-[15px] leading-relaxed text-center">
               {{ systemGoal.description }}
             </p>
+            <ul class="about-highlights">
+              <li v-for="item in systemGoal.highlights" :key="item">{{ item }}</li>
+            </ul>
           </div>
 
-          <!-- Bottom accent - centered, 160px wide -->
           <div class="about-card-accent-bottom"></div>
         </div>
 
         <!-- Main Functions Card -->
         <div class="about-card">
-          <!-- Top accent - centered, 160px wide -->
           <div class="about-card-accent-top"></div>
 
-          <!-- Illustration - 267x267px, centered, top: 38px -->
-          <div class="about-card-illustration">
-            <div class="w-[267px] h-[267px] relative overflow-hidden">
-              <!-- Background -->
-              <img src="/images/about/func-bg.svg" alt="" class="absolute" style="inset: 11% 0 19.71% 0;" />
-              <!-- Shadow -->
-              <img src="/images/about/func-shadow.svg" alt="" class="absolute" style="inset: 80.87% 11.22% 14.6% 11.22%;" />
-              <!-- Screen -->
-              <img src="/images/about/func-screen.svg" alt="" class="absolute" style="inset: 12.53% 32.02% 48.4% 11.19%;" />
-              <!-- Character -->
-              <img src="/images/about/func-character.svg" alt="" class="absolute" style="inset: 28.47% 11.08% 17.23% 56.99%;" />
-              <!-- Plant -->
-              <img src="/images/about/func-plant.svg" alt="" class="absolute" style="inset: 65.21% 69.06% 17.5% 11.24%;" />
-              <!-- Desk -->
-              <img src="/images/about/func-desk.svg" alt="" class="absolute" style="inset: 61.51% 35.31% 17.21% 24.68%;" />
+          <div class="about-card-illustration" aria-hidden="true">
+            <div class="portal-illustration portal-illustration-functions">
+              <img
+                src="/images/about/main-functions-premium.png"
+                alt=""
+                class="portal-image"
+                loading="lazy"
+              />
             </div>
           </div>
 
-          <!-- Content - title centered, list left-aligned -->
-          <div class="about-card-content">
-            <h3 class="text-[#415861] text-xl lg:text-[22px] leading-[31px] font-medium uppercase mb-[25px] text-center">
+          <div class="about-card-content about-card-content-wide">
+            <h3 class="text-[#415861] text-xl lg:text-[22px] leading-[31px] font-medium uppercase mb-4 text-center">
               {{ mainFunctions.title }}
             </h3>
-            <ul class="text-[#415861] text-xs lg:text-[12px] leading-normal list-disc pl-[18px] text-left">
-              <li v-for="(item, index) in mainFunctions.items" :key="index" class="mb-0">
+            <ul class="functions-list">
+              <li v-for="(item, index) in mainFunctions.items" :key="index">
                 {{ item }}
               </li>
             </ul>
           </div>
 
-          <!-- Bottom accent - centered, 160px wide -->
           <div class="about-card-accent-bottom"></div>
         </div>
       </div>
@@ -121,7 +105,7 @@ const mainFunctions = {
           to="/glossary"
           class="block bg-gradient-to-r from-[#0e888d]/10 to-[#0e888d]/5 border border-[#0e888d]/20 rounded-2xl p-6 lg:p-8 hover:border-[#0e888d]/40 transition-colors group"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 lg:w-14 lg:h-14 bg-[#0e888d] rounded-xl flex items-center justify-center">
                 <svg class="w-6 h-6 lg:w-7 lg:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +121,7 @@ const mainFunctions = {
                 </p>
               </div>
             </div>
-            <svg class="w-6 h-6 text-[#0e888d] group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 text-[#0e888d] group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
@@ -148,20 +132,24 @@ const mainFunctions = {
 </template>
 
 <style scoped>
-/* About page card styles - exact Figma values */
-.about-card {
-  background: white;
-  border: 1px solid #f5f5f5;
-  border-radius: 30px;
-  box-shadow: 2px 5px 20px 0px rgba(0, 0, 0, 0.03);
-  position: relative;
-  /* No overflow: hidden - allow content to be visible */
-  /* No fixed height - auto-adjust to content, grid stretch makes them equal */
-  display: flex;
-  flex-direction: column;
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  gap: 30px;
+  align-items: stretch;
 }
 
-/* Top accent bar - short, centered inside card */
+.about-card {
+  background: white;
+  border: 1px solid #e8eef0;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(65, 88, 97, 0.08);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .about-card-accent-top {
   width: 60px;
   height: 4px;
@@ -171,7 +159,6 @@ const mainFunctions = {
   flex-shrink: 0;
 }
 
-/* Bottom accent bar - short, centered inside card */
 .about-card-accent-bottom {
   width: 60px;
   height: 4px;
@@ -181,38 +168,126 @@ const mainFunctions = {
   flex-shrink: 0;
 }
 
-/* Illustration container - 267x267px, centered */
 .about-card-illustration {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 24px;
   flex-shrink: 0;
 }
 
-@media (max-width: 767px) {
-  .about-card-illustration > div {
-    width: 200px;
-    height: 200px;
-  }
+.portal-illustration {
+  width: min(100% - 28px, 500px);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  position: relative;
+  border-radius: 28px;
+  background: #f7fbfb;
+  box-shadow: 0 22px 46px rgba(65, 88, 97, 0.13);
+  overflow: hidden;
 }
 
-/* Content area - 248px wide, centered */
+.portal-illustration::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(14, 136, 141, 0.16);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.portal-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .about-card-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  width: 248px;
+  width: min(100% - 48px, 560px);
   margin: 0 auto;
-  padding: 24px 0 24px;
+  padding: 26px 0 34px;
   flex-grow: 1;
 }
 
-@media (min-width: 1024px) {
-  .about-card-content {
-    padding-top: 34px;
-    padding-bottom: 40px;
+.about-card-content-wide {
+  width: min(100% - 48px, 640px);
+}
+
+.about-highlights {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.about-highlights li,
+.functions-list li {
+  position: relative;
+  color: #415861;
+  line-height: 1.45;
+}
+
+.about-highlights li {
+  padding-left: 24px;
+  font-size: 14px;
+}
+
+.about-highlights li::before,
+.functions-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #0e888d;
+}
+
+.functions-list {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.functions-list li {
+  break-inside: avoid;
+  padding-left: 20px;
+  margin-bottom: 11px;
+  font-size: 14px;
+}
+
+@media (min-width: 1280px) {
+  .functions-list {
+    columns: 2;
+    column-gap: 28px;
+  }
+}
+
+@media (max-width: 767px) {
+  .about-grid {
+    gap: 24px;
+  }
+
+  .portal-illustration {
+    width: min(100% - 28px, 390px);
+  }
+
+  .about-card-content,
+  .about-card-content-wide {
+    width: min(100% - 32px, 560px);
+    padding-top: 22px;
   }
 }
 </style>

@@ -15,7 +15,7 @@ import { downloadElementAsPdf } from '../../utils/pdfExport'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const goBack = () => {
   const from = route.query.from as string

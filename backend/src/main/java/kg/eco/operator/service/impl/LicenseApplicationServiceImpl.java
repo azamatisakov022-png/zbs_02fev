@@ -444,13 +444,18 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
      */
     private void validateReadyForSubmit(LicenseApplication app) {
         if (app.getActivityTypes() == null || app.getActivityTypes().length == 0) {
-            throw new BusinessLogicException("Укажите хотя бы один вид деятельности (Шаг 2)");
+            throw new BusinessLogicException("Укажите хотя бы один вид деятельности (Шаг 1 «Лицензия»)");
         }
         if (app.getLegalAddress() == null || app.getLegalAddress().isBlank()) {
-            throw new BusinessLogicException("Укажите юридический адрес (Шаг 3)");
+            // Юр. адрес теперь подтягивается автоматически из профиля компании
+            // (companies.address) — но если по каким-то причинам он пуст, просим
+            // дополнить профиль, а не данные заявки.
+            throw new BusinessLogicException(
+                    "В профиле компании не указан юридический адрес — обновите профиль");
         }
         if (app.getActualAddress() == null || app.getActualAddress().isBlank()) {
-            throw new BusinessLogicException("Укажите фактический адрес (Шаг 3)");
+            throw new BusinessLogicException(
+                    "Укажите фактический адрес объекта (Шаг 2 «Объект и контакты»)");
         }
     }
 

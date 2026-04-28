@@ -21,7 +21,7 @@ import { formatNum } from '../../utils/formatNumber'
 
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const isLoading = ref(true)
 onMounted(() => { setTimeout(() => { isLoading.value = false }, 500) })

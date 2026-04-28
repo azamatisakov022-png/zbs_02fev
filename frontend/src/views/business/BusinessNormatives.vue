@@ -6,7 +6,7 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { UTILIZATION_RATES_2025, getRateByGroup } from '../../data/rates'
 
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const currentYear = 2026
 const years = [2025, 2026, 2027, 2028, 2029, 2030]

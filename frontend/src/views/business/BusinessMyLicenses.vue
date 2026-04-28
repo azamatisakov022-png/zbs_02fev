@@ -7,7 +7,7 @@ import type { License } from '../../types/licenses'
 import { authStore } from '../../stores/auth'
 import { publicLicensesApi } from '../../api/licenses'
 
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const myLicenses = ref<License[]>([])
 const loading = ref(true)
@@ -53,7 +53,7 @@ function formatDate(d: string) {
 </script>
 
 <template>
-  <DashboardLayout :role-title="roleTitle" :menu-items="menuItems">
+  <DashboardLayout :role-title="roleTitle" :menu-items="menuItems" :primary-action="primaryAction">
     <div class="px-6 py-6">
       <h1 class="text-2xl font-bold text-gray-900 mb-2">Мои лицензии</h1>
       <p class="text-sm text-gray-500 mb-6">Выданные на моё предприятие лицензии</p>

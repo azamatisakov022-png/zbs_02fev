@@ -418,16 +418,17 @@ body {
   border-radius: 5px 5px 0 0;
 }
 
-.strategy-card {
-  width: 407px;
-  height: 309px;
-  background: white;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: 30px;
-  transition: all var(--transition-normal);
-}
+  .strategy-card {
+    width: 100%;
+    min-height: 312px;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    padding: 22px;
+    transition: all var(--transition-normal);
+    overflow: hidden;
+  }
 
 .strategy-card:hover {
   box-shadow: var(--shadow-md);

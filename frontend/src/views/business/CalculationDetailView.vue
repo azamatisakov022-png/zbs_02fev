@@ -25,7 +25,7 @@ import { formatNum } from '../../utils/formatNumber'
 const router = useRouter()
 const route = useRoute()
 const { t, locale: i18nLocale } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const dateLang = computed(() => {
   const map: Record<string, string> = { ru: 'ru-RU', ky: 'ky-KG', en: 'en-GB' }

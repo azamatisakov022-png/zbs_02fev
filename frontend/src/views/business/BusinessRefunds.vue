@@ -14,7 +14,7 @@ import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)

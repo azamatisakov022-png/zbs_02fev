@@ -11,7 +11,7 @@ import { toastStore } from '../../stores/toast'
 import { CalcStatus } from '../../constants/statuses'
 
 const router = useRouter()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 const { t } = useI18n()
 
 // View mode

@@ -16,31 +16,31 @@ const features = computed<Feature[]>(() => [
     id: 1,
     title: t('features.items.title1'),
     description: t('features.items.desc1'),
-    image: '/images/features/administration.svg',
+    image: '/images/features/administration-3d.webp',
   },
   {
     id: 2,
     title: t('features.items.title2'),
     description: t('features.items.desc2'),
-    image: '/images/features/infrastructure.svg',
+    image: '/images/features/infrastructure-3d.webp',
   },
   {
     id: 3,
     title: t('features.items.title3'),
     description: t('features.items.desc3'),
-    image: '/images/features/recycling.svg',
+    image: '/images/features/recycling-3d.webp',
   },
   {
     id: 4,
     title: t('features.items.title4'),
     description: t('features.items.desc4'),
-    image: '/images/features/education.svg',
+    image: '/images/features/education-3d.webp',
   },
   {
     id: 5,
     title: t('features.items.title5'),
     description: t('features.items.desc5'),
-    image: '/images/features/monitoring.svg',
+    image: '/images/features/monitoring-3d.webp',
   },
 ])
 </script>
@@ -67,7 +67,7 @@ const features = computed<Feature[]>(() => [
           <div class="feature-card-accent-top bg-[#0e888d]"></div>
 
           <!-- Image container -->
-          <div class="h-[200px] md:h-[240px] lg:h-[267px] mx-[40px] lg:mx-[63px] mt-[39px] flex items-center justify-center">
+          <div class="mt-8 flex h-[220px] w-[78%] max-w-[320px] items-center justify-center self-center md:h-[250px] lg:h-[285px]">
             <img :src="feature.image" :alt="feature.title" class="w-full h-full object-contain" />
           </div>
 
@@ -100,7 +100,7 @@ const features = computed<Feature[]>(() => [
           <div class="feature-card-accent-top bg-[#0e888d]"></div>
 
           <!-- Image container - wider for bottom row -->
-          <div class="h-[200px] md:h-[240px] lg:h-[267px] mx-[40px] lg:mx-[170px] mt-[39px] flex items-center justify-center">
+          <div class="mt-8 flex h-[220px] w-[78%] max-w-[320px] items-center justify-center self-center md:h-[250px] lg:h-[285px]">
             <img :src="feature.image" :alt="feature.title" class="w-full h-full object-contain" />
           </div>
 

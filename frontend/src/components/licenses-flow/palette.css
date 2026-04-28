@@ -1,0 +1,38 @@
+/* Локальная палитра для флоу подачи и рассмотрения заявок на лицензии.
+   Применяется через класс .licenses-flow-page на обёрточном элементе,
+   чтобы не пересекаться с остальными стилями АИС. */
+
+.licenses-flow-page {
+  --lf-brand: #0d9488;
+  --lf-brand-600: #0f766e;
+  --lf-brand-700: #115e59;
+  --lf-brand-050: #ecfdf5;
+  --lf-brand-100: #ccfbf1;
+
+  --lf-accent: #f59a2e;
+  --lf-accent-700: #b45309;
+
+  --lf-ink: #0f172a;
+  --lf-ink-2: #334155;
+  --lf-ink-3: #64748b;
+  --lf-ink-4: #94a3b8;
+
+  --lf-line: #e2e8f0;
+  --lf-line-2: #f1f5f9;
+  --lf-bg: #f8fafc;
+
+  --lf-amber: #d97706;
+  --lf-amber-050: #fef3c7;
+  --lf-rose: #dc2626;
+  --lf-rose-050: #fee2e2;
+
+  --lf-indigo: #4f46e5;
+  --lf-indigo-050: #eef2ff;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--lf-ink);
+}
+.licenses-flow-page .mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}

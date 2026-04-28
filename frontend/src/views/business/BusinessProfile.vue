@@ -8,7 +8,7 @@ import { productGroups, getTranslatedGroupLabel } from '../../data/product-group
 import { toastStore } from '../../stores/toast'
 
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 // Company data
 const companyData = ref({

@@ -14,7 +14,7 @@ import { ReportStatus } from '../../constants/statuses'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const report = computed(() => {
   const id = Number(route.params.id)

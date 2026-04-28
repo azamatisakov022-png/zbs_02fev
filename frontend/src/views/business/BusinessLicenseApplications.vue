@@ -7,7 +7,7 @@ import { licenseStore } from '../../stores/licenses'
 import type { LicenseApplication, LicenseApplicationStatus } from '../../types/licenses'
 
 const router = useRouter()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const statusFilter = ref<LicenseApplicationStatus | ''>('')
 
@@ -49,7 +49,7 @@ function formatDate(dateStr?: string) {
 </script>
 
 <template>
-  <DashboardLayout :role-title="roleTitle" :menu-items="menuItems">
+  <DashboardLayout :role-title="roleTitle" :menu-items="menuItems" :primary-action="primaryAction">
     <div class="px-6 py-6">
       <div class="flex items-center justify-between mb-6">
         <div>

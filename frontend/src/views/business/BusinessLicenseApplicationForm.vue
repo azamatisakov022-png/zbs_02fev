@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DashboardLayout from '../../components/dashboard/DashboardLayout.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { licenseStore } from '../../stores/licenses'
 import { applicantApi } from '../../api/licenses'
 import { authStore } from '../../stores/auth'
+import { companyApi, type MyCompany } from '../../api/companies'
 import type {
   ApplicantEntity,
   ApplicantType,
@@ -21,6 +22,8 @@ import FormField from '../../components/licenses-flow/FormField.vue'
 import SectionLabel from '../../components/licenses-flow/SectionLabel.vue'
 import KeyVal from '../../components/licenses-flow/KeyVal.vue'
 import GuideCard from '../../components/licenses-flow/GuideCard.vue'
+import ProfileCard from '../../components/licenses-flow/ProfileCard.vue'
+import ActivityPicker from '../../components/licenses-flow/ActivityPicker.vue'
 import '../../components/licenses-flow/palette.css'
 
 const route = useRoute()
@@ -33,70 +36,56 @@ const isEdit = computed(() => !!editId.value)
 const step = ref(1)
 const saving = ref(false)
 const error = ref<string | null>(null)
+const company = ref<MyCompany | null>(null)
 
-const STEPS = ['Заявитель', 'Вид лицензии', 'Адреса', 'Документы', 'Проверка', 'Оплата']
+const STEPS = ['Лицензия', 'Объект', 'Документы', 'Проверка и оплата']
 
-// 4 визуальных варианта ОПФ (как в mockup) → маппятся на 2 enum'а API (legal_entity / sole_proprietor)
-const orgForm = ref<'llc' | 'jsc' | 'ip' | 'other'>(
-  (authStore.state.user as { orgForm?: 'llc' | 'jsc' | 'ip' | 'other' })?.orgForm || 'llc'
-)
-const entityOptions = [
-  { value: 'llc', short: 'ОсОО', label: 'Общество с ОО', entity: 'legal_entity' },
-  { value: 'jsc', short: 'ОАО', label: 'Акционерное общество', entity: 'legal_entity' },
-  { value: 'ip', short: 'ИП', label: 'Индивидуальный предприниматель', entity: 'sole_proprietor' },
-  { value: 'other', short: 'Иная', label: 'Другая форма', entity: 'legal_entity' },
-] as const
-function pickOrgForm(v: 'llc' | 'jsc' | 'ip' | 'other') {
-  orgForm.value = v
-  const opt = entityOptions.find(o => o.value === v)
-  if (opt) form.value.applicantEntity = opt.entity as ApplicantEntity
-}
-
-const applicantTypeOptions = [
-  { value: 'recycler', label: 'Переработчик', desc: 'Механическая / химическая обработка отходов' },
-  { value: 'landfill', label: 'Полигон ТБО', desc: 'Захоронение и длительное хранение' },
-  { value: 'collection_point', label: 'Пункт приёма', desc: 'Сбор и первичная сортировка' },
-  { value: 'other', label: 'Иная организация', desc: 'Не подходит ни один из вариантов' },
-]
-
-// hue значения для типов лицензий (для градиентов карточек)
-const LICENSE_HUES: Record<string, number> = {
-  complex: 165,
-  storage_disposal: 28,
-  transportation: 205,
-  processing: 140,
-  collection: 260,
-  neutralization: 0,
-}
-const LICENSE_SHORTS: Record<string, string> = {
-  complex: 'К',
-  storage_disposal: 'Х',
-  transportation: 'Т',
-  processing: 'П',
-  collection: 'С',
-  neutralization: 'О',
-}
-function hueOf(lt: string) {
-  return LICENSE_HUES[lt] ?? 165
-}
-function shortOf(lt: string) {
-  return LICENSE_SHORTS[lt] ?? '·'
-}
 const STEP_GUIDES: { title: string; description: string }[] = [
-  { title: 'Заявитель', description: 'Укажите реквизиты организации-заявителя. ИНН должен совпадать с вашей учётной записью.' },
-  { title: 'Вид лицензии', description: 'Выберите лицензируемый вид деятельности. Допускается несколько связанных видов в одной заявке.' },
-  { title: 'Адреса и контакты', description: 'Юридический и фактический адреса объекта. На фактический адрес будет проведён выезд инспекторов.' },
-  { title: 'Документы', description: 'Загрузите обязательные документы пакета. Опциональные можно приложить позже.' },
-  { title: 'Проверка', description: 'Проверьте данные перед отправкой. После оплаты редактирование возможно только через инспектора.' },
-  { title: 'Оплата', description: 'Оплатите госпошлину онлайн или приложите квитанцию. После подтверждения заявка уходит инспектору.' },
+  {
+    title: 'Лицензия',
+    description:
+      'Выберите вид лицензируемой деятельности и тип заявителя. Можно указать несколько связанных видов в рамках одной лицензии.',
+  },
+  {
+    title: 'Объект и контакты',
+    description:
+      'Фактический адрес объекта может отличаться от юридического. На него будет проведён выезд инспекторов.',
+  },
+  {
+    title: 'Документы',
+    description:
+      'Загрузите обязательные документы пакета. Опциональные можно приложить позже.',
+  },
+  {
+    title: 'Проверка и оплата',
+    description:
+      'Проверьте данные и оплатите госпошлину онлайн или приложите квитанцию. После подтверждения заявка уходит инспектору.',
+  },
 ]
 
+// ─── Тип заявителя (4 варианта) ──────────────────────────────────
+const applicantTypeOptions = [
+  { value: 'recycler',         label: 'Переработчик',     desc: 'Механическая / химическая обработка отходов' },
+  { value: 'landfill',         label: 'Полигон ТБО',      desc: 'Захоронение и длительное хранение' },
+  { value: 'collection_point', label: 'Пункт приёма',     desc: 'Сбор и первичная сортировка' },
+  { value: 'other',            label: 'Иная организация', desc: 'Не подходит ни один из вариантов' },
+]
+
+// ─── Маппинг ОПФ из БД (русский текст) на applicantEntity (enum API) ──
+function mapLegalFormToEntity(legalForm?: string): ApplicantEntity {
+  if (!legalForm) return 'legal_entity'
+  const lf = legalForm.trim().toLowerCase()
+  if (lf === 'ип' || lf.includes('индивид')) return 'sole_proprietor'
+  return 'legal_entity'
+}
+
+// ─── Форма (отправляется на бэк CreateApplicationRequest) ─────────
 const form = ref<CreateApplicationRequest>({
   applicantType: 'recycler' as ApplicantType,
   applicantEntity: 'legal_entity' as ApplicantEntity,
   applicantName: '',
   applicantInn: authStore.state.user?.inn || '',
-  licenseType: 'complex' as LicenseType,
+  licenseType: 'processing' as LicenseType,
   activityTypes: [],
   legalAddress: '',
   actualAddress: '',
@@ -105,41 +94,42 @@ const form = ref<CreateApplicationRequest>({
   contactPerson: '',
 })
 
-// Запрашиваемый срок лицензии (1-5 лет, ст. 20 Закона КР № 181 от 15.08.2023).
-// Ввод заявителя — окончательный срок устанавливает инспектор при выдаче.
-const requestedTermYears = ref<number>(5)
-
-// Категория лицензии: «Транспортировка» отдельно или «вся деятельность с отходами».
-// Маппится на бэкенд licenseType: transportation → 'transportation', complex → 'complex'.
-type LicenseCategory = 'transportation' | 'complex'
-const licenseCategory = computed<LicenseCategory>(() =>
-  form.value.licenseType === 'transportation' ? 'transportation' : 'complex'
-)
-function setCategory(cat: LicenseCategory) {
-  form.value.licenseType = (cat === 'transportation' ? 'transportation' : 'complex') as LicenseType
-  // При переключении на «транспортировку» сбрасываем подвиды.
-  if (cat === 'transportation') form.value.activityTypes = []
-}
-
-// 5 подвидов деятельности для complex (порядок согласован с заказчиком 2026-04-27):
-const ACTIVITY_KINDS = [
-  { value: 'treatment',      label: 'Обработка',     desc: 'Сортировка, разборка, очистка отходов' },
-  { value: 'neutralization', label: 'Уничтожение',   desc: 'Сжигание, обеззараживание, снижение массы' },
-  { value: 'recycling',      label: 'Переработка',   desc: 'Производство продукции / получение энергии' },
-  { value: 'storage',        label: 'Хранение',      desc: 'Накопление в спецхранилищах (срок до 11 мес.)' },
-  { value: 'burial',         label: 'Захоронение',   desc: 'Безвозвратная изоляция в спецхранилищах' },
-] as const
-function toggleActivityKind(value: string) {
-  const idx = form.value.activityTypes.indexOf(value)
-  if (idx === -1) form.value.activityTypes.push(value)
-  else form.value.activityTypes.splice(idx, 1)
-}
-function isActivityChecked(value: string) {
-  return form.value.activityTypes.includes(value)
+/**
+ * Заполняет форму данными из профиля компании.
+ * Не перетирает поля, которые пользователь уже мог изменить (для editId-сценария).
+ */
+function applyCompanyToForm(c: MyCompany, mode: 'fresh' | 'merge') {
+  if (mode === 'fresh') {
+    form.value.applicantName = c.companyName
+    form.value.applicantInn = c.inn
+    form.value.applicantEntity = mapLegalFormToEntity(c.legalForm)
+    form.value.legalAddress = c.address || ''
+    form.value.actualAddress = c.address || ''  // по умолчанию совпадает с юр.
+    form.value.contactPhone = c.phone || authStore.state.user?.phone || ''
+    form.value.contactEmail = c.email || authStore.state.user?.email || ''
+    form.value.contactPerson = c.director || c.contactPerson || ''
+  } else {
+    // merge: заполняем только пустые поля
+    if (!form.value.applicantName) form.value.applicantName = c.companyName
+    if (!form.value.applicantInn) form.value.applicantInn = c.inn
+    if (!form.value.legalAddress) form.value.legalAddress = c.address || ''
+    if (!form.value.actualAddress) form.value.actualAddress = c.address || ''
+    if (!form.value.contactPhone) form.value.contactPhone = c.phone || ''
+    if (!form.value.contactEmail) form.value.contactEmail = c.email || ''
+    if (!form.value.contactPerson) form.value.contactPerson = c.director || c.contactPerson || ''
+  }
 }
 
 onMounted(async () => {
-  await licenseStore.loadEnums(form.value.licenseType)
+  // Параллельно: справочники + профиль компании
+  const [, comp] = await Promise.allSettled([
+    licenseStore.loadEnums(form.value.licenseType),
+    companyApi.getMyCompany(),
+  ])
+  if (comp.status === 'fulfilled') {
+    company.value = comp.value
+  }
+
   if (editId.value) {
     try {
       const app = await applicantApi.getMyApplication(editId.value)
@@ -160,11 +150,35 @@ onMounted(async () => {
       await licenseStore.reloadDocumentTypes(app.licenseType)
       currentApp.value = app
       uploadedDocTypes.value = new Set((app.documents || []).map(d => d.docType))
+
+      // Если профиль не успел загрузиться — добиваем пустые поля
+      if (company.value) applyCompanyToForm(company.value, 'merge')
+
+      // Где открыть мастер: смотрим как заполнен черновик
+      step.value = inferStepFromState()
     } catch (e: unknown) {
       error.value = 'Не удалось загрузить заявку'
     }
+  } else if (company.value) {
+    // Новая заявка — сразу подтягиваем всё что есть в профиле
+    applyCompanyToForm(company.value, 'fresh')
   }
 })
+
+/**
+ * Маппинг старой 6-шаговой логики и текущих заполненных полей на новые 4 шага.
+ * Используется при открытии существующего черновика.
+ */
+function inferStepFromState(): number {
+  // 1 (Лицензия) если licenseType ещё дефолтный или нет видов деятельности
+  if (!form.value.licenseType || form.value.activityTypes.length === 0) return 1
+  // 2 (Объект) если нет фактического адреса
+  if (!form.value.actualAddress) return 2
+  // 3 (Документы) если нет загруженных обязательных
+  if (requiredDone.value < requiredDocs.value.length) return 3
+  // 4 (Проверка и оплата)
+  return 4
+}
 
 watch(
   () => form.value.licenseType,
@@ -174,7 +188,6 @@ watch(
 )
 
 // ─── документы ───
-
 const currentApp = ref<import('../../types/licenses').LicenseApplication | null>(null)
 const uploadedDocTypes = ref<Set<string>>(new Set())
 
@@ -184,7 +197,6 @@ const requiredDocs = computed(() =>
 const optionalDocs = computed(() =>
   licenseStore.state.documentTypesEnum.filter(d => !d.extra?.required),
 )
-
 function isUploaded(docType: string) {
   return uploadedDocTypes.value.has(docType)
 }
@@ -200,7 +212,7 @@ async function onFileSelected(docType: LicenseDocumentType, event: Event) {
   if (!input.files || input.files.length === 0) return
   const file = input.files[0]
   if (!currentApp.value) {
-    error.value = 'Сначала сохраните черновик (шаги 1–3), затем загружайте документы'
+    error.value = 'Сначала сохраните черновик (шаги 1–2), затем загружайте документы'
     return
   }
   try {
@@ -214,39 +226,44 @@ async function onFileSelected(docType: LicenseDocumentType, event: Event) {
   }
 }
 
-// ─── виды деятельности ───
-
-const newActivity = ref('')
-const addingActivity = ref(false)
-const activityInput = ref<HTMLInputElement | null>(null)
-
-function addActivity() {
-  const v = newActivity.value.trim()
-  if (!v) return
-  if (!form.value.activityTypes.includes(v)) form.value.activityTypes.push(v)
-  newActivity.value = ''
-}
-function removeActivity(index: number) {
-  form.value.activityTypes.splice(index, 1)
-}
-function startAddActivity() {
-  addingActivity.value = true
-  newActivity.value = ''
-  nextTick(() => activityInput.value?.focus())
-}
-function confirmAddActivity() {
-  addActivity()
-  addingActivity.value = false
-}
-function cancelAddActivity() {
-  newActivity.value = ''
-  addingActivity.value = false
-}
+// Виды деятельности теперь управляются через <ActivityPicker> и form.activityTypes напрямую.
 
 // ─── навигация по шагам ───
 
+/**
+ * Проверка целостности данных текущего шага перед переходом дальше.
+ * Возвращает текст ошибки или null если шаг валиден.
+ *
+ * Цель — не пропустить пользователя через шаг с незаполненными полями,
+ * чтобы он не получил неинформативную ошибку с бэка ровно на финальном
+ * submit'е.
+ */
+function validateCurrentStep(): string | null {
+  if (step.value === 1) {
+    // Шаг 1: вид лицензии + тип заявителя + хотя бы один вид деятельности
+    if (!form.value.licenseType) return 'Выберите вид лицензии'
+    if (!form.value.applicantType) return 'Выберите тип заявителя'
+    if (form.value.activityTypes.length === 0) {
+      return 'Укажите хотя бы один вид деятельности'
+    }
+  }
+  if (step.value === 2) {
+    // Шаг 2: фактический адрес объекта обязателен
+    if (!form.value.actualAddress?.trim()) {
+      return 'Укажите фактический адрес объекта'
+    }
+  }
+  return null
+}
+
 async function saveDraftAndNext() {
-  if (newActivity.value.trim()) addActivity()
+  const validationError = validateCurrentStep()
+  if (validationError) {
+    error.value = validationError
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
   saving.value = true
   error.value = null
   try {
@@ -266,7 +283,6 @@ async function saveDraftAndNext() {
     saving.value = false
   }
 }
-
 function goToStep(s: number) {
   if (s < step.value) {
     step.value = s
@@ -275,7 +291,6 @@ function goToStep(s: number) {
 }
 
 // ─── оплата / отправка ───
-
 const paymentMode = ref<'online' | 'offline'>('online')
 const offlineReceiptFile = ref<File | null>(null)
 const offlineAmount = ref<number>(1000)
@@ -283,12 +298,6 @@ const offlineDate = ref<string>(new Date().toISOString().slice(0, 16))
 
 async function submit() {
   if (!currentApp.value) return
-  if (newActivity.value.trim()) {
-    addActivity()
-    try {
-      currentApp.value = await applicantApi.updateDraft(currentApp.value.id, form.value)
-    } catch {}
-  }
   saving.value = true
   error.value = null
   try {
@@ -343,28 +352,21 @@ function onReceiptFile(event: Event) {
   if (input.files && input.files.length > 0) offlineReceiptFile.value = input.files[0]
 }
 
-// ─── computed labels ───
-
+// ─── computed для шаблонов ───
 const licenseTypeLabel = computed(() => licenseStore.labelForLicenseType(form.value.licenseType))
-
 const allDocs = computed(() => [...requiredDocs.value, ...optionalDocs.value])
-
-const applicantTypeLabel = computed(() => ({
-  recycler: 'Переработчик',
-  landfill: 'Полигон ТБО',
-  collection_point: 'Пункт приёма',
-  other: 'Иная организация',
-}[form.value.applicantType as string] || form.value.applicantType))
-
-const applicantEntityLabel = computed(() =>
-  form.value.applicantEntity === 'legal_entity' ? 'Юридическое лицо' : 'Индивидуальный предприниматель',
+const applicantTypeLabel = computed(() =>
+  applicantTypeOptions.find(o => o.value === form.value.applicantType)?.label || form.value.applicantType,
 )
-
 const savedLabel = computed(() => {
   if (!currentApp.value) return 'Черновик не создан'
   const d = new Date(currentApp.value.updatedAt || currentApp.value.createdAt)
   return `Черновик сохранён в ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 })
+
+const submitButtonLabel = computed(() =>
+  paymentMode.value === 'online' ? 'Оплатить и отправить' : 'Отправить заявку',
+)
 </script>
 
 <template>
@@ -372,7 +374,7 @@ const savedLabel = computed(() => {
     <div class="licenses-flow-page lf-wizard">
       <PageHeader
         :title="isEdit ? 'Редактирование заявки' : 'Новая заявка на лицензию'"
-        subtitle="Заполните 6 шагов, чтобы подать заявку. Черновик сохраняется при переходе на следующий шаг."
+        subtitle="Заполните 4 шага. Черновик сохраняется при переходе на следующий шаг."
         :breadcrumb="['Личный кабинет', 'Заявки', isEdit ? 'Редактирование' : 'Новая заявка']"
       />
 
@@ -384,156 +386,95 @@ const savedLabel = computed(() => {
 
       <div class="lf-wizard__grid">
         <div class="lf-wizard__main">
-          <!-- ── Step 1: заявитель ── -->
-          <FormCard v-if="step === 1">
-            <SectionLabel>Организационно-правовая форма</SectionLabel>
-            <div class="lf-pick-grid lf-pick-grid--4">
-              <button
-                v-for="o in entityOptions"
-                :key="o.value"
-                type="button"
-                class="lf-pick"
-                :class="{ 'lf-pick--active': orgForm === o.value }"
-                @click="pickOrgForm(o.value)"
-              >
-                <div class="lf-pick__title">{{ o.short }}</div>
-                <div class="lf-pick__desc">{{ o.label }}</div>
-              </button>
-            </div>
+          <!-- ── Step 1: Лицензия ── -->
+          <template v-if="step === 1">
+            <ProfileCard :company="company" compact />
 
-            <SectionLabel mt>Реквизиты организации</SectionLabel>
-            <div class="lf-wizard__grid-2">
-              <FormField label="Наименование организации" required>
-                <input v-model="form.applicantName" placeholder="ОсОО «…»" />
-              </FormField>
-              <FormField label="ИНН" required>
-                <input v-model="form.applicantInn" class="mono" />
-              </FormField>
-            </div>
-
-            <SectionLabel mt>Тип заявителя</SectionLabel>
-            <div class="lf-pick-grid lf-pick-grid--2">
-              <button
-                v-for="o in applicantTypeOptions"
-                :key="o.value"
-                type="button"
-                class="lf-pick lf-pick--tall"
-                :class="{ 'lf-pick--active': form.applicantType === o.value }"
-                @click="form.applicantType = o.value as ApplicantType"
-              >
-                <div class="lf-pick__head">
-                  <div class="lf-pick__title">{{ o.label }}</div>
+            <FormCard>
+              <SectionLabel>Вид лицензируемой деятельности</SectionLabel>
+              <div class="lf-kind-grid">
+                <button
+                  v-for="opt in licenseStore.state.licenseTypesEnum"
+                  :key="opt.value"
+                  type="button"
+                  class="lf-kind"
+                  :class="{ 'lf-kind--active': form.licenseType === opt.value }"
+                  @click="form.licenseType = opt.value as LicenseType"
+                >
+                  <div class="lf-kind__body">
+                    <div class="lf-kind__title">{{ opt.labelRu }}</div>
+                    <div class="lf-kind__fee">Госпошлина: 1 000 с.</div>
+                  </div>
                   <svg
-                    v-if="form.applicantType === o.value"
-                    width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                    class="lf-pick__check"
+                    v-if="form.licenseType === opt.value"
+                    width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                    class="lf-kind__check"
                   >
                     <path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
-                </div>
-                <div class="lf-pick__desc">{{ o.desc }}</div>
-              </button>
-            </div>
-          </FormCard>
-
-          <!-- ── Step 2: вид лицензии ── -->
-          <FormCard v-if="step === 2">
-            <SectionLabel>Категория лицензии</SectionLabel>
-            <p class="lf-activity__hint">
-              По ст. 20 Закона КР № 181 от 15.08.2023 лицензированию подлежат две категории деятельности.
-            </p>
-            <div class="lf-kind-grid">
-              <button
-                type="button"
-                class="lf-kind"
-                :class="{ 'lf-kind--active': licenseCategory === 'transportation' }"
-                @click="setCategory('transportation')"
-              >
-                <div class="lf-kind__body">
-                  <div class="lf-kind__title">Транспортировка</div>
-                  <div class="lf-kind__fee">Перевозка отходов автомобильным, ж/д, воздушным или водным транспортом</div>
-                </div>
-                <svg
-                  v-if="licenseCategory === 'transportation'"
-                  width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                  class="lf-kind__check"
-                >
-                  <path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="lf-kind"
-                :class="{ 'lf-kind--active': licenseCategory === 'complex' }"
-                @click="setCategory('complex')"
-              >
-                <div class="lf-kind__body">
-                  <div class="lf-kind__title">Вся деятельность с отходами</div>
-                  <div class="lf-kind__fee">Обработка, уничтожение, переработка, хранение, захоронение — выберите подвиды ниже</div>
-                </div>
-                <svg
-                  v-if="licenseCategory === 'complex'"
-                  width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                  class="lf-kind__check"
-                >
-                  <path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </button>
-            </div>
-
-            <template v-if="licenseCategory === 'complex'">
-              <SectionLabel mt>Подвиды деятельности</SectionLabel>
-              <p class="lf-activity__hint">Отметьте все подвиды, которыми вы планируете заниматься. Можно несколько.</p>
-              <div class="lf-activity-list">
-                <label
-                  v-for="ak in ACTIVITY_KINDS"
-                  :key="ak.value"
-                  class="lf-activity-row"
-                  :class="{ 'lf-activity-row--active': isActivityChecked(ak.value) }"
-                >
-                  <input
-                    type="checkbox"
-                    :checked="isActivityChecked(ak.value)"
-                    @change="toggleActivityKind(ak.value)"
-                    class="lf-activity-row__check"
-                  />
-                  <span class="lf-activity-row__title">{{ ak.label }}</span>
-                  <span class="lf-activity-row__sep">—</span>
-                  <span class="lf-activity-row__desc">{{ ak.desc }}</span>
-                </label>
+                </button>
               </div>
-            </template>
 
-            <SectionLabel mt>Запрашиваемый срок</SectionLabel>
-            <p class="lf-activity__hint">Срок действия лицензии — от 1 до 5 лет. Окончательный срок устанавливает лицензирующий орган.</p>
-            <div class="lf-term-grid">
-              <button
-                v-for="y in [1, 2, 3, 4, 5]"
-                :key="y"
-                type="button"
-                class="lf-term-chip"
-                :class="{ 'lf-term-chip--active': requestedTermYears === y }"
-                @click="requestedTermYears = y"
-              >
-                {{ y }} {{ y === 1 ? 'год' : (y < 5 ? 'года' : 'лет') }}
-              </button>
-            </div>
-          </FormCard>
+              <SectionLabel mt>Тип заявителя</SectionLabel>
+              <div class="lf-pick-grid lf-pick-grid--2">
+                <button
+                  v-for="o in applicantTypeOptions"
+                  :key="o.value"
+                  type="button"
+                  class="lf-pick lf-pick--tall"
+                  :class="{ 'lf-pick--active': form.applicantType === o.value }"
+                  @click="form.applicantType = o.value as ApplicantType"
+                >
+                  <div class="lf-pick__head">
+                    <div class="lf-pick__title">{{ o.label }}</div>
+                    <svg
+                      v-if="form.applicantType === o.value"
+                      width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                      class="lf-pick__check"
+                    >
+                      <path d="M5 12l5 5L20 7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                  <div class="lf-pick__desc">{{ o.desc }}</div>
+                </button>
+              </div>
 
-          <!-- ── Step 3: адреса ── -->
-          <FormCard v-if="step === 3">
-            <SectionLabel>Адреса и контакты</SectionLabel>
-            <div class="lf-wizard__stack">
-              <FormField label="Юридический адрес" required>
-                <textarea v-model="form.legalAddress" rows="2" />
-              </FormField>
+              <SectionLabel mt>
+                Виды деятельности в рамках лицензии
+                <template v-if="form.activityTypes.length === 0" #right>
+                  <span class="lf-required-hint">обязательно</span>
+                </template>
+              </SectionLabel>
+              <p class="lf-activity__hint">
+                Введите название и нажмите <kbd class="lf-kbd">Enter</kbd> — добавится чипом.
+                Можно несколько.
+              </p>
+              <ActivityPicker
+                v-model="form.activityTypes"
+                placeholder="Введите вид деятельности и нажмите Enter"
+              />
+            </FormCard>
+          </template>
+
+          <!-- ── Step 2: Объект и контакты ── -->
+          <template v-if="step === 2">
+            <ProfileCard :company="company" />
+
+            <FormCard>
+              <SectionLabel>Адрес объекта</SectionLabel>
               <FormField
                 label="Фактический адрес объекта"
                 required
-                hint="На этот адрес будет проведён выезд инспекторов"
+                hint="На этот адрес будет проведён выезд инспекторов. Может отличаться от юридического."
               >
                 <textarea v-model="form.actualAddress" rows="2" />
               </FormField>
+
+              <SectionLabel mt>Контакты по этой заявке</SectionLabel>
+              <p class="lf-hint">
+                По умолчанию подставлены данные из профиля. При необходимости укажите контакты,
+                по которым удобно связываться именно по этой заявке.
+              </p>
               <div class="lf-wizard__grid-3">
                 <FormField label="Телефон">
                   <input v-model="form.contactPhone" class="mono" placeholder="+996 (___) __-__-__" />
@@ -545,18 +486,18 @@ const savedLabel = computed(() => {
                   <input v-model="form.contactPerson" />
                 </FormField>
               </div>
-            </div>
-          </FormCard>
+            </FormCard>
+          </template>
 
-          <!-- ── Step 4: документы ── -->
-          <div v-if="step === 4" class="lf-wizard__stack">
+          <!-- ── Step 3: Документы ── -->
+          <template v-if="step === 3">
             <FormCard v-if="!currentApp" class="lf-wizard__warn">
               <div class="lf-warn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
                 </svg>
                 <div>
-                  Чтобы загружать документы, сначала сохраните черновик — пройдите шаги 1–3 и нажмите «Далее».
+                  Чтобы загружать документы, сначала сохраните черновик — пройдите шаги 1–2 и нажмите «Далее».
                 </div>
               </div>
             </FormCard>
@@ -584,10 +525,7 @@ const savedLabel = computed(() => {
                     {{ requiredDone }} из {{ requiredDocs.length }}
                   </span>
                   <div class="lf-docs-progress__bar">
-                    <div
-                      class="lf-docs-progress__fill"
-                      :style="{ width: `${(requiredDone / requiredDocs.length) * 100}%` }"
-                    />
+                    <div class="lf-docs-progress__fill" :style="{ width: `${(requiredDone / requiredDocs.length) * 100}%` }" />
                   </div>
                 </div>
               </div>
@@ -642,10 +580,7 @@ const savedLabel = computed(() => {
                     {{ optionalDone }} из {{ optionalDocs.length }}
                   </span>
                   <div class="lf-docs-progress__bar">
-                    <div
-                      class="lf-docs-progress__fill lf-docs-progress__fill--amber"
-                      :style="{ width: `${(optionalDone / optionalDocs.length) * 100}%` }"
-                    />
+                    <div class="lf-docs-progress__fill lf-docs-progress__fill--amber" :style="{ width: `${(optionalDone / optionalDocs.length) * 100}%` }" />
                   </div>
                 </div>
               </div>
@@ -684,179 +619,163 @@ const savedLabel = computed(() => {
                 </label>
               </div>
             </FormCard>
-          </div>
+          </template>
 
-          <!-- ── Step 5: проверка ── -->
-          <FormCard v-if="step === 5">
-            <div class="lf-preview-note">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
-              </svg>
-              <div>Проверьте данные перед отправкой. После оплаты редактирование ограничено — только через обращение к инспектору.</div>
-            </div>
-
-            <div class="lf-preview-block">
-              <SectionLabel>
-                Заявитель
-                <template #right>
-                  <button class="lf-link" type="button" @click="step = 1">Редактировать</button>
-                </template>
-              </SectionLabel>
-              <div class="lf-wizard__grid-3">
-                <KeyVal label="Организация" :value="form.applicantName" />
-                <KeyVal label="ИНН" :value="form.applicantInn" mono />
-                <KeyVal label="ОПФ" :value="applicantEntityLabel" />
-                <KeyVal label="Тип" :value="applicantTypeLabel" />
+          <!-- ── Step 4: Проверка и оплата ── -->
+          <template v-if="step === 4">
+            <FormCard>
+              <div class="lf-preview-note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
+                </svg>
+                <div>Проверьте данные перед отправкой. После оплаты редактирование ограничено — только через обращение к инспектору.</div>
               </div>
-            </div>
 
-            <div class="lf-preview-block">
-              <SectionLabel>
-                Вид лицензии
-                <template #right>
-                  <button class="lf-link" type="button" @click="step = 2">Редактировать</button>
-                </template>
-              </SectionLabel>
-              <div class="lf-preview-type">{{ licenseTypeLabel }}</div>
-              <div v-if="form.activityTypes.length" class="lf-preview-activities">
-                <span v-for="a in form.activityTypes" :key="a" class="lf-chip lf-chip--muted">
-                  {{ ACTIVITY_KINDS.find(k => k.value === a)?.label || a }}
-                </span>
+              <div class="lf-preview-block">
+                <SectionLabel>
+                  Лицензия
+                  <template #right>
+                    <button class="lf-link" type="button" @click="step = 1">Редактировать</button>
+                  </template>
+                </SectionLabel>
+                <div class="lf-preview-type">{{ licenseTypeLabel }}</div>
+                <div class="lf-preview-sub">Тип заявителя: {{ applicantTypeLabel }}</div>
+                <div v-if="form.activityTypes.length" class="lf-preview-activities">
+                  <span v-for="a in form.activityTypes" :key="a" class="lf-chip lf-chip--muted">{{ a }}</span>
+                </div>
               </div>
-              <div class="lf-preview-term">Запрашиваемый срок: <b>{{ requestedTermYears }} {{ requestedTermYears === 1 ? 'год' : (requestedTermYears < 5 ? 'года' : 'лет') }}</b></div>
-            </div>
 
-            <div class="lf-preview-block">
-              <SectionLabel>
-                Адреса и контакты
-                <template #right>
-                  <button class="lf-link" type="button" @click="step = 3">Редактировать</button>
-                </template>
-              </SectionLabel>
-              <div class="lf-wizard__grid-2">
-                <KeyVal label="Юридический адрес" :value="form.legalAddress" />
-                <KeyVal label="Фактический адрес" :value="form.actualAddress" />
-                <KeyVal label="Телефон" :value="form.contactPhone" mono />
-                <KeyVal label="Email" :value="form.contactEmail" />
-                <KeyVal label="Ответственный" :value="form.contactPerson" />
+              <div class="lf-preview-block">
+                <SectionLabel>
+                  Объект и контакты
+                  <template #right>
+                    <button class="lf-link" type="button" @click="step = 2">Редактировать</button>
+                  </template>
+                </SectionLabel>
+                <div class="lf-wizard__grid-2">
+                  <KeyVal label="Юридический адрес (из профиля)" :value="form.legalAddress" />
+                  <KeyVal label="Фактический адрес объекта" :value="form.actualAddress" />
+                  <KeyVal label="Телефон" :value="form.contactPhone" mono />
+                  <KeyVal label="Email" :value="form.contactEmail" />
+                  <KeyVal label="Ответственный" :value="form.contactPerson" />
+                </div>
               </div>
-            </div>
 
-            <div class="lf-preview-block">
-              <SectionLabel>
-                Документы
-                <template #right>
-                  <button class="lf-link" type="button" @click="step = 4">Редактировать</button>
-                </template>
-              </SectionLabel>
-              <div class="lf-preview-docs">
-                <div class="lf-preview-docs__icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <div class="lf-preview-block">
+                <SectionLabel>
+                  Документы
+                  <template #right>
+                    <button class="lf-link" type="button" @click="step = 3">Редактировать</button>
+                  </template>
+                </SectionLabel>
+                <div class="lf-preview-docs">
+                  <div class="lf-preview-docs__icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M5 12l5 5L20 7" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="lf-preview-docs__title">
+                      Загружено {{ (currentApp?.documents || []).length }} документов
+                      <span v-if="requiredDocs.length">({{ requiredDone }} из {{ requiredDocs.length }} обязательных)</span>
+                    </div>
+                    <div class="lf-preview-docs__sub">
+                      <template v-if="requiredDone < requiredDocs.length">
+                        Не все обязательные документы загружены — вернитесь на шаг 3.
+                      </template>
+                      <template v-else>
+                        Все обязательные документы приложены.
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </FormCard>
+
+            <FormCard>
+              <SectionLabel>Оплата государственной пошлины</SectionLabel>
+
+              <div class="lf-fee">
+                <div class="lf-fee__label">Сумма к оплате</div>
+                <div class="lf-fee__value mono">1 000 сом</div>
+                <div class="lf-fee__hint">Госпошлина за рассмотрение заявки «{{ licenseTypeLabel }}»</div>
+              </div>
+
+              <div class="lf-wizard__grid-2 lf-wizard__gap-sm">
+                <button
+                  type="button"
+                  class="lf-pay-card"
+                  :class="{ 'lf-pay-card--active': paymentMode === 'online' }"
+                  @click="paymentMode = 'online'"
+                >
+                  <div class="lf-pay-card__head">
+                    <div class="lf-pay-card__icon lf-pay-card__icon--brand">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                      </svg>
+                    </div>
+                    <div class="lf-pay-card__title">Оплатить онлайн</div>
+                  </div>
+                  <div class="lf-pay-card__text">Карта Visa / Mastercard или Элдик. Зачисление за 5 минут, автоматический возврат в АИС.</div>
+                </button>
+                <button
+                  type="button"
+                  class="lf-pay-card"
+                  :class="{ 'lf-pay-card--active': paymentMode === 'offline' }"
+                  @click="paymentMode = 'offline'"
+                >
+                  <div class="lf-pay-card__head">
+                    <div class="lf-pay-card__icon lf-pay-card__icon--dark">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" />
+                      </svg>
+                    </div>
+                    <div class="lf-pay-card__title">Я уже оплатил офлайн</div>
+                  </div>
+                  <div class="lf-pay-card__text">Приложите квитанцию из банка или терминала. Подтверждение инспектором до 2 рабочих дней.</div>
+                </button>
+              </div>
+
+              <div v-if="paymentMode === 'offline'" class="lf-offline">
+                <label class="lf-dropzone" :class="{ 'lf-dropzone--filled': offlineReceiptFile }">
+                  <svg v-if="offlineReceiptFile" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                     <path d="M5 12l5 5L20 7" stroke-linecap="round" />
                   </svg>
-                </div>
-                <div>
-                  <div class="lf-preview-docs__title">
-                    Загружено {{ (currentApp?.documents || []).length }} документов
-                    <span v-if="requiredDocs.length">({{ requiredDone }} из {{ requiredDocs.length }} обязательных)</span>
+                  <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v13M6 12l6-5 6 5M4 21h16" />
+                  </svg>
+                  <div>
+                    <div class="lf-dropzone__title">
+                      {{ offlineReceiptFile ? offlineReceiptFile.name : 'Загрузите скан квитанции' }}
+                    </div>
+                    <div class="lf-dropzone__sub">
+                      {{ offlineReceiptFile
+                        ? `${(offlineReceiptFile.size / 1024).toFixed(0)} КБ — кликните чтобы заменить`
+                        : 'PDF или JPG, до 10 МБ' }}
+                    </div>
                   </div>
-                  <div class="lf-preview-docs__sub">
-                    <template v-if="requiredDone < requiredDocs.length">
-                      Не все обязательные документы загружены — вернитесь на шаг 4.
-                    </template>
-                    <template v-else>
-                      Все обязательные документы приложены.
-                    </template>
-                  </div>
+                  <input type="file" accept="application/pdf,image/*" class="lf-dropzone__input" @change="onReceiptFile" />
+                </label>
+                <div class="lf-wizard__grid-2">
+                  <FormField label="Сумма, сом" required>
+                    <input v-model.number="offlineAmount" type="number" class="mono" />
+                  </FormField>
+                  <FormField label="Дата и время оплаты" required>
+                    <input v-model="offlineDate" type="datetime-local" class="mono" />
+                  </FormField>
                 </div>
               </div>
-            </div>
-          </FormCard>
 
-          <!-- ── Step 6: оплата ── -->
-          <FormCard v-if="step === 6">
-            <SectionLabel>Оплата государственной пошлины</SectionLabel>
-
-            <div class="lf-fee">
-              <div class="lf-fee__label">Сумма к оплате</div>
-              <div class="lf-fee__value mono">1 000 сом</div>
-              <div class="lf-fee__hint">Госпошлина за рассмотрение заявки «{{ licenseTypeLabel }}»</div>
-            </div>
-
-            <div class="lf-wizard__grid-2 lf-wizard__gap-sm">
-              <button
-                type="button"
-                class="lf-pay-card"
-                :class="{ 'lf-pay-card--active': paymentMode === 'online' }"
-                @click="paymentMode = 'online'"
-              >
-                <div class="lf-pay-card__head">
-                  <div class="lf-pay-card__icon lf-pay-card__icon--brand">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                    </svg>
-                  </div>
-                  <div class="lf-pay-card__title">Оплатить онлайн</div>
-                </div>
-                <div class="lf-pay-card__text">Карта Visa / Mastercard или Элдик. Зачисление за 5 минут, автоматический возврат в АИС.</div>
-              </button>
-              <button
-                type="button"
-                class="lf-pay-card"
-                :class="{ 'lf-pay-card--active': paymentMode === 'offline' }"
-                @click="paymentMode = 'offline'"
-              >
-                <div class="lf-pay-card__head">
-                  <div class="lf-pay-card__icon lf-pay-card__icon--dark">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" />
-                    </svg>
-                  </div>
-                  <div class="lf-pay-card__title">Я уже оплатил офлайн</div>
-                </div>
-                <div class="lf-pay-card__text">Приложите квитанцию из банка или терминала. Подтверждение инспектором до 2 рабочих дней.</div>
-              </button>
-            </div>
-
-            <div v-if="paymentMode === 'offline'" class="lf-offline">
-              <label class="lf-dropzone" :class="{ 'lf-dropzone--filled': offlineReceiptFile }">
-                <svg v-if="offlineReceiptFile" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <path d="M5 12l5 5L20 7" stroke-linecap="round" />
-                </svg>
-                <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 3v13M6 12l6-5 6 5M4 21h16" />
+              <div class="lf-info-note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
                 </svg>
                 <div>
-                  <div class="lf-dropzone__title">
-                    {{ offlineReceiptFile ? offlineReceiptFile.name : 'Загрузите скан квитанции' }}
-                  </div>
-                  <div class="lf-dropzone__sub">
-                    {{ offlineReceiptFile
-                      ? `${(offlineReceiptFile.size / 1024).toFixed(0)} КБ — кликните чтобы заменить`
-                      : 'PDF или JPG, до 10 МБ' }}
-                  </div>
+                  После отправки заявка попадёт к инспектору. Если будет отказ, квитанция сохранится — повторная оплата не потребуется.
                 </div>
-                <input type="file" accept="application/pdf,image/*" class="lf-dropzone__input" @change="onReceiptFile" />
-              </label>
-              <div class="lf-wizard__grid-2">
-                <FormField label="Сумма, сом" required>
-                  <input v-model.number="offlineAmount" type="number" class="mono" />
-                </FormField>
-                <FormField label="Дата и время оплаты" required>
-                  <input v-model="offlineDate" type="datetime-local" class="mono" />
-                </FormField>
               </div>
-            </div>
-
-            <div class="lf-info-note">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
-              </svg>
-              <div>
-                После отправки заявка попадёт к инспектору. Если будет отказ, квитанция сохранится — повторная оплата не потребуется.
-              </div>
-            </div>
-          </FormCard>
+            </FormCard>
+          </template>
         </div>
 
         <aside class="lf-wizard__side">
@@ -896,7 +815,7 @@ const savedLabel = computed(() => {
           {{ savedLabel }}
         </div>
         <button
-          v-if="step < 6"
+          v-if="step < 4"
           type="button"
           class="lf-btn lf-btn--primary"
           :disabled="saving"
@@ -914,9 +833,7 @@ const savedLabel = computed(() => {
           :disabled="saving"
           @click="submit"
         >
-          {{ saving
-            ? 'Отправка…'
-            : paymentMode === 'online' ? 'Оплатить и отправить' : 'Отправить заявку' }}
+          {{ saving ? 'Отправка…' : submitButtonLabel }}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
@@ -928,9 +845,12 @@ const savedLabel = computed(() => {
 
 <style scoped>
 .lf-wizard {
-  padding: 24px 32px 140px;
-  max-width: 1200px;
-  margin: 0 auto;
+  /* Адаптивный контейнер: на FullHD-мониторах ограничен 1440px (читаемая длина строк
+     в форме), на узких экранах занимает всю ширину; padding-inline растёт с viewport. */
+  width: min(100%, 1440px);
+  margin-inline: auto;
+  padding-block: 24px 140px;
+  padding-inline: clamp(16px, 3vw, 32px);
 }
 .lf-wizard__stepper-card {
   margin-bottom: 20px;
@@ -947,7 +867,9 @@ const savedLabel = computed(() => {
 }
 .lf-wizard__grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  /* Главная колонка тянется (minmax 0 1fr — отрезает протекание длинного текста),
+     sidebar адаптивен от 280px до 360px. */
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 22%, 360px);
   gap: 20px;
   align-items: flex-start;
 }
@@ -963,11 +885,6 @@ const savedLabel = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-.lf-wizard__stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 .lf-wizard__grid-2 {
   display: grid;
@@ -993,17 +910,19 @@ const savedLabel = computed(() => {
   background: var(--lf-amber-050);
   border-color: #fde68a;
 }
+.lf-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--lf-ink-4);
+}
 
-/* ─── pick cards (Step 1 ОПФ и тип заявителя) ─── */
+/* ─── pick cards ─── */
 .lf-pick-grid {
   display: grid;
   gap: 10px;
 }
 .lf-pick-grid--2 {
   grid-template-columns: 1fr 1fr;
-}
-.lf-pick-grid--4 {
-  grid-template-columns: repeat(4, 1fr);
 }
 .lf-pick {
   text-align: left;
@@ -1049,98 +968,11 @@ const savedLabel = computed(() => {
   flex-shrink: 0;
 }
 
-/* ─── kind cards (Step 2 — 6 видов лицензий с hue) ─── */
+/* ─── kind cards ─── */
 .lf-kind-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-}
-.lf-activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.lf-activity-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--lf-line);
-  background: #fff;
-  cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-.lf-activity-row:hover {
-  border-color: var(--lf-brand);
-}
-.lf-activity-row--active {
-  border-color: var(--lf-brand);
-  background: var(--lf-brand-050);
-}
-.lf-activity-row__check {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--lf-brand);
-  flex-shrink: 0;
-}
-.lf-activity-row__title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--lf-ink);
-  width: 130px;
-  flex-shrink: 0;
-}
-.lf-activity-row__sep {
-  color: var(--lf-ink-4);
-  flex-shrink: 0;
-}
-.lf-activity-row__desc {
-  font-size: 12.5px;
-  color: var(--lf-ink-3);
-  flex: 1;
-  min-width: 0;
-}
-@media (max-width: 560px) {
-  .lf-activity-row {
-    flex-wrap: wrap;
-  }
-  .lf-activity-row__title {
-    width: auto;
-  }
-  .lf-activity-row__sep {
-    display: none;
-  }
-  .lf-activity-row__desc {
-    flex-basis: 100%;
-    margin-left: 26px;
-  }
-}
-.lf-term-grid {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.lf-term-chip {
-  padding: 8px 18px;
-  border-radius: 999px;
-  border: 1px solid var(--lf-line);
-  background: #fff;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lf-ink);
-  cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
-}
-.lf-term-chip:hover {
-  border-color: var(--lf-brand);
-  color: var(--lf-brand);
-}
-.lf-term-chip--active {
-  background: var(--lf-brand);
-  border-color: var(--lf-brand);
-  color: #fff;
 }
 .lf-kind {
   text-align: left;
@@ -1184,7 +1016,7 @@ const savedLabel = computed(() => {
   color: var(--lf-brand-700);
 }
 
-/* ─── dropzone Step 4 ─── */
+/* ─── dropzone Step 3 ─── */
 .lf-dropzone-big {
   background: var(--lf-brand-050);
   border: 2px dashed var(--lf-brand-100);
@@ -1232,6 +1064,21 @@ const savedLabel = computed(() => {
   background: var(--lf-bg);
   min-height: 58px;
   align-items: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.lf-activity-box--empty {
+  border-color: var(--lf-amber);
+  background: var(--lf-amber-050);
+}
+.lf-required-hint {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--lf-amber);
+  background: var(--lf-amber-050);
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
 }
 .lf-activity-box__input {
   flex: 1;
@@ -1252,19 +1099,18 @@ const savedLabel = computed(() => {
   font-size: 12px;
   color: var(--lf-ink-4);
 }
-.lf-chip--add {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--lf-brand-050);
-  color: var(--lf-brand-700);
-  border: 1px dashed var(--lf-brand);
-  font-size: 12.5px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-}
-.lf-chip--add:hover {
+.lf-kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--lf-line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--lf-ink-2);
   background: #fff;
+  margin: 0 1px;
+  vertical-align: 1px;
 }
 .lf-chip {
   display: inline-flex;
@@ -1291,14 +1137,26 @@ const savedLabel = computed(() => {
   font-size: 14px;
   line-height: 1;
   padding: 0;
-  display: grid;
-  place-items: center;
 }
 .lf-chip__x:hover {
   color: var(--lf-rose);
 }
+.lf-chip--add {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--lf-brand-050);
+  color: var(--lf-brand-700);
+  border: 1px dashed var(--lf-brand);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.lf-chip--add:hover {
+  background: #fff;
+}
 
-/* ─── documents ─── */
+/* ─── documents (Step 3) ─── */
 .lf-docs-head {
   padding: 14px 20px;
   border-bottom: 1px solid var(--lf-line);
@@ -1413,7 +1271,6 @@ const savedLabel = computed(() => {
   color: #fff;
   white-space: nowrap;
   font-family: inherit;
-  transition: filter 0.12s ease;
 }
 .lf-doc__btn:hover:not(.lf-doc__btn--disabled) {
   filter: brightness(1.08);
@@ -1436,7 +1293,7 @@ const savedLabel = computed(() => {
   display: none;
 }
 
-/* ─── preview (step 5) ─── */
+/* ─── preview (Step 4) ─── */
 .lf-preview-note {
   padding: 12px 14px;
   background: var(--lf-amber-050);
@@ -1464,13 +1321,10 @@ const savedLabel = computed(() => {
   font-weight: 600;
   color: var(--lf-brand-700);
 }
-.lf-preview-term {
-  margin-top: 8px;
-  font-size: 13px;
+.lf-preview-sub {
+  font-size: 12.5px;
   color: var(--lf-ink-3);
-}
-.lf-preview-term b {
-  color: var(--lf-ink);
+  margin-top: 3px;
 }
 .lf-preview-activities {
   display: flex;
@@ -1522,7 +1376,7 @@ const savedLabel = computed(() => {
   text-decoration: underline;
 }
 
-/* ─── payment (step 6) ─── */
+/* ─── payment (Step 4 nested) ─── */
 .lf-fee {
   padding: 18px;
   background: linear-gradient(135deg, var(--lf-brand-050) 0%, #fff 100%);
@@ -1614,7 +1468,6 @@ const savedLabel = computed(() => {
   border-radius: 10px;
   cursor: pointer;
   background: #fff;
-  transition: all 0.12s ease;
 }
 .lf-dropzone:hover {
   border-color: var(--lf-brand);
@@ -1667,8 +1520,12 @@ const savedLabel = computed(() => {
 .lf-wizard__footer {
   position: sticky;
   bottom: 0;
-  margin: 20px -32px 0;
-  padding: 14px 32px;
+  /* Отрицательный margin вычитает padding-inline родителя — чтобы footer
+     прилегал к границам wizard'а независимо от значения clamp(). */
+  margin-block-start: 20px;
+  margin-inline: calc(-1 * clamp(16px, 3vw, 32px));
+  padding-block: 14px;
+  padding-inline: clamp(16px, 3vw, 32px);
   background: #fff;
   border-top: 1px solid var(--lf-line);
   display: flex;
@@ -1750,9 +1607,6 @@ const savedLabel = computed(() => {
   }
 }
 @media (max-width: 760px) {
-  .lf-pick-grid--4 {
-    grid-template-columns: 1fr 1fr;
-  }
   .lf-pick-grid--2 {
     grid-template-columns: 1fr;
   }
@@ -1764,12 +1618,7 @@ const savedLabel = computed(() => {
   .lf-wizard__grid-2 {
     grid-template-columns: 1fr;
   }
-  .lf-wizard {
-    padding: 16px 16px 140px;
-  }
   .lf-wizard__footer {
-    margin: 20px -16px 0;
-    padding: 12px 16px;
     flex-wrap: wrap;
   }
   .lf-wizard__footer-status {

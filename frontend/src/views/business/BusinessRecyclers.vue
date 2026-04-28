@@ -8,7 +8,7 @@ import { toastStore } from '../../stores/toast'
 import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 
 const { t } = useI18n()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 // View mode
 const viewMode = ref<'grid' | 'list'>('grid')

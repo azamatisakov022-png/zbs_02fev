@@ -8,6 +8,12 @@ import { notificationStore } from '../stores/notifications'
 import { feedbackStore } from '../stores/feedback'
 import { contestStore } from '../stores/contests'
 import { authStore } from '../stores/auth'
+import { licenseStore } from '../stores/licenses'
+
+export interface PrimaryAction {
+  label: string
+  route: string
+}
 
 /**
  * Меню для BUSINESS-пользователя.
@@ -19,10 +25,24 @@ import { authStore } from '../stores/auth'
  *   - BOTH      — редкий гибрид (плательщик, одновременно подающий на лицензию).
  *                 Видит оба набора.
  */
+/** Однократный preload заявок для applicant'а при первом заходе в ЛК —
+ *  нужен чтобы бейджи «Мои заявки (N)» и «Мои лицензии (N)» показывали актуальные цифры
+ *  на любой странице ЛК, а не только после клика в «Мои заявки». */
+let applicantApplicationsPreloaded = false
+
 export function useBusinessMenu() {
   const { t } = useI18n()
 
   const bt = computed(() => authStore.state.user?.businessType || 'payer')
+
+  // Для applicant/both триггерим preload заявок один раз за сессию.
+  if ((bt.value === 'applicant' || bt.value === 'both') && !applicantApplicationsPreloaded) {
+    applicantApplicationsPreloaded = true
+    licenseStore.loadMyApplications().catch(() => {
+      // не критично: при ошибке бейджи просто будут 0, пользователь увидит актуал при заходе в раздел
+      applicantApplicationsPreloaded = false
+    })
+  }
 
   // Название роли в сайдбаре зависит от типа: APPLICANT = «Заявитель».
   const roleTitle = computed(() => {
@@ -46,25 +66,58 @@ export function useBusinessMenu() {
   ])
 
   const licenseItems = computed(() => [
-    { id: 'license-applications', label: t('nav.business.licenseApplications') || 'Мои заявки', icon: icons.document, route: '/business/license-applications' },
-    { id: 'my-licenses', label: t('nav.business.myLicenses') || 'Мои лицензии', icon: icons.license, route: '/business/my-licenses' },
+    {
+      id: 'license-applications',
+      label: t('nav.business.licenseApplications') || 'Мои заявки',
+      icon: icons.inbox,
+      route: '/business/license-applications',
+      badge: licenseStore.activeApplicationsCount.value || 0,
+    },
+    {
+      id: 'my-licenses',
+      label: t('nav.business.myLicenses') || 'Мои лицензии',
+      icon: icons.shield,
+      route: '/business/my-licenses',
+      badge: licenseStore.readyLicensesCount.value || 0,
+    },
   ])
 
   const profileItem = computed(() => ({
     id: 'profile', label: t('nav.business.profile'), icon: icons.building, route: '/business/profile',
   }))
 
+  /**
+   * Меню собирается по бизнес-типу:
+   *   - APPLICANT видит только «Мои заявки / Мои лицензии / Профиль». «Главная» и
+   *     «Уведомления» для него — лишние клики (заявитель заходит 1-2 раза в год);
+   *     колокольчик уведомлений доступен в header.
+   *   - PAYER видит полный набор декларационного меню.
+   *   - BOTH — оба набора.
+   */
   const menuItems = computed(() => {
+    if (bt.value === 'applicant') {
+      return [...licenseItems.value, profileItem.value]
+    }
     const items: Array<{ id: string; label: string; icon: unknown; route: string; badge?: number }> = [
       ...commonItems.value,
     ]
     if (bt.value === 'payer' || bt.value === 'both') items.push(...payerItems.value)
-    if (bt.value === 'applicant' || bt.value === 'both') items.push(...licenseItems.value)
+    if (bt.value === 'both') items.push(...licenseItems.value)
     items.push(profileItem.value)
     return items
   })
 
-  return { roleTitle, menuItems, businessType: bt }
+  /**
+   * CTA для applicant: большая зелёная кнопка «Подать новую заявку» над меню.
+   * Для остальных ролей CTA нет — у них меню плотнее и без выраженного главного действия.
+   */
+  const primaryAction = computed<PrimaryAction | null>(() =>
+    bt.value === 'applicant' || bt.value === 'both'
+      ? { label: 'Подать новую заявку', route: '/business/license-applications/new' }
+      : null,
+  )
+
+  return { roleTitle, menuItems, businessType: bt, primaryAction }
 }
 
 export function useEcoOperatorMenu() {

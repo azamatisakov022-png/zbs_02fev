@@ -22,7 +22,10 @@ const scrollToContacts = () => {
 <template>
   <section class="py-8 md:py-12 lg:py-[100px]">
     <div class="container-main">
-      <div class="bg-[#0e888d] rounded-[30px] md:rounded-[40px] lg:rounded-[50px] py-10 md:py-14 lg:py-[60px] px-6 md:px-12 lg:px-[151px] text-center">
+      <div
+        class="rounded-[30px] md:rounded-[40px] lg:rounded-[50px] py-10 md:py-14 lg:py-[60px] px-6 md:px-12 lg:px-[151px] text-center"
+        style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);"
+      >
         <h2 class="text-white text-xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold uppercase mb-4 md:mb-6 lg:mb-[20px]">
           {{ $t('cta.title') }}
         </h2>

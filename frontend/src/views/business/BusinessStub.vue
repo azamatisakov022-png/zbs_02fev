@@ -6,7 +6,7 @@ import StubPage from '../../components/dashboard/StubPage.vue'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 
 const route = useRoute()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 const pageTitles: Record<string, string> = {
   '/business/payments': 'Платежи',

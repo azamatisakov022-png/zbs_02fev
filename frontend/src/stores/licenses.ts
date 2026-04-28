@@ -62,28 +62,38 @@ const activeApplications = computed(() =>
   ),
 )
 
+/** Сколько заявок у applicant'а сейчас «в работе» — для бейджа на «Мои заявки». */
+const activeApplicationsCount = computed(() => activeApplications.value.length)
+
+/** Сколько лицензий выдано (одобренные заявки) — для бейджа на «Мои лицензии». */
+const readyLicensesCount = computed(
+  () => state.myApplications.filter(a => a.status === 'approved').length,
+)
+
 // ─── actions ─────────────────────────────────────────────────────
 
 // Справочники (подгружаются один раз)
 async function loadEnums(licenseTypeForDocs?: LicenseType) {
-  try {
-    const [types, reasons, statuses, docs] = await Promise.all([
-      publicLicensesApi.licenseTypes(),
-      publicLicensesApi.rejectionReasons(),
-      publicLicensesApi.applicationStatuses(),
-      publicLicensesApi.documentTypes(licenseTypeForDocs),
-    ])
-    state.licenseTypesEnum = types
-    state.rejectionReasonsEnum = reasons
-    state.applicationStatusesEnum = statuses
-    state.documentTypesEnum = docs
-  } catch (e) {
-    console.warn('Failed to load license enums', e)
-  }
+  // Параметры бэк принимает в UPPER, фронт хранит в lower. Конвертируем на границе.
+  const upperDocs = licenseTypeForDocs
+    ? (licenseTypeForDocs.toUpperCase() as LicenseType)
+    : undefined
+  // Каждый запрос самостоятелен — если один упадёт, остальные всё равно загрузятся.
+  await Promise.allSettled([
+    publicLicensesApi.licenseTypes().then(v => (state.licenseTypesEnum = v)).catch(e => console.warn('licenseTypes', e)),
+    publicLicensesApi.rejectionReasons().then(v => (state.rejectionReasonsEnum = v)).catch(e => console.warn('rejectionReasons', e)),
+    publicLicensesApi.applicationStatuses().then(v => (state.applicationStatusesEnum = v)).catch(e => console.warn('applicationStatuses', e)),
+    publicLicensesApi.documentTypes(upperDocs).then(v => (state.documentTypesEnum = v)).catch(e => console.warn('documentTypes', e)),
+  ])
 }
 
 async function reloadDocumentTypes(licenseType: LicenseType) {
-  state.documentTypesEnum = await publicLicensesApi.documentTypes(licenseType)
+  try {
+    const upper = licenseType.toUpperCase() as LicenseType
+    state.documentTypesEnum = await publicLicensesApi.documentTypes(upper)
+  } catch (e) {
+    console.warn('reloadDocumentTypes', e)
+  }
 }
 
 // ─── applicant ───
@@ -220,6 +230,8 @@ export const licenseStore = {
   pendingReviewCount,
   overdueCount,
   activeApplications,
+  activeApplicationsCount,
+  readyLicensesCount,
   loadEnums,
   reloadDocumentTypes,
   loadMyApplications,

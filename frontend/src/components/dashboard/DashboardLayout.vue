@@ -20,11 +20,18 @@ interface MenuItem {
   groupDivider?: boolean
 }
 
+interface PrimaryAction {
+  label: string
+  route: string
+}
+
 interface Props {
   role: 'admin' | 'employee' | 'business' | 'eco-operator'
   roleTitle: string
   userName: string
   menuItems: MenuItem[]
+  /** Опциональная primary-CTA кнопка над меню (используется у applicant'а для «Подать новую заявку»). */
+  primaryAction?: PrimaryAction | null
 }
 
 interface NavSection {
@@ -174,8 +181,27 @@ const breadcrumbs = computed(() => {
         </router-link>
       </div>
 
+      <!-- Primary CTA (opt-in per role) -->
+      <div v-if="primaryAction" class="px-3 pt-3">
+        <button
+          @click="navigateTo(primaryAction.route)"
+          class="dashboard-cta w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[14px] font-semibold text-white transition-all"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" />
+          </svg>
+          {{ primaryAction.label }}
+        </button>
+      </div>
+
       <!-- Navigation -->
-      <nav class="p-3 space-y-2 overflow-y-auto h-[calc(100%-5rem-4rem)]" :aria-label="t('common.menu')">
+      <nav
+        :class="[
+          'p-3 space-y-2 overflow-y-auto',
+          primaryAction ? 'h-[calc(100%-5rem-4rem-4rem)]' : 'h-[calc(100%-5rem-4rem)]',
+        ]"
+        :aria-label="t('common.menu')"
+      >
         <div
           v-for="(section, sIdx) in groupedSections"
           :key="sIdx"
@@ -278,6 +304,21 @@ const breadcrumbs = computed(() => {
 </template>
 
 <style scoped>
+.dashboard-cta {
+  background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
+  border: none;
+  box-shadow: 0 6px 18px -8px rgba(13, 148, 136, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+}
+.dashboard-cta:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px -8px rgba(13, 148, 136, 0.6);
+}
+.dashboard-cta:active {
+  transform: translateY(0);
+}
 .nav-item {
   transition: all var(--transition-fast);
 }

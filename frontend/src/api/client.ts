@@ -33,7 +33,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Spring Security отдаёт 403 при истёкшем JWT (через AccessDeniedException),
+    // поэтому refresh пробуем и на 401, и на 403. Флаг _retry страхует от рекурсии —
+    // если после refresh снова 401/403, значит у пользователя реально нет прав.
+    const status = error.response?.status
+    const retryable = (status === 401 || status === 403) && !originalRequest._retry
+    if (retryable) {
       originalRequest._retry = true
 
       const refreshToken = localStorage.getItem('refresh_token')
@@ -48,13 +53,16 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.token}`
           return api(originalRequest)
         } catch {
-          // Refresh failed — clear auth
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('auth_user')
-          window.location.href = '/login'
+          // Refresh failed — clear auth только на 401 (на 403 может быть просто
+          // недостаточно прав — не надо выкидывать пользователя на /login).
+          if (status === 401) {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+            localStorage.removeItem('auth_user')
+            window.location.href = '/login'
+          }
         }
-      } else {
+      } else if (status === 401) {
         localStorage.removeItem('access_token')
         localStorage.removeItem('auth_user')
         window.location.href = '/login'

@@ -24,7 +24,7 @@ import { ReportStatus, statusI18nKey } from '../../constants/statuses'
 
 const { t } = useI18n()
 const router = useRouter()
-const { roleTitle, menuItems } = useBusinessMenu()
+const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 // Loading state
 const isLoading = ref(true)
