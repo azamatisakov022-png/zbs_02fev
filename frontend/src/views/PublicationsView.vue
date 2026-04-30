@@ -6,7 +6,6 @@ import {
   type PublicationCategory,
   type PublicationListItem,
 } from '../types/publications'
-import WasteLifetimePromo from '../components/publications/WasteLifetimePromo.vue'
 import HeroCard from '../components/publications/HeroCard.vue'
 import PubCard from '../components/publications/PubCard.vue'
 import '../components/publications/palette.css'
@@ -84,11 +83,8 @@ function goPage(p: number) {
   <div class="pubs-page pubs">
     <div class="pubs__container">
       <!-- Заголовок и подзаголовок убраны: активная вкладка «Публикации»
-           в шапке + промо-баннер ниже уже задают контекст страницы.
+           в шапке уже задаёт контекст страницы.
            Редакционные ленты не нуждаются в дополнительной обложке. -->
-
-      <!-- Промо-баннер «Сколько живёт ваш мусор?» — постоянный, всегда сверху -->
-      <WasteLifetimePromo class="pubs__promo" />
 
       <!-- Hero — свежая публикация (скрыт при фильтре/поиске) -->
       <HeroCard v-if="heroPub" :pub="heroPub" class="pubs__hero" />
@@ -167,9 +163,6 @@ function goPage(p: number) {
 }
 /* Заголовок «Публикации» удалён вместе с подзаголовком — стили
    .pubs__head / .pubs__title / .pubs__lead больше не нужны. */
-.pubs__promo {
-  margin-bottom: 28px;
-}
 .pubs__hero {
   margin-bottom: 36px;
 }

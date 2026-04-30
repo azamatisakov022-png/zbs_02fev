@@ -702,8 +702,14 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
-    return { top: 0 }
+  scrollBehavior(_to, _from, savedPosition) {
+    // Возврат «назад» — восстанавливаем позицию из истории
+    if (savedPosition) return savedPosition
+    // Ждём окончания leave-фазы page-transition (см. .page-leave-active в style.css = 150ms),
+    // чтобы скролл-сброс произошёл уже невидимым — иначе во время fade-out видно «прыжок» наверх.
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ top: 0 }), 180)
+    })
   },
 })
 
