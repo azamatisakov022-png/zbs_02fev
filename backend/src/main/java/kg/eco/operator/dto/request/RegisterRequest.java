@@ -3,6 +3,7 @@ package kg.eco.operator.dto.request;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import kg.eco.operator.entity.enums.ApplicantType;
 import kg.eco.operator.entity.enums.BusinessType;
 import kg.eco.operator.entity.enums.PayerCategory;
 import lombok.Data;
@@ -29,6 +30,14 @@ public class RegisterRequest {
      * recycler → APPLICANT, смешанный → BOTH).
      */
     private BusinessType businessType;
+
+    /**
+     * Подтип заявителя на лицензию: RECYCLER | LANDFILL | COLLECTION_POINT | OTHER.
+     * Передаётся только когда businessType ∈ {APPLICANT, BOTH}.
+     * Для PAYER оставляется null. Бэк не валидирует обязательность —
+     * пользователь сможет дозаполнить позже в настройках профиля.
+     */
+    private ApplicantType applicantType;
 
     @NotBlank(message = "Email обязателен")
     @Email(message = "Некорректный формат email")

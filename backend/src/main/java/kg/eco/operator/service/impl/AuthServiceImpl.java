@@ -106,6 +106,12 @@ public class AuthServiceImpl implements AuthService {
         user.setCompanyName(request.getCompanyName());
         user.setRole(RoleEnum.BUSINESS);
         user.setBusinessType(businessType);
+        // applicant_type заполняется только если пользователь регистрируется
+        // как заявитель (APPLICANT/BOTH). Для чистого PAYER оставляем NULL.
+        if (businessType == kg.eco.operator.entity.enums.BusinessType.APPLICANT
+                || businessType == kg.eco.operator.entity.enums.BusinessType.BOTH) {
+            user.setApplicantType(request.getApplicantType());
+        }
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setCompany(company);
@@ -182,6 +188,29 @@ public class AuthServiceImpl implements AuthService {
         return buildUserProfile(user);
     }
 
+    @Override
+    public UserProfileResponse updateApplicantType(String inn,
+            kg.eco.operator.dto.request.UpdateApplicantTypeRequest request) {
+        User user = userRepository.findByInn(inn)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь", "ИНН", inn));
+
+        // Менять подтип заявителя имеет смысл только для тех, кто реально
+        // подаёт заявки на лицензию. PAYER без перехода в BOTH не должен
+        // тащить applicant_type — иначе у нас в БД появится бессмысленный
+        // мусор. Если пользователю нужно стать заявителем, он должен
+        // отдельно сменить businessType (этот эндпойнт пока не делаем —
+        // вернёмся к нему, если возникнет реальная потребность).
+        if (user.getBusinessType() != kg.eco.operator.entity.enums.BusinessType.APPLICANT
+                && user.getBusinessType() != kg.eco.operator.entity.enums.BusinessType.BOTH) {
+            throw new UnauthorizedException(
+                    "Изменить тип заявителя может только пользователь с businessType ∈ {applicant, both}");
+        }
+
+        user.setApplicantType(request.getApplicantType());
+        user = userRepository.save(user);
+        return buildUserProfile(user);
+    }
+
     private LoginResponse buildLoginResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getInn());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getInn());
@@ -208,6 +237,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .businessType(user.getBusinessType() != null ? user.getBusinessType().getValue() : null)
+                .applicantType(user.getApplicantType() != null ? user.getApplicantType().getValue() : null)
                 .build();
     }
 

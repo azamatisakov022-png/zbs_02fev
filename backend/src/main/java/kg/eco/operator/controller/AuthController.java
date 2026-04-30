@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import kg.eco.operator.dto.request.LoginRequest;
 import kg.eco.operator.dto.request.RefreshTokenRequest;
 import kg.eco.operator.dto.request.RegisterRequest;
+import kg.eco.operator.dto.request.UpdateApplicantTypeRequest;
 import kg.eco.operator.dto.response.LoginResponse;
 import kg.eco.operator.dto.response.UserProfileResponse;
 import kg.eco.operator.service.AuthService;
@@ -53,5 +54,18 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponse> me(Authentication authentication) {
         return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
+    }
+
+    /**
+     * PATCH /auth/me/applicant-type — смена подтипа заявителя на лицензию.
+     * Доступно BUSINESS-пользователям с businessType ∈ {applicant, both}
+     * через настройки профиля в их ЛК.
+     */
+    @PatchMapping("/me/applicant-type")
+    public ResponseEntity<UserProfileResponse> updateApplicantType(
+            Authentication authentication,
+            @Valid @RequestBody UpdateApplicantTypeRequest request) {
+        return ResponseEntity.ok(
+                authService.updateApplicantType(authentication.getName(), request));
     }
 }

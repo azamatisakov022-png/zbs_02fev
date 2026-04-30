@@ -6,9 +6,68 @@ import { validators, scrollToFirstError } from '../../utils/validators'
 import { useBusinessMenu } from '../../composables/useRoleMenu'
 import { productGroups, getTranslatedGroupLabel } from '../../data/product-groups'
 import { toastStore } from '../../stores/toast'
+import { authStore } from '../../stores/auth'
+import api from '../../api/client'
 
 const { t } = useI18n()
 const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
+
+// ─── Тип учётной записи (businessType + applicantType) ──────────────
+//
+// Меняем ТОЛЬКО applicantType — это пользователь может сам поправить,
+// если, например, перерегистрировался с одного типа объекта на другой.
+// businessType (плательщик / заявитель / оба) меняется только админом
+// или через пересоздание учётки — слишком завязано на платежные сущности
+// (Payer-запись и Account создаются при регистрации).
+type ApplicantTypeValue = 'recycler' | 'landfill' | 'collection_point' | 'other'
+
+const businessType = computed(() => authStore.state.user?.businessType || 'payer')
+const isApplicantOrBoth = computed(
+  () => businessType.value === 'applicant' || businessType.value === 'both',
+)
+const currentApplicantType = computed<ApplicantTypeValue | null>(
+  () => (authStore.state.user?.applicantType as ApplicantTypeValue | null) || null,
+)
+const applicantTypeDraft = ref<ApplicantTypeValue | ''>('')
+const savingApplicantType = ref(false)
+
+const applicantTypeOptions: Array<{ value: ApplicantTypeValue; labelKey: string }> = [
+  { value: 'recycler', labelKey: 'register.applicantSubtypes.recycler' },
+  { value: 'landfill', labelKey: 'register.applicantSubtypes.landfill' },
+  { value: 'collection_point', labelKey: 'register.applicantSubtypes.collectionPoint' },
+  { value: 'other', labelKey: 'register.applicantSubtypes.other' },
+]
+
+const applicantTypeChanged = computed(
+  () => applicantTypeDraft.value !== '' && applicantTypeDraft.value !== currentApplicantType.value,
+)
+
+async function saveApplicantType() {
+  if (!applicantTypeChanged.value) return
+  savingApplicantType.value = true
+  try {
+    const { data } = await api.patch('/auth/me/applicant-type', {
+      applicantType: applicantTypeDraft.value,
+    })
+    // Обновляем cache юзера в auth-сторе, чтобы сайдбар/префилл подхватили
+    if (authStore.state.user) {
+      authStore.state.user.applicantType = data.applicantType
+      localStorage.setItem('auth_user', JSON.stringify(authStore.state.user))
+    }
+    toastStore.show({ type: 'success', title: t('businessProfile.applicantTypeUpdated') })
+  } catch (e: any) {
+    toastStore.show({
+      type: 'error',
+      title: t('businessProfile.error'),
+      message: e?.response?.data?.message || '',
+    })
+  } finally {
+    savingApplicantType.value = false
+  }
+}
+
+// Инициализация draft значением из стора (один раз при монтировании компонента)
+applicantTypeDraft.value = currentApplicantType.value ?? ''
 
 // Company data
 const companyData = ref({
@@ -336,6 +395,67 @@ const toggleTwoFactor = () => {
               <div class="absolute inset-0 flex items-center justify-center">
                 <span class="text-lg font-bold">{{ profileCompletion }}%</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Тип учётной записи ─── -->
+      <!-- Показывает текущий businessType и (для заявителей) позволяет
+           сменить applicantType. Это нужно когда переработчик, например,
+           переоборудовал площадку в полигон — без обращения в админку. -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h2 class="text-lg font-bold text-gray-900">{{ $t('businessProfile.accountType.title') }}</h2>
+          </div>
+        </div>
+        <div class="p-6 space-y-5">
+          <!-- Текущий businessType (read-only) -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div class="text-sm text-gray-500">{{ $t('businessProfile.accountType.role') }}</div>
+              <div class="font-medium text-gray-900 mt-0.5">
+                <span v-if="businessType === 'payer'">{{ $t('register.payerCard.title') }}</span>
+                <span v-else-if="businessType === 'applicant'">{{ $t('register.applicantCard.title') }}</span>
+                <span v-else>
+                  {{ $t('register.payerCard.title') }} + {{ $t('register.applicantCard.title') }}
+                </span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-400 max-w-md">
+              {{ $t('businessProfile.accountType.roleHint') }}
+            </div>
+          </div>
+
+          <!-- Применимо только заявителям/обоим — выбор подтипа -->
+          <div v-if="isApplicantOrBoth" class="border-t border-gray-100 pt-5">
+            <label class="block text-sm font-medium text-gray-900 mb-2">
+              {{ $t('businessProfile.accountType.applicantTypeLabel') }}
+            </label>
+            <p class="text-xs text-gray-500 mb-3">{{ $t('businessProfile.accountType.applicantTypeHint') }}</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <select
+                v-model="applicantTypeDraft"
+                class="flex-1 max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-600"
+              >
+                <option value="" disabled>{{ $t('businessProfile.accountType.selectPlaceholder') }}</option>
+                <option v-for="opt in applicantTypeOptions" :key="opt.value" :value="opt.value">
+                  {{ $t(opt.labelKey) }}
+                </option>
+              </select>
+              <button
+                :disabled="!applicantTypeChanged || savingApplicantType"
+                @click="saveApplicantType"
+                class="px-5 py-2 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ savingApplicantType ? $t('common.saving') : $t('common.save') }}
+              </button>
             </div>
           </div>
         </div>

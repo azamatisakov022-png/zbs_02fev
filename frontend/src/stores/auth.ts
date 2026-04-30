@@ -11,6 +11,12 @@ export interface AuthUser {
   phone: string
   /** Для role='business': PAYER (утильсбор), APPLICANT (только лицензии), BOTH. */
   businessType?: 'payer' | 'applicant' | 'both'
+  /**
+   * Подтип заявителя на лицензию. Заполнен только если businessType ∈
+   * {applicant, both}. Используется для предзаполнения формы первой
+   * заявки на лицензию и в настройках профиля.
+   */
+  applicantType?: 'recycler' | 'landfill' | 'collection_point' | 'other' | null
 }
 
 interface AuthState {

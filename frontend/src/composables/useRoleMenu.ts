@@ -136,6 +136,7 @@ export function useEcoOperatorMenu() {
     { id: 'profile', label: t('nav.ecoOperator.profile'), icon: icons.profile, route: '/eco-operator/profile' },
     { id: 'payers', label: t('nav.ecoOperator.payers'), icon: icons.registries, route: '/eco-operator/payers' },
     { id: 'recyclers-registry', label: t('nav.ecoOperator.recyclers'), icon: icons.recycle, route: '/eco-operator/recyclers' },
+    { id: 'publications', label: 'Публикации', icon: icons.publications, route: '/admin/publications' },
     // Пункт «Реестр лицензий» убран: лицензия — атрибут переработчика, а не отдельная сущность
     // для Эко Оператора. Статус лицензии теперь виден в реестре переработчиков.
   ])
@@ -161,6 +162,7 @@ export function useEmployeeMenu() {
     // Секция: Аналитика
     { id: 'analytics', label: t('nav.employee.analytics'), icon: icons.analytics, route: '/ministry/analytics', groupTitle: t('nav.employee.sections.analytics') },
     { id: 'reports', label: t('nav.employee.reports'), icon: icons.report, route: '/employee/reports' },
+    { id: 'publications', label: 'Публикации', icon: icons.publications, route: '/admin/publications' },
 
     // Секция: Система
     { id: 'audit', label: t('nav.employee.audit'), icon: icons.audit, route: '/employee/audit', groupTitle: t('nav.employee.sections.system') },
@@ -180,6 +182,7 @@ export function useAdminMenu() {
     { id: 'users', label: t('nav.admin.users'), icon: icons.users, route: '/admin/users' },
     { id: 'roles', label: t('nav.admin.roles'), icon: icons.shield, route: '/admin/roles' },
     { id: 'references', label: t('nav.admin.references'), icon: icons.registries, route: '/admin/references' },
+    { id: 'publications', label: 'Публикации', icon: icons.publications, route: '/admin/publications' },
     { id: 'audit', label: t('nav.admin.audit'), icon: icons.audit, route: '/admin/audit' },
     { id: 'notifications', label: t('nav.admin.notifications'), icon: icons.notification, route: '/admin/notifications' },
     { id: 'settings', label: t('nav.admin.settings'), icon: icons.settings, route: '/admin/settings' },

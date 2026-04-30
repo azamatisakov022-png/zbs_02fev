@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/publications/WasteLifetime.vue'),
   },
   {
+    path: '/publications/:slug',
+    name: 'publication-detail',
+    component: () => import('../views/publications/PublicationDetailView.vue'),
+  },
+  {
     path: '/registries',
     name: 'registries',
     component: () => import('../views/RegistriesView.vue'),
@@ -161,6 +166,27 @@ const routes: RouteRecordRaw[] = [
     name: 'admin-settings',
     component: () => import('../views/admin/AdminSettings.vue'),
     meta: { requiresAuth: true, role: 'admin', breadcrumbLabel: 'breadcrumb.adminSettings' },
+  },
+  // ─── Публикации (CMS) ─ доступ: admin, employee/ministry, eco-operator ─
+  // role: 'cms-editor' — синтетическая роль, маппится на 4 backend-роли
+  // в guard'е ниже. Одна страница для всех редакторов.
+  {
+    path: '/admin/publications',
+    name: 'admin-publications',
+    component: () => import('../views/admin/AdminPublications.vue'),
+    meta: { requiresAuth: true, role: 'cms-editor', breadcrumbLabel: 'breadcrumb.adminPublications' },
+  },
+  {
+    path: '/admin/publications/new',
+    name: 'admin-publication-new',
+    component: () => import('../views/admin/AdminPublicationForm.vue'),
+    meta: { requiresAuth: true, role: 'cms-editor', breadcrumbLabel: 'breadcrumb.adminPublicationNew' },
+  },
+  {
+    path: '/admin/publications/:id/edit',
+    name: 'admin-publication-edit',
+    component: () => import('../views/admin/AdminPublicationForm.vue'),
+    meta: { requiresAuth: true, role: 'cms-editor', breadcrumbLabel: 'breadcrumb.adminPublicationEdit' },
   },
   // Redirects for removed admin pages
   {
@@ -707,6 +733,9 @@ router.beforeEach((to, _from, next) => {
         'employee': ['employee', 'ministry'],
         'eco-operator': ['eco-operator'],
         'business': ['business'],
+        // Синтетическая роль для CMS «Публикации» — доступ редакторам
+        // обоих ведомств плюс админу.
+        'cms-editor': ['admin', 'employee', 'ministry', 'eco-operator'],
       }
       const allowedBackendRoles = roleMap[requiredRole] || [requiredRole]
       if (!allowedBackendRoles.includes(userRole)) {

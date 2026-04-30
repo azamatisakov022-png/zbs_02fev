@@ -24,8 +24,22 @@ const esiData = reactive({
 })
 
 // ESI simplified form
+//
+// Раньше тут был один селект `activityType` (importer/producer/both/recycler/mixed),
+// в котором смешивались две независимые роли в системе: «плательщик утильсбора»
+// и «заявитель на лицензию». Это приводило к скрытой семантике на UI —
+// пользователь не понимал, что выбор «Переработчик» = «вы заявитель на лицензию,
+// без раздела утильсбора», и попадал в неправильный кабинет.
+//
+// Теперь два независимых флага + по одному подтипу на каждую роль:
+//   isPayer + payerSubtype  ('importer' | 'producer' | 'both')
+//   isApplicant + applicantSubtype  ('recycler' | 'landfill' | 'collection_point' | 'other')
+// Можно отметить и оба — это даёт businessType=BOTH.
 const esiForm = reactive({
-  activityType: '',
+  isPayer: false,
+  isApplicant: false,
+  payerSubtype: '' as '' | 'importer' | 'producer' | 'both',
+  applicantSubtype: '' as '' | 'recycler' | 'landfill' | 'collection_point' | 'other',
   wasteCategories: [] as string[],
   recyclerCapacities: [] as { wasteType: string, capacityTons: number }[],
   confirmData: false,
@@ -118,17 +132,33 @@ const toggleAllWaste = () => {
 }
 
 const validateEsiForm = (): boolean => {
-  esiFormErrors.activityType = ''
+  esiFormErrors.userType = ''
+  esiFormErrors.payerSubtype = ''
+  esiFormErrors.applicantSubtype = ''
   esiFormErrors.wasteCategories = ''
 
-  if (!esiForm.activityType) {
-    esiFormErrors.activityType = t('register.errors.selectActivityType')
+  // Должна быть выбрана хотя бы одна роль
+  if (!esiForm.isPayer && !esiForm.isApplicant) {
+    esiFormErrors.userType = t('register.errors.selectActivityType')
   }
+  // Если плательщик — обязателен подвыбор импортёр/производитель/оба
+  if (esiForm.isPayer && !esiForm.payerSubtype) {
+    esiFormErrors.payerSubtype = t('register.errors.selectActivityType')
+  }
+  // Если заявитель — обязателен подвыбор переработчик/полигон/…
+  if (esiForm.isApplicant && !esiForm.applicantSubtype) {
+    esiFormErrors.applicantSubtype = t('register.errors.selectActivityType')
+  }
+  // Категории отходов нужны и плательщику (для декларирования), и заявителю
+  // (для предпочистки groups в форме заявки на лицензию). Запрашиваем у обоих.
   if (esiForm.wasteCategories.length === 0) {
     esiFormErrors.wasteCategories = t('register.errors.selectAtLeastOneCategory')
   }
 
-  return !esiFormErrors.activityType && !esiFormErrors.wasteCategories
+  return !esiFormErrors.userType
+      && !esiFormErrors.payerSubtype
+      && !esiFormErrors.applicantSubtype
+      && !esiFormErrors.wasteCategories
 }
 
 const isEsiSubmitting = ref(false)
@@ -224,19 +254,17 @@ const individualOrgTypes = ['ip', 'kfh']
 
 const isIndividual = computed(() => individualOrgTypes.includes(formData.orgType))
 
-const activityTypes = computed(() => [
-  { value: 'importer', label: t('register.activityTypes.importer') },
-  { value: 'producer', label: t('register.activityTypes.producer') },
-  { value: 'both', label: t('register.activityTypes.both') },
-  { value: 'recycler', label: t('register.activityTypes.recycler') },
-  // Смешанный — плательщик утильсбора, который также сам перерабатывает свои товары.
-  // Редкий сценарий (BusinessType=BOTH на бэке).
-  { value: 'mixed', label: t('register.activityTypes.mixed') || 'Смешанный (импортёр/производитель + переработчик)' },
-])
+// Старый плоский список activityTypes удалён: вместо него — две независимые
+// карточки isPayer/isApplicant с подвыборами (см. формы выше). Сводный
+// человекочитаемый текст для review-экрана собирается в buildUserTypeSummary().
 
 const formData = reactive({
   orgType: '',
-  activityType: '',
+  // См. комментарий к esiForm выше — здесь та же двух-ролевая модель.
+  isPayer: false,
+  isApplicant: false,
+  payerSubtype: '' as '' | 'importer' | 'producer' | 'both',
+  applicantSubtype: '' as '' | 'recycler' | 'landfill' | 'collection_point' | 'other',
   shortName: '',
   fullName: '',
   inn: '',
@@ -302,10 +330,23 @@ const validatePhone = (phone: string): boolean => {
 
 const validateStep1 = (): boolean => {
   errors.orgType = ''
-  errors.activityType = ''
+  errors.userType = ''
+  errors.payerSubtype = ''
+  errors.applicantSubtype = ''
   if (!formData.orgType) errors.orgType = t('register.errors.selectOrgType')
-  if (!formData.activityType) errors.activityType = t('register.errors.selectActivityType')
-  return !errors.orgType && !errors.activityType
+  if (!formData.isPayer && !formData.isApplicant) {
+    errors.userType = t('register.errors.selectActivityType')
+  }
+  if (formData.isPayer && !formData.payerSubtype) {
+    errors.payerSubtype = t('register.errors.selectActivityType')
+  }
+  if (formData.isApplicant && !formData.applicantSubtype) {
+    errors.applicantSubtype = t('register.errors.selectActivityType')
+  }
+  return !errors.orgType
+      && !errors.userType
+      && !errors.payerSubtype
+      && !errors.applicantSubtype
 }
 
 const validateStep2 = (): boolean => {
@@ -482,29 +523,38 @@ const isSuccess = ref(false)
 const registrationNumber = ref('')
 
 /**
- * Маппинг activityType фронт-формы → businessType + PayerCategory бэка.
- *   importer / producer / both → PAYER (плательщик утильсбора)
- *   recycler                   → APPLICANT (только лицензия)
- *   mixed                      → BOTH (редкий гибрид: платит + перерабатывает сам)
+/**
+ * Маппинг роли (плательщик / заявитель / оба) и подтипов в формат бэка:
+ *   businessType   — payer | applicant | both
+ *   payerCategory  — importer | producer | importer_producer (только для PAYER/BOTH)
+ *   applicantType  — recycler | landfill | collection_point | other (только для APPLICANT/BOTH)
  */
-function mapActivityToBusinessType(activityType: string): {
+function mapRolesToBackend(input: {
+  isPayer: boolean
+  isApplicant: boolean
+  payerSubtype: string
+  applicantSubtype: string
+}): {
   businessType: 'payer' | 'applicant' | 'both'
   payerCategory: 'importer' | 'producer' | 'importer_producer' | null
+  applicantType: 'recycler' | 'landfill' | 'collection_point' | 'other' | null
 } {
-  switch (activityType) {
-    case 'recycler':
-      return { businessType: 'applicant', payerCategory: null }
-    case 'importer':
-      return { businessType: 'payer', payerCategory: 'importer' }
-    case 'producer':
-      return { businessType: 'payer', payerCategory: 'producer' }
-    case 'both':
-      return { businessType: 'payer', payerCategory: 'importer_producer' }
-    case 'mixed':
-      return { businessType: 'both', payerCategory: 'importer_producer' }
-    default:
-      return { businessType: 'payer', payerCategory: 'importer' }
-  }
+  const businessType: 'payer' | 'applicant' | 'both' =
+    input.isPayer && input.isApplicant ? 'both'
+    : input.isApplicant ? 'applicant'
+    : 'payer'
+
+  const payerCategory = input.isPayer
+    ? (input.payerSubtype === 'both' ? 'importer_producer'
+        : input.payerSubtype === 'producer' ? 'producer'
+        : 'importer')
+    : null
+
+  const applicantType = input.isApplicant
+    ? (input.applicantSubtype as 'recycler' | 'landfill' | 'collection_point' | 'other')
+    : null
+
+  return { businessType, payerCategory, applicantType }
 }
 
 const submitRegistration = async () => {
@@ -519,13 +569,19 @@ const submitRegistration = async () => {
   isSubmitting.value = true
 
   try {
-    const { businessType, payerCategory } = mapActivityToBusinessType(formData.activityType)
+    const { businessType, payerCategory, applicantType } = mapRolesToBackend({
+      isPayer: formData.isPayer,
+      isApplicant: formData.isApplicant,
+      payerSubtype: formData.payerSubtype,
+      applicantSubtype: formData.applicantSubtype,
+    })
     const payload = {
       inn: formData.inn,
       companyName: formData.fullName || formData.shortName || formData.companyName,
       legalForm: formData.orgType || 'ОсОО',
       category: payerCategory,
       businessType,
+      applicantType,
       email: formData.email,
       phone: formData.phone,
       password: formData.password || 'changeme123',
@@ -552,8 +608,26 @@ const getOrgTypeLabel = (value: string) => {
   return orgTypes.value.find(t => t.value === value)?.label || value
 }
 
-const getActivityTypeLabel = (value: string) => {
-  return activityTypes.value.find(t => t.value === value)?.label || value
+/**
+ * Сводный человекочитаемый текст для шага «Подтверждение».
+ * Складываем выбранные роли + подтипы в одну строку для review.
+ */
+const buildUserTypeSummary = (): string => {
+  const parts: string[] = []
+  if (formData.isPayer) {
+    const sub = formData.payerSubtype
+      ? t(`register.payerSubtypes.${formData.payerSubtype === 'both' ? 'both' : formData.payerSubtype}`)
+      : ''
+    parts.push(`${t('register.payerCard.title')}${sub ? ` (${sub})` : ''}`)
+  }
+  if (formData.isApplicant) {
+    const subKey = formData.applicantSubtype === 'collection_point'
+      ? 'collectionPoint'
+      : formData.applicantSubtype
+    const sub = subKey ? t(`register.applicantSubtypes.${subKey}`) : ''
+    parts.push(`${t('register.applicantCard.title')}${sub ? ` (${sub})` : ''}`)
+  }
+  return parts.join(' + ') || '—'
 }
 
 const toggleProductGroup = (value: string) => {
@@ -793,30 +867,116 @@ const goHome = () => {
             <span class="font-semibold text-[#1e293b]">{{ $t('register.additionalInfo') }}</span>
           </div>
           <div class="p-6 space-y-6">
-            <!-- Activity Type -->
+            <!-- ─── Кто вы? — 2 карточки + сабкатегории ─── -->
+            <!--
+              Вместо одного селекта «Вид деятельности» с 5 вариантами теперь две
+              независимые карточки: «Плательщик утильсбора» и «Заявитель на лицензию».
+              Можно выбрать обе (тогда businessType=BOTH). Сабкатегории внутри
+              карточки появляются только когда сама карточка выбрана.
+            -->
             <div>
-              <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.activityType') }} *</label>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label
-                  v-for="type in activityTypes"
-                  :key="type.value"
+              <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.whoAreYou') }} *</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Карточка: Плательщик утильсбора -->
+                <div
                   :class="[
-                    'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
-                    esiForm.activityType === type.value
+                    'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                    esiForm.isPayer
                       ? 'border-[#0e888d] bg-[#f0fdfa]'
-                      : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                      : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
                   ]"
+                  @click="esiForm.isPayer = !esiForm.isPayer; if (!esiForm.isPayer) esiForm.payerSubtype = ''"
                 >
-                  <input
-                    type="radio"
-                    v-model="esiForm.activityType"
-                    :value="type.value"
-                    class="w-5 h-5 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
-                  />
-                  <span class="text-sm text-[#1e293b]">{{ type.label }}</span>
-                </label>
+                  <div class="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      :checked="esiForm.isPayer"
+                      @click.stop
+                      @change="esiForm.isPayer = ($event.target as HTMLInputElement).checked; if (!esiForm.isPayer) esiForm.payerSubtype = ''"
+                      class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                    />
+                    <div class="flex-1">
+                      <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.payerCard.title') }}</div>
+                      <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.payerCard.subtitle') }}</div>
+                      <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.payerCard.cabinet') }}</div>
+                    </div>
+                  </div>
+                  <!-- Подвыбор плательщика — раскрывается, когда карточка отмечена -->
+                  <div v-if="esiForm.isPayer" class="mt-4 pl-8 space-y-2" @click.stop>
+                    <label
+                      v-for="opt in [
+                        { value: 'importer', label: $t('register.payerSubtypes.importer') },
+                        { value: 'producer', label: $t('register.payerSubtypes.producer') },
+                        { value: 'both', label: $t('register.payerSubtypes.both') },
+                      ]"
+                      :key="opt.value"
+                      class="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        v-model="esiForm.payerSubtype"
+                        :value="opt.value"
+                        class="w-4 h-4 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                      />
+                      <span class="text-sm text-[#334155]">{{ opt.label }}</span>
+                    </label>
+                    <p v-if="esiFormErrors.payerSubtype" class="mt-1 text-xs text-red-600">
+                      {{ esiFormErrors.payerSubtype }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Карточка: Заявитель на лицензию -->
+                <div
+                  :class="[
+                    'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                    esiForm.isApplicant
+                      ? 'border-[#0e888d] bg-[#f0fdfa]'
+                      : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
+                  ]"
+                  @click="esiForm.isApplicant = !esiForm.isApplicant; if (!esiForm.isApplicant) esiForm.applicantSubtype = ''"
+                >
+                  <div class="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      :checked="esiForm.isApplicant"
+                      @click.stop
+                      @change="esiForm.isApplicant = ($event.target as HTMLInputElement).checked; if (!esiForm.isApplicant) esiForm.applicantSubtype = ''"
+                      class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                    />
+                    <div class="flex-1">
+                      <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.applicantCard.title') }}</div>
+                      <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.applicantCard.subtitle') }}</div>
+                      <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.applicantCard.cabinet') }}</div>
+                    </div>
+                  </div>
+                  <!-- Подвыбор заявителя — что именно за организация -->
+                  <div v-if="esiForm.isApplicant" class="mt-4 pl-8 space-y-2" @click.stop>
+                    <label
+                      v-for="opt in [
+                        { value: 'recycler', label: $t('register.applicantSubtypes.recycler') },
+                        { value: 'landfill', label: $t('register.applicantSubtypes.landfill') },
+                        { value: 'collection_point', label: $t('register.applicantSubtypes.collectionPoint') },
+                        { value: 'other', label: $t('register.applicantSubtypes.other') },
+                      ]"
+                      :key="opt.value"
+                      class="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        v-model="esiForm.applicantSubtype"
+                        :value="opt.value"
+                        class="w-4 h-4 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                      />
+                      <span class="text-sm text-[#334155]">{{ opt.label }}</span>
+                    </label>
+                    <p v-if="esiFormErrors.applicantSubtype" class="mt-1 text-xs text-red-600">
+                      {{ esiFormErrors.applicantSubtype }}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p v-if="esiFormErrors.activityType" class="mt-2 text-sm text-red-600">{{ esiFormErrors.activityType }}</p>
+              <p v-if="esiFormErrors.userType" class="mt-2 text-sm text-red-600">{{ esiFormErrors.userType }}</p>
             </div>
 
             <!-- Waste Categories (24 группы по ПКМ КР №322) -->
@@ -866,8 +1026,8 @@ const goHome = () => {
 
               <p v-if="esiFormErrors.wasteCategories" class="mt-2 text-sm text-red-600">{{ esiFormErrors.wasteCategories }}</p>
 
-              <!-- Recycler Capacities (ESI) -->
-              <div v-if="esiForm.activityType === 'recycler' && esiForm.wasteCategories.length > 0" class="mt-6">
+              <!-- Recycler Capacities (ESI) — показываем только переработчикам -->
+              <div v-if="esiForm.isApplicant && esiForm.applicantSubtype === 'recycler' && esiForm.wasteCategories.length > 0" class="mt-6">
                 <h3 class="text-base font-semibold text-[#1e293b] mb-1">{{ $t('register.recyclingCapacity') }}</h3>
                 <p class="text-sm text-[#64748b] mb-4">{{ $t('register.recyclingCapacityHint') }}</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1085,29 +1245,104 @@ const goHome = () => {
                   <p v-if="errors.orgType" class="mt-2 text-sm text-red-600">{{ errors.orgType }}</p>
                 </div>
 
+                <!-- ─── Кто вы? — 2 карточки + сабкатегории (manual) ─── -->
                 <div>
-                  <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.activityType') }} *</label>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label
-                      v-for="type in activityTypes"
-                      :key="type.value"
+                  <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.whoAreYou') }} *</label>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Карточка: Плательщик -->
+                    <div
                       :class="[
-                        'flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all',
-                        formData.activityType === type.value
+                        'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                        formData.isPayer
                           ? 'border-[#0e888d] bg-[#f0fdfa]'
-                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50'
+                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
                       ]"
+                      @click="formData.isPayer = !formData.isPayer; if (!formData.isPayer) formData.payerSubtype = ''"
                     >
-                      <input
-                        type="radio"
-                        v-model="formData.activityType"
-                        :value="type.value"
-                        class="w-5 h-5 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
-                      />
-                      <span class="text-sm text-[#1e293b]">{{ type.label }}</span>
-                    </label>
+                      <div class="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          :checked="formData.isPayer"
+                          @click.stop
+                          @change="formData.isPayer = ($event.target as HTMLInputElement).checked; if (!formData.isPayer) formData.payerSubtype = ''"
+                          class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                        />
+                        <div class="flex-1">
+                          <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.payerCard.title') }}</div>
+                          <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.payerCard.subtitle') }}</div>
+                          <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.payerCard.cabinet') }}</div>
+                        </div>
+                      </div>
+                      <div v-if="formData.isPayer" class="mt-4 pl-8 space-y-2" @click.stop>
+                        <label
+                          v-for="opt in [
+                            { value: 'importer', label: $t('register.payerSubtypes.importer') },
+                            { value: 'producer', label: $t('register.payerSubtypes.producer') },
+                            { value: 'both', label: $t('register.payerSubtypes.both') },
+                          ]"
+                          :key="opt.value"
+                          class="flex items-center gap-2 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            v-model="formData.payerSubtype"
+                            :value="opt.value"
+                            class="w-4 h-4 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                          />
+                          <span class="text-sm text-[#334155]">{{ opt.label }}</span>
+                        </label>
+                        <p v-if="errors.payerSubtype" class="mt-1 text-xs text-red-600">{{ errors.payerSubtype }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Карточка: Заявитель -->
+                    <div
+                      :class="[
+                        'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                        formData.isApplicant
+                          ? 'border-[#0e888d] bg-[#f0fdfa]'
+                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
+                      ]"
+                      @click="formData.isApplicant = !formData.isApplicant; if (!formData.isApplicant) formData.applicantSubtype = ''"
+                    >
+                      <div class="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          :checked="formData.isApplicant"
+                          @click.stop
+                          @change="formData.isApplicant = ($event.target as HTMLInputElement).checked; if (!formData.isApplicant) formData.applicantSubtype = ''"
+                          class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                        />
+                        <div class="flex-1">
+                          <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.applicantCard.title') }}</div>
+                          <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.applicantCard.subtitle') }}</div>
+                          <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.applicantCard.cabinet') }}</div>
+                        </div>
+                      </div>
+                      <div v-if="formData.isApplicant" class="mt-4 pl-8 space-y-2" @click.stop>
+                        <label
+                          v-for="opt in [
+                            { value: 'recycler', label: $t('register.applicantSubtypes.recycler') },
+                            { value: 'landfill', label: $t('register.applicantSubtypes.landfill') },
+                            { value: 'collection_point', label: $t('register.applicantSubtypes.collectionPoint') },
+                            { value: 'other', label: $t('register.applicantSubtypes.other') },
+                          ]"
+                          :key="opt.value"
+                          class="flex items-center gap-2 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            v-model="formData.applicantSubtype"
+                            :value="opt.value"
+                            class="w-4 h-4 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                          />
+                          <span class="text-sm text-[#334155]">{{ opt.label }}</span>
+                        </label>
+                        <p v-if="errors.applicantSubtype" class="mt-1 text-xs text-red-600">{{ errors.applicantSubtype }}</p>
+                      </div>
+                    </div>
                   </div>
-                  <p v-if="errors.activityType" class="mt-2 text-sm text-red-600">{{ errors.activityType }}</p>
+                  <p v-if="errors.userType" class="mt-2 text-sm text-red-600">{{ errors.userType }}</p>
                 </div>
               </div>
             </div>
@@ -1307,7 +1542,7 @@ const goHome = () => {
                   <p v-if="errors.selectedProductGroups" class="mt-2 text-sm text-red-600">{{ errors.selectedProductGroups }}</p>
 
                   <!-- Recycler Capacities (Manual) -->
-                  <div v-if="formData.activityType === 'recycler' && formData.selectedProductGroups.length > 0" class="mt-6">
+                  <div v-if="formData.isApplicant && formData.applicantSubtype === 'recycler' && formData.selectedProductGroups.length > 0" class="mt-6">
                     <h3 class="text-base font-semibold text-[#1e293b] mb-1">{{ $t('register.recyclingCapacity') }}</h3>
                     <p class="text-sm text-[#64748b] mb-4">{{ $t('register.recyclingCapacityHintManual') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1686,8 +1921,8 @@ const goHome = () => {
                       <p class="font-medium text-[#1e293b]">{{ getOrgTypeLabel(formData.orgType) }}</p>
                     </div>
                     <div>
-                      <span class="text-[#64748b]">{{ $t('register.activityType') }}:</span>
-                      <p class="font-medium text-[#1e293b]">{{ getActivityTypeLabel(formData.activityType) }}</p>
+                      <span class="text-[#64748b]">{{ $t('register.whoAreYou') }}:</span>
+                      <p class="font-medium text-[#1e293b]">{{ buildUserTypeSummary() }}</p>
                     </div>
                   </div>
                 </div>
@@ -1777,7 +2012,7 @@ const goHome = () => {
                   </p>
 
                   <!-- Recycler capacities in review -->
-                  <div v-if="formData.activityType === 'recycler' && formData.recyclerCapacities.length > 0">
+                  <div v-if="formData.isApplicant && formData.applicantSubtype === 'recycler' && formData.recyclerCapacities.length > 0">
                     <h4 class="font-medium text-[#1e293b] mb-2">{{ $t('register.recyclingCapacityTitle') }}</h4>
                     <div class="space-y-1">
                       <div v-for="cap in formData.recyclerCapacities" :key="'review-cap-' + cap.wasteType" class="flex items-center justify-between text-sm">

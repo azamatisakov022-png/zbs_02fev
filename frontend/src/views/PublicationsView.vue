@@ -1,268 +1,340 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { publicPublicationsApi } from '../api/publications'
+import {
+  CATEGORY_LABELS,
+  type PublicationCategory,
+  type PublicationListItem,
+} from '../types/publications'
+import WasteLifetimePromo from '../components/publications/WasteLifetimePromo.vue'
+import HeroCard from '../components/publications/HeroCard.vue'
+import PubCard from '../components/publications/PubCard.vue'
+import '../components/publications/palette.css'
 
-const { t } = useI18n()
-const router = useRouter()
+const items = ref<PublicationListItem[]>([])
+const total = ref(0)
+const loading = ref(false)
+const error = ref('')
 
-function goToWasteLifetime() {
-  router.push('/publications/waste-lifetime')
-}
+const search = ref('')
+const category = ref<PublicationCategory | ''>('')
+const page = ref(0)
+const SIZE = 12
 
-interface Publication {
-  id: number
-  icon: string
-  title: string
-  description: string
-  date: string
-  slug?: string
-}
+const categoryOptions = Object.entries(CATEGORY_LABELS) as [PublicationCategory, string][]
 
-// Sample data
-const publications: Publication[] = [
-  {
-    id: 1,
-    icon: '🆕',
-    title: 'Запущена новая версия калькулятора утилизационного сбора',
-    description: 'Обновлённый калькулятор позволяет более точно рассчитать сумму утилизационного сбора с учётом новых категорий товаров и коэффициентов.',
-    date: '15 ноября 2024'
-  },
-  {
-    id: 2,
-    icon: '📊',
-    title: 'Отчёт по сбору и переработке отходов за III квартал 2024',
-    description: 'Собрано 42.3 млн сом утилизационного сбора, переработано 12,450 тонн отходов.',
-    date: '10 ноября 2024'
-  },
-  {
-    id: 3,
-    icon: '🏆',
-    title: 'Открыт приём заявок на конкурс экологических проектов',
-    description: 'Грант до 500 000 сом на проекты в сфере переработки отходов.',
-    date: '10 ноября 2024'
-  },
-  {
-    id: 4,
-    icon: '📊',
-    title: 'Отчёт по сбору и переработке отходов за III квартал 2024',
-    description: 'Собрано 42.3 млн сом утилизационного сбора, переработано 12,450 тонн отходов.',
-    date: '10 ноября 2024'
-  },
-  {
-    id: 5,
-    icon: '📋',
-    title: 'Обновлены правила лицензирования',
-    description: 'Вступили в силу новые требования к организациям, занимающимся сбором и переработкой отходов.',
-    date: '5 ноября 2024'
-  },
-  {
-    id: 6,
-    icon: '🌱',
-    title: 'Запущена программа поддержки экологических стартапов',
-    description: 'Министерство объявляет о начале программы грантовой поддержки инновационных проектов в сфере экологии.',
-    date: '1 ноября 2024'
-  },
-  {
-    id: 7,
-    icon: '📈',
-    title: 'Статистика за октябрь 2024',
-    description: 'Опубликованы данные о собранных отходах и выданных лицензиях за прошедший месяц.',
-    date: '28 октября 2024'
-  },
-  {
-    id: 8,
-    icon: '🔔',
-    title: 'Напоминание о сроках подачи отчётности',
-    description: 'До 15 ноября необходимо подать квартальную отчётность по утилизационному сбору.',
-    date: '25 октября 2024'
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const res = await publicPublicationsApi.list({
+      category: (category.value || undefined) as PublicationCategory | undefined,
+      search: search.value.trim() || undefined,
+      page: page.value,
+      size: SIZE,
+    })
+    items.value = res.content
+    total.value = res.totalElements
+  } catch (e) {
+    error.value = 'Не удалось загрузить публикации'
+  } finally {
+    loading.value = false
   }
-]
+}
 
-const handleClick = (_publication: Publication) => {
-  // TODO: Implement navigation logic
+onMounted(load)
+
+// Debounce search
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+watch(search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    page.value = 0
+    load()
+  }, 250)
+})
+
+watch(category, () => {
+  page.value = 0
+  load()
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / SIZE)))
+
+// Hero — самая свежая публикация (только когда нет фильтра/поиска)
+const showHero = computed(() => !search.value && !category.value && items.value.length > 0)
+const heroPub = computed(() => (showHero.value ? items.value[0] : null))
+const gridItems = computed(() => (showHero.value ? items.value.slice(1) : items.value))
+
+function reset() {
+  search.value = ''
+  category.value = ''
+  page.value = 0
+  load()
+}
+function goPage(p: number) {
+  if (p < 0 || p >= totalPages.value) return
+  page.value = p
+  load()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
 
 <template>
-  <div class="py-10 lg:py-[60px]">
-    <!-- Page header -->
-    <div class="container-main">
-      <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-6 lg:mb-8">
-        {{ $t('publications.title') }}
-      </h1>
+  <div class="pubs-page pubs">
+    <div class="pubs__container">
+      <!-- Заголовок и подзаголовок убраны: активная вкладка «Публикации»
+           в шапке + промо-баннер ниже уже задают контекст страницы.
+           Редакционные ленты не нуждаются в дополнительной обложке. -->
 
-    </div>
+      <!-- Промо-баннер «Сколько живёт ваш мусор?» — постоянный, всегда сверху -->
+      <WasteLifetimePromo class="pubs__promo" />
 
-    <div class="container-main">
-      <!-- Promo banner -->
-      <div class="promo-banner" @click="goToWasteLifetime">
-        <span class="promo-badge">{{ $t('publications.bannerBadge') }}</span>
-        <div class="promo-icon-box">
-          <span class="promo-icon">♻️</span>
+      <!-- Hero — свежая публикация (скрыт при фильтре/поиске) -->
+      <HeroCard v-if="heroPub" :pub="heroPub" class="pubs__hero" />
+
+      <!-- Фильтры: поиск + dropdown категорий -->
+      <div class="pubs__filters">
+        <div class="pubs__search">
+          <svg class="pubs__search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="7" cy="7" r="4.5" />
+            <path d="M10.5 10.5L13.5 13.5" />
+          </svg>
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Поиск по публикациям…"
+            class="pubs__search-input"
+          />
+          <button v-if="search" class="pubs__search-clear" @click="search = ''" aria-label="Очистить">×</button>
         </div>
-        <div class="promo-content">
-          <h3 class="promo-title">
-            {{ $t('publications.bannerTitleStart') }} <span class="promo-title-accent">{{ $t('publications.bannerTitleAccent') }}</span>
-          </h3>
-          <p class="promo-desc">{{ $t('publications.bannerDescription') }}</p>
-        </div>
-        <button class="promo-btn" @click.stop="goToWasteLifetime">
-          {{ $t('publications.bannerButton') }} →
-        </button>
+        <select v-model="category" class="pubs__dropdown">
+          <option value="">Все категории</option>
+          <option v-for="[id, label] in categoryOptions" :key="id" :value="id">
+            {{ label }}
+          </option>
+        </select>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 lg:gap-[30px]">
-        <article
-          v-for="publication in publications"
-          :key="publication.id"
-          @click="handleClick(publication)"
-          class="publication-card"
+      <!-- Лента -->
+      <div v-if="loading" class="pubs__state">Загрузка…</div>
+      <div v-else-if="error" class="pubs__state pubs__state--error">{{ error }}</div>
+      <div v-else-if="gridItems.length === 0" class="pubs__empty">
+        <div class="pubs__empty-title">Ничего не найдено</div>
+        <p class="pubs__empty-text">Попробуйте изменить фильтр или поисковый запрос.</p>
+        <button class="pubs__empty-btn" @click="reset">Сбросить</button>
+      </div>
+      <div v-else class="pubs__grid">
+        <PubCard
+          v-for="(p, i) in gridItems"
+          :key="p.id"
+          :pub="p"
+          :index="i"
+        />
+      </div>
+
+      <!-- Пагинация -->
+      <div v-if="totalPages > 1 && gridItems.length > 0" class="pubs__pagination">
+        <button class="pubs__page pubs__page--ghost" :disabled="page === 0" @click="goPage(page - 1)">
+          ← Назад
+        </button>
+        <button
+          v-for="p in totalPages"
+          :key="p"
+          class="pubs__page"
+          :class="{ 'pubs__page--active': p - 1 === page }"
+          @click="goPage(p - 1)"
         >
-          <div class="flex-1">
-            <h3 class="text-[#415861] text-lg lg:text-[20px] font-medium leading-normal mb-3 lg:mb-[12px]">
-              <span class="mr-1">{{ publication.icon }}</span>
-              {{ publication.title }}
-            </h3>
-            <p class="text-[#415861] text-sm lg:text-[14px] leading-normal">
-              {{ publication.description }}
-            </p>
-          </div>
-          <time class="text-[#70868f] text-xs lg:text-[12px] mt-auto">
-            {{ publication.date }}
-          </time>
-        </article>
+          {{ p }}
+        </button>
+        <button class="pubs__page pubs__page--ghost" :disabled="page + 1 >= totalPages" @click="goPage(page + 1)">
+          Далее →
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Promo banner */
-.promo-banner {
+.pubs {
+  background: var(--pub-bg);
+  min-height: 100vh;
+}
+.pubs__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 40px 80px;
+}
+/* Заголовок «Публикации» удалён вместе с подзаголовком — стили
+   .pubs__head / .pubs__title / .pubs__lead больше не нужны. */
+.pubs__promo {
+  margin-bottom: 28px;
+}
+.pubs__hero {
+  margin-bottom: 36px;
+}
+.pubs__filters {
   display: flex;
   align-items: center;
-  gap: 24px;
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #fef9c3 100%);
-  border-radius: 16px;
-  padding: 28px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  gap: 12px;
+  margin: 24px 0 28px;
+  flex-wrap: wrap;
+}
+.pubs__search {
   position: relative;
-  overflow: hidden;
-  margin-bottom: 24px;
+  flex: 1;
+  min-width: 240px;
+  max-width: 480px;
 }
-.promo-banner:hover {
-  border-color: #10b981;
-  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.15);
-  transform: translateY(-2px);
-}
-.promo-badge {
+.pubs__search-icon {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  background: #10b981;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--pub-ink-4);
+  pointer-events: none;
 }
-.promo-icon-box {
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+.pubs__search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 38px;
+  background: #fff;
+  border: 1px solid var(--pub-line);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--pub-ink);
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.pubs__search-input:focus {
+  border-color: var(--pub-brand);
+  box-shadow: 0 0 0 3px var(--pub-brand-050);
+}
+.pubs__search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--pub-bg-2);
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--pub-ink-3);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pubs__search-clear:hover {
+  background: var(--pub-line);
+}
+.pubs__dropdown {
+  height: 40px;
+  padding: 0 36px 0 14px;
+  background: #fff;
+  border: 1px solid var(--pub-line);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--pub-ink-2);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none' stroke='%23566560' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M2 4l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.pubs__dropdown:focus {
+  border-color: var(--pub-brand);
+  box-shadow: 0 0 0 3px var(--pub-brand-050);
+}
+.pubs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+.pubs__state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--pub-ink-3);
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid var(--pub-line);
   border-radius: 16px;
 }
-.promo-icon {
-  font-size: 48px;
-  line-height: 1;
+.pubs__state--error {
+  color: #b23b3b;
 }
-.promo-content {
-  flex: 1;
-  min-width: 0;
+.pubs__empty {
+  text-align: center;
+  padding: 64px 24px;
+  background: #fff;
+  border: 1px solid var(--pub-line);
+  border-radius: 16px;
 }
-.promo-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  font-weight: 900;
-  color: #111827;
+.pubs__empty-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--pub-ink);
   margin-bottom: 6px;
-  line-height: 1.3;
 }
-.promo-title-accent {
-  background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.pubs__empty-text {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--pub-ink-3);
 }
-.promo-desc {
-  font-size: 13px;
-  color: #475569;
-  line-height: 1.5;
-}
-.promo-btn {
-  flex-shrink: 0;
-  padding: 10px 20px;
-  border-radius: 10px;
-  background: #10b981;
+.pubs__empty-btn {
+  display: inline-block;
+  padding: 9px 18px;
+  background: var(--pub-brand);
   color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
   border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  font-family: inherit;
 }
-.promo-btn:hover {
-  background: #059669;
-}
-
-@media (max-width: 767px) {
-  .promo-banner {
-    flex-direction: column;
-    text-align: center;
-    padding: 24px 20px;
-    gap: 16px;
-  }
-  .promo-btn {
-    width: 100%;
-  }
-  .promo-title {
-    font-size: 19px;
-  }
-}
-
-/* Publication cards */
-.publication-card {
-  background: #fafafa;
-  border-radius: 30px;
-  padding: 30px;
+.pubs__pagination {
   display: flex;
-  flex-direction: column;
-  gap: 30px;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 48px;
+}
+.pubs__page {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--pub-line);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pub-ink-2);
   cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-  min-height: 280px;
+  font-family: inherit;
+}
+.pubs__page--active {
+  background: var(--pub-brand-050);
+  border-color: var(--pub-brand-100);
+  color: var(--pub-brand-700);
+}
+.pubs__page--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--pub-ink-3);
+}
+.pubs__page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.publication-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-@media (max-width: 767px) {
-  .publication-card {
-    padding: 20px;
-    min-height: auto;
-    gap: 20px;
+@media (max-width: 720px) {
+  .pubs__container {
+    padding: 32px 20px 64px;
   }
+  /* Заголовок теперь управляется через mobile-first блок выше,
+     отдельный mobile-override не нужен. */
 }
 </style>

@@ -20,4 +20,11 @@ public class UserProfileResponse {
 
     /** Для role='business': payer | applicant | both. Для остальных ролей — null. */
     private String businessType;
+
+    /**
+     * Подтип заявителя на лицензию: recycler | landfill | collection_point | other.
+     * Заполнен только если businessType ∈ {applicant, both} и пользователь
+     * указал тип. Иначе — null.
+     */
+    private String applicantType;
 }

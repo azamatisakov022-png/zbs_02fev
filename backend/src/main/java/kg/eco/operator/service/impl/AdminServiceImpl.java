@@ -38,6 +38,8 @@ public class AdminServiceImpl implements AdminService {
                         .role(mapRole(user.getRole()))
                         .email(user.getEmail())
                         .phone(user.getPhone())
+                        .businessType(user.getBusinessType() != null ? user.getBusinessType().getValue() : null)
+                        .applicantType(user.getApplicantType() != null ? user.getApplicantType().getValue() : null)
                         .build())
                 .collect(Collectors.toList());
     }

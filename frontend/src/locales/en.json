@@ -634,6 +634,28 @@
       "both": "Importer and Producer",
       "recycler": "Waste recycler"
     },
+    "whoAreYou": "Who are you?",
+    "payerCard": {
+      "title": "Recycling fee payer",
+      "subtitle": "Importers, manufacturers of goods",
+      "cabinet": "In account: declarations, calculations, fee balance"
+    },
+    "applicantCard": {
+      "title": "License applicant",
+      "subtitle": "Recyclers, landfills, collection points, other organizations",
+      "cabinet": "In account: applications, my licenses, documents"
+    },
+    "payerSubtypes": {
+      "importer": "Importer",
+      "producer": "Producer",
+      "both": "Importer and producer"
+    },
+    "applicantSubtypes": {
+      "recycler": "Waste recycler",
+      "landfill": "Landfill",
+      "collectionPoint": "Collection point",
+      "other": "Other organization"
+    },
     "fileCategories": {
       "certificate": "Registration certificate",
       "extract": "Registry extract",
@@ -3286,6 +3308,15 @@
   "businessProfile": {
     "title": "Company profile",
     "subtitle": "Managing your organization's data",
+    "applicantTypeUpdated": "Account type updated",
+    "accountType": {
+      "title": "Account type",
+      "role": "Current role",
+      "roleHint": "Changing the main role (payer / applicant / both) is done by an administrator.",
+      "applicantTypeLabel": "Applicant organization type",
+      "applicantTypeHint": "Used to pre-fill the license application form.",
+      "selectPlaceholder": "Choose a type…"
+    },
     "verified": "Verified",
     "pending": "Under review",
     "notVerified": "Not verified",

@@ -2,6 +2,7 @@ package kg.eco.operator.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import kg.eco.operator.entity.enums.ApplicantType;
 import kg.eco.operator.entity.enums.BusinessType;
 import kg.eco.operator.entity.enums.RoleEnum;
 import lombok.Data;
@@ -41,6 +42,19 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "business_type", nullable = false, length = 10)
     private BusinessType businessType = BusinessType.PAYER;
+
+    /**
+     * Подтип заявителя на лицензию. Заполняется только если businessType
+     * равен APPLICANT или BOTH (т.е. пользователь намерен подавать заявки
+     * на лицензии). Используется для предзаполнения формы первой заявки —
+     * чтобы пользователю не приходилось второй раз выбирать
+     * RECYCLER / LANDFILL / COLLECTION_POINT / OTHER. Может меняться
+     * пользователем в настройках профиля.
+     * Для PAYER и не-BUSINESS ролей — NULL.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "applicant_type", length = 32)
+    private ApplicantType applicantType;
 
     @Column(length = 100)
     private String email;
