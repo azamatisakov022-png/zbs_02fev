@@ -137,10 +137,10 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
     [t('excelExport.legalFormAndName'), company.name],
     [t('excelExport.address'), company.address],
     [t('excelExport.inn'), company.inn],
-    [t('excelExport.okpo'), company.okpo || '—'],
-    [t('excelExport.ogrn'), company.ogrn || '—'],
-    [t('excelExport.director'), company.director || '—'],
-    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
+    [t('excelExport.okpo'), company.okpo || '-'],
+    [t('excelExport.ogrn'), company.ogrn || '-'],
+    [t('excelExport.director'), company.director || '-'],
+    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '-'],
   ]
 
   companyRows.forEach((row, i) => {
@@ -210,8 +210,8 @@ export function generateCalculationExcel(calc: Calculation, company: CompanyData
 
     setCellValue(ws, `A${dataRow}`, idx + 1, 'n', sDataCell)
     setCellValue(ws, `B${dataRow}`, groupLabel, 's', sDataCell)
-    setCellValue(ws, `C${dataRow}`, item.gskpCode || '—', 's', sDataCell)
-    setCellValue(ws, `D${dataRow}`, item.tnvedCode || '—', 's', sDataCell)
+    setCellValue(ws, `C${dataRow}`, item.gskpCode || '-', 's', sDataCell)
+    setCellValue(ws, `D${dataRow}`, item.tnvedCode || '-', 's', sDataCell)
     setCellValue(ws, `E${dataRow}`, vol, 'n', sDataNum)
     setCellValue(ws, `F${dataRow}`, `${item.recyclingStandard}%`, 's', sDataPct)
     setCellValue(ws, `G${dataRow}`, item.volumeToRecycle, 'n', sDataNum)
@@ -296,9 +296,9 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
     [t('excelExport.name'), company.name],
     [t('excelExport.address'), company.address],
     [t('excelExport.inn'), company.inn],
-    [t('excelExport.okpo'), company.okpo || '—'],
-    [t('excelExport.ogrn'), company.ogrn || '—'],
-    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '—'],
+    [t('excelExport.okpo'), company.okpo || '-'],
+    [t('excelExport.ogrn'), company.ogrn || '-'],
+    [t('excelExport.contactInfo'), [company.contactPerson, company.phone, company.email].filter(Boolean).join(', ') || '-'],
   ]
 
   companyRows.forEach((row, i) => {
@@ -360,7 +360,7 @@ export function generateRecyclingReportExcel(report: Report, company: CompanyDat
     setCellValue(ws1, `${cols1[0]}${dRow}`, idx + 1, 'n', sDataCell)
     setCellValue(ws1, `${cols1[1]}${dRow}`, groupLabel, 's', sDataCell)
     setCellValue(ws1, `${cols1[2]}${dRow}`, item.wasteCode, 's', sDataCell)
-    setCellValue(ws1, `${cols1[3]}${dRow}`, '—', 's', sDataCell)
+    setCellValue(ws1, `${cols1[3]}${dRow}`, '-', 's', sDataCell)
     setCellValue(ws1, `${cols1[4]}${dRow}`, item.wasteCode, 's', sDataCell)
     setCellValue(ws1, `${cols1[5]}${dRow}`, declaredKg, 'n', sDataNum)
     setCellValue(ws1, `${cols1[6]}${dRow}`, '20%', 's', sDataPct)

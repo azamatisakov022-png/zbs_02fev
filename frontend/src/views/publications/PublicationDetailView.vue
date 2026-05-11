@@ -23,7 +23,7 @@ async function load() {
   try {
     const slug = route.params.slug as string
     pub.value = await publicPublicationsApi.getBySlug(slug, lang.value)
-    // Похожие — последние 3 той же категории (исключая текущую)
+    // Похожие - последние 3 той же категории (исключая текущую)
     if (pub.value) {
       const list = await publicPublicationsApi.list({
         category: pub.value.category, lang: lang.value, page: 0, size: 4,
@@ -99,7 +99,7 @@ function setLang(l: PublicationLang) {
           <img :src="pub.coverUrl" :alt="pub.title" />
         </figure>
 
-        <!-- Body — HTML из БД, доверенный (создаётся редакторами через Tiptap) -->
+        <!-- Body - HTML из БД, доверенный (создаётся редакторами через Tiptap) -->
         <div class="detail__body" v-html="pub.body" />
 
         <hr class="detail__divider" />

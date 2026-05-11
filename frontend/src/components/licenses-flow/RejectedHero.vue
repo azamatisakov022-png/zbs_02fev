@@ -30,7 +30,7 @@ function fmt(d?: string) {
         <div class="hero__comment-label">Комментарий инспектора</div>
         <div class="hero__comment-text">«{{ inspectorComment }}»</div>
         <div class="hero__comment-meta">
-          <template v-if="inspectorName">— {{ inspectorName }}</template>
+          <template v-if="inspectorName">- {{ inspectorName }}</template>
           <template v-if="inspectorName && rejectedAt">, </template>
           <template v-if="rejectedAt">{{ fmt(rejectedAt) }}</template>
         </div>
@@ -50,7 +50,7 @@ function fmt(d?: string) {
         </button>
       </div>
       <p class="hero__note">
-        Платёж госпошлины сохраняется — повторная оплата не требуется.
+        Платёж госпошлины сохраняется - повторная оплата не требуется.
       </p>
     </div>
   </div>

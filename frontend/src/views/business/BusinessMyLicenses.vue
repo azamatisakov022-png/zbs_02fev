@@ -14,7 +14,7 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    // Подгружаем публичный реестр с фильтром по моему ИНН — эндпоинт без авторизации,
+    // Подгружаем публичный реестр с фильтром по моему ИНН - эндпоинт без авторизации,
     // но нам достаточно публичной информации для ЛК заявителя.
     const res = await publicLicensesApi.listPublished({
       search: authStore.state.user?.inn || '',

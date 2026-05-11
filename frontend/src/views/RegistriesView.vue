@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ════════════════════════════════════════════════════════════════════
-// RegistriesView.vue — PUBLIC GIS Map Page (/registries)
+// RegistriesView.vue - PUBLIC GIS Map Page (/registries)
 // 4 visible layers: Landfills, Recyclers, Reception Points, Dumps
 // Left filter panel overlay, grid-based clustering, tables below map
 // ════════════════════════════════════════════════════════════════════
@@ -14,9 +14,9 @@ import { productGroups, getTranslatedGroupLabel } from '../data/product-groups'
 // ═══════════════════════════════════════════════════════════════════════════
 // Публичный реестр читает данные через общий composable, который ходит
 // на /api/v1/public/* без JWT. Тот же composable использует и ЛК сотрудника
-// — гарантия что обе страницы видят одни и те же объекты.
+// - гарантия что обе страницы видят одни и те же объекты.
 // ═══════════════════════════════════════════════════════════════════════════
-// Polling раз в 60 сек — публичная карта автоматически обновляется,
+// Polling раз в 60 сек - публичная карта автоматически обновляется,
 // если сотрудник МПРЭТН добавил/изменил объект в своём ЛК.
 const {
   landfills: backendLandfills,
@@ -181,7 +181,7 @@ const dumpsTabSearch = ref('')
 const expandedWasteRows = reactive(new Set<number>())
 
 // ════════════════════════════════════════════════════════════════════
-// Computed: All Map Points — строится ТОЛЬКО из данных backend.
+// Computed: All Map Points - строится ТОЛЬКО из данных backend.
 // Конвертация backend-полей (latitude/longitude/companyName) в формат
 // таблицы (lat/lng/name).
 // ════════════════════════════════════════════════════════════════════
@@ -233,8 +233,8 @@ const allMapPoints = computed<MapPoint[]>(() => {
       status: (l.status ?? 'active').toLowerCase(),
       region: l.region ?? '',
       landfillType: l.type ?? '',
-      area: l.area != null ? `${l.area} га` : '—',
-      fillLevel: l.fillPercent != null ? `${l.fillPercent}%` : '—',
+      area: l.area != null ? `${l.area} га` : '-',
+      fillLevel: l.fillPercent != null ? `${l.fillPercent}%` : '-',
     }))
 
   const dumpPoints: MapPoint[] = backendDumps.value
@@ -245,8 +245,8 @@ const allMapPoints = computed<MapPoint[]>(() => {
       address: d.address ?? '', phone: '',
       status: (d.status ?? 'active').toLowerCase(),
       region: d.region ?? '',
-      area: d.area != null ? `${d.area} ${t('registries.ha')}` : '—',
-      discoveryDate: d.discoveredDate ?? '—',
+      area: d.area != null ? `${d.area} ${t('registries.ha')}` : '-',
+      discoveryDate: d.discoveredDate ?? '-',
       dumpStatus: (d.status ?? 'active').toLowerCase(),
       notes: d.notes ?? '',
     }))
@@ -301,7 +301,7 @@ const countByType = computed(() => {
   return counts
 })
 
-// Счётчики берутся из allMapPoints — учитывают и сторы, и mock fallback.
+// Счётчики берутся из allMapPoints - учитывают и сторы, и mock fallback.
 const totalCountByType = computed(() => {
   const acc = { landfills: 0, recyclers: 0, reception: 0, dumps: 0, total: 0 }
   for (const p of allMapPoints.value) {
@@ -488,7 +488,7 @@ const getMarkerIcon = (point: MapPoint) => {
 
 const getLeafletMap = (): L.Map | null => {
   if (!mapRef.value) return null
-  // Новый CutoutMap экспонирует getLeafletMap(); старый LMap — свойство leafletObject.
+  // Новый CutoutMap экспонирует getLeafletMap(); старый LMap - свойство leafletObject.
   const ref = mapRef.value as any
   if (typeof ref.getLeafletMap === 'function') return ref.getLeafletMap() || null
   return ref.leafletObject || null
@@ -863,7 +863,7 @@ const hasActiveFilters = computed(() => {
               <svg :class="['w-3 h-3 transition-transform', mobileFiltersOpen ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </button>
           </div>
-          <!-- Expanded mobile filters (упрощены — только регион) -->
+          <!-- Expanded mobile filters (упрощены - только регион) -->
           <div v-if="mobileFiltersOpen" class="px-4 pb-3 space-y-3 border-t border-gray-100 pt-3">
             <select v-model="regionFilter" class="w-full h-9 px-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
               <option value="">{{ $t('registries.regionAll') }}</option>
@@ -892,7 +892,7 @@ const hasActiveFilters = computed(() => {
           @marker-click="(m: CutoutMarker) => onMarkerClick(allMapPoints.find(p => p.id === m.id && p.type === m.type) ?? (m as any))"
         />
 
-        <!-- ══ Слои (floating control — слева-сверху) ══ -->
+        <!-- ══ Слои (floating control - слева-сверху) ══ -->
         <div
           class="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/70 overflow-hidden"
           style="min-width: 200px;"
@@ -920,7 +920,7 @@ const hasActiveFilters = computed(() => {
           </div>
         </div>
 
-        <!-- (legacy Leaflet markup removed — replaced by KyrgyzstanInteractiveMap above) -->
+        <!-- (legacy Leaflet markup removed - replaced by KyrgyzstanInteractiveMap above) -->
 
         <!-- ════════════════════════════════════════════ -->
         <!-- Zoom Controls (right side)                  -->
@@ -963,7 +963,7 @@ const hasActiveFilters = computed(() => {
           </button>
         </div>
 
-        <!-- Старая легенда убрана — слои теперь в floating control слева-сверху -->
+        <!-- Старая легенда убрана - слои теперь в floating control слева-сверху -->
 
       </div><!-- end map container -->
     </div>
@@ -1086,7 +1086,7 @@ const hasActiveFilters = computed(() => {
                   <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ landfill.area }}</td>
                   <td class="py-3 px-4 text-gray-600 whitespace-nowrap">{{ landfill.capacity }}</td>
                   <td class="py-3 px-4">
-                    <div v-if="landfill.fillLevel !== '—'" class="flex items-center gap-2">
+                    <div v-if="landfill.fillLevel !== '-'" class="flex items-center gap-2">
                       <div class="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div class="h-full rounded-full transition-all" :class="getFillLevelColor(landfill.fillLevel)" :style="{ width: landfill.fillLevel }"></div>
                       </div>

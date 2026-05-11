@@ -1,5 +1,5 @@
 /**
- * Payment account details — synced with backend application.yml → payment.accounts
+ * Payment account details - synced with backend application.yml → payment.accounts
  */
 export interface PaymentAccount {
   recipient: string

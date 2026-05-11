@@ -517,16 +517,16 @@ function getPermissionCount(roleId: string): { granted: number; total: number } 
           <div class="flex flex-wrap items-center gap-4 text-xs text-[#64748b]">
             <span class="font-semibold text-[#415861]">{{ $t('adminRoles.legendTitle') }}</span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendViewShort') }}</span> — {{ $t('adminRoles.legendView') }}
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendViewShort') }}</span> - {{ $t('adminRoles.legendView') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendCreateShort') }}</span> — {{ $t('adminRoles.legendCreate') }}
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendCreateShort') }}</span> - {{ $t('adminRoles.legendCreate') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendEditShort') }}</span> — {{ $t('adminRoles.legendEdit') }}
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendEditShort') }}</span> - {{ $t('adminRoles.legendEdit') }}
             </span>
             <span class="flex items-center gap-1">
-              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendDeleteShort') }}</span> — {{ $t('adminRoles.legendDelete') }}
+              <span class="font-bold text-[#415861]">{{ $t('adminRoles.legendDeleteShort') }}</span> - {{ $t('adminRoles.legendDelete') }}
             </span>
             <span class="ml-auto flex items-center gap-2">
               <span class="inline-flex items-center gap-1">

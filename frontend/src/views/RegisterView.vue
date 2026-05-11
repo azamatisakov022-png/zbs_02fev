@@ -13,7 +13,7 @@ const { t } = useI18n()
 const registrationMode = ref<'choose' | 'esi' | 'manual'>('choose')
 const isEsiLoading = ref(false)
 
-// ESI data — fetched from backend INN verification API
+// ESI data - fetched from backend INN verification API
 const esiData = reactive({
   inn: '',
   shortName: '',
@@ -27,14 +27,14 @@ const esiData = reactive({
 //
 // Раньше тут был один селект `activityType` (importer/producer/both/recycler/mixed),
 // в котором смешивались две независимые роли в системе: «плательщик утильсбора»
-// и «заявитель на лицензию». Это приводило к скрытой семантике на UI —
+// и «заявитель на лицензию». Это приводило к скрытой семантике на UI -
 // пользователь не понимал, что выбор «Переработчик» = «вы заявитель на лицензию,
 // без раздела утильсбора», и попадал в неправильный кабинет.
 //
 // Теперь два независимых флага + по одному подтипу на каждую роль:
 //   isPayer + payerSubtype  ('importer' | 'producer' | 'both')
 //   isApplicant + applicantSubtype  ('recycler' | 'landfill' | 'collection_point' | 'other')
-// Можно отметить и оба — это даёт businessType=BOTH.
+// Можно отметить и оба - это даёт businessType=BOTH.
 const esiForm = reactive({
   isPayer: false,
   isApplicant: false,
@@ -50,7 +50,7 @@ interface WasteCategory {
   label: string
 }
 
-// 24 группы продукции по ПКМ КР №322 — плоский список
+// 24 группы продукции по ПКМ КР №322 - плоский список
 const wasteItems = computed<WasteCategory[]>(() => [
   { value: 'g1', label: t('registerView.wasteG1') },
   { value: 'g2', label: t('registerView.wasteG2') },
@@ -141,11 +141,11 @@ const validateEsiForm = (): boolean => {
   if (!esiForm.isPayer && !esiForm.isApplicant) {
     esiFormErrors.userType = t('register.errors.selectActivityType')
   }
-  // Если плательщик — обязателен подвыбор импортёр/производитель/оба
+  // Если плательщик - обязателен подвыбор импортёр/производитель/оба
   if (esiForm.isPayer && !esiForm.payerSubtype) {
     esiFormErrors.payerSubtype = t('register.errors.selectActivityType')
   }
-  // Если заявитель — обязателен подвыбор переработчик/полигон/…
+  // Если заявитель - обязателен подвыбор переработчик/полигон/…
   if (esiForm.isApplicant && !esiForm.applicantSubtype) {
     esiFormErrors.applicantSubtype = t('register.errors.selectActivityType')
   }
@@ -254,13 +254,13 @@ const individualOrgTypes = ['ip', 'kfh']
 
 const isIndividual = computed(() => individualOrgTypes.includes(formData.orgType))
 
-// Старый плоский список activityTypes удалён: вместо него — две независимые
+// Старый плоский список activityTypes удалён: вместо него - две независимые
 // карточки isPayer/isApplicant с подвыборами (см. формы выше). Сводный
 // человекочитаемый текст для review-экрана собирается в buildUserTypeSummary().
 
 const formData = reactive({
   orgType: '',
-  // См. комментарий к esiForm выше — здесь та же двух-ролевая модель.
+  // См. комментарий к esiForm выше - здесь та же двух-ролевая модель.
   isPayer: false,
   isApplicant: false,
   payerSubtype: '' as '' | 'importer' | 'producer' | 'both',
@@ -525,9 +525,9 @@ const registrationNumber = ref('')
 /**
 /**
  * Маппинг роли (плательщик / заявитель / оба) и подтипов в формат бэка:
- *   businessType   — payer | applicant | both
- *   payerCategory  — importer | producer | importer_producer (только для PAYER/BOTH)
- *   applicantType  — recycler | landfill | collection_point | other (только для APPLICANT/BOTH)
+ *   businessType   - payer | applicant | both
+ *   payerCategory  - importer | producer | importer_producer (только для PAYER/BOTH)
+ *   applicantType  - recycler | landfill | collection_point | other (только для APPLICANT/BOTH)
  */
 function mapRolesToBackend(input: {
   isPayer: boolean
@@ -627,7 +627,7 @@ const buildUserTypeSummary = (): string => {
     const sub = subKey ? t(`register.applicantSubtypes.${subKey}`) : ''
     parts.push(`${t('register.applicantCard.title')}${sub ? ` (${sub})` : ''}`)
   }
-  return parts.join(' + ') || '—'
+  return parts.join(' + ') || '-'
 }
 
 const toggleProductGroup = (value: string) => {
@@ -867,7 +867,7 @@ const goHome = () => {
             <span class="font-semibold text-[#1e293b]">{{ $t('register.additionalInfo') }}</span>
           </div>
           <div class="p-6 space-y-6">
-            <!-- ─── Кто вы? — 2 карточки + сабкатегории ─── -->
+            <!-- ─── Кто вы? - 2 карточки + сабкатегории ─── -->
             <!--
               Вместо одного селекта «Вид деятельности» с 5 вариантами теперь две
               независимые карточки: «Плательщик утильсбора» и «Заявитель на лицензию».
@@ -901,7 +901,7 @@ const goHome = () => {
                       <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.payerCard.cabinet') }}</div>
                     </div>
                   </div>
-                  <!-- Подвыбор плательщика — раскрывается, когда карточка отмечена -->
+                  <!-- Подвыбор плательщика - раскрывается, когда карточка отмечена -->
                   <div v-if="esiForm.isPayer" class="mt-4 pl-8 space-y-2" @click.stop>
                     <label
                       v-for="opt in [
@@ -950,7 +950,7 @@ const goHome = () => {
                       <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.applicantCard.cabinet') }}</div>
                     </div>
                   </div>
-                  <!-- Подвыбор заявителя — что именно за организация -->
+                  <!-- Подвыбор заявителя - что именно за организация -->
                   <div v-if="esiForm.isApplicant" class="mt-4 pl-8 space-y-2" @click.stop>
                     <label
                       v-for="opt in [
@@ -1026,7 +1026,7 @@ const goHome = () => {
 
               <p v-if="esiFormErrors.wasteCategories" class="mt-2 text-sm text-red-600">{{ esiFormErrors.wasteCategories }}</p>
 
-              <!-- Recycler Capacities (ESI) — показываем только переработчикам -->
+              <!-- Recycler Capacities (ESI) - показываем только переработчикам -->
               <div v-if="esiForm.isApplicant && esiForm.applicantSubtype === 'recycler' && esiForm.wasteCategories.length > 0" class="mt-6">
                 <h3 class="text-base font-semibold text-[#1e293b] mb-1">{{ $t('register.recyclingCapacity') }}</h3>
                 <p class="text-sm text-[#64748b] mb-4">{{ $t('register.recyclingCapacityHint') }}</p>
@@ -1165,13 +1165,31 @@ const goHome = () => {
 
         <!-- Registration Form -->
         <div v-else class="max-w-4xl mx-auto">
-          <!-- Header -->
-          <div class="mb-6 text-center">
-            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('register.title') }}</h1>
-            <p class="text-[#64748b]">{{ $t('register.manualSubtitle') }}</p>
+          <!-- Header (АИС-style: uppercase, brand slate) -->
+          <div class="mb-8 text-center">
+            <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-3">
+              {{ $t('register.title') }}
+            </h1>
+            <p class="text-base lg:text-lg text-[#415861] font-medium max-w-3xl mx-auto">
+              {{ $t('register.manualSubtitle') }}
+            </p>
           </div>
 
-          <!-- Progress Steps -->
+          <!-- Mobile-only progress bar (Шаг X из 5 · N%) -->
+          <div class="lg:hidden mb-3">
+            <div class="flex items-center justify-between text-xs text-[#64748b] mb-1.5">
+              <span>{{ $t('register.stepCount', { current: currentStep, total: steps.length }) }}</span>
+              <span>{{ Math.round((currentStep / steps.length) * 100) }}%</span>
+            </div>
+            <div class="h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden">
+              <div
+                class="h-full bg-[#0e888d] transition-all duration-300"
+                :style="{ width: `${(currentStep / steps.length) * 100}%` }"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Progress Steps (icons + teal-only + ring on active) -->
           <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
             <div class="flex items-center justify-between overflow-x-auto">
               <template v-for="(step, index) in steps" :key="step.number">
@@ -1184,23 +1202,55 @@ const goHome = () => {
                 >
                   <div
                     :class="[
-                      'w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-colors',
+                      'rounded-full flex items-center justify-center transition-all',
                       currentStep === step.number
-                        ? 'bg-[#0e888d] text-white'
+                        ? 'w-10 h-10 lg:w-12 lg:h-12 bg-[#0e888d] text-white ring-4 ring-[#0e888d]/20'
                         : currentStep > step.number
-                          ? 'bg-green-500 text-white'
-                          : 'bg-[#e2e8f0] text-[#64748b]'
+                          ? 'w-8 h-8 lg:w-10 lg:h-10 bg-[#0e888d] text-white'
+                          : 'w-8 h-8 lg:w-10 lg:h-10 bg-[#e2e8f0] text-[#64748b]'
                     ]"
                   >
-                    <svg v-if="currentStep > step.number" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    <!-- Completed: checkmark -->
+                    <svg v-if="currentStep > step.number" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span v-else>{{ step.number }}</span>
+                    <!-- Active: stroke icon for this step (Lucide) -->
+                    <template v-else-if="currentStep === step.number">
+                      <!-- Step 1: building-2 -->
+                      <svg v-if="step.number === 1" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+                        <path d="M6 22H2v-7a2 2 0 0 1 2-2h2" />
+                        <path d="M18 22h4v-9a2 2 0 0 0-2-2h-2" />
+                        <path d="M10 6h4M10 10h4M10 14h4M10 18h4" />
+                      </svg>
+                      <!-- Step 2: file-text -->
+                      <svg v-else-if="step.number === 2" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M16 13H8M16 17H8M10 9H8" />
+                      </svg>
+                      <!-- Step 3: user -->
+                      <svg v-else-if="step.number === 3" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <!-- Step 4: paperclip -->
+                      <svg v-else-if="step.number === 4" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 17.99 8.8l-8.58 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      </svg>
+                      <!-- Step 5: check-circle -->
+                      <svg v-else class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <path d="m9 11 3 3L22 4" />
+                      </svg>
+                    </template>
+                    <!-- Future: number -->
+                    <span v-else class="font-semibold text-sm lg:text-base">{{ step.number }}</span>
                   </div>
                   <span
                     :class="[
                       'hidden lg:block text-sm font-medium whitespace-nowrap',
-                      currentStep >= step.number ? 'text-[#1e293b]' : 'text-[#64748b]'
+                      currentStep >= step.number ? 'text-[#415861]' : 'text-[#64748b]'
                     ]"
                   >
                     {{ step.title }}
@@ -1210,7 +1260,7 @@ const goHome = () => {
                   v-if="index < steps.length - 1"
                   :class="[
                     'flex-1 h-1 mx-2 lg:mx-4 rounded-full min-w-[20px]',
-                    currentStep > step.number ? 'bg-green-500' : 'bg-[#e2e8f0]'
+                    currentStep > step.number ? 'bg-[#0e888d]' : 'bg-[#e2e8f0]'
                   ]"
                 ></div>
               </template>
@@ -1221,7 +1271,15 @@ const goHome = () => {
           <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0] overflow-hidden">
             <!-- Step 1: Organization Type -->
             <div v-if="currentStep === 1" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.steps.orgType') }}</h2>
+              <div class="mb-6 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /><path d="M6 22H2v-7a2 2 0 0 1 2-2h2" /><path d="M18 22h4v-9a2 2 0 0 0-2-2h-2" /><path d="M10 6h4M10 10h4M10 14h4M10 18h4" /></svg>
+                  </span>
+                  <h2 class="text-xl font-semibold text-[#415861]">{{ $t('register.steps.orgType') }}</h2>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('register.hints.orgType') }}</p>
+              </div>
 
               <div class="space-y-6">
                 <div>
@@ -1245,21 +1303,23 @@ const goHome = () => {
                   <p v-if="errors.orgType" class="mt-2 text-sm text-red-600">{{ errors.orgType }}</p>
                 </div>
 
-                <!-- ─── Кто вы? — 2 карточки + сабкатегории (manual) ─── -->
+                <!-- ─── Кто вы? - 2 карточки + сабкатегории (manual) ─── -->
                 <div>
                   <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('register.whoAreYou') }} *</label>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <!-- Карточка: Плательщик -->
+                    <!-- Карточка: Плательщик (accent: teal #0e888d) -->
                     <div
                       :class="[
-                        'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                        'relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:-translate-y-px',
                         formData.isPayer
-                          ? 'border-[#0e888d] bg-[#f0fdfa]'
-                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
+                          ? 'border-[#0e888d] bg-[#0e888d]/5 ring-4 ring-[#0e888d]/15'
+                          : 'border-[#e2e8f0] hover:border-[#0e888d]/40',
                       ]"
                       @click="formData.isPayer = !formData.isPayer; if (!formData.isPayer) formData.payerSubtype = ''"
                     >
-                      <div class="flex items-start gap-3">
+                      <!-- Цветная точка-индикатор -->
+                      <span class="absolute top-3 left-3 w-2 h-2 rounded-full bg-[#0e888d]"></span>
+                      <div class="flex items-start gap-3 pl-5">
                         <input
                           type="checkbox"
                           :checked="formData.isPayer"
@@ -1268,7 +1328,15 @@ const goHome = () => {
                           class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
                         />
                         <div class="flex-1">
-                          <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.payerCard.title') }}</div>
+                          <div class="flex items-center gap-2">
+                            <!-- Иконка: wallet -->
+                            <svg class="w-5 h-5 text-[#0e888d] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                              <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                              <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                            </svg>
+                            <div class="font-semibold text-base text-[#415861]">{{ $t('register.payerCard.title') }}</div>
+                          </div>
                           <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.payerCard.subtitle') }}</div>
                           <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.payerCard.cabinet') }}</div>
                         </div>
@@ -1295,26 +1363,37 @@ const goHome = () => {
                       </div>
                     </div>
 
-                    <!-- Карточка: Заявитель -->
+                    <!-- Карточка: Заявитель (accent: yellow #fea629) -->
                     <div
                       :class="[
-                        'p-5 rounded-xl border-2 cursor-pointer transition-all',
+                        'relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:-translate-y-px',
                         formData.isApplicant
-                          ? 'border-[#0e888d] bg-[#f0fdfa]'
-                          : 'border-[#e2e8f0] hover:border-[#0e888d]/50',
+                          ? 'border-[#fea629] bg-[#fea629]/5 ring-4 ring-[#fea629]/15'
+                          : 'border-[#e2e8f0] hover:border-[#fea629]/40',
                       ]"
                       @click="formData.isApplicant = !formData.isApplicant; if (!formData.isApplicant) formData.applicantSubtype = ''"
                     >
-                      <div class="flex items-start gap-3">
+                      <!-- Цветная точка-индикатор -->
+                      <span class="absolute top-3 left-3 w-2 h-2 rounded-full bg-[#fea629]"></span>
+                      <div class="flex items-start gap-3 pl-5">
                         <input
                           type="checkbox"
                           :checked="formData.isApplicant"
                           @click.stop
                           @change="formData.isApplicant = ($event.target as HTMLInputElement).checked; if (!formData.isApplicant) formData.applicantSubtype = ''"
-                          class="w-5 h-5 mt-0.5 text-[#0e888d] border-gray-300 rounded focus:ring-[#0e888d] flex-shrink-0"
+                          class="w-5 h-5 mt-0.5 text-[#fea629] border-gray-300 rounded focus:ring-[#fea629] flex-shrink-0"
                         />
                         <div class="flex-1">
-                          <div class="font-semibold text-base text-[#1e293b]">{{ $t('register.applicantCard.title') }}</div>
+                          <div class="flex items-center gap-2">
+                            <!-- Иконка: file-badge -->
+                            <svg class="w-5 h-5 text-[#fea629] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+                              <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+                              <circle cx="6" cy="14" r="3" />
+                              <path d="m9 17-1.5 4L6 19l-1.5 2L3 17" />
+                            </svg>
+                            <div class="font-semibold text-base text-[#415861]">{{ $t('register.applicantCard.title') }}</div>
+                          </div>
                           <div class="text-sm text-[#475569] mt-1.5 leading-snug">{{ $t('register.applicantCard.subtitle') }}</div>
                           <div class="text-sm text-[#64748b] mt-2 leading-snug">{{ $t('register.applicantCard.cabinet') }}</div>
                         </div>
@@ -1334,7 +1413,7 @@ const goHome = () => {
                             type="radio"
                             v-model="formData.applicantSubtype"
                             :value="opt.value"
-                            class="w-4 h-4 text-[#0e888d] border-gray-300 focus:ring-[#0e888d]"
+                            class="w-4 h-4 text-[#fea629] border-gray-300 focus:ring-[#fea629]"
                           />
                           <span class="text-sm text-[#334155]">{{ opt.label }}</span>
                         </label>
@@ -1349,7 +1428,15 @@ const goHome = () => {
 
             <!-- Step 2: Organization Data -->
             <div v-if="currentStep === 2" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ isIndividual ? $t('register.entrepreneurData') : $t('register.orgData') }}</h2>
+              <div class="mb-6 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M16 13H8M16 17H8M10 9H8" /></svg>
+                  </span>
+                  <h2 class="text-xl font-semibold text-[#415861]">{{ isIndividual ? $t('register.entrepreneurData') : $t('register.orgData') }}</h2>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('register.hints.orgData') }}</p>
+              </div>
 
               <div class="space-y-6">
                 <!-- Individual (ИП/КФХ) fields -->
@@ -1709,7 +1796,15 @@ const goHome = () => {
 
             <!-- Step 3: Director & Contact -->
             <div v-if="currentStep === 3" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.directorAndContact') }}</h2>
+              <div class="mb-6 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  </span>
+                  <h2 class="text-xl font-semibold text-[#415861]">{{ $t('register.directorAndContact') }}</h2>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('register.hints.directorContacts') }}</p>
+              </div>
 
               <div class="space-y-8">
                 <div>
@@ -1825,7 +1920,15 @@ const goHome = () => {
 
             <!-- Step 4: Documents -->
             <div v-if="currentStep === 4" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.uploadDocuments') }}</h2>
+              <div class="mb-6 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 17.99 8.8l-8.58 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                  </span>
+                  <h2 class="text-xl font-semibold text-[#415861]">{{ $t('register.uploadDocuments') }}</h2>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('register.hints.documents') }}</p>
+              </div>
 
               <div class="space-y-6">
                 <div v-for="cat in fileCategories" :key="cat.value" class="border border-[#e2e8f0] rounded-xl p-4">
@@ -1905,7 +2008,15 @@ const goHome = () => {
 
             <!-- Step 5: Review -->
             <div v-if="currentStep === 5" class="p-6 lg:p-8">
-              <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('register.steps.reviewSubmit') }}</h2>
+              <div class="mb-6 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" /></svg>
+                  </span>
+                  <h2 class="text-xl font-semibold text-[#415861]">{{ $t('register.steps.reviewSubmit') }}</h2>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('register.hints.reviewSubmit') }}</p>
+              </div>
 
               <div class="space-y-6">
                 <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
@@ -2145,6 +2256,19 @@ const goHome = () => {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+}
+/* Dropdown items always dark for readability - overrides the placeholder
+   color (text-[#94a3b8]) that's applied to the closed select element. */
+.reg-select option {
+  color: #1e293b;
+  background: #ffffff;
+}
+.reg-select optgroup {
+  color: #1e293b;
+  font-weight: 600;
+}
+.reg-select option:disabled {
+  color: #94a3b8;
 }
 .pg-section-title {
   font-size: 11px;

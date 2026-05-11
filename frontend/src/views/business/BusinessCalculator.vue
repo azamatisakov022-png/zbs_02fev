@@ -496,7 +496,7 @@ const performCalculation = () => {
   calculationResult.value = {
     number: `РС-${now.getFullYear()}-${num}`,
     date: now.toLocaleDateString(),
-    dueDate: deadline ? formatDateShort(deadline) : '—'
+    dueDate: deadline ? formatDateShort(deadline) : '-'
   }
   currentStep.value = 3
 }
@@ -1049,13 +1049,13 @@ const downloadReceipt = () => {
 
     <!-- LIST VIEW -->
     <template v-if="viewMode === 'list'">
-      <div class="content__header mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b] mb-2">{{ $t('businessCalc.pageTitle') }}</h1>
-        <p class="text-[#64748b]">{{ $t('businessCalc.pageSubtitle') }}</p>
+      <div class="content__header mb-8">
+        <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase mb-2">{{ $t('businessCalc.pageTitle') }}</h1>
+        <p class="text-base lg:text-lg text-[#415861] font-medium">{{ $t('businessCalc.pageSubtitle') }}</p>
       </div>
 
       <!-- CTA Banner -->
-      <div class="mb-6 bg-gradient-to-r from-[#f59e0b] to-[#d97706] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
+      <div class="mb-6 bg-gradient-to-br from-[#0e888d] via-[#0fa8a0] to-[#10b981] rounded-2xl p-6 lg:p-8 text-white relative overflow-hidden">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2"></div>
         <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
@@ -1070,7 +1070,7 @@ const downloadReceipt = () => {
           </div>
           <button
             @click="startWizard"
-            class="flex items-center justify-center gap-2 bg-white text-[#f59e0b] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-amber-50 transition-colors shadow-lg flex-shrink-0"
+            class="flex items-center justify-center gap-2 bg-white text-[#0e888d] px-6 py-3 lg:px-8 lg:py-4 rounded-xl font-semibold hover:bg-[#e8f5f5] transition-colors shadow-lg flex-shrink-0"
           >
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -1081,16 +1081,16 @@ const downloadReceipt = () => {
       </div>
 
       <!-- Info Alert -->
-      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <div class="w-8 h-8 rounded-lg bg-[#0e888d]/10 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-          <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.infoTitle') }}</p>
+          <p class="font-medium text-[#415861]">{{ $t('businessCalc.infoTitle') }}</p>
           <p class="text-sm text-[#64748b]">{{ $t('businessCalc.infoDescription') }}
-            <button @click="showInstruction = true" class="text-[#2D8B4E] hover:underline font-medium inline-flex items-center gap-1 mt-1">
+            <button @click="showInstruction = true" class="text-[#0e888d] hover:underline font-medium inline-flex items-center gap-1 mt-1">
               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               {{ $t('businessCalc.instructionLink') }}
             </button>
@@ -1106,21 +1106,50 @@ const downloadReceipt = () => {
       <template v-if="!isLoading">
       <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.totalCalcs') }}</p>
-          <p class="text-2xl font-bold text-[#1e293b]">12</p>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.totalCalcs') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M9 13h6M9 17h6M9 9h2" />
+              </svg>
+            </span>
+          </div>
+          <p class="text-[28px] font-bold text-[#1e293b] leading-none">12</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.paidForYear') }}</p>
-          <p class="text-2xl font-bold text-[#10b981]">161 050 {{ $t('businessCalc.som') }}</p>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.paidForYear') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#10b981]/10 text-[#10b981] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+          </div>
+          <p class="text-[28px] font-bold text-[#10b981] leading-none">161 050 {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.toPay') }}</p>
-          <p class="text-2xl font-bold text-[#f59e0b]">0 {{ $t('businessCalc.som') }}</p>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.toPay') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#fea629]/10 text-[#fea629] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+          </div>
+          <p class="text-[28px] font-bold text-[#fea629] leading-none">0 {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bg-white rounded-xl p-4 shadow-sm border border-[#e2e8f0]">
-          <p class="text-sm text-[#64748b] mb-1">{{ $t('businessCalc.lastCalc') }}</p>
-          <p class="text-2xl font-bold text-[#2563eb]">Q4 2025</p>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.lastCalc') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#415861]/10 text-[#415861] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </span>
+          </div>
+          <p class="text-[28px] font-bold text-[#415861] leading-none">Q4 2025</p>
         </div>
       </div>
 
@@ -1412,7 +1441,7 @@ const downloadReceipt = () => {
             {{ $t('businessCalc.backToList') }}
           </button>
           <div class="flex items-center justify-between gap-4">
-            <h1 class="text-2xl lg:text-3xl font-bold text-[#1e293b]">{{ $t('businessCalc.pageTitle') }}</h1>
+            <h1 class="text-2xl md:text-[28px] lg:text-[30px] font-bold text-[#415861] uppercase">{{ $t('businessCalc.pageTitle') }}</h1>
             <button @click="showInstruction = true" class="flex items-center gap-2 text-[#2D8B4E] hover:bg-[#ecfdf5] px-4 py-2 rounded-xl transition-colors text-sm font-medium flex-shrink-0">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1435,23 +1464,40 @@ const downloadReceipt = () => {
               >
                 <div
                   :class="[
-                    'w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-colors',
+                    'w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-all',
                     currentStep === step.number
-                      ? 'bg-[#2D8B4E] text-white step-active-pulse'
+                      ? 'bg-[#0e888d] text-white ring-4 ring-[#0e888d]/20 step-active-pulse'
                       : currentStep > step.number
-                        ? 'bg-[#2D8B4E] text-white'
+                        ? 'bg-[#0e888d] text-white'
                         : 'bg-[#e2e8f0] text-[#64748b]'
                   ]"
                 >
-                  <svg v-if="currentStep > step.number" class="w-5 h-5 step-check-enter" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  <!-- Completed: check -->
+                  <svg v-if="currentStep > step.number" class="w-5 h-5 step-check-enter" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
+                  <!-- Active: Lucide icon per step -->
+                  <template v-else-if="currentStep === step.number">
+                    <!-- Step 1: calendar -->
+                    <svg v-if="step.number === 1" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <!-- Step 2: package -->
+                    <svg v-else-if="step.number === 2" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <!-- Step 3: calculator -->
+                    <svg v-else class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h.01M12 11h.01M15 11h.01M9 14h.01M12 14h.01M15 14h.01M9 17h6M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </template>
+                  <!-- Future: number -->
                   <span v-else>{{ step.number }}</span>
                 </div>
                 <span
                   :class="[
                     'hidden sm:block text-sm lg:text-base font-medium',
-                    currentStep >= step.number ? 'text-[#1e293b]' : 'text-[#64748b]'
+                    currentStep >= step.number ? 'text-[#415861]' : 'text-[#64748b]'
                   ]"
                 >
                   {{ step.title }}
@@ -1461,7 +1507,7 @@ const downloadReceipt = () => {
                 v-if="index < steps.length - 1"
                 :class="[
                   'flex-1 h-1 mx-2 lg:mx-4 rounded-full transition-all duration-500',
-                  currentStep > step.number ? 'bg-[#2D8B4E]' : 'bg-[#e2e8f0]'
+                  currentStep > step.number ? 'bg-[#0e888d]' : 'bg-[#e2e8f0]'
                 ]"
               ></div>
             </template>
@@ -1472,7 +1518,17 @@ const downloadReceipt = () => {
         <div class="bg-white rounded-2xl shadow-sm border border-[#e2e8f0]">
           <!-- Step 1: Basic Data -->
           <div v-if="currentStep === 1" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessCalc.periodAndPayerTitle') }}</h2>
+            <div class="mb-6 pb-3 border-b border-gray-100">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                  <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <h2 class="text-xl font-semibold text-[#415861]">{{ $t('businessCalc.periodAndPayerTitle') }}</h2>
+              </div>
+              <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('businessCalc.hints.period') }}</p>
+            </div>
 
             <div class="space-y-6">
               <!-- Payer Type Toggle -->
@@ -1485,8 +1541,8 @@ const downloadReceipt = () => {
                     :class="[
                       'px-6 py-3 text-sm font-medium transition-all duration-200',
                       payerType === 'producer'
-                        ? 'bg-[#f59e0b] text-white shadow-sm'
-                        : 'text-[#64748b] hover:text-[#1e293b] hover:bg-white'
+                        ? 'bg-[#0e888d] text-white shadow-sm'
+                        : 'text-[#64748b] hover:text-[#415861] hover:bg-white'
                     ]"
                   >{{ $t('businessCalc.producer') }}</button>
                   <button
@@ -1495,8 +1551,8 @@ const downloadReceipt = () => {
                     :class="[
                       'px-6 py-3 text-sm font-medium transition-all duration-200',
                       payerType === 'importer'
-                        ? 'bg-[#f59e0b] text-white shadow-sm'
-                        : 'text-[#64748b] hover:text-[#1e293b] hover:bg-white'
+                        ? 'bg-[#0e888d] text-white shadow-sm'
+                        : 'text-[#64748b] hover:text-[#415861] hover:bg-white'
                     ]"
                   >{{ $t('businessCalc.importer') }}</button>
                 </div>
@@ -1626,11 +1682,13 @@ const downloadReceipt = () => {
               </div>
 
               <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
-                <div class="flex items-center gap-2 mb-4">
-                  <svg class="w-5 h-5 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  <h3 class="font-medium text-[#1e293b]">{{ $t('businessCalc.payerDataTitle') }}</h3>
+                <div class="flex items-center gap-3 mb-4">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </span>
+                  <h3 class="font-medium text-[#415861]">{{ $t('businessCalc.payerDataTitle') }}</h3>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -1648,14 +1706,14 @@ const downloadReceipt = () => {
                 </div>
               </div>
 
-              <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                <div class="w-8 h-8 rounded-lg bg-[#0e888d]/10 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p class="font-medium text-[#1e293b]">{{ $t('businessCalc.paymentTermsTitle') }}</p>
+                  <p class="font-medium text-[#415861]">{{ $t('businessCalc.paymentTermsTitle') }}</p>
                   <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentTermsText')"></p>
                 </div>
               </div>
@@ -1664,14 +1722,26 @@ const downloadReceipt = () => {
 
           <!-- Step 2: Products -->
           <div v-if="currentStep === 2" class="p-6 lg:p-8">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <h2 class="text-xl font-semibold text-[#1e293b]">{{ $t('businessCalc.productsTitle') }}</h2>
-              <button @click="importFromDeclaration" class="flex items-center gap-2 text-[#f59e0b] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
+            <div class="mb-6 pb-3 border-b border-gray-100">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                      <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </span>
+                    <h2 class="text-xl font-semibold text-[#415861]">{{ $t('businessCalc.productsTitle') }}</h2>
+                  </div>
+                  <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('businessCalc.hints.products') }}</p>
+                </div>
+                <button @click="importFromDeclaration" class="flex items-center gap-2 text-[#f59e0b] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                {{ $t('businessCalc.importFromDeclaration') }}
-              </button>
+                  {{ $t('businessCalc.importFromDeclaration') }}
+                </button>
+              </div>
             </div>
 
             <p v-if="formSubmitted && formErrors.products" class="vld-error mb-4" data-validation-error>
@@ -1847,7 +1917,7 @@ const downloadReceipt = () => {
                   <div class="cf-data__computed">
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.normLabel') }}</span>
-                      <span class="cf-data__computed-value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '—' }}</span>
+                      <span class="cf-data__computed-value">{{ item.recyclingStandard ? item.recyclingStandard + '%' : '-' }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.toRecycleLabel') }}</span>
@@ -1916,7 +1986,17 @@ const downloadReceipt = () => {
 
           <!-- Step 3: Result -->
           <div v-if="currentStep === 3" class="p-6 lg:p-8">
-            <h2 class="text-xl font-semibold text-[#1e293b] mb-6">{{ $t('businessCalc.resultTitle') }}</h2>
+            <div class="mb-6 pb-3 border-b border-gray-100">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                  <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h.01M12 11h.01M15 11h.01M9 14h.01M12 14h.01M15 14h.01M9 17h6M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <h2 class="text-xl font-semibold text-[#415861]">{{ $t('businessCalc.resultTitle') }}</h2>
+              </div>
+              <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('businessCalc.hints.result') }}</p>
+            </div>
 
             <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0] mb-6">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1998,12 +2078,12 @@ const downloadReceipt = () => {
                     <tr>
                       <td class="px-4 py-3">{{ $t('businessCalc.totalRow') }}</td>
                       <td class="px-4 py-3 text-right">{{ totalVolume }}</td>
-                      <td class="px-4 py-3 text-right">—</td>
+                      <td class="px-4 py-3 text-right">-</td>
                       <td class="px-4 py-3 text-right text-[#6366f1]">{{ totalVolumeToRecycle }}</td>
                       <td class="px-4 py-3 text-right text-[#10b981]">{{ totalTransferred }}</td>
                       <td class="px-4 py-3 text-right text-[#2563eb]">{{ totalExported }}</td>
                       <td class="px-4 py-3 text-right">{{ totalTaxableVolume }}</td>
-                      <td class="px-4 py-3 text-right">—</td>
+                      <td class="px-4 py-3 text-right">-</td>
                       <td class="px-4 py-3 text-right text-[#f59e0b]">{{ totalAmount.toLocaleString() }}</td>
                     </tr>
                   </tfoot>
@@ -2081,7 +2161,7 @@ const downloadReceipt = () => {
               class="mt-6"
             />
 
-            <!-- ═══ 6. PAYMENT DETAILS — two separate cards ═══ -->
+            <!-- ═══ 6. PAYMENT DETAILS - two separate cards ═══ -->
             <div class="pay-details mt-6">
               <h3 class="pay-details__title">{{ $t('payment.paymentDetailsTitle') }}</h3>
               <div class="pay-details__cards">

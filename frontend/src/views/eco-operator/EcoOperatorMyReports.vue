@@ -345,7 +345,7 @@ const getStatusText = (status: string) => {
 }
 
 const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString()
 }
 
@@ -607,7 +607,7 @@ const saveDraft = () => {
                 {{ getStatusText(selectedReport.status) }}
               </span>
             </div>
-            <p class="text-gray-600 mt-1">{{ selectedReport.type }} — {{ selectedReport.period }}</p>
+            <p class="text-gray-600 mt-1">{{ selectedReport.type }} - {{ selectedReport.period }}</p>
           </div>
         </div>
         <div class="flex gap-2">

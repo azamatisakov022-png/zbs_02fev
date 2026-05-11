@@ -308,7 +308,7 @@ const periodButtons = computed(() => [
         <!-- Custom dates -->
         <template v-if="periodMode === 'custom'">
           <input type="date" v-model="customFrom" :lang="dateLang" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
-          <span class="text-xs text-[#94a3b8]">—</span>
+          <span class="text-xs text-[#94a3b8]">-</span>
           <input type="date" v-model="customTo" :lang="dateLang" class="px-3 py-1.5 border border-[#e2e8f0] rounded-lg text-xs focus:outline-none focus:border-[#10b981]" />
         </template>
         <!-- Region -->

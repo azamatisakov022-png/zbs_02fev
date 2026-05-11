@@ -4,7 +4,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@900&family=Source+Sans+3:wght@400;600&display=swap');
 
 /* ═══════════════════════════════════════
-   Design System — CSS Custom Properties
+   Design System - CSS Custom Properties
    ═══════════════════════════════════════ */
 :root {
   /* Brand colors */
@@ -17,7 +17,7 @@
   --color-muted: #6B7280;
   --font-family: 'Inter', 'Avenir Next', system-ui, sans-serif;
 
-  /* Shadows — three depth levels */
+  /* Shadows - three depth levels */
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.06);
   --shadow-lg: 0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04);
@@ -47,7 +47,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Dashboard Buttons — Four Categories
+   Dashboard Buttons - Four Categories
    ═══════════════════════════════════════ */
 .btn-action {
   display: inline-flex;
@@ -151,7 +151,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Status Badges — Pill Style
+   Status Badges - Pill Style
    ═══════════════════════════════════════ */
 .badge {
   display: inline-flex;
@@ -302,7 +302,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Stepper — Pulse animation for active step
+   Stepper - Pulse animation for active step
    ═══════════════════════════════════════ */
 @keyframes stepPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(45,139,78,0.4); }
@@ -352,7 +352,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Public Site — Legacy Classes
+   Public Site - Legacy Classes
    ═══════════════════════════════════════ */
 @utility max-w-container {
   max-width: 1440px;
@@ -650,7 +650,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Mobile: Detail pages — grids & cards
+   Mobile: Detail pages - grids & cards
    ═══════════════════════════════════════ */
 @media (max-width: 640px) {
   /* Reset min-width on cards/badges that cause overflow */
@@ -683,7 +683,7 @@ body {
    Mobile: Typography & breadcrumbs
    ═══════════════════════════════════════ */
 @media (max-width: 640px) {
-  /* Hide breadcrumb navigation on mobile — saves vertical space */
+  /* Hide breadcrumb navigation on mobile - saves vertical space */
   nav[aria-label="Breadcrumb"] {
     display: none;
   }
@@ -698,7 +698,7 @@ body {
 }
 
 /* ═══════════════════════════════════════
-   Print Styles — hide UI chrome
+   Print Styles - hide UI chrome
    ═══════════════════════════════════════ */
 @media print {
   .sidebar, nav, .header, .breadcrumb,

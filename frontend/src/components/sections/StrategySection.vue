@@ -11,41 +11,43 @@ interface StrategyItem {
 const { t } = useI18n()
 
 const strategyItems = computed<StrategyItem[]>(() => [
-  { id: 1, title: t('strategy.item1'), image: '/images/strategy/system-3d.webp' },
-  { id: 2, title: t('strategy.item2'), image: '/images/strategy/economy-3d.webp' },
-  { id: 3, title: t('strategy.item3'), image: '/images/strategy/culture-3d.webp' },
-  { id: 4, title: t('strategy.item4'), image: '/images/strategy/recycling-growth-3d.webp' },
-  { id: 5, title: t('strategy.item5'), image: '/images/strategy/landfill-reduction-3d.webp' },
-  { id: 6, title: t('strategy.item6'), image: '/images/strategy/partnership-3d.webp' },
-  { id: 7, title: t('strategy.item7'), image: '/images/strategy/innovation-3d.webp' },
+  { id: 1, title: t('strategy.item1'), image: '/images/strategy/system-3d-v2.webp' },
+  { id: 2, title: t('strategy.item2'), image: '/images/strategy/economy-3d-v2.webp' },
+  { id: 3, title: t('strategy.item3'), image: '/images/strategy/culture-3d-v2.webp' },
+  { id: 4, title: t('strategy.item4'), image: '/images/strategy/recycling-growth-3d-v2.webp' },
+  { id: 5, title: t('strategy.item5'), image: '/images/strategy/landfill-reduction-3d-v2.webp' },
+  { id: 6, title: t('strategy.item6'), image: '/images/strategy/partnership-3d-v2.webp' },
+  { id: 7, title: t('strategy.item7'), image: '/images/strategy/innovation-3d-v2.webp' },
+  { id: 8, title: t('strategy.item8'), image: '/images/strategy/transparency-control-3d-v2.webp' },
 ])
 </script>
 
 <template>
-  <section class="py-10 md:py-14 lg:py-[100px] bg-white">
+  <section class="py-10 md:py-14 lg:py-[80px] bg-white">
     <div class="container-main">
       <!-- Section header -->
-      <div class="text-center mb-8 md:mb-10 lg:mb-[50px]">
-        <h2 class="text-2xl md:text-4xl lg:text-[50px] lg:leading-[68px] font-bold text-[#415861] mb-4 lg:mb-[30px]">
+      <div class="mb-8 md:mb-10 lg:mb-[48px]">
+        <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px]">
           {{ $t('strategy.title') }}
         </h2>
-        <p class="text-[#415861] text-base md:text-lg lg:text-[28px] lg:leading-[38px] font-medium max-w-[1075px] mx-auto">
+        <div class="section-title-underline"></div>
+        <p class="text-[#415861] text-sm md:text-base lg:text-[17px] lg:leading-[1.55] max-w-[760px] mt-4 lg:mt-[20px]">
           {{ $t('strategy.mission') }}
         </p>
       </div>
 
-      <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-12 lg:gap-6 xl:gap-[30px]">
+      <!-- Uniform grid: 1 / 2 / 3 / 4 columns -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
         <article
           v-for="item in strategyItems"
           :key="item.id"
           class="strategy-card flex flex-col"
-          :class="item.id <= 4 ? 'md:col-span-1 lg:col-span-3' : item.id === 7 ? 'md:col-span-2 md:mx-auto md:max-w-[420px] lg:col-span-4 lg:mx-0 lg:max-w-none' : 'md:col-span-1 lg:col-span-4'"
         >
-          <div class="mb-5 flex h-[150px] items-center justify-center overflow-hidden rounded-[18px] bg-white md:h-[170px] lg:h-[132px] xl:h-[164px]">
+          <div class="mb-4 flex h-[120px] w-[55%] max-w-[160px] items-center justify-center self-center md:h-[140px] lg:h-[150px]">
             <img :src="item.image" :alt="item.title" class="h-full w-full object-contain" />
           </div>
 
-          <h3 class="text-[#415861] text-lg leading-[1.28] font-semibold md:text-xl lg:text-[18px] xl:text-[22px]">
+          <h3 class="text-[#415861] text-base lg:text-[17px] lg:leading-[24px] font-semibold text-center">
             {{ item.title }}
           </h3>
         </article>

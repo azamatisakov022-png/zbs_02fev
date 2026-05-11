@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { toastStore } from '../../stores/toast'
 import { useGisPublicData } from '../../composables/useGisPublicData'
 
-// ─── Источник данных карты — общий composable. Тот же что и у /registries. ───
+// ─── Источник данных карты - общий composable. Тот же что и у /registries. ───
 const {
   landfills: backendLandfills,
   recyclers: backendRecyclers,
@@ -337,7 +337,7 @@ const filteredPayers = computed(() => {
 })
 
 // ==================== MAP POINTS FROM BACKEND ====================
-// Источник — общий composable useGisPublicData (см. выше).
+// Источник - общий composable useGisPublicData (см. выше).
 // Producers и payers намеренно не добавляются на карту.
 
 const allMapPoints = computed<MapPoint[]>(() => {
@@ -482,7 +482,7 @@ const oblastGeoJsonOptions = {
   },
 }
 
-// Маска «мир минус КР» добавляется императивно после готовности карты —
+// Маска «мир минус КР» добавляется императивно после готовности карты -
 // ей нужен собственный pane между tilePane (200) и overlayPane (400).
 const mapReady = ref(false)
 let maskLayer: L.Polygon | null = null
@@ -515,7 +515,7 @@ watch([mapReady, oblastsGeo], ([ready, data]) => {
 })
 
 onMounted(async () => {
-  // Загружаем данные из сторов — без fetchAll() сторы остаются пустыми
+  // Загружаем данные из сторов - без fetchAll() сторы остаются пустыми
   // и на карте не появляются маркеры. Ошибки подавлены в самих сторах.
   // Данные подгружаются через useGisPublicData (см. composables/useGisPublicData.ts)
 
@@ -676,7 +676,7 @@ import { loadGisPublicData } from '../../composables/useGisPublicData'
 const mapLandfillToBackend = (form: Landfill): Record<string, unknown> => ({
   name: form.name,
   // Тип: «Санкционированная» = MUNICIPAL, «Промышленный отвал» = INDUSTRIAL,
-  // «Несанкционированная» = используется для DUMPS отдельно — здесь MIXED.
+  // «Несанкционированная» = используется для DUMPS отдельно - здесь MIXED.
   type: form.type === 'Промышленный отвал' ? 'INDUSTRIAL'
       : form.type === t('employeeMap.statusUnsanctioned') ? 'MIXED'
       : 'MUNICIPAL',
@@ -788,7 +788,7 @@ const saveItem = async () => {
 const deleteItem = async () => {
   try {
     if (activeRegistry.value === 'landfills' && selectedLandfill.value) {
-      // У landfill backend нет DELETE — отправляем полный DTO со статусом CLOSED.
+      // У landfill backend нет DELETE - отправляем полный DTO со статусом CLOSED.
       const dto = {
         ...mapLandfillToBackend({ ...selectedLandfill.value, status: t('employeeMap.statusClosed') }),
       }
@@ -915,7 +915,7 @@ const countByType = computed(() => ({
             mask-color="#ffffff"
           />
 
-          <!-- ══ Слои (floating control — слева-сверху) ══ -->
+          <!-- ══ Слои (floating control - слева-сверху) ══ -->
           <div
             class="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/70 overflow-hidden"
             style="min-width: 200px;"
@@ -1193,10 +1193,10 @@ const countByType = computed(() => ({
                 <div><label class="text-sm text-gray-500">{{ $t('common.type') }}</label><p>{{ selectedLandfill.type }}</p></div>
                 <div><label class="text-sm text-gray-500">{{ $t('employeeMap.area') }}</label><p>{{ selectedLandfill.area }} {{ $t('employeeMap.ha') }}</p></div>
                 <div><label class="text-sm text-gray-500">{{ $t('employeeMap.volume') }}</label><p>{{ selectedLandfill.volume?.toLocaleString() }} {{ $t('common.tons') }}</p></div>
-                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedLandfill.organization || '—' }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.organization') }}</label><p>{{ selectedLandfill.organization || '-' }}</p></div>
                 <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.address') }}</label><p>{{ selectedLandfill.address }}</p></div>
                 <div><label class="text-sm text-gray-500">GPS</label><p class="font-mono text-sm">{{ selectedLandfill.gpsLat }}, {{ selectedLandfill.gpsLng }}</p></div>
-                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.discoveryDate') }}</label><p>{{ selectedLandfill.discoveryDate || '—' }}</p></div>
+                <div><label class="text-sm text-gray-500">{{ $t('employeeMap.discoveryDate') }}</label><p>{{ selectedLandfill.discoveryDate || '-' }}</p></div>
                 <div class="col-span-2"><label class="text-sm text-gray-500">{{ $t('employeeMap.wasteTypes') }}</label><div class="flex flex-wrap gap-1 mt-1"><span v-for="wt in selectedLandfill.wasteTypes" :key="wt" class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">{{ wt }}</span></div></div>
                 <div class="col-span-2" v-if="selectedLandfill.notes"><label class="text-sm text-gray-500">{{ $t('employeeMap.notes') }}</label><p>{{ selectedLandfill.notes }}</p></div>
               </div>

@@ -287,7 +287,7 @@ const computedDueDate = computed(() => {
 })
 
 const dueDateFormatted = computed(() => {
-  if (!computedDueDate.value) return calc.value?.dueDate || '—'
+  if (!computedDueDate.value) return calc.value?.dueDate || '-'
   return formatDateShort(computedDueDate.value)
 })
 
@@ -537,7 +537,7 @@ function submitPaymentConfirmation() {
           </div>
           <div>
             <p class="text-xs text-[#64748b] mb-1">{{ $t('calcDetail.address') }}</p>
-            <p class="font-medium text-[#1e293b]">{{ calc.address || '—' }}</p>
+            <p class="font-medium text-[#1e293b]">{{ calc.address || '-' }}</p>
           </div>
           <div>
             <p class="text-xs text-[#64748b] mb-1">{{ calc.payerType === 'importer' ? $t('calcDetail.importDate') : $t('calcDetail.calcPeriod') }}</p>
@@ -613,9 +613,9 @@ function submitPaymentConfirmation() {
                   <template v-else>{{ formatNum(item.volume) }}</template>
                 </td>
                 <!-- Standard -->
-                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '—' }}%</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '-' }}%</td>
                 <!-- VolumeToRecycle -->
-                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '—' }}</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '-' }}</td>
                 <!-- Transferred -->
                 <td class="px-5 py-3 text-right text-[#10b981]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.transferredToRecycling" @input="recalcItem(item)" class="edit-input text-right" />
@@ -627,7 +627,7 @@ function submitPaymentConfirmation() {
                   <template v-else>{{ formatNum(item.exportedFromKR || '0') }}</template>
                 </td>
                 <!-- Taxable -->
-                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '—' }}</td>
+                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '-' }}</td>
                 <!-- Rate -->
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ formatNum(item.rate, 0) }}</td>
                 <!-- Amount -->

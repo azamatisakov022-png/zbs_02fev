@@ -1,12 +1,12 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// useGisPublicData — единый источник данных для ГИС-карты.
+// useGisPublicData - единый источник данных для ГИС-карты.
 //
 // Грузит 4 типа объектов с публичных backend-endpoints (без JWT).
 // Используется и публичной картой `/registries`, и ЛК сотрудника `/employee/map`,
 // чтобы гарантировать что обе страницы показывают ОДИНАКОВЫЕ данные.
 //
 // Кэш живёт в module-scope: откроешь сначала /registries, потом /employee/map
-// — второй экран получит данные мгновенно из памяти.
+// - второй экран получит данные мгновенно из памяти.
 // ═══════════════════════════════════════════════════════════════════════════
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import api from '../api/client'
@@ -84,7 +84,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const loadedOnce = ref(false)
 
-/** Загрузка (force=true — принудительное обновление, иначе skip если уже загружено). */
+/** Загрузка (force=true - принудительное обновление, иначе skip если уже загружено). */
 export async function loadGisPublicData(force = false): Promise<void> {
   if (loadedOnce.value && !force) return
   loading.value = true
@@ -113,12 +113,12 @@ export async function loadGisPublicData(force = false): Promise<void> {
 /**
  * Хук: вернёт reactive-массивы и триггернёт загрузку на onMounted.
  *
- * @param options.pollIntervalMs — если задано, компонент будет автоматически
+ * @param options.pollIntervalMs - если задано, компонент будет автоматически
  *   обновлять данные с указанной периодичностью (мс). Используется на
  *   публичной карте `/registries`, чтобы инспектор в одном городе видел
  *   изменения, внесённые сотрудником в другом, без перезагрузки страницы.
  *
- *   Рекомендованное значение для гос-системы: 60000 (раз в минуту) —
+ *   Рекомендованное значение для гос-системы: 60000 (раз в минуту) -
  *   баланс между «свежестью» и нагрузкой на backend.
  */
 export function useGisPublicData(options?: { pollIntervalMs?: number }) {
@@ -128,7 +128,7 @@ export function useGisPublicData(options?: { pollIntervalMs?: number }) {
     if (!loadedOnce.value && !loading.value) loadGisPublicData()
     if (options?.pollIntervalMs && options.pollIntervalMs > 0) {
       pollTimer = setInterval(() => {
-        // Тихий refresh — не показываем спиннер, не валим UI на ошибке
+        // Тихий refresh - не показываем спиннер, не валим UI на ошибке
         loadGisPublicData(true).catch(() => {})
       }, options.pollIntervalMs)
     }

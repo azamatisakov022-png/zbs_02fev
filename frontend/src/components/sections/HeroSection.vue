@@ -27,29 +27,17 @@ const { t } = useI18n()
           </div>
 
           <!-- Title -->
-          <h1 class="text-white text-3xl md:text-4xl lg:text-[50px] lg:leading-[1.2] font-bold uppercase mt-6 lg:mt-[94px] mb-6 lg:mb-[77px]">
+          <h1 class="text-white text-2xl md:text-3xl lg:text-[38px] lg:leading-[1.15] font-bold uppercase mt-6 lg:mt-[80px] mb-6 lg:mb-[60px] max-w-[560px] lg:max-w-[680px]">
             {{ $t('hero.title') }}
           </h1>
 
           <!-- Description -->
-          <div class="text-white text-sm md:text-base lg:text-[18px] lg:leading-[1.6] font-medium max-w-[506px] space-y-4">
+          <div class="text-white text-sm md:text-base lg:text-[18px] lg:leading-[1.6] font-medium max-w-[506px]">
             <p>
-              {{ $t('hero.description1') }}
-            </p>
-            <p class="hidden md:block">
-              {{ $t('hero.description2') }}
-            </p>
-            <p class="hidden lg:block">
-              {{ $t('hero.description3') }}
+              {{ $t('hero.description') }}
             </p>
           </div>
 
-          <!-- Pagination dots -->
-          <div class="flex items-center gap-[8px] mt-8 lg:mt-auto">
-            <span class="w-[30px] h-[7px] bg-[#e3e3e3] rounded-[7px]"></span>
-            <span class="w-[34px] h-[9px] bg-[#fea629] rounded-[7px]"></span>
-            <span class="w-[30px] h-[7px] bg-[#e3e3e3] rounded-[7px]"></span>
-          </div>
         </div>
 
         <!-- Right card - Desktop only positioned absolutely -->

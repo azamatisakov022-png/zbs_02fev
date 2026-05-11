@@ -14,10 +14,10 @@ const { roleTitle, menuItems, primaryAction } = useBusinessMenu()
 
 // ─── Тип учётной записи (businessType + applicantType) ──────────────
 //
-// Меняем ТОЛЬКО applicantType — это пользователь может сам поправить,
+// Меняем ТОЛЬКО applicantType - это пользователь может сам поправить,
 // если, например, перерегистрировался с одного типа объекта на другой.
 // businessType (плательщик / заявитель / оба) меняется только админом
-// или через пересоздание учётки — слишком завязано на платежные сущности
+// или через пересоздание учётки - слишком завязано на платежные сущности
 // (Payer-запись и Account создаются при регистрации).
 type ApplicantTypeValue = 'recycler' | 'landfill' | 'collection_point' | 'other'
 
@@ -403,7 +403,7 @@ const toggleTwoFactor = () => {
       <!-- ─── Тип учётной записи ─── -->
       <!-- Показывает текущий businessType и (для заявителей) позволяет
            сменить applicantType. Это нужно когда переработчик, например,
-           переоборудовал площадку в полигон — без обращения в админку. -->
+           переоборудовал площадку в полигон - без обращения в админку. -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div class="flex items-center gap-3">
@@ -433,7 +433,7 @@ const toggleTwoFactor = () => {
             </div>
           </div>
 
-          <!-- Применимо только заявителям/обоим — выбор подтипа -->
+          <!-- Применимо только заявителям/обоим - выбор подтипа -->
           <div v-if="isApplicantOrBoth" class="border-t border-gray-100 pt-5">
             <label class="block text-sm font-medium text-gray-900 mb-2">
               {{ $t('businessProfile.accountType.applicantTypeLabel') }}
@@ -778,7 +778,7 @@ const toggleTwoFactor = () => {
                 type="tel"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ contactData.fax || '—' }}</p>
+              <p v-else class="text-gray-900">{{ contactData.fax || '-' }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">Email</label>
@@ -801,7 +801,7 @@ const toggleTwoFactor = () => {
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900">{{ contactData.website || '—' }}</p>
+              <p v-else class="text-gray-900">{{ contactData.website || '-' }}</p>
             </div>
           </div>
           <!-- Edit Actions -->
@@ -1027,7 +1027,7 @@ const toggleTwoFactor = () => {
                 :placeholder="$t('businessProfile.notSpecified')"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <p v-else class="text-gray-900 font-mono">{{ bankData.correspondentAccount || '—' }}</p>
+              <p v-else class="text-gray-900 font-mono">{{ bankData.correspondentAccount || '-' }}</p>
             </div>
           </div>
           <!-- Edit Actions -->
@@ -1280,7 +1280,7 @@ const toggleTwoFactor = () => {
                     </svg>
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">Windows — Chrome</p>
+                    <p class="font-medium text-gray-900">Windows - Chrome</p>
                     <p class="text-sm text-gray-500">{{ $t('businessProfile.currentSession') }}</p>
                   </div>
                 </div>
@@ -1294,7 +1294,7 @@ const toggleTwoFactor = () => {
                     </svg>
                   </div>
                   <div>
-                    <p class="font-medium text-gray-900">iOS — Safari</p>
+                    <p class="font-medium text-gray-900">iOS - Safari</p>
                     <p class="text-sm text-gray-500">{{ $t('businessProfile.previousSession') }}</p>
                   </div>
                 </div>

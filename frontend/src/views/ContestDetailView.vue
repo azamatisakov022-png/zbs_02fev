@@ -27,7 +27,7 @@ const formatDate = (iso: string): string => {
 }
 
 const formatGrant = (amount?: number, currency?: string): string => {
-  if (!amount) return '—'
+  if (!amount) return '-'
   const c = currency === 'KGS' ? 'сом' : (currency || '')
   return `${amount.toLocaleString('ru-RU')} ${c}`.trim()
 }

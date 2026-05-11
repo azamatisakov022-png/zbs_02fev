@@ -10,7 +10,7 @@ import { auditStore, type AuditEntry, type AuditActionType, type AuditStatus } f
 const { roleTitle, menuItems } = useEmployeeMenu()
 const { t } = useI18n()
 
-// Current user (in production — from authStore)
+// Current user (in production - from authStore)
 const currentUser = 'Алиева Д.Н.'
 
 // All entries for this user

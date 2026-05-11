@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 const footerLinks = computed(() => [
-  { name: 'legislation', path: '/legislation', label: t('nav.legislation') },
+  { name: 'legal-base', path: '/legal-base', label: t('nav.legalBase') },
   { name: 'licenses', path: '/licenses', label: t('nav.licenses') },
   { name: 'publications', path: '/publications', label: t('nav.publications') },
   { name: 'registries', path: '/registries', label: t('nav.registries') },
@@ -29,8 +29,12 @@ const socialLinks = [
       <!-- Top footer - Logo and Navigation -->
       <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between py-5 lg:py-6 gap-4 lg:gap-0">
         <!-- Logo -->
-        <router-link to="/" class="flex items-center">
-          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="max-height: 48px; width: auto; object-fit: contain;" />
+        <router-link to="/" class="flex items-center gap-2">
+          <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 48px; width: 48px; object-fit: cover; object-position: left;" />
+          <div class="flex flex-col whitespace-nowrap">
+            <span class="text-[14px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">{{ $t('common.companyName') }}</span>
+            <span class="text-[11px] font-normal text-[#6b7280]">{{ $t('common.companyType') }}</span>
+          </div>
         </router-link>
 
         <!-- Footer navigation -->

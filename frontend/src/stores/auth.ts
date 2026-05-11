@@ -86,7 +86,7 @@ export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true'
 // Логин/пароль, работающие во всех ЛК. По умолчанию идут в backend через
 // seed-юзеров (V5__seed_test_users.sql), чтобы получить РЕАЛЬНЫЙ JWT и
 // иметь доступ к приватным endpoints (CRUD landfills/recyclers/...).
-// Если backend недоступен — fallback на локальный demo-токен.
+// Если backend недоступен - fallback на локальный demo-токен.
 export const TEST_LOGIN = 'test'
 export const TEST_PASSWORD = '2026'
 

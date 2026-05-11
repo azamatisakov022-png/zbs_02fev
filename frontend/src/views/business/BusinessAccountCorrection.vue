@@ -346,7 +346,7 @@ const canSubmit = computed(() =>
             <!-- BLOCK 1: Info (readonly) -->
             <div class="cf-info">
               <div class="cf-info__title">{{ index + 1 }}. {{ getGroupLabel(row.group) }}</div>
-              <div class="cf-info__subtitle">{{ row.subgroup ? getSubgroupLabel(row.group, row.subgroup) : '—' }}</div>
+              <div class="cf-info__subtitle">{{ row.subgroup ? getSubgroupLabel(row.group, row.subgroup) : '-' }}</div>
               <div class="cf-info__grid">
                 <div class="cf-info__cell">
                   <span class="cf-info__label">{{ $t('businessCorrection.gr5Volume') }}</span>

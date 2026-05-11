@@ -121,7 +121,7 @@ const getSlaClass = (item: FeedbackItem): string => {
 }
 
 const getDaysText = (item: FeedbackItem): string => {
-  if (item.status === FeedbackStatus.RESOLVED || item.status === FeedbackStatus.REJECTED) return '—'
+  if (item.status === FeedbackStatus.RESOLVED || item.status === FeedbackStatus.REJECTED) return '-'
   const days = feedbackStore.getDaysElapsed(item.createdAt)
   return `${days} ${t('feedback.days')}`
 }
@@ -221,7 +221,7 @@ const openDetail = (id: number) => {
                 <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ categoryLabel(item.category) }}</td>
                 <td class="px-4 py-3 text-gray-800 max-w-[250px] truncate">{{ item.subject }}</td>
                 <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ item.fullName }}</td>
-                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ item.region || '—' }}</td>
+                <td class="px-4 py-3 text-gray-600 whitespace-nowrap">{{ item.region || '-' }}</td>
                 <td class="px-4 py-3 whitespace-nowrap">
                   <span :class="[statusColor(item.status), 'text-xs px-2 py-1 rounded-full font-medium']">
                     {{ statusLabel(item.status) }}

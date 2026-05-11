@@ -455,14 +455,14 @@ const resetFilters = () => {
                     <tr v-for="item in selectedReport.items" :key="item.id" class="hover:bg-[#f8fafc]">
                       <td class="px-4 py-3 text-[#1e293b]">{{ getWasteTypeLabel(item.wasteType) }}</td>
                       <template v-if="!isPackagingGroup(item.wasteType)">
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.gskpCode || '—' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.gskpCode || '-' }}</td>
                         <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ item.wasteCode }}</td>
                         <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedTnvedName(getSubgroupByCode(item.wasteType, item.wasteCode)?.tnvedName) }}</td>
                       </template>
                       <template v-else>
                         <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedPackagingMaterial(getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial) }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '—' }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '—' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '-' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '-' }}</td>
                       </template>
                       <td class="px-4 py-3 text-right font-medium">{{ item.declared }}</td>
                       <td class="px-4 py-3 text-right font-medium text-[#10b981]">{{ item.processed }}</td>
@@ -571,7 +571,7 @@ const resetFilters = () => {
                   entry.action.includes('доработку') ? 'bg-orange-500' : 'bg-blue-500'
                 ]"></div>
                 <div>
-                  <p class="text-sm text-[#1e293b]"><span class="font-medium">{{ entry.action }}</span> — {{ entry.user }}</p>
+                  <p class="text-sm text-[#1e293b]"><span class="font-medium">{{ entry.action }}</span> - {{ entry.user }}</p>
                   <p class="text-xs text-[#94a3b8]">{{ entry.date }}</p>
                   <p v-if="entry.comment" class="text-xs text-[#64748b] mt-1">{{ entry.comment }}</p>
                 </div>

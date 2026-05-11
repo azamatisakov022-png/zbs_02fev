@@ -86,7 +86,7 @@ const counts = computed(() => ({
 const totalPages = computed(() => Math.max(1, Math.ceil(totalElements.value / SIZE)))
 
 function formatDate(iso: string) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   return new Date(iso).toLocaleDateString('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   })

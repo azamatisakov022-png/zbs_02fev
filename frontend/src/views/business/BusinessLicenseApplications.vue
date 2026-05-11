@@ -43,7 +43,7 @@ function createNew() {
 }
 
 function formatDate(dateStr?: string) {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('ru-RU')
 }
 </script>
@@ -126,7 +126,7 @@ function formatDate(dateStr?: string) {
                   <span v-if="app.daysLeft < 0" class="text-xs">(просрочено)</span>
                   <span v-else-if="app.daysLeft >= 0" class="text-xs">(осталось {{ app.daysLeft }} дн.)</span>
                 </span>
-                <span v-else>—</span>
+                <span v-else>-</span>
               </td>
               <td class="px-4 py-3">
                 <button

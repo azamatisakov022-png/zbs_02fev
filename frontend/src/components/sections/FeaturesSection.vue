@@ -46,20 +46,20 @@ const features = computed<Feature[]>(() => [
 </script>
 
 <template>
-  <section class="py-10 md:py-14 lg:py-[100px] bg-white">
+  <section class="py-10 md:py-14 lg:py-[80px] bg-white">
     <div class="container-main">
       <!-- Section header -->
-      <div class="mb-8 md:mb-10 lg:mb-[63px]">
+      <div class="mb-8 md:mb-10 lg:mb-[48px]">
         <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px]">
           {{ $t('features.title') }}
         </h2>
         <div class="section-title-underline"></div>
       </div>
 
-      <!-- Features grid - first row (3 cards) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-[30px] mb-5 lg:mb-[30px]">
+      <!-- Features grid - 5 cards in a row on desktop -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 lg:gap-6">
         <div
-          v-for="feature in features.slice(0, 3)"
+          v-for="feature in features"
           :key="feature.id"
           class="feature-card flex flex-col"
         >
@@ -67,54 +67,18 @@ const features = computed<Feature[]>(() => [
           <div class="feature-card-accent-top bg-[#0e888d]"></div>
 
           <!-- Image container -->
-          <div class="mt-8 flex h-[220px] w-[78%] max-w-[320px] items-center justify-center self-center md:h-[250px] lg:h-[285px]">
+          <div class="mt-5 flex h-[120px] w-[55%] max-w-[160px] items-center justify-center self-center md:h-[140px] lg:h-[150px]">
             <img :src="feature.image" :alt="feature.title" class="w-full h-full object-contain" />
           </div>
 
           <!-- Content -->
-          <div class="flex-1 flex flex-col items-center text-center px-6 lg:px-10 py-6 lg:pb-[40px]">
-            <h3 class="text-[#415861] text-lg lg:text-[22px] lg:leading-[31px] font-medium mb-4 lg:mb-[25px]">
+          <div class="flex-1 flex flex-col items-center text-center px-4 lg:px-5 py-5 lg:pb-7">
+            <h3 class="text-[#415861] text-base lg:text-[17px] lg:leading-[24px] font-semibold mb-2 lg:mb-3">
               {{ feature.title }}
             </h3>
-            <p class="text-[#415861] text-xs leading-relaxed max-w-[248px] mb-4 lg:mb-[25px]">
+            <p class="text-[#415861] text-sm lg:text-[14px] leading-[1.55]">
               {{ feature.description }}
             </p>
-            <a href="#" class="text-[#fea629] text-xs font-black uppercase hover:opacity-80 transition-opacity mt-auto">
-              {{ $t('common.more') }}
-            </a>
-          </div>
-
-          <!-- Bottom accent -->
-          <div class="feature-card-accent-bottom bg-[#415861]"></div>
-        </div>
-      </div>
-
-      <!-- Features grid - second row (2 cards centered) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-[30px] lg:max-w-[1242px] lg:mx-auto">
-        <div
-          v-for="feature in features.slice(3, 5)"
-          :key="feature.id"
-          class="feature-card flex flex-col lg:w-[606px]"
-        >
-          <!-- Top accent -->
-          <div class="feature-card-accent-top bg-[#0e888d]"></div>
-
-          <!-- Image container - wider for bottom row -->
-          <div class="mt-8 flex h-[220px] w-[78%] max-w-[320px] items-center justify-center self-center md:h-[250px] lg:h-[285px]">
-            <img :src="feature.image" :alt="feature.title" class="w-full h-full object-contain" />
-          </div>
-
-          <!-- Content -->
-          <div class="flex-1 flex flex-col items-center text-center px-6 lg:px-10 py-6 lg:pb-[40px]">
-            <h3 class="text-[#415861] text-lg lg:text-[22px] lg:leading-[31px] font-medium mb-4 lg:mb-[25px]">
-              {{ feature.title }}
-            </h3>
-            <p class="text-[#415861] text-xs leading-relaxed max-w-[248px] mb-4 lg:mb-[25px]">
-              {{ feature.description }}
-            </p>
-            <a href="#" class="text-[#fea629] text-xs font-black uppercase hover:opacity-80 transition-opacity mt-auto">
-              {{ $t('common.more') }}
-            </a>
           </div>
 
           <!-- Bottom accent -->

@@ -1,4 +1,4 @@
-// Константы и помощники Leaflet-карты Кыргызстана — единый источник
+// Константы и помощники Leaflet-карты Кыргызстана - единый источник
 // для всех компонентов (MapCoordinatePicker, EcoOperatorRecyclerDetail,
 // EmployeeMap, MinistryLandfills, MinistryCollectionPoints).
 
@@ -11,7 +11,7 @@ export const KG_TILE_ATTRIBUTION =
 export const KG_TILE_SUBDOMAINS = 'abc'
 
 // ─── Вид карты по умолчанию ───────────────────────────────────────────
-// Центр Кыргызстана ~ (41.2°N, 74.8°E) — примерно между Бишкеком и Нарыном.
+// Центр Кыргызстана ~ (41.2°N, 74.8°E) - примерно между Бишкеком и Нарыном.
 export const KG_CENTER: LatLngTuple = [41.2044, 74.7661]
 export const KG_DEFAULT_ZOOM = 7
 export const KG_MIN_ZOOM = 6
@@ -31,7 +31,7 @@ export const KG_MASK_PANE = 'kg-mask-pane'
 export const KG_MASK_PANE_Z = 400 // выше tilePane (200), ниже overlayPane (400)
 
 // ─── Стили заливки областей ───────────────────────────────────────────
-/** Заливка областей КР по умолчанию — лёгкий цвет бренда с тонкой границей. */
+/** Заливка областей КР по умолчанию - лёгкий цвет бренда с тонкой границей. */
 export const oblastStyle: PathOptions = {
   color: '#1e293b',
   weight: 1.2,
@@ -49,7 +49,7 @@ export const oblastHoverStyle: PathOptions = {
   opacity: 1,
 }
 
-/** Стиль маски (затемнение вне КР) — рендерится в kg-mask-pane. */
+/** Стиль маски (затемнение вне КР) - рендерится в kg-mask-pane. */
 export const maskStyle: PathOptions = {
   pane: KG_MASK_PANE,
   color: '#ffffff',
@@ -64,7 +64,7 @@ export const maskStyle: PathOptions = {
 // ─── Загрузка GeoJSON областей КР ─────────────────────────────────────
 /**
  * Загружает GeoJSON административных областей КР из публичной папки.
- * При ошибке (404 / сеть) бросает Error — вызывающий код должен ловить.
+ * При ошибке (404 / сеть) бросает Error - вызывающий код должен ловить.
  */
 export async function loadKgOblasts(): Promise<GeoJSON.FeatureCollection> {
   const resp = await fetch('/geo/kyrgyzstan-admin1.geojson')
@@ -74,8 +74,8 @@ export async function loadKgOblasts(): Promise<GeoJSON.FeatureCollection> {
 
 // ─── Построение «маски» (inverse-polygon) вокруг страны ───────────────
 /**
- * Строит массив LatLng-колец для Leaflet.polygon: внешнее кольцо — весь
- * мир, «дырки» — области КР. Используется чтобы выделить страну поверх
+ * Строит массив LatLng-колец для Leaflet.polygon: внешнее кольцо - весь
+ * мир, «дырки» - области КР. Используется чтобы выделить страну поверх
  * затемнённого фона.
  */
 export function buildMaskLatLngs(fc: GeoJSON.FeatureCollection): LatLngExpression[][] {

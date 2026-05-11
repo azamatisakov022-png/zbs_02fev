@@ -34,12 +34,6 @@ const updatedLabel = computed(() => {
           </svg>
           Данные верифицированы Минприроды
         </span>
-        <span class="info-chip">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" />
-          </svg>
-          API v2
-        </span>
       </div>
     </div>
   </section>

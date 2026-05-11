@@ -201,7 +201,7 @@ const totalRefunded = computed(() => approvedRefunds.value.reduce((s, r) => s + 
 const netIncome = computed(() => totalIncome.value - totalRefunded.value)
 const avgCalc = computed(() => paidCalcs.value.length ? Math.round(totalIncome.value / paidCalcs.value.length) : 0)
 
-// ─── Bar chart data — monthly mock with realistic dynamics ───
+// ─── Bar chart data - monthly mock with realistic dynamics ───
 const chartMode = ref<'months' | 'quarters'>('months')
 
 const monthlyMockFallback = computed(() => [
@@ -376,14 +376,14 @@ function downloadReportFile(_format: string) {
 
 // Mock data for report previews
 const periodReportMock = [
-  { company: 'ОсОО "БишкекПласт"', inn: '01234567891234', group: 'Группа 6 — Пластмассовые упаковочные', amount: 117725, date: '15.01.2026' },
-  { company: 'ОсОО "ТаласПак"', inn: '08912345678901', group: 'Группа 22 — Упаковка из гофрокартона', amount: 92001, date: '20.01.2026' },
-  { company: 'ОАО "ОшМеталл"', inn: '03456789123456', group: 'Группа 12 — Аккумуляторы свинцовые', amount: 62009, date: '25.01.2026' },
-  { company: 'ИП "Асанов"', inn: '12345678901234', group: 'Группа 8 — Стекло полое', amount: 63285, date: '28.01.2026' },
-  { company: 'ОсОО "GreenPack"', inn: '04567891234567', group: 'Группа 19 — Упаковка полимерная', amount: 48974, date: '02.02.2026' },
-  { company: 'ОсОО "АвтоШина"', inn: '09123456789012', group: 'Группа 4 — Шины и покрышки', amount: 555525, date: '05.02.2026' },
-  { company: 'ОсОО "ЭкоРесайкл"', inn: '02345678912345', group: 'Группа 1 — Гофрированная бумага', amount: 119825, date: '12.03.2026' },
-  { company: 'ОсОО "ИссыкКульЭко"', inn: '06789123456789', group: 'Группа 2 — Негофрированная бумага', amount: 123090, date: '18.03.2026' },
+  { company: 'ОсОО "БишкекПласт"', inn: '01234567891234', group: 'Группа 6 - Пластмассовые упаковочные', amount: 117725, date: '15.01.2026' },
+  { company: 'ОсОО "ТаласПак"', inn: '08912345678901', group: 'Группа 22 - Упаковка из гофрокартона', amount: 92001, date: '20.01.2026' },
+  { company: 'ОАО "ОшМеталл"', inn: '03456789123456', group: 'Группа 12 - Аккумуляторы свинцовые', amount: 62009, date: '25.01.2026' },
+  { company: 'ИП "Асанов"', inn: '12345678901234', group: 'Группа 8 - Стекло полое', amount: 63285, date: '28.01.2026' },
+  { company: 'ОсОО "GreenPack"', inn: '04567891234567', group: 'Группа 19 - Упаковка полимерная', amount: 48974, date: '02.02.2026' },
+  { company: 'ОсОО "АвтоШина"', inn: '09123456789012', group: 'Группа 4 - Шины и покрышки', amount: 555525, date: '05.02.2026' },
+  { company: 'ОсОО "ЭкоРесайкл"', inn: '02345678912345', group: 'Группа 1 - Гофрированная бумага', amount: 119825, date: '12.03.2026' },
+  { company: 'ОсОО "ИссыкКульЭко"', inn: '06789123456789', group: 'Группа 2 - Негофрированная бумага', amount: 123090, date: '18.03.2026' },
 ]
 
 const payersReportMock = [
@@ -412,7 +412,7 @@ const summaryReportMock = computed(() => [
   { indicator: t('ecoAnalytics.summaryReportData.avgCalcAmount'), value: '78 829 ' + t('ecoAnalytics.currency') },
   { indicator: t('ecoAnalytics.summaryReportData.payersCount'), value: '12' },
   { indicator: t('ecoAnalytics.summaryReportData.groupsCount'), value: '18' },
-  { indicator: t('ecoAnalytics.summaryReportData.leadingGroup'), value: 'Группа 4 — Шины (38.2%)' },
+  { indicator: t('ecoAnalytics.summaryReportData.leadingGroup'), value: 'Группа 4 - Шины (38.2%)' },
   { indicator: t('ecoAnalytics.summaryReportData.dynamicsVsPrev'), value: '+12.5%' },
   { indicator: t('ecoAnalytics.summaryReportData.forecastNextQuarter'), value: '1 350 000 ' + t('ecoAnalytics.currency') },
 ])
@@ -741,7 +741,7 @@ function fmtCenter(n: number, unit: string = ''): string {
 
 // ─── Products tab: Dynamic mock for rate and trend ───
 function getAvgRate(totalAmount: number, totalMass: number): string {
-  if (!totalMass) return '—'
+  if (!totalMass) return '-'
   return Math.round(totalAmount / totalMass).toLocaleString()
 }
 
@@ -1021,7 +1021,7 @@ const summaryPayerCategoriesFallback = computed(() => [
 const summaryPayerCategories = computed(() => {
   const s = analyticsStore.state.summary
   if (!s) return summaryPayerCategoriesFallback.value
-  // Derive from activePayers — split proportionally
+  // Derive from activePayers - split proportionally
   const total = s.activePayers || s.totalPayers
   const importers = Math.round(total * 0.45)
   const producers = Math.round(total * 0.36)
@@ -1741,7 +1741,7 @@ const selectedSummaryRegion = ref('all')
         </div>
       </div>
 
-      <!-- ── Поступления по группам товаров — horizontal bars ── -->
+      <!-- ── Поступления по группам товаров - horizontal bars ── -->
       <div class="an-chart-container mb-6" style="position:relative">
         <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.finance.incomeByGroups') }}</h2>
         <div v-if="groupBarData.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
@@ -1787,7 +1787,7 @@ const selectedSummaryRegion = ref('all')
         {{ $t('ecoAnalytics.products.productAnalysis') }}
       </h2>
 
-      <!-- A1: Donut chart — Структура ввоза/производства по группам -->
+      <!-- A1: Donut chart - Структура ввоза/производства по группам -->
       <div class="an-chart-container mb-6">
         <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.importProductionStructure') }}</h2>
         <div class="an-donut-grid an-donut-grid--single">
@@ -1910,7 +1910,7 @@ const selectedSummaryRegion = ref('all')
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.count }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass.toFixed(1) }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.amount.toLocaleString() }}</span>
-                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass ? Math.round(sg.amount / sg.mass).toLocaleString() : '—' }}</span>
+                  <span class="an-tbl-sub-col an-tbl-sub-col--num">{{ sg.mass ? Math.round(sg.amount / sg.mass).toLocaleString() : '-' }}</span>
                   <span class="an-tbl-sub-col an-tbl-sub-col--num">
                     <span :style="{ color: mockTrend(sg.subgroup).up ? '#22C55E' : '#EF4444' }">
                       {{ mockTrend(sg.subgroup).up ? '&#9650;' : '&#9660;' }}
@@ -1938,7 +1938,7 @@ const selectedSummaryRegion = ref('all')
         </div>
       </div>
 
-      <!-- A3: Топ-10 подгрупп по массе ввоза — horizontal bars -->
+      <!-- A3: Топ-10 подгрупп по массе ввоза - horizontal bars -->
       <div class="an-chart-container mb-6" style="position:relative">
         <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.top10subgroups') }}</h2>
         <div v-if="flatSubgroups.length === 0" class="py-12 text-center text-[#94a3b8]">{{ $t('ecoAnalytics.noDataForPeriod') }}</div>
@@ -1989,7 +1989,7 @@ const selectedSummaryRegion = ref('all')
         </div>
       </div>
 
-      <!-- B2: Grouped bar chart — Required vs Actual -->
+      <!-- B2: Grouped bar chart - Required vs Actual -->
       <div class="an-chart-container mb-6" style="position:relative">
         <div class="an-chart-header">
           <h2 class="an-section-title">{{ $t('ecoAnalytics.products.requiredVsActual') }}</h2>
@@ -2054,7 +2054,7 @@ const selectedSummaryRegion = ref('all')
         </div>
       </div>
 
-      <!-- B3: Выполнение нормативов переработки — detailed table -->
+      <!-- B3: Выполнение нормативов переработки - detailed table -->
       <div class="an-chart-container mb-6">
         <h2 class="an-section-title mb-4">{{ $t('ecoAnalytics.products.normComplianceTable') }}</h2>
         <div class="an-report-table-wrap">
@@ -2888,7 +2888,7 @@ const selectedSummaryRegion = ref('all')
 }
 .an-export-dropdown__item:hover { background: #f8fafc; }
 
-/* ── Reports tab — template cards ── */
+/* ── Reports tab - template cards ── */
 .an-report-card {
   background: white;
   border: 1px solid #e2e8f0;
@@ -2941,7 +2941,7 @@ const selectedSummaryRegion = ref('all')
 }
 .an-report-card__btn:hover { opacity: 0.8; }
 
-/* ── Reports tab — detail view ── */
+/* ── Reports tab - detail view ── */
 .an-report-back-btn {
   width: 40px;
   height: 40px;

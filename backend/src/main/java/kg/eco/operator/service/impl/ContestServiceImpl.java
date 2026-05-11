@@ -130,7 +130,7 @@ public class ContestServiceImpl implements ContestService {
             throw new BusinessLogicException("Опубликовать можно только черновик");
         }
         if (contest.getDeadline().isBefore(LocalDateTime.now())) {
-            throw new BusinessLogicException("Срок подачи уже истёк — измените дату перед публикацией");
+            throw new BusinessLogicException("Срок подачи уже истёк - измените дату перед публикацией");
         }
         contest.setStatus(ContestStatus.PUBLISHED);
         contest = contestRepository.save(contest);

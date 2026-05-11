@@ -288,15 +288,15 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
                 <td class="rd-td rd-td--num">0.00</td>
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
                 <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'text-[#ef4444] font-semibold' : 'text-[#10b981]'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
-                <td class="rd-td rd-td--small">{{ item.contractNumber || '—' }}</td>
-                <td class="rd-td rd-td--small">—</td>
+                <td class="rd-td rd-td--small">{{ item.contractNumber || '-' }}</td>
+                <td class="rd-td rd-td--small">-</td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="rd-row--total">
                 <td class="rd-td" colspan="5"><strong>{{ $t('ecoReportDetail.totalRow') }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalDeclared * 1000) }}</strong></td>
-                <td class="rd-td rd-td--num">—</td>
+                <td class="rd-td rd-td--num">-</td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalSubjectTo * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(productTotals.totalProcessed * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>0.00</strong></td>
@@ -342,8 +342,8 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
               <tr v-for="(item, idx) in packagingItems" :key="item.id" class="rd-row">
                 <td class="rd-td rd-td--center">{{ idx + 1 }}</td>
                 <td class="rd-td">{{ getTranslatedPackagingMaterial(getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingMaterial) }}</td>
-                <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '—' }}</td>
-                <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '—' }}</td>
+                <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingLetterCode || '-' }}</td>
+                <td class="rd-td font-mono">{{ getSubgroupByCode(item.wasteType, item.wasteCode)?.packagingDigitalCode || '-' }}</td>
                 <td class="rd-td">{{ getGroupLabel(item.wasteType) }}</td>
                 <td class="rd-td rd-td--num">{{ fmt((parseFloat(item.declared) || 0) * 1000) }}</td>
                 <td class="rd-td rd-td--num">{{ fmtPercent(getItemNormative(item)) }}</td>
@@ -352,15 +352,15 @@ const fmtPercent = (n: number) => (n * 100).toFixed(1) + '%'
                 <td class="rd-td rd-td--num">0.00</td>
                 <td class="rd-td rd-td--num">{{ fmt(getItemTotalProcessed(item) * 1000) }}</td>
                 <td class="rd-td rd-td--num" :class="getItemDeficit(item) > 0 ? 'text-[#ef4444] font-semibold' : 'text-[#10b981]'">{{ fmt(getItemDeficit(item) * 1000) }}</td>
-                <td class="rd-td rd-td--small">{{ item.contractNumber || '—' }}</td>
-                <td class="rd-td rd-td--small">—</td>
+                <td class="rd-td rd-td--small">{{ item.contractNumber || '-' }}</td>
+                <td class="rd-td rd-td--small">-</td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="rd-row--total">
                 <td class="rd-td" colspan="5"><strong>{{ $t('ecoReportDetail.totalRow') }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(packagingTotals.totalDeclared * 1000) }}</strong></td>
-                <td class="rd-td rd-td--num">—</td>
+                <td class="rd-td rd-td--num">-</td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(packagingTotals.totalSubjectTo * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>{{ fmt(packagingTotals.totalProcessed * 1000) }}</strong></td>
                 <td class="rd-td rd-td--num"><strong>0.00</strong></td>

@@ -113,7 +113,7 @@ watch(isOpen, (val) => {
   width: 100%;
 }
 
-/* === DEFAULT (large) — for public calculator === */
+/* === DEFAULT (large) - for public calculator === */
 .ss-trigger {
   width: 100%;
   display: flex;
@@ -217,7 +217,7 @@ watch(isOpen, (val) => {
   font-weight: 500;
 }
 
-/* === COMPACT — for business forms === */
+/* === COMPACT - for business forms === */
 .ss-compact .ss-trigger {
   padding: 10px 14px;
   border: 1px solid #e2e8f0;

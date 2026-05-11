@@ -21,7 +21,7 @@ const enterpriseData = ref({
   capacity: '500 тонн/месяц',
   wasteTypes: ['Пластик (ПЭТ)', 'Пластик (ПНД)', 'Бумага', 'Картон'],
   licenseNumber: 'ЛП-2024-0045',
-  licenseDate: '15.08.2024 — 15.08.2026',
+  licenseDate: '15.08.2024 - 15.08.2026',
 })
 </script>
 

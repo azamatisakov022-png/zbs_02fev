@@ -612,7 +612,7 @@ const goBack = () => {
           <!-- Export buttons -->
           <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
             <div class="text-sm text-gray-600">
-              {{ $t('employeeReports.summaryForPeriod') }}: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> — <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
+              {{ $t('employeeReports.summaryForPeriod') }}: <span class="font-semibold">{{ summaryFilters.dateFrom }}</span> - <span class="font-semibold">{{ summaryFilters.dateTo }}</span>
             </div>
             <div class="flex flex-wrap gap-2">
               <AppButton variant="primary" size="sm" @click="exportToExcel">
@@ -1153,7 +1153,7 @@ const goBack = () => {
                   <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.landfills }}</td>
                   <td class="px-4 py-3 text-center font-bold">{{ regionsTotals.licenses }}</td>
                   <td class="px-4 py-3 text-right font-bold text-indigo-700">{{ regionsTotals.volume.toFixed(1) }} т</td>
-                  <td class="px-4 py-3 text-center font-bold">—</td>
+                  <td class="px-4 py-3 text-center font-bold">-</td>
                   <td class="px-4 py-3 text-center font-bold">100%</td>
                 </tr>
               </tfoot>

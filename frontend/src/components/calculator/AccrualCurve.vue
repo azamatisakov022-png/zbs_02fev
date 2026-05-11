@@ -28,7 +28,7 @@ const maxY = computed(() => {
   return last ? last.y : 1
 })
 
-// SVG path — 300x80 viewport
+// SVG path - 300x80 viewport
 const pathD = computed(() => {
   if (!points.value.length || maxY.value <= 0) return 'M 0 80 L 300 80'
   return points.value.map((p, i) => {

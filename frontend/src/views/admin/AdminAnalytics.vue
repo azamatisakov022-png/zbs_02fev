@@ -152,8 +152,8 @@ const exportReport = () => {
 
   // Monthly data
   monthlyData.value.forEach(d => {
-    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} — ${t('analyticsPage.csvFact')};${d.revenue} ${t('analyticsPage.mlnSom')}\n`
-    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} — ${t('analyticsPage.csvPlan')};${d.target} ${t('analyticsPage.mlnSom')}\n`
+    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} - ${t('analyticsPage.csvFact')};${d.revenue} ${t('analyticsPage.mlnSom')}\n`
+    csv += `${t('analyticsPage.csvMonthlyDynamics')};${d.month} - ${t('analyticsPage.csvPlan')};${d.target} ${t('analyticsPage.mlnSom')}\n`
   })
 
   // Regional data

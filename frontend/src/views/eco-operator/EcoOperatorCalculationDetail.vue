@@ -325,11 +325,11 @@ const downloadExcel = () => {
                   <div v-if="item.tnvedCode" class="text-xs font-mono text-[#94a3b8] mt-0.5">{{ $t('ecoCalcDetail.tnvedPrefix') }} <TnvedCode :code="item.tnvedCode" /></div>
                 </td>
                 <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ formatNum(item.volume) }}</td>
-                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.recyclingStandard != null ? item.recyclingStandard + '%' : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#10b981] font-medium">{{ item.transferredToRecycling ? formatNum(item.transferredToRecycling) : '—' }}</td>
-                <td class="px-4 py-3 text-right text-[#2563eb] font-medium">{{ item.exportedFromKR ? formatNum(item.exportedFromKR) : '—' }}</td>
-                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '—' }}</td>
+                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.recyclingStandard != null ? item.recyclingStandard + '%' : '-' }}</td>
+                <td class="px-4 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '-' }}</td>
+                <td class="px-4 py-3 text-right text-[#10b981] font-medium">{{ item.transferredToRecycling ? formatNum(item.transferredToRecycling) : '-' }}</td>
+                <td class="px-4 py-3 text-right text-[#2563eb] font-medium">{{ item.exportedFromKR ? formatNum(item.exportedFromKR) : '-' }}</td>
+                <td class="px-4 py-3 text-right font-medium text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '-' }}</td>
                 <td class="px-4 py-3 text-right text-[#64748b]">{{ formatNum(item.rate, 0) }}</td>
                 <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ formatNum(item.amount, 0) }}</td>
               </tr>

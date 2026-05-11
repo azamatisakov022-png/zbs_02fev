@@ -1,19 +1,19 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// GIS Map Data — реальные объекты обращения с отходами Кыргызской Республики.
+// GIS Map Data - реальные объекты обращения с отходами Кыргызской Республики.
 //
 // Источники открытых данных:
 //   • OpenStreetMap (landuse=landfill, amenity=waste_disposal, amenity=recycling)
-//     — выгружено через Overpass API по area["ISO3166-1"="KG"], апрель 2026.
+//     - выгружено через Overpass API по area["ISO3166-1"="KG"], апрель 2026.
 //     Лицензия: ODbL (openstreetmap.org/copyright).
 //   • Министерство экономики и коммерции КР: реестр юридических лиц
 //     (mineconom.gov.kg, minjust.gov.kg).
-//   • osoo.kg — публичная база юридических лиц.
+//   • osoo.kg - публичная база юридических лиц.
 //
 // Данные, отсутствующие в открытых источниках (площадь, заполняемость,
-// телефон, часы работы оператора) помечены «—». Они должны уточняться
+// телефон, часы работы оператора) помечены «-». Они должны уточняться
 // при загрузке реестра из МПРЭТН / оператором системы.
 //
-// Несанкционированные свалки — предварительная выборка по публикациям СМИ;
+// Несанкционированные свалки - предварительная выборка по публикациям СМИ;
 // требует верификации у инспекторов МПРЭТН.
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -87,7 +87,7 @@ export const gisWasteTypes = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 1. Полигоны ТБО и промышленные отвалы — 🟢
+// 1. Полигоны ТБО и промышленные отвалы - 🟢
 //    OSM: landuse=landfill (way) + именованные amenity=waste_disposal (way)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -98,10 +98,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Бишкекский городской полигон ТБО',
     lat: 42.9649, lng: 74.5894,
     address: 'Чуйская обл., пригород Бишкека (с. Ново-Павловка)',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -109,10 +109,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Ошский городской полигон ТБО',
     lat: 40.4635, lng: 72.7550,
     address: 'Ошская обл., окрестности г. Ош',
-    phone: '—',
+    phone: '-',
     region: 'Ошская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -120,10 +120,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Джалал-Абадский полигон ТБО',
     lat: 41.0193, lng: 73.0604,
     address: 'Джалал-Абадская обл., окрестности г. Джалал-Абад',
-    phone: '—',
+    phone: '-',
     region: 'Джалал-Абадская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -131,10 +131,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО г. Каракол',
     lat: 42.6603, lng: 77.1150,
     address: 'Иссык-Кульская обл., окраина г. Каракол',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -142,10 +142,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО г. Токмок',
     lat: 42.8353, lng: 75.2905,
     address: 'Чуйская обл., г. Токмок',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -153,10 +153,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО г. Кант',
     lat: 42.9159, lng: 74.9000,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -164,10 +164,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО Нарынской области',
     lat: 41.9190, lng: 74.5264,
     address: 'Нарынская обл.',
-    phone: '—',
+    phone: '-',
     region: 'Нарынская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -175,10 +175,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО Ноокатского района',
     lat: 40.2439, lng: 71.4636,
     address: 'Ошская обл., Ноокатский район',
-    phone: '—',
+    phone: '-',
     region: 'Ошская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -186,10 +186,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО г. Баткен',
     lat: 40.0494, lng: 70.8868,
     address: 'Баткенская обл., г. Баткен',
-    phone: '—',
+    phone: '-',
     region: 'Баткенская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -197,10 +197,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон ТБО Ат-Башинского района',
     lat: 41.1500, lng: 75.9020,
     address: 'Нарынская обл., Ат-Башинский район',
-    phone: '—',
+    phone: '-',
     region: 'Нарынская',
     landfillType: 'Муниципальный полигон ТБО',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
 
@@ -210,10 +210,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Хвостохранилище ОАО «Хайдарканский ртутный комбинат»',
     lat: 39.9589, lng: 71.2809,
     address: 'Баткенская обл., пос. Хайдаркан',
-    phone: '—',
+    phone: '-',
     region: 'Баткенская',
     landfillType: 'Промышленный отвал (ртуть)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -221,10 +221,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Хвостохранилище ОАО «Кадамжайский сурьмяный комбинат» (КСК)',
     lat: 40.1486, lng: 71.7089,
     address: 'Баткенская обл., Кадамжайский район',
-    phone: '—',
+    phone: '-',
     region: 'Баткенская',
     landfillType: 'Промышленный отвал (сурьма)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -232,10 +232,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Отвал «Давыдов» (м-ние Кумтор)',
     lat: 41.8653, lng: 78.1612,
     address: 'Иссык-Кульская обл., р-н м-ния Кумтор (ОАО «Кыргызалтын»)',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     landfillType: 'Промышленный отвал (горнодобыча)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -243,10 +243,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Отвал «Сары-Төр» (м-ние Кумтор)',
     lat: 41.8506, lng: 78.1561,
     address: 'Иссык-Кульская обл., р-н м-ния Кумтор',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     landfillType: 'Промышленный отвал (горнодобыча)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -254,10 +254,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Отвал «Лысый» (м-ние Кумтор)',
     lat: 41.8815, lng: 78.2009,
     address: 'Иссык-Кульская обл., р-н м-ния Кумтор',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     landfillType: 'Промышленный отвал (горнодобыча)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -265,10 +265,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Полигон хранения отходов добычи ураносодержащих руд',
     lat: 41.2328, lng: 71.3020,
     address: 'Джалал-Абадская обл., Майлуу-Сууйский район',
-    phone: '—',
+    phone: '-',
     region: 'Джалал-Абадская',
     landfillType: 'Промышленный отвал (уран)',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -276,10 +276,10 @@ export const landfillsData: LandfillData[] = [
     name: 'Отвал вскрышных пород',
     lat: 39.9966, lng: 71.4215,
     address: 'Баткенская обл.',
-    phone: '—',
+    phone: '-',
     region: 'Баткенская',
     landfillType: 'Промышленный отвал',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
   {
@@ -287,16 +287,16 @@ export const landfillsData: LandfillData[] = [
     name: 'Отвал (Иссык-Кульская обл., р-н Чолпон-Ата)',
     lat: 42.6884, lng: 75.6490,
     address: 'Иссык-Кульская обл., район Чолпон-Ата',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     landfillType: 'Промышленный отвал',
-    area: '—', capacity: '—', fillLevel: '—',
+    area: '-', capacity: '-', fillLevel: '-',
     status: 'active',
   },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 2. Пункты приёма отходов — 🟡
+// 2. Пункты приёма отходов - 🟡
 //    OSM: amenity=recycling (container-режим) + recycling:* accept-теги
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -306,11 +306,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма ПЭТ (Бишкек, микрорайон Асанбай)',
     lat: 42.8760, lng: 74.6357,
     address: 'г. Бишкек, микрорайон Асанбай',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -318,34 +318,34 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Центр раздельного сбора (Кант)',
     lat: 42.8934, lng: 74.8954,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Пластик', 'Бумага/картон', 'Стекло', 'Металл', 'Алюминий', 'Электроника', 'Текстиль'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
     id: 103,
-    name: 'Пункт приёма ПЭТ и стекла (Organic) — Кант',
+    name: 'Пункт приёма ПЭТ и стекла (Organic) - Кант',
     lat: 42.8917, lng: 74.8601,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
-    workingHours: '—',
+    workingHours: '-',
     operator: 'Organic',
     status: 'active',
   },
   {
     id: 104,
-    name: 'Пункт приёма ПЭТ и стекла (Organic) — Кант-2',
+    name: 'Пункт приёма ПЭТ и стекла (Organic) - Кант-2',
     lat: 42.8910, lng: 74.8494,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
-    workingHours: '—',
+    workingHours: '-',
     operator: 'Organic',
     status: 'active',
   },
@@ -354,11 +354,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма пластика (Бишкек, ул. Токтоналиева)',
     lat: 42.8745, lng: 74.6042,
     address: 'г. Бишкек, ул. Токтоналиева',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -366,11 +366,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма пластика (Бишкек, ул. Тыныстанова)',
     lat: 42.8780, lng: 74.6109,
     address: 'г. Бишкек, ул. Тыныстанова',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -378,11 +378,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма пластика (Бишкек, Восток-5)',
     lat: 42.8339, lng: 74.6215,
     address: 'г. Бишкек, микрорайон Восток-5',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -390,11 +390,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма (Чолпон-Ата)',
     lat: 42.6428, lng: 77.1006,
     address: 'Иссык-Кульская обл., г. Чолпон-Ата',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -402,11 +402,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма у Иссык-Куля',
     lat: 42.4897, lng: 78.3906,
     address: 'Иссык-Кульская обл., район Каракола',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     wasteTypes: ['Пластик', 'Металл'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -414,11 +414,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма ПЭТ и стекла (Токмок)',
     lat: 42.8303, lng: 75.2896,
     address: 'Чуйская обл., г. Токмок',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Пластик (ПЭТ)', 'Стеклотара'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -426,11 +426,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Пункт приёма ПЭТ (Ош, центр)',
     lat: 40.5427, lng: 72.7966,
     address: 'г. Ош, центр',
-    phone: '—',
+    phone: '-',
     region: 'Ошская',
     wasteTypes: ['Пластик (ПЭТ)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -438,11 +438,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Центр приёма цветного металла (Кант)',
     lat: 42.8911, lng: 74.8572,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Металл', 'Цветной металл'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -450,11 +450,11 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Хлебные контейнеры (раздельный сбор)',
     lat: 42.8921, lng: 74.8646,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Органика (хлеб)'],
-    workingHours: '—',
-    operator: '—',
+    workingHours: '-',
+    operator: '-',
     status: 'active',
   },
   {
@@ -462,7 +462,7 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Контейнеры «Кант тазалык» №1',
     lat: 42.8924, lng: 74.8676,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Бытовые отходы'],
     workingHours: 'Круглосуточно',
@@ -474,7 +474,7 @@ export const receptionPointsData: ReceptionPointData[] = [
     name: 'Контейнеры «Кант тазалык» №2',
     lat: 42.8893, lng: 74.8685,
     address: 'Чуйская обл., г. Кант',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     wasteTypes: ['Бытовые отходы'],
     workingHours: 'Круглосуточно',
@@ -484,7 +484,7 @@ export const receptionPointsData: ReceptionPointData[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 3. Несанкционированные свалки — 🟠
+// 3. Несанкционированные свалки - 🟠
 //    По публикациям СМИ и жалобам граждан; координаты приблизительные,
 //    требуют верификации инспектором МПРЭТН.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -496,8 +496,8 @@ export const dumpsData: DumpData[] = [
     lat: 42.9456, lng: 74.5123,
     address: 'Чуйская обл., пойма р. Аламедин, р-н с. Лебединовка',
     region: 'Чуйская',
-    area: '—',
-    discoveryDate: '—',
+    area: '-',
+    discoveryDate: '-',
     dumpStatus: 'liquidating',
     notes: 'Бытовые и строительные отходы. Данные требуют верификации.',
   },
@@ -507,8 +507,8 @@ export const dumpsData: DumpData[] = [
     lat: 42.8567, lng: 75.3123,
     address: 'Чуйская обл., окрестности г. Токмок',
     region: 'Чуйская',
-    area: '—',
-    discoveryDate: '—',
+    area: '-',
+    discoveryDate: '-',
     dumpStatus: 'liquidating',
     notes: 'Крупная стихийная свалка. Данные требуют верификации.',
   },
@@ -518,8 +518,8 @@ export const dumpsData: DumpData[] = [
     lat: 42.6234, lng: 74.3567,
     address: 'Чуйская обл., трасса Бишкек–Ош, 45-й км',
     region: 'Чуйская',
-    area: '—',
-    discoveryDate: '—',
+    area: '-',
+    discoveryDate: '-',
     dumpStatus: 'discovered',
     notes: 'Пластик и строительный мусор. Данные требуют верификации.',
   },
@@ -529,8 +529,8 @@ export const dumpsData: DumpData[] = [
     lat: 41.2623, lng: 72.4512,
     address: 'Джалал-Абадская обл., г. Майлуу-Суу',
     region: 'Джалал-Абадская',
-    area: '—',
-    discoveryDate: '—',
+    area: '-',
+    discoveryDate: '-',
     dumpStatus: 'discovered',
     notes: 'Район исторических урановых хранилищ. Данные требуют верификации.',
   },
@@ -540,15 +540,15 @@ export const dumpsData: DumpData[] = [
     lat: 40.4812, lng: 72.6789,
     address: 'Ошская обл., Кара-Сууйский район',
     region: 'Ошская',
-    area: '—',
-    discoveryDate: '—',
+    area: '-',
+    discoveryDate: '-',
     dumpStatus: 'liquidating',
     notes: 'Смешанные отходы рядом с жилмассивом. Данные требуют верификации.',
   },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 4. Плательщики (только для ЛК МПРЭТН) — 🟣
+// 4. Плательщики (только для ЛК МПРЭТН) - 🟣
 //    Реальные юридические лица, работающие в КР (источник: osoo.kg,
 //    открытые данные). ИНН и координаты уточняются оператором при внесении.
 // ═══════════════════════════════════════════════════════════════════════════
@@ -560,7 +560,7 @@ export const payersData: PayerData[] = [
     inn: '02907202010020',
     lat: 42.8345, lng: 74.5567,
     address: 'г. Бишкек, ул. Льва Толстого, 117а',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     category: 'Крупный импортёр/производитель',
     calcStatus: 'paid',
@@ -571,7 +571,7 @@ export const payersData: PayerData[] = [
     inn: '01204200010399',
     lat: 42.8567, lng: 74.5234,
     address: 'г. Бишкек, ул. Фрунзе, 480',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     category: 'Производитель',
     calcStatus: 'paid',
@@ -582,7 +582,7 @@ export const payersData: PayerData[] = [
     inn: '02406200210072',
     lat: 42.8789, lng: 74.5890,
     address: 'г. Бишкек',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     category: 'Производитель',
     calcStatus: 'pending',
@@ -593,7 +593,7 @@ export const payersData: PayerData[] = [
     inn: '02308198810078',
     lat: 42.8923, lng: 74.8456,
     address: 'г. Кант, ул. Заводская, 1',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     category: 'Производитель',
     calcStatus: 'paid',
@@ -601,10 +601,10 @@ export const payersData: PayerData[] = [
   {
     id: 505,
     name: 'ОАО «Хайдарканский ртутный комбинат»',
-    inn: '—',
+    inn: '-',
     lat: 39.9589, lng: 71.2809,
     address: 'Баткенская обл., пос. Хайдаркан',
-    phone: '—',
+    phone: '-',
     region: 'Баткенская',
     category: 'Горнодобыча',
     calcStatus: 'paid',
@@ -612,10 +612,10 @@ export const payersData: PayerData[] = [
   {
     id: 506,
     name: 'ЗАО «Кумтор Голд Компани»',
-    inn: '—',
+    inn: '-',
     lat: 41.8653, lng: 78.1612,
     address: 'Иссык-Кульская обл., м-ние Кумтор',
-    phone: '—',
+    phone: '-',
     region: 'Иссык-Кульская',
     category: 'Горнодобыча',
     calcStatus: 'paid',
@@ -626,7 +626,7 @@ export const payersData: PayerData[] = [
     inn: '02309200410156',
     lat: 42.8234, lng: 75.2789,
     address: 'г. Токмок, ул. Промышленная, 25',
-    phone: '—',
+    phone: '-',
     region: 'Чуйская',
     category: 'Производитель стекла',
     calcStatus: 'paid',
@@ -634,10 +634,10 @@ export const payersData: PayerData[] = [
   {
     id: 508,
     name: 'ОсОО «Триод» (переработка лома)',
-    inn: '—',
+    inn: '-',
     lat: 42.8710, lng: 74.5920,
     address: 'г. Бишкек, ул. 7 апреля, 7',
-    phone: '—',
+    phone: '-',
     region: 'Бишкек',
     category: 'Переработчик (металл)',
     calcStatus: 'paid',
@@ -645,7 +645,7 @@ export const payersData: PayerData[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// 5. Переработчики — реальные компании с координатами (OSM + реестры КР).
+// 5. Переработчики - реальные компании с координатами (OSM + реестры КР).
 //    Используется как fallback когда recyclerStore пустой.
 // ═══════════════════════════════════════════════════════════════════════════
 

@@ -86,12 +86,12 @@ watch(() => props.subgroup, () => {
 
 <template>
   <div class="product-group-selector">
-    <!-- Row 1: Group — full width -->
+    <!-- Row 1: Group - full width -->
     <div class="mb-4">
       <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.label') }}</label>
       <template v-if="readonly">
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="groupLabel">
-          {{ groupLabel || '—' }}
+          {{ groupLabel || '-' }}
         </div>
       </template>
       <template v-else>
@@ -108,12 +108,12 @@ watch(() => props.subgroup, () => {
       </template>
     </div>
 
-    <!-- Row 2: Subgroup — modal picker -->
+    <!-- Row 2: Subgroup - modal picker -->
     <div class="mb-4">
       <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.subgroupLabel') }}</label>
       <template v-if="readonly">
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] truncate" :title="subgroupLabel">
-          {{ subgroupLabel || '—' }}
+          {{ subgroupLabel || '-' }}
         </div>
       </template>
       <template v-else>
@@ -131,14 +131,14 @@ watch(() => props.subgroup, () => {
       <div>
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.gskpCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
-          {{ selectedSubgroupData?.gskpCode || '—' }}
+          {{ selectedSubgroupData?.gskpCode || '-' }}
         </div>
       </div>
       <div>
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.tnvedCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
           <TnvedCode v-if="selectedSubgroupData?.tnvedCode" :code="selectedSubgroupData.tnvedCode" />
-          <span v-else>—</span>
+          <span v-else>-</span>
         </div>
       </div>
       <div class="sm:col-span-2 lg:col-span-3">
@@ -158,13 +158,13 @@ watch(() => props.subgroup, () => {
       <div class="lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsDesignation') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
-          {{ selectedSubgroupData?.packagingLetterCode || '—' }}
+          {{ selectedSubgroupData?.packagingLetterCode || '-' }}
         </div>
       </div>
       <div class="lg:col-span-3">
         <label v-if="showLabels" class="block text-xs text-[#64748b] mb-1">{{ $t('productGroup.trtsCode') }}</label>
         <div class="w-full px-3 py-2 bg-gray-50 border border-[#e2e8f0] rounded-lg text-sm text-[#1e293b] font-mono">
-          {{ selectedSubgroupData?.packagingDigitalCode || '—' }}
+          {{ selectedSubgroupData?.packagingDigitalCode || '-' }}
         </div>
       </div>
     </div>

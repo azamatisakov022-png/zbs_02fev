@@ -379,7 +379,7 @@ const changePassword = async () => {
                   </svg>
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-900">Windows — Chrome</p>
+                  <p class="text-sm font-medium text-gray-900">Windows - Chrome</p>
                   <p class="text-xs text-gray-500">{{ $t('employeeProfile.sessionLocation') }}</p>
                 </div>
               </div>

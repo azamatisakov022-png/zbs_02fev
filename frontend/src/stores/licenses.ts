@@ -62,10 +62,10 @@ const activeApplications = computed(() =>
   ),
 )
 
-/** Сколько заявок у applicant'а сейчас «в работе» — для бейджа на «Мои заявки». */
+/** Сколько заявок у applicant'а сейчас «в работе» - для бейджа на «Мои заявки». */
 const activeApplicationsCount = computed(() => activeApplications.value.length)
 
-/** Сколько лицензий выдано (одобренные заявки) — для бейджа на «Мои лицензии». */
+/** Сколько лицензий выдано (одобренные заявки) - для бейджа на «Мои лицензии». */
 const readyLicensesCount = computed(
   () => state.myApplications.filter(a => a.status === 'approved').length,
 )
@@ -78,7 +78,7 @@ async function loadEnums(licenseTypeForDocs?: LicenseType) {
   const upperDocs = licenseTypeForDocs
     ? (licenseTypeForDocs.toUpperCase() as LicenseType)
     : undefined
-  // Каждый запрос самостоятелен — если один упадёт, остальные всё равно загрузятся.
+  // Каждый запрос самостоятелен - если один упадёт, остальные всё равно загрузятся.
   await Promise.allSettled([
     publicLicensesApi.licenseTypes().then(v => (state.licenseTypesEnum = v)).catch(e => console.warn('licenseTypes', e)),
     publicLicensesApi.rejectionReasons().then(v => (state.rejectionReasonsEnum = v)).catch(e => console.warn('rejectionReasons', e)),

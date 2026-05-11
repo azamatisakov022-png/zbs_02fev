@@ -108,7 +108,7 @@ watch(isOpen, (val) => {
 })
 
 watch(() => props.groupId, () => {
-  // Group changed — reset selection handled by parent
+  // Group changed - reset selection handled by parent
 })
 </script>
 
@@ -203,18 +203,18 @@ watch(() => props.groupId, () => {
                     <template v-if="!isPackaging">
                       <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
                       <td class="spm-td spm-td-name">{{ subLabel(sub) }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.gskpCode || '—' }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.tnvedCode || '—' }}</td>
+                      <td class="spm-td spm-td-code">{{ sub.gskpCode || '-' }}</td>
+                      <td class="spm-td spm-td-code">{{ sub.tnvedCode || '-' }}</td>
                       <td class="spm-td spm-td-tnved">{{ getTranslatedTnvedName(sub.tnvedName) }}</td>
-                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>
+                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '-' }}</td>
                     </template>
                     <template v-else>
                       <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
                       <td class="spm-td spm-td-name">{{ subLabel(sub) }}</td>
                       <td class="spm-td spm-td-material">{{ getTranslatedPackagingMaterial(sub.packagingMaterial) }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.packagingDigitalCode || '—' }}</td>
-                      <td class="spm-td spm-td-code">{{ sub.packagingLetterCode || '—' }}</td>
-                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '—' }}</td>
+                      <td class="spm-td spm-td-code">{{ sub.packagingDigitalCode || '-' }}</td>
+                      <td class="spm-td spm-td-code">{{ sub.packagingLetterCode || '-' }}</td>
+                      <td class="spm-td spm-td-rate">{{ groupData?.baseRate?.toLocaleString('ru-RU') || '-' }}</td>
                     </template>
                   </tr>
                 </template>

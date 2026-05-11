@@ -35,29 +35,31 @@ const documents = computed<Document[]>(() => [
 </script>
 
 <template>
-  <section class="bg-white">
-    <div class="container-main py-20">
+  <section class="py-10 md:py-14 lg:py-[80px] bg-white">
+    <div class="container-main">
       <!-- Section header -->
-      <div class="mb-10">
-        <h2 class="text-3xl font-bold text-[#111827] tracking-tight mb-2">
+      <div class="mb-8 md:mb-10 lg:mb-[48px]">
+        <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px]">
           {{ $t('documents.title') }}
         </h2>
-        <p class="text-[#6B7280]">
+        <div class="section-title-underline"></div>
+        <p class="text-[#415861] text-sm md:text-base lg:text-[17px] lg:leading-[1.55] max-w-[760px] mt-4 lg:mt-[20px]">
           {{ $t('documents.subtitle') }}
         </p>
       </div>
 
       <!-- Cards grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+        <router-link
           v-for="doc in documents"
           :key="doc.id"
-          class="dash-card dash-card-hover p-6 flex flex-col"
+          to="/legal-base"
+          class="dash-card dash-card-hover p-6 flex flex-col group"
         >
           <!-- Document icon -->
           <div class="mb-4">
             <svg
-              class="w-10 h-10 text-[#0e888d]"
+              class="w-9 h-9 text-[#0e888d]"
               fill="none"
               viewBox="0 0 40 40"
               stroke="currentColor"
@@ -71,23 +73,15 @@ const documents = computed<Document[]>(() => [
           </div>
 
           <!-- Title -->
-          <h3 class="font-bold text-[#111827] text-base mb-2">
+          <h3 class="text-[#415861] text-base lg:text-[17px] lg:leading-[24px] font-semibold mb-2">
             {{ doc.title }}
           </h3>
 
           <!-- Description -->
-          <p class="text-[#6B7280] text-sm leading-relaxed mb-4 flex-1">
+          <p class="text-[#415861] text-sm lg:text-[14px] leading-[1.55] flex-1">
             {{ doc.description }}
           </p>
-
-          <!-- Link -->
-          <a
-            href="#"
-            class="text-[#0e888d] text-sm font-semibold hover:opacity-80 transition-opacity mt-auto"
-          >
-            {{ $t('common.more') }} &rarr;
-          </a>
-        </div>
+        </router-link>
       </div>
     </div>
   </section>

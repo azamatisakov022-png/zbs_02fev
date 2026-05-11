@@ -60,7 +60,7 @@ function statusClass(l: License) {
 }
 
 function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '-'
 }
 
 async function downloadCsv() {
@@ -84,7 +84,7 @@ async function downloadCsv() {
           <h1 class="text-2xl font-bold text-gray-900">Реестр лицензий</h1>
           <p class="text-sm text-gray-500 mt-1">
             Проверка наличия действующих лицензий у переработчиков, полигонов и пунктов приёма.
-            Просмотр только для чтения — выдача и отзыв лицензий производится сотрудниками МПРЭТН.
+            Просмотр только для чтения - выдача и отзыв лицензий производится сотрудниками МПРЭТН.
           </p>
         </div>
         <button

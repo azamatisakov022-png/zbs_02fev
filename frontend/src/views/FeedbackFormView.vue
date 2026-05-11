@@ -31,6 +31,9 @@ const submitted = ref(false)
 const ticketNumber = ref('')
 const errors = ref<Record<string, string>>({})
 
+// Drag-and-drop state for file zone
+const isDragging = ref(false)
+
 const categoryOptions = computed(() => [
   { value: '', label: t('feedback.selectCategory') },
   { value: FeedbackCategory.COMPLAINT, label: t('feedback.categories.complaint') },
@@ -62,6 +65,19 @@ const onFileSelect = (event: Event) => {
     }
   }
   input.value = ''
+}
+
+// Drag-and-drop handler - mirrors onFileSelect, doesn't replace it
+const onFileDrop = (event: DragEvent) => {
+  isDragging.value = false
+  if (!event.dataTransfer?.files) return
+  for (let i = 0; i < event.dataTransfer.files.length; i++) {
+    if (documents.value.length >= 5) break
+    const file = event.dataTransfer.files[i]
+    if (!documents.value.find(d => d.name === file.name)) {
+      documents.value.push({ name: file.name, size: file.size, type: file.type })
+    }
+  }
 }
 
 const removeDocument = (index: number) => {
@@ -110,7 +126,7 @@ const submitForm = () => {
 <template>
   <div class="min-h-screen bg-gray-50">
     <main class="container-main py-8 lg:py-12">
-      <!-- Success screen -->
+      <!-- Success screen - UNCHANGED -->
       <div v-if="submitted" class="max-w-2xl mx-auto">
         <AppCard padding="lg">
           <div class="text-center py-8">
@@ -147,18 +163,29 @@ const submitForm = () => {
 
       <!-- Form -->
       <div v-else class="max-w-3xl mx-auto">
+        <!-- Page header -->
         <div class="mb-8">
           <h1 class="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">{{ $t('feedback.formTitle') }}</h1>
           <p class="text-gray-600">{{ $t('feedback.formDescription') }}</p>
         </div>
 
         <AppCard padding="lg">
-          <form @submit.prevent="submitForm" class="space-y-6">
-            <!-- Personal info section -->
-            <div>
-              <h3 class="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-                {{ $t('feedback.personalInfo') }}
-              </h3>
+          <form @submit.prevent="submitForm" class="space-y-8">
+            <!-- ───── SECTION 1: Personal info ───── -->
+            <section>
+              <div class="mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </span>
+                  <h3 class="text-lg font-semibold text-gray-700">{{ $t('feedback.personalInfo') }}</h3>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('feedback.personalInfoHint') }}</p>
+              </div>
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                   <AppInput
@@ -185,13 +212,22 @@ const submitForm = () => {
                   required
                 />
               </div>
-            </div>
+            </section>
 
-            <!-- Request info section -->
-            <div>
-              <h3 class="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-                {{ $t('feedback.requestInfo') }}
-              </h3>
+            <!-- ───── SECTION 2: Request info ───── -->
+            <section>
+              <div class="mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </span>
+                  <h3 class="text-lg font-semibold text-gray-700">{{ $t('feedback.requestInfo') }}</h3>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('feedback.requestInfoHint') }}</p>
+              </div>
+
               <div class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -227,21 +263,37 @@ const submitForm = () => {
                   <p v-if="errors.message" class="mt-1 text-sm text-red-500">{{ errors.message }}</p>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <!-- File upload section -->
-            <div>
-              <h3 class="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-                {{ $t('feedback.attachments') }}
-              </h3>
-              <label class="flex items-center justify-center gap-2 w-full px-4 py-4 border-2 border-dashed border-[#e2e8f0] rounded-xl hover:border-[#10b981] hover:bg-green-50 transition-colors cursor-pointer">
-                <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            <!-- ───── SECTION 3: Attachments (drag-and-drop) ───── -->
+            <section>
+              <div class="mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 17.98 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                    </svg>
+                  </span>
+                  <h3 class="text-lg font-semibold text-gray-700">{{ $t('feedback.attachments') }}</h3>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('feedback.attachmentsHint') }}</p>
+              </div>
+
+              <label
+                class="flex flex-col items-center justify-center gap-2 w-full px-4 py-8 border-2 border-dashed rounded-xl transition-colors cursor-pointer"
+                :class="isDragging ? 'border-[#0e888d] bg-[#0e888d]/5' : 'border-[#e2e8f0] hover:border-[#10b981] hover:bg-green-50'"
+                @dragenter.prevent="isDragging = true"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop.prevent="onFileDrop"
+              >
+                <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
-                <span class="text-sm text-gray-500">{{ $t('feedback.selectFiles') }}</span>
+                <span class="text-sm text-gray-600 font-medium">{{ $t('feedback.dropZoneTitle') }}</span>
+                <span class="text-xs text-gray-400">{{ $t('feedback.dropZoneSubtitle') }}</span>
                 <input type="file" multiple class="hidden" @change="onFileSelect" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
               </label>
-              <p class="text-xs text-gray-400 mt-1">{{ $t('feedback.maxFiles') }}</p>
 
               <div v-if="documents.length" class="mt-3 space-y-2">
                 <div v-for="(doc, idx) in documents" :key="idx"
@@ -261,14 +313,22 @@ const submitForm = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <!-- Location section -->
-            <div>
-              <h3 class="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-                {{ $t('feedback.location') }}
-              </h3>
-              <p class="text-sm text-gray-500 mb-3">{{ $t('feedback.locationHint') }}</p>
+            <!-- ───── SECTION 4: Location ───── -->
+            <section>
+              <div class="mb-4 pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d]">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </span>
+                  <h3 class="text-lg font-semibold text-gray-700">{{ $t('feedback.location') }}</h3>
+                </div>
+                <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('feedback.locationHint') }}</p>
+              </div>
 
               <div v-if="coordinates" class="bg-green-50 rounded-xl p-4 mb-3 flex items-center justify-between">
                 <div>
@@ -295,23 +355,64 @@ const submitForm = () => {
                 :visible="showMap"
                 @update:visible="showMap = $event"
               />
-            </div>
+            </section>
 
-            <!-- Submit -->
-            <div class="pt-4 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-              <AppButton
-                type="submit"
-                :label="$t('feedback.submit')"
-                variant="primary"
-                :loading="loading"
-                size="lg"
-              />
-              <AppButton
-                type="button"
-                :label="$t('feedback.checkStatusLink')"
-                variant="ghost"
-                @click="router.push('/feedback/status')"
-              />
+            <!-- ───── Trust strip + Submit ───── -->
+            <div class="pt-4 border-t border-gray-100">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div class="flex items-start gap-3">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">{{ $t('feedback.trust.review.title') }}</p>
+                    <p class="text-xs text-gray-500">{{ $t('feedback.trust.review.desc') }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">{{ $t('feedback.trust.confidential.title') }}</p>
+                    <p class="text-xs text-gray-500">{{ $t('feedback.trust.confidential.desc') }}</p>
+                  </div>
+                </div>
+                <div class="flex items-start gap-3">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="m22 7-10 6L2 7" />
+                    </svg>
+                  </span>
+                  <div>
+                    <p class="text-sm font-semibold text-gray-700">{{ $t('feedback.trust.notify.title') }}</p>
+                    <p class="text-xs text-gray-500">{{ $t('feedback.trust.notify.desc') }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row gap-4">
+                <AppButton
+                  type="submit"
+                  :label="$t('feedback.submit')"
+                  variant="primary"
+                  :loading="loading"
+                  size="lg"
+                />
+                <AppButton
+                  type="button"
+                  :label="$t('feedback.checkStatusLink')"
+                  variant="ghost"
+                  @click="router.push('/feedback/status')"
+                />
+              </div>
             </div>
           </form>
         </AppCard>

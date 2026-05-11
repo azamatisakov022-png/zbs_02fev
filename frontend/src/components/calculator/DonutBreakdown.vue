@@ -12,7 +12,7 @@ const props = defineProps<{
   total: number
 }>()
 
-// Палитра сегментов — из брендовой гаммы (бирюзовый → зелёный).
+// Палитра сегментов - из брендовой гаммы (бирюзовый → зелёный).
 const COLORS = ['#0e888d', '#10b981', '#34d399', '#0c6267', '#047857', '#2dd4bf', '#059669', '#42acb3']
 
 // Вычисляем сегменты с накопительным offset для SVG stroke-dashoffset.
@@ -80,6 +80,6 @@ const circumference = 2 * Math.PI * 45
     </ul>
   </div>
   <div v-else class="text-xs text-white/40 italic text-center py-4">
-    Введите позиции — появится разбивка
+    Введите позиции - появится разбивка
   </div>
 </template>

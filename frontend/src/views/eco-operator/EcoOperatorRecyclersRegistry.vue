@@ -27,7 +27,7 @@ const searchQuery = ref('')
 const filterStatus = ref('')
 const filterWasteType = ref('')
 
-// Фильтр по статусу лицензии — главная добавленная фича для Эко Оператора:
+// Фильтр по статусу лицензии - главная добавленная фича для Эко Оператора:
 // одним кликом найти нарушителей (нет лицензии / истекла).
 type LicenseStatus = 'active' | 'expiring' | 'expired' | 'missing'
 type LicenseFilter = '' | LicenseStatus
@@ -35,9 +35,9 @@ const filterLicense = ref<LicenseFilter>('')
 
 /**
  * Вычисление статуса лицензии переработчика.
- * - missing: лицензии нет / невалидная дата — это НАРУШЕНИЕ
+ * - missing: лицензии нет / невалидная дата - это НАРУШЕНИЕ
  * - expired: дата истечения уже в прошлом
- * - expiring: истекает в ближайшие 30 дней — требует внимания
+ * - expiring: истекает в ближайшие 30 дней - требует внимания
  * - active: всё в порядке
  */
 function getLicenseStatus(r: Recycler): LicenseStatus {
@@ -95,7 +95,7 @@ const licenseCounts = computed(() => {
 })
 
 // Чип «Истёкшие» включает и «missing» (невалидные записи с отсутствующим номером/датой).
-// Для Эко Оператора оба случая — повод вмешаться: лицензия не действует сейчас.
+// Для Эко Оператора оба случая - повод вмешаться: лицензия не действует сейчас.
 const expiredTotalCount = computed(() => licenseCounts.value.expired + licenseCounts.value.missing)
 
 // Counts
@@ -116,7 +116,7 @@ const filteredRecyclers = computed(() => {
   }
   if (filterLicense.value) {
     if (filterLicense.value === 'expired') {
-      // Фильтр «Истёкшие» включает и missing (невалидные данные) — оба кейса
+      // Фильтр «Истёкшие» включает и missing (невалидные данные) - оба кейса
       // требуют действия от Эко Оператора.
       result = result.filter(r => {
         const s = getLicenseStatus(r)
@@ -773,14 +773,14 @@ const resetAllFilters = () => {
               <td class="px-4 py-3 font-mono text-xs">{{ recycler.inn }}</td>
               <td class="px-4 py-3">
                 <div class="space-y-1.5">
-                  <!-- Цветной бейдж со статусом лицензии — главный сигнал для Эко Оператора -->
+                  <!-- Цветной бейдж со статусом лицензии - главный сигнал для Эко Оператора -->
                   <span :class="['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap', licenseStatusBadgeClass(getLicenseStatus(recycler))]">
                     <span :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', licenseStatusDotClass(getLicenseStatus(recycler))]"></span>
                     <template v-if="getLicenseStatus(recycler) === 'expiring'">
                       Истекает через {{ licenseDaysLeft(recycler) }} дн.
                     </template>
                     <template v-else-if="getLicenseStatus(recycler) === 'missing'">
-                      ⚠ Нет лицензии — нарушение
+                      ⚠ Нет лицензии - нарушение
                     </template>
                     <template v-else>
                       {{ licenseStatusLabel(getLicenseStatus(recycler)) }}

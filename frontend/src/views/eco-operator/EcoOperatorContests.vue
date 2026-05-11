@@ -47,7 +47,7 @@ const formatDate = (iso: string): string => {
 }
 
 const formatGrant = (a?: number, c?: string) =>
-  a ? `${a.toLocaleString('ru-RU')} ${c === 'KGS' ? 'сом' : (c || '')}`.trim() : '—'
+  a ? `${a.toLocaleString('ru-RU')} ${c === 'KGS' ? 'сом' : (c || '')}`.trim() : '-'
 
 const statusBadge = (status: string): string => {
   const map: Record<string, string> = {

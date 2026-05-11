@@ -9,7 +9,7 @@ defineProps<{
 defineEmits<{ (e: 'download'): void; (e: 'qr'): void }>()
 
 function fmt(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '-'
 }
 </script>
 
@@ -30,7 +30,7 @@ function fmt(d?: string) {
     <div class="hero__facts">
       <div>
         <div class="hero__fact-label">Номер лицензии</div>
-        <div class="hero__fact-value mono">{{ licenseNumber || '—' }}</div>
+        <div class="hero__fact-value mono">{{ licenseNumber || '-' }}</div>
       </div>
       <div>
         <div class="hero__fact-label">Дата выдачи</div>

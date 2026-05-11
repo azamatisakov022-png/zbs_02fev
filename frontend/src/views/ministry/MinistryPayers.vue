@@ -537,7 +537,7 @@ onMounted(() => {
               class="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               :title="$t('ministryPayers.dateFrom')"
             />
-            <span class="text-gray-400 text-sm flex-shrink-0">—</span>
+            <span class="text-gray-400 text-sm flex-shrink-0">-</span>
             <input
               v-model="registeredTo"
               type="date"
@@ -659,7 +659,7 @@ onMounted(() => {
 
                 <!-- lastCalculationDate -->
                 <td v-if="isColumnVisible('lastCalculationDate')" class="px-3 py-3 text-gray-600 whitespace-nowrap">
-                  {{ payer.lastCalculationDate || '—' }}
+                  {{ payer.lastCalculationDate || '-' }}
                 </td>
 
                 <!-- reportingStatus -->
@@ -671,12 +671,12 @@ onMounted(() => {
 
                 <!-- lastPaymentDate -->
                 <td v-if="isColumnVisible('lastPaymentDate')" class="px-3 py-3 text-gray-600 whitespace-nowrap">
-                  {{ payer.lastPaymentDate || '—' }}
+                  {{ payer.lastPaymentDate || '-' }}
                 </td>
 
                 <!-- lastPaymentAmount -->
                 <td v-if="isColumnVisible('lastPaymentAmount')" class="px-3 py-3 text-gray-700 text-right whitespace-nowrap">
-                  {{ payer.lastPaymentAmount ? formatMoney(payer.lastPaymentAmount) + ' ' + $t('ministryPayers.currencySom') : '—' }}
+                  {{ payer.lastPaymentAmount ? formatMoney(payer.lastPaymentAmount) + ' ' + $t('ministryPayers.currencySom') : '-' }}
                 </td>
 
                 <!-- totalCharged -->

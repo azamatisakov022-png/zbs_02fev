@@ -8,13 +8,13 @@ import kg.eco.operator.entity.enums.LandfillStatus;
 import kg.eco.operator.entity.enums.RecyclerStatus;
 import kg.eco.operator.repository.*;
 import kg.eco.operator.service.PublicService;
+import kg.eco.operator.util.CalculationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -92,11 +92,9 @@ public class PublicServiceImpl implements PublicService {
             BigDecimal rate = ratesByGroup.getOrDefault(productGroup, BigDecimal.ZERO);
             BigDecimal norm = normsByGroup.getOrDefault(productGroup, BigDecimal.ZERO);
 
-            // Усб = Ставка × Масса(тонн) × (1 - Нпер/100)
-            BigDecimal factor = BigDecimal.ONE.subtract(
-                    norm.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP));
-            BigDecimal amount = rate.multiply(weight).multiply(factor)
-                    .setScale(2, RoundingMode.HALF_UP);
+            // Усб = Ставка(сом/тонна) × Масса(тонн) × (1 - Нпер/100)
+            // Единая формула с сервисной частью (ставка в сом/тонна, weight приходит в кг)
+            BigDecimal amount = CalculationUtil.calculateItemAmount(rate, weight, norm);
 
             Map<String, Object> resultItem = new LinkedHashMap<>();
             resultItem.put("productGroup", productGroup);

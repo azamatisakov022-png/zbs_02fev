@@ -2,7 +2,7 @@
 // Соответствуют ст. 20 Закона КР № 181 от 15.08.2023:
 // 5 лицензируемых видов деятельности по обращению с отходами.
 //
-// Слово «обезвреживание» (закон 2023) в редакции 2026 заменено на «уничтожение» —
+// Слово «обезвреживание» (закон 2023) в редакции 2026 заменено на «уничтожение» -
 // в UI отображаем «Уничтожение», внутренний id оставлен neutralization.
 
 import type { License, LicenseType } from '../../types/licenses'
@@ -16,7 +16,7 @@ export type Variant = 'dashboard' | 'timeline' | 'cards'
 //  - treatment     обработка (сортировка, разборка, очистка)
 //  - neutralization уничтожение (= обезвреживание: сжигание, обеззараживание)
 //  - recycle       переработка (производство продукции/энергии)
-//  - storage       хранение (срок до 11 мес — накопление в спецхранилищах)
+//  - storage       хранение (срок до 11 мес - накопление в спецхранилищах)
 //  - burial        захоронение (изоляция в спецхранилищах безвозвратно)
 export type KindId = 'transport' | 'treatment' | 'neutralization' | 'recycle' | 'storage' | 'burial'
 
@@ -37,8 +37,8 @@ export const KINDS: Record<KindId, KindMeta> = {
 }
 
 // Категория лицензии по бизнес-модели заказчика:
-// transportation — отдельная лицензия на перевозку отходов;
-// complex — лицензия «на всю деятельность с отходами» (с выбранными подвидами).
+// transportation - отдельная лицензия на перевозку отходов;
+// complex - лицензия «на всю деятельность с отходами» (с выбранными подвидами).
 export type LicenseCategory = 'transportation' | 'complex'
 
 // Старый бэкенд-enum (6 значений) → новый UI-подвид. Используется для
@@ -69,8 +69,8 @@ const ACTIVITY_TO_KIND: Record<string, KindId> = {
 }
 
 // Главный helper: возвращает все подвиды деятельности, которые покрывает
-// данная лицензия. Для transportation = ['transport']. Для complex —
-// активити-подвиды; если activityTypes не заданы (legacy) — выводим из
+// данная лицензия. Для transportation = ['transport']. Для complex -
+// активити-подвиды; если activityTypes не заданы (legacy) - выводим из
 // исходного licenseType.
 export function licenseToKinds(l: License): KindId[] {
   if (l.licenseType === 'transportation') return ['transport']
@@ -88,7 +88,7 @@ export function licenseToKinds(l: License): KindId[] {
   const legacy = LEGACY_LICENSE_TYPE_TO_KIND[l.licenseType]
   if (legacy) return [legacy]
 
-  // complex без activityTypes — показываем все 5 подвидов.
+  // complex без activityTypes - показываем все 5 подвидов.
   if (l.licenseType === 'complex') {
     return ['treatment', 'neutralization', 'recycle', 'storage', 'burial']
   }
@@ -123,7 +123,7 @@ export interface LicenseUI {
   num: string
   org: string
   inn: string
-  kind: KindId           // главный (первый из kinds) — для бейджа в карточке
+  kind: KindId           // главный (первый из kinds) - для бейджа в карточке
   kindMeta: KindMeta
   kinds: KindId[]        // все подвиды деятельности, которые покрывает лицензия
   category: LicenseCategory
@@ -151,9 +151,9 @@ export function daysBetween(a: Date, b: Date): number {
 }
 
 export function fmt(d: Date | string | undefined): string {
-  if (!d) return '—'
+  if (!d) return '-'
   const dt = typeof d === 'string' ? parseISO(d) : d
-  if (isNaN(dt.getTime())) return '—'
+  if (isNaN(dt.getTime())) return '-'
   return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`
 }
 
@@ -187,27 +187,27 @@ export type RegionKg = typeof KG_REGIONS[number]
 
 // Нормализация legalAddress → один из 8 регионов. Маппится по ключевым
 // словам и крупным населённым пунктам каждой области. Если адрес не
-// распознан — возвращаем «—».
-export function addressToRegion(legalAddress?: string): RegionKg | '—' {
-  if (!legalAddress) return '—'
+// распознан - возвращаем «-».
+export function addressToRegion(legalAddress?: string): RegionKg | '-' {
+  if (!legalAddress) return '-'
   const a = legalAddress.toLowerCase()
-  // Бишкек — по г. Бишкек.
+  // Бишкек - по г. Бишкек.
   if (/бишкек/.test(a)) return 'Бишкек'
-  // Иссык-Кульская — Каракол, Балыкчы, Чолпон-Ата + явная «иссык-куль».
+  // Иссык-Кульская - Каракол, Балыкчы, Чолпон-Ата + явная «иссык-куль».
   if (/иссык[-\s]?куль|каракол|балыкчы|чолпон[-\s]?ата/.test(a)) return 'Иссык-Кульская'
-  // Чуйская — Кара-Балта, Сокулук, Токмок, Кант + явная «чуйск».
+  // Чуйская - Кара-Балта, Сокулук, Токмок, Кант + явная «чуйск».
   if (/чуйск|чуй\b|сокулук|кант\b|токмок|кара[-\s]?балта|кара[-\s]?балт/.test(a)) return 'Чуйская'
   // Нарынская.
   if (/нарын/.test(a)) return 'Нарынская'
   // Таласская.
   if (/талас/.test(a)) return 'Таласская'
-  // Джалал-Абадская — Джалал-Абад, Таш-Кумыр, Майлы-Сай, Кара-Куль.
+  // Джалал-Абадская - Джалал-Абад, Таш-Кумыр, Майлы-Сай, Кара-Куль.
   if (/джалал[-\s]?абад|таш[-\s]?кумыр|майлы[-\s]?сай|кара[-\s]?куль/.test(a)) return 'Джалал-Абадская'
   // Баткенская.
   if (/баткен|сулюкта|кызыл[-\s]?кия/.test(a)) return 'Баткенская'
-  // Ошская — Ош (город включаем сюда), Узген, Ноокат, Кара-Суу.
+  // Ошская - Ош (город включаем сюда), Узген, Ноокат, Кара-Суу.
   if (/ошск|\bош\b|узген|ноокат|кара[-\s]?суу/.test(a)) return 'Ошская'
-  return '—'
+  return '-'
 }
 
 function statusFromLicense(l: License, today: Date): StatusInfo {
@@ -222,7 +222,7 @@ function statusFromLicense(l: License, today: Date): StatusInfo {
 }
 
 // Подсчёт количества организаций (уникальный ИНН) в каждом из 8 регионов КР.
-// Регионы фиксированы — даже если в данных их 0, в результате будет «(0)».
+// Регионы фиксированы - даже если в данных их 0, в результате будет «(0)».
 export function computeRegionStats(data: LicenseUI[]): { region: string; count: number }[] {
   const byRegion: Record<string, Set<string>> = {}
   for (const l of data) {
@@ -262,7 +262,7 @@ export function toLicenseUI(l: License, today: Date = new Date()): LicenseUI {
     issued: parseISO(l.issuedAt),
     expires: parseISO(l.validUntil),
     region: addressToRegion(l.legalAddress),
-    address: l.legalAddress || '—',
+    address: l.legalAddress || '-',
     issuedByName: l.issuedByName,
     isRevoked: l.isRevoked,
     hasDocument: !!l.hasDocument,

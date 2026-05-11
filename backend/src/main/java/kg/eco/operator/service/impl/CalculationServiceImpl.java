@@ -42,8 +42,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CalculationServiceImpl implements CalculationService {
 
-    @Value("${calculation.penalty.daily-rate:0.0009}")
+    @Value("${calculation.penalty.daily-rate:0.003}")
     private BigDecimal dailyRate;
+
+    @Value("${calculation.penalty.cap-percent:15}")
+    private BigDecimal capPercent;
 
     private final CalculationRepository calculationRepository;
     private final UserRepository userRepository;
@@ -520,14 +523,16 @@ public class CalculationServiceImpl implements CalculationService {
             return PenaltyResponse.noPenalty(amount, LocalDate.now());
         }
 
+        // Cap по ТЗ: не более 15% от суммы первоначальной задолженности
+        BigDecimal capMultiplier = capPercent.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+        BigDecimal maxPenalty = amount.multiply(capMultiplier).setScale(2, RoundingMode.HALF_UP);
+
         // If penalty was fixed (fee already paid), return the fixed values
         if (calc.getPenaltyFixedDate() != null && calc.getPenaltyFixedAmount() != null) {
             int fixedDays = calc.getPenaltyFixedDays() != null ? calc.getPenaltyFixedDays() : 0;
             BigDecimal fixedAmount = calc.getPenaltyFixedAmount();
-            BigDecimal maxPenalty = amount;
-            BigDecimal dailyPen = fixedDays > 0
-                    ? fixedAmount.divide(BigDecimal.valueOf(fixedDays), 2, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
+            // Дневная пеня - всегда честная ставка от долга (а не размазанный итог после cap)
+            BigDecimal dailyPen = amount.multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
             double progress = maxPenalty.compareTo(BigDecimal.ZERO) > 0
                     ? fixedAmount.multiply(BigDecimal.valueOf(100))
                             .divide(maxPenalty, 2, RoundingMode.HALF_UP).doubleValue()
@@ -556,7 +561,7 @@ public class CalculationServiceImpl implements CalculationService {
 
         BigDecimal dailyPenalty = amount.multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalPenalty = dailyPenalty.multiply(BigDecimal.valueOf(days)).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal maxPenalty = amount; // 100% cap
+        // maxPenalty уже посчитан выше (15% от тела долга по ТЗ)
         if (totalPenalty.compareTo(maxPenalty) > 0) {
             totalPenalty = maxPenalty;
         }

@@ -330,7 +330,7 @@ function goToReceptionPoints() {
   transform: translateX(-50%);
 }
 
-/* Card wrapper — zigzag */
+/* Card wrapper - zigzag */
 .dt-card-wrapper {
   position: relative;
   display: flex;

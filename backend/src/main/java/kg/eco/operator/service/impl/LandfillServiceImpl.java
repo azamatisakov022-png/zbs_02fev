@@ -76,10 +76,10 @@ public class LandfillServiceImpl implements LandfillService {
     @Transactional
     public LandfillResponse update(Long id, LandfillCreateRequest request) {
         Landfill landfill = findLandfillById(id);
-        String oldStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "—";
+        String oldStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "-";
         mapRequestToEntity(request, landfill);
         landfill = landfillRepository.save(landfill);
-        String newStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "—";
+        String newStatus = landfill.getStatus() != null ? landfill.getStatus().name() : "-";
         String details = "Обновлён полигон: " + landfill.getName();
         if (!oldStatus.equals(newStatus)) {
             details += " (статус " + oldStatus + " → " + newStatus + ")";

@@ -190,7 +190,7 @@ async function runGnsMonitoring() {
 
 // ── Helpers ─────────────────────────────────────────────────
 function formatDate(dateStr: string): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   try {
     return new Date(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
   } catch {
@@ -199,7 +199,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatMass(mass: number | null): string {
-  if (mass == null) return '—'
+  if (mass == null) return '-'
   return mass.toLocaleString('ru-RU')
 }
 
@@ -439,7 +439,7 @@ onMounted(() => {
                   {{ (currentPage - 1) * perPage + idx + 1 }}
                 </td>
                 <td class="px-3 py-3 font-semibold text-gray-900 whitespace-nowrap">
-                  {{ company.companyName || '—' }}
+                  {{ company.companyName || '-' }}
                 </td>
                 <td class="px-3 py-3 font-mono text-xs text-gray-600 whitespace-nowrap">
                   {{ company.inn }}
@@ -455,15 +455,15 @@ onMounted(() => {
                   </span>
                 </td>
                 <td class="px-3 py-3 text-gray-600">
-                  <div class="max-w-[180px] truncate" :title="company.okedCodes || company.tnvedCodes || '—'">
-                    {{ company.okedCodes || company.tnvedCodes || '—' }}
+                  <div class="max-w-[180px] truncate" :title="company.okedCodes || company.tnvedCodes || '-'">
+                    {{ company.okedCodes || company.tnvedCodes || '-' }}
                   </div>
                 </td>
                 <td class="px-3 py-3 text-gray-700 text-right whitespace-nowrap">
                   {{ formatMass(company.estimatedMass) }}
                 </td>
                 <td class="px-3 py-3 text-gray-600 whitespace-nowrap">
-                  {{ company.assignedEmployeeName || '—' }}
+                  {{ company.assignedEmployeeName || '-' }}
                 </td>
                 <td class="px-3 py-3 text-gray-600 whitespace-nowrap">
                   {{ formatDate(company.createdAt) }}

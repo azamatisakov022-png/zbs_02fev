@@ -51,14 +51,15 @@ function toggle(id: number) {
 </script>
 
 <template>
-  <section style="background: linear-gradient(180deg, white 0%, #F0FDF4 100%)">
-    <div class="container-main py-20">
-      <!-- Section header -->
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-[#111827] tracking-tight mb-2">
+  <section class="py-10 md:py-14 lg:py-[80px]" style="background: linear-gradient(180deg, white 0%, #F0FDF4 100%)">
+    <div class="container-main">
+      <!-- Section header - centered (FAQ is the only section centered intentionally) -->
+      <div class="text-center mb-8 md:mb-10 lg:mb-[48px]">
+        <h2 class="text-2xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold text-[#415861] mb-3 lg:mb-[20px]">
           {{ $t('faq.title') }}
         </h2>
-        <p class="text-[#6B7280]">
+        <div class="section-title-underline mx-auto"></div>
+        <p class="text-[#415861] text-sm md:text-base lg:text-[17px] lg:leading-[1.55] max-w-[760px] mx-auto mt-4 lg:mt-[20px]">
           {{ $t('faq.subtitle') }}
         </p>
       </div>

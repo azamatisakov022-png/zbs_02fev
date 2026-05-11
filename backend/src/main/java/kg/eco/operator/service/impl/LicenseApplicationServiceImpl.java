@@ -136,7 +136,7 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
 
         if ("offline".equals(mode)) {
             // Офлайн-оплата: квитанцию заявитель прикладывает отдельно (см. LicensePaymentService#submitOfflineReceipt).
-            // Здесь просто переводим заявку в SUBMITTED. Если payment ещё не создан — сервис платежей его создаст.
+            // Здесь просто переводим заявку в SUBMITTED. Если payment ещё не создан - сервис платежей его создаст.
             app.setStatus(LicenseApplicationStatus.SUBMITTED);
             app.setSubmittedAt(now);
             app.setDeadline(now.plusDays(deadlineDays));
@@ -147,7 +147,7 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
 
         // По умолчанию online: заявка уходит в PAYMENT_PENDING.
         // Создание payment intent делается сервисом платежей (LicensePaymentServiceImpl).
-        // Здесь только меняем статус — отдельный вызов /pay должен быть следующим шагом фронта.
+        // Здесь только меняем статус - отдельный вызов /pay должен быть следующим шагом фронта.
         app.setStatus(LicenseApplicationStatus.PAYMENT_PENDING);
         app.setSubmittedAt(now);
         app.setDeadline(now.plusDays(deadlineDays));
@@ -212,7 +212,7 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
         }
         validateFile(file);
 
-        // Если документ такого типа уже есть — заменяем
+        // Если документ такого типа уже есть - заменяем
         documentRepository.findByApplication_IdAndDocType(applicationId, docType).ifPresent(existing -> {
             try { fileStorageService.delete(existing.getFileObjectKey()); } catch (Exception e) {
                 log.warn("Failed to delete old document file {}: {}", existing.getFileObjectKey(), e.getMessage());
@@ -404,7 +404,7 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
     private LicenseApplication loadAndEnsureOwnership(Long id, String userInn) {
         LicenseApplication app = loadApplication(id);
         User user = loadUser(userInn);
-        // Для не-BUSINESS ролей доступ через admin-эндпоинты — эта проверка только для ЛК заявителя.
+        // Для не-BUSINESS ролей доступ через admin-эндпоинты - эта проверка только для ЛК заявителя.
         if (user.getRole() != RoleEnum.BUSINESS) {
             throw new UnauthorizedException("Этот эндпоинт доступен только заявителю (BUSINESS)");
         }
@@ -448,10 +448,10 @@ public class LicenseApplicationServiceImpl implements LicenseApplicationService 
         }
         if (app.getLegalAddress() == null || app.getLegalAddress().isBlank()) {
             // Юр. адрес теперь подтягивается автоматически из профиля компании
-            // (companies.address) — но если по каким-то причинам он пуст, просим
+            // (companies.address) - но если по каким-то причинам он пуст, просим
             // дополнить профиль, а не данные заявки.
             throw new BusinessLogicException(
-                    "В профиле компании не указан юридический адрес — обновите профиль");
+                    "В профиле компании не указан юридический адрес - обновите профиль");
         }
         if (app.getActualAddress() == null || app.getActualAddress().isBlank()) {
             throw new BusinessLogicException(

@@ -65,7 +65,7 @@ export function formatYears(min: number, max: number, t: (key: string) => string
     return `${n.toLocaleString()} ${t('decomposition.yearsShort')}`
   }
   if (min === max) return fmt(min)
-  return `${fmt(min)} — ${fmt(max)}`
+  return `${fmt(min)} - ${fmt(max)}`
 }
 
 export type FilterKey = 'all' | 'safe' | 'medium' | 'danger' | 'critical'

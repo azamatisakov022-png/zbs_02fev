@@ -151,7 +151,7 @@ onMounted(async () => {
       currentApp.value = app
       uploadedDocTypes.value = new Set((app.documents || []).map(d => d.docType))
 
-      // Если профиль не успел загрузиться — добиваем пустые поля
+      // Если профиль не успел загрузиться - добиваем пустые поля
       if (company.value) applyCompanyToForm(company.value, 'merge')
 
       // Где открыть мастер: смотрим как заполнен черновик
@@ -160,7 +160,7 @@ onMounted(async () => {
       error.value = 'Не удалось загрузить заявку'
     }
   } else if (company.value) {
-    // Новая заявка — сразу подтягиваем всё что есть в профиле
+    // Новая заявка - сразу подтягиваем всё что есть в профиле
     applyCompanyToForm(company.value, 'fresh')
   }
 })
@@ -234,7 +234,7 @@ async function onFileSelected(docType: LicenseDocumentType, event: Event) {
  * Проверка целостности данных текущего шага перед переходом дальше.
  * Возвращает текст ошибки или null если шаг валиден.
  *
- * Цель — не пропустить пользователя через шаг с незаполненными полями,
+ * Цель - не пропустить пользователя через шаг с незаполненными полями,
  * чтобы он не получил неинформативную ошибку с бэка ровно на финальном
  * submit'е.
  */
@@ -446,7 +446,7 @@ const submitButtonLabel = computed(() =>
                 </template>
               </SectionLabel>
               <p class="lf-activity__hint">
-                Введите название и нажмите <kbd class="lf-kbd">Enter</kbd> — добавится чипом.
+                Введите название и нажмите <kbd class="lf-kbd">Enter</kbd> - добавится чипом.
                 Можно несколько.
               </p>
               <ActivityPicker
@@ -497,7 +497,7 @@ const submitButtonLabel = computed(() =>
                   <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
                 </svg>
                 <div>
-                  Чтобы загружать документы, сначала сохраните черновик — пройдите шаги 1–2 и нажмите «Далее».
+                  Чтобы загружать документы, сначала сохраните черновик - пройдите шаги 1–2 и нажмите «Далее».
                 </div>
               </div>
             </FormCard>
@@ -573,7 +573,7 @@ const submitButtonLabel = computed(() =>
               <div class="lf-docs-head">
                 <div>
                   <div class="lf-docs-title">Дополнительный пакет</div>
-                  <div class="lf-docs-subtitle">Опциональные документы — могут запросить дополнительно</div>
+                  <div class="lf-docs-subtitle">Опциональные документы - могут запросить дополнительно</div>
                 </div>
                 <div class="lf-docs-progress">
                   <span class="lf-docs-progress__text">
@@ -628,7 +628,7 @@ const submitButtonLabel = computed(() =>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
                 </svg>
-                <div>Проверьте данные перед отправкой. После оплаты редактирование ограничено — только через обращение к инспектору.</div>
+                <div>Проверьте данные перед отправкой. После оплаты редактирование ограничено - только через обращение к инспектору.</div>
               </div>
 
               <div class="lf-preview-block">
@@ -681,7 +681,7 @@ const submitButtonLabel = computed(() =>
                     </div>
                     <div class="lf-preview-docs__sub">
                       <template v-if="requiredDone < requiredDocs.length">
-                        Не все обязательные документы загружены — вернитесь на шаг 3.
+                        Не все обязательные документы загружены - вернитесь на шаг 3.
                       </template>
                       <template v-else>
                         Все обязательные документы приложены.
@@ -750,7 +750,7 @@ const submitButtonLabel = computed(() =>
                     </div>
                     <div class="lf-dropzone__sub">
                       {{ offlineReceiptFile
-                        ? `${(offlineReceiptFile.size / 1024).toFixed(0)} КБ — кликните чтобы заменить`
+                        ? `${(offlineReceiptFile.size / 1024).toFixed(0)} КБ - кликните чтобы заменить`
                         : 'PDF или JPG, до 10 МБ' }}
                     </div>
                   </div>
@@ -771,7 +771,7 @@ const submitButtonLabel = computed(() =>
                   <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" />
                 </svg>
                 <div>
-                  После отправки заявка попадёт к инспектору. Если будет отказ, квитанция сохранится — повторная оплата не потребуется.
+                  После отправки заявка попадёт к инспектору. Если будет отказ, квитанция сохранится - повторная оплата не потребуется.
                 </div>
               </div>
             </FormCard>
@@ -867,7 +867,7 @@ const submitButtonLabel = computed(() =>
 }
 .lf-wizard__grid {
   display: grid;
-  /* Главная колонка тянется (minmax 0 1fr — отрезает протекание длинного текста),
+  /* Главная колонка тянется (minmax 0 1fr - отрезает протекание длинного текста),
      sidebar адаптивен от 280px до 360px. */
   grid-template-columns: minmax(0, 1fr) clamp(280px, 22%, 360px);
   gap: 20px;
@@ -1520,7 +1520,7 @@ const submitButtonLabel = computed(() =>
 .lf-wizard__footer {
   position: sticky;
   bottom: 0;
-  /* Отрицательный margin вычитает padding-inline родителя — чтобы footer
+  /* Отрицательный margin вычитает padding-inline родителя - чтобы footer
      прилегал к границам wizard'а независимо от значения clamp(). */
   margin-block-start: 20px;
   margin-inline: calc(-1 * clamp(16px, 3vw, 32px));

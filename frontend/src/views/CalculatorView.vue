@@ -47,7 +47,7 @@ interface CalcRow {
 const activeTab = ref<'calculator' | 'penalty'>('calculator')
 
 // ─── Penalty calculator state ───
-// Старое состояние (дата-based) — оставлено для обратной совместимости
+// Старое состояние (дата-based) - оставлено для обратной совместимости
 // с PenaltyCalculator и PDF-экспортом.
 const penaltyDebtAmount = ref('')
 const penaltyDueDate = ref('')
@@ -72,7 +72,7 @@ const isPenaltyFormValid = computed(() => {
   return amount > 0 && !!penaltyDueDate.value
 })
 
-// Новое состояние редизайна (days-based slider + kickers) —
+// Новое состояние редизайна (days-based slider + kickers) -
 // проще и нагляднее чем выбор даты.
 const penaltyDebt = ref<number>(1_000_000)
 const penaltyDays = ref<number>(30)
@@ -231,10 +231,10 @@ function newCalculation() {
 
 // ─── Live-итоги для sticky-панели (новый дизайн) ───
 // В отличие от старой кнопки «Рассчитать», в новом дизайне сумма обновляется
-// сразу при изменении полей — как в Apple Card / Revolut калькуляторах.
+// сразу при изменении полей - как в Apple Card / Revolut калькуляторах.
 
 // Строки готовые к показу в таблице результатов (для PDF-экспорта).
-// Вычисляются на лету — не нужен флаг showResult и кнопка «Рассчитать».
+// Вычисляются на лету - не нужен флаг showResult и кнопка «Рассчитать».
 const displayResultRows = computed<CalcRow[]>(() =>
   rows.value.filter(r => r.group && parseFloat(String(r.volume)) > 0),
 )
@@ -259,7 +259,7 @@ function rowShare(r: CalcRow): number {
   if (!t || t <= 0) return 0
   return (r.amount / t) * 100
 }
-// Для donut — маппим rows в формат {id, amount, label}
+// Для donut - маппим rows в формат {id, amount, label}
 const donutItems = computed(() =>
   rows.value
     .filter(r => r.group && r.amount > 0)
@@ -278,19 +278,19 @@ function fmtDec(n: number): string {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 function fmtT(n: number): string {
-  if (!Number.isFinite(n)) return '—'
+  if (!Number.isFinite(n)) return '-'
   return n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 function fmtSom(n: number): string {
-  return Number.isFinite(n) ? n.toLocaleString('ru-RU') : '—'
+  return Number.isFinite(n) ? n.toLocaleString('ru-RU') : '-'
 }
 
 function getGroupLabel(value: string): string {
-  return productGroups.find(g => g.value === value)?.label || '—'
+  return productGroups.find(g => g.value === value)?.label || '-'
 }
 
 function getSubgroupLabel(row: CalcRow): string {
-  if (!row.subgroupData) return '—'
+  if (!row.subgroupData) return '-'
   return getTranslatedSubgroupLabel(row.subgroupData.value, row.subgroupData.label)
 }
 
@@ -330,7 +330,7 @@ async function downloadPdf() {
           </div>
           <h1
             class="text-[38px] lg:text-[46px] leading-[1.08] font-semibold tracking-tight"
-            style="color:#0f172a"
+            style="color:#415861"
           >
             <template v-if="activeTab === 'calculator'">
               {{ $t('calculatorPage.heroTitleA') }}
@@ -476,14 +476,14 @@ async function downloadPdf() {
                 <div>
                   <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowNorm') }}</div>
                   <div class="px-3 py-2 text-[14px] font-semibold text-ink-700 tabular-nums">
-                    {{ row.group ? row.recyclingStandard + '%' : '—' }}
+                    {{ row.group ? row.recyclingStandard + '%' : '-' }}
                   </div>
                 </div>
                 <!-- To recycle -->
                 <div>
                   <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowRecycle') }}</div>
                   <div class="px-3 py-2 text-[14px] font-semibold text-emerald2-700 tabular-nums">
-                    {{ row.group ? fmtT(row.volumeToRecycle) + ' т' : '—' }}
+                    {{ row.group ? fmtT(row.volumeToRecycle) + ' т' : '-' }}
                   </div>
                 </div>
                 <!-- Row sum -->
@@ -491,7 +491,7 @@ async function downloadPdf() {
                   <div class="text-[10px] uppercase tracking-[0.12em] text-ink-400 font-semibold mb-1.5">{{ $t('calculatorPage.rowSum') }}</div>
                   <div class="px-3 py-2 text-[16px] font-semibold text-ink-900 tabular-nums leading-none">
                     <CountUp v-if="row.amount > 0" :value="row.amount" :decimals="0" />
-                    <span v-else>—</span>
+                    <span v-else>-</span>
                     <span v-if="row.amount > 0" class="text-[11px] text-ink-400 ml-1 font-normal">с.</span>
                   </div>
                 </div>
@@ -606,7 +606,7 @@ async function downloadPdf() {
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
-    <!-- TAB: PENALTY CALCULATOR (Variant A — slider + curve)      -->
+    <!-- TAB: PENALTY CALCULATOR (Variant A - slider + curve)      -->
     <!-- ═══════════════════════════════════════════════════════ -->
     <div v-if="activeTab === 'penalty'" class="max-w-[1360px] mx-auto px-6 lg:px-8 pb-20 grid grid-cols-12 gap-6">
       <!-- ───────────── LEFT: INPUTS ───────────── -->
@@ -716,7 +716,7 @@ async function downloadPdf() {
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
-    <!-- ТЕХНИЧЕСКИЙ БЛОК ДЛЯ PDF-ЭКСПОРТА — СПРЯТАН OFF-SCREEN -->
+    <!-- ТЕХНИЧЕСКИЙ БЛОК ДЛЯ PDF-ЭКСПОРТА - СПРЯТАН OFF-SCREEN -->
     <!-- Пользователь его не видит, но html2canvas/jsPDF может     -->
     <!-- снять с него снимок когда кликают «Скачать PDF».          -->
     <!-- aria-hidden чтобы screen readers его игнорировали.        -->
@@ -774,7 +774,7 @@ async function downloadPdf() {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-/* Tabular nums — для чисел в sticky-панели */
+/* Tabular nums - для чисел в sticky-панели */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

@@ -3,7 +3,7 @@ import type { MyCompany } from '../../api/companies'
 
 defineProps<{
   company: MyCompany | null
-  /** Когда true — компактный inline-вариант (используется в Шаге 1, заголовком). */
+  /** Когда true - компактный inline-вариант (используется в Шаге 1, заголовком). */
   compact?: boolean
 }>()
 </script>

@@ -97,7 +97,7 @@ const aggregatedItems = computed(() => {
           group: item.group,
           groupLabel: groupObj?.label || item.group,
           subgroup: item.subgroup,
-          subgroupLabel: subObj?.label || '—',
+          subgroupLabel: subObj?.label || '-',
           tnvedCode: item.tnvedCode,
           mass,
           rate: item.rate,
@@ -206,7 +206,7 @@ const submitDeclaration = () => {
     })),
     reports: yearReports.value.map(r => ({
       number: r.number, period: r.year, categories: r.items.map(i => i.wasteType).join(', '),
-      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '—',
+      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '-',
     })),
     payments: [],
     documents: [],
@@ -249,7 +249,7 @@ const saveDraft = () => {
     })),
     reports: yearReports.value.map(r => ({
       number: r.number, period: r.year, categories: r.items.map(i => i.wasteType).join(', '),
-      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '—',
+      processed: r.totalProcessed, credited: 0, reportStatus: r.status, acceptedDate: r.reviewDate || '-',
     })),
     payments: [],
     documents: [],
@@ -438,7 +438,7 @@ const signDeclaration = (id: number) => {
           </div>
           <div class="flex-1">
             <p :class="['text-sm font-semibold', decl.status === 'rejected' ? 'text-red-900' : 'text-orange-900']">
-              {{ decl.number }} — {{ decl.status === 'rejected' ? $t('status.rejectedFem') : $t('businessDecl.returnedForRevision') }}
+              {{ decl.number }} - {{ decl.status === 'rejected' ? $t('status.rejectedFem') : $t('businessDecl.returnedForRevision') }}
               <span v-if="decl.reviewDate" class="font-normal">{{ $t('businessDecl.fromDate') }} {{ decl.reviewDate }}</span>
             </p>
             <p v-if="decl.reviewComment" :class="['text-xs mt-1', decl.status === 'rejected' ? 'text-red-700' : 'text-orange-700']">
@@ -757,14 +757,14 @@ const signDeclaration = (id: number) => {
                     <td class="px-3 py-3 text-xs">{{ item.groupLabel }}</td>
                     <td class="px-3 py-3 text-xs">{{ item.subgroupLabel }}</td>
                     <template v-if="!isPackagingGroup(item.group)">
-                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
+                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '-' }}</td>
                       <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || item.tnvedCode }}</td>
                       <td class="px-3 py-3 text-xs">{{ getTranslatedTnvedName(getSubgroupData(item.group, item.subgroup)?.tnvedName) }}</td>
                     </template>
                     <template v-else>
                       <td class="px-3 py-3 text-xs">{{ getTranslatedPackagingMaterial(getSubgroupData(item.group, item.subgroup)?.packagingMaterial) }}</td>
-                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
-                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
+                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '-' }}</td>
+                      <td class="px-3 py-3 font-mono text-xs">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '-' }}</td>
                     </template>
                     <td class="px-3 py-3 text-right font-medium">{{ item.mass.toFixed(1) }}</td>
                     <td class="px-3 py-3 text-right">{{ item.rate.toLocaleString() }}</td>

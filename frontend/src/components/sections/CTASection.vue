@@ -20,32 +20,32 @@ const scrollToContacts = () => {
 </script>
 
 <template>
-  <section class="py-8 md:py-12 lg:py-[100px]">
+  <section class="py-10 md:py-14 lg:py-[80px]">
     <div class="container-main">
       <div
-        class="rounded-[30px] md:rounded-[40px] lg:rounded-[50px] py-10 md:py-14 lg:py-[60px] px-6 md:px-12 lg:px-[151px] text-center"
+        class="rounded-[24px] md:rounded-[32px] lg:rounded-[40px] py-10 md:py-14 lg:py-[56px] px-6 md:px-12 lg:px-[80px] text-center"
         style="background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);"
       >
-        <h2 class="text-white text-xl md:text-3xl lg:text-[40px] lg:leading-[55px] font-bold uppercase mb-4 md:mb-6 lg:mb-[20px]">
+        <h2 class="text-white text-2xl md:text-3xl lg:text-[40px] lg:leading-[1.2] font-bold uppercase mb-4 md:mb-5 lg:mb-[20px]">
           {{ $t('cta.title') }}
         </h2>
 
-        <p class="text-white text-sm md:text-lg lg:text-[30px] lg:leading-[41px] font-medium max-w-[1057px] mx-auto mb-8 md:mb-10 lg:mb-[40px]">
+        <p class="text-white/95 text-sm md:text-base lg:text-[17px] lg:leading-[1.55] max-w-[760px] mx-auto mb-7 md:mb-8 lg:mb-[36px]">
           {{ $t('cta.description') }}
         </p>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-[40px]">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 lg:gap-5">
           <router-link
             v-for="button in routerButtons"
             :key="button.label"
             :to="button.href"
-            class="w-full sm:w-auto min-w-[200px] lg:min-w-[224px] bg-white/20 text-white px-6 lg:px-[30px] py-3.5 lg:py-[14px] rounded-[25px] text-sm lg:text-base font-semibold uppercase hover:bg-white/30 transition-colors"
+            class="w-full sm:w-auto min-w-[200px] lg:min-w-[220px] bg-white/20 text-white px-6 lg:px-7 py-3 lg:py-3.5 rounded-[14px] text-sm lg:text-[14px] font-semibold uppercase tracking-wide hover:bg-white/30 transition-colors"
           >
             {{ button.label }}
           </router-link>
           <button
             @click="scrollToContacts"
-            class="w-full sm:w-auto min-w-[200px] lg:min-w-[224px] bg-white/20 text-white px-6 lg:px-[30px] py-3.5 lg:py-[14px] rounded-[25px] text-sm lg:text-base font-semibold uppercase hover:bg-white/30 transition-colors"
+            class="w-full sm:w-auto min-w-[200px] lg:min-w-[220px] bg-white/20 text-white px-6 lg:px-7 py-3 lg:py-3.5 rounded-[14px] text-sm lg:text-[14px] font-semibold uppercase tracking-wide hover:bg-white/30 transition-colors"
           >
             {{ $t('cta.contactUs') }}
           </button>

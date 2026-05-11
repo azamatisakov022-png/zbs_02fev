@@ -91,7 +91,7 @@ async function handleAssign() {
 }
 
 function formatDate(dateStr: string): string {
-  if (!dateStr) return '—'
+  if (!dateStr) return '-'
   try {
     return new Date(dateStr).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   } catch {
@@ -100,7 +100,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatMass(mass: number | null): string {
-  if (mass == null) return '—'
+  if (mass == null) return '-'
   return mass.toLocaleString('ru-RU') + ' ' + t('detectedCompanies.kg')
 }
 
@@ -144,7 +144,7 @@ onMounted(() => {
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">{{ company.companyName || '—' }}</h1>
+              <h1 class="text-2xl font-bold text-gray-900">{{ company.companyName || '-' }}</h1>
               <p class="text-gray-500 mt-1">{{ $t('detectedCompanies.colInn') }}: {{ company.inn }}</p>
             </div>
             <div class="flex items-center gap-2">
@@ -204,35 +204,35 @@ onMounted(() => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldLegalForm') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.legalForm || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.legalForm || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldLegalAddress') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.legalAddress || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.legalAddress || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldDirector') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.director || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.director || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldPhone') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.phone || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.phone || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldEmail') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.email || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.email || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldOkpo') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.okpoCode || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.okpoCode || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldOked') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.okedCodes || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.okedCodes || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldTnved') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.tnvedCodes || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.tnvedCodes || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.colMass') }}</p>
@@ -240,11 +240,11 @@ onMounted(() => {
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldGnsStatus') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.gnsStatus || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.gnsStatus || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.colEmployee') }}</p>
-              <p class="text-sm font-medium text-gray-900">{{ company.assignedEmployeeName || '—' }}</p>
+              <p class="text-sm font-medium text-gray-900">{{ company.assignedEmployeeName || '-' }}</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">{{ $t('detectedCompanies.fieldNotifiedAt') }}</p>

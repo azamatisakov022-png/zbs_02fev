@@ -39,7 +39,7 @@ function format(n: number): string {
         minimumFractionDigits: props.decimals,
         maximumFractionDigits: props.decimals,
       })
-    : '—'
+    : '-'
 }
 </script>
 

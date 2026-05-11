@@ -17,7 +17,7 @@ export interface MyCompany {
 }
 
 export const companyApi = {
-  /** GET /companies/my — профиль компании авторизованного user'а. */
+  /** GET /companies/my - профиль компании авторизованного user'а. */
   async getMyCompany(): Promise<MyCompany> {
     const { data } = await api.get<MyCompany>('/companies/my')
     return data

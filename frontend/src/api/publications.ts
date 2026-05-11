@@ -28,7 +28,7 @@ export const publicPublicationsApi = {
     return data
   },
 
-  /** Самая свежая — для hero-блока. Может быть null если нет публикаций. */
+  /** Самая свежая - для hero-блока. Может быть null если нет публикаций. */
   async latest(lang: PublicationLang = 'ru'): Promise<PublicationListItem | null> {
     const { data } = await api.get<PublicationListItem | null>(
       '/public/publications/latest',

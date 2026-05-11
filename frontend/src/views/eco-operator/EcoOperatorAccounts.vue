@@ -72,7 +72,7 @@ const tableData = computed(() => {
       company: acc.company,
       inn: acc.inn,
       balance: acc.balance,
-      lastPayment: lastPaymentTx ? `${lastPaymentTx.date} — ${lastPaymentTx.paymentAmount.toLocaleString()} ${t('ecoAccounts.som')}` : '—',
+      lastPayment: lastPaymentTx ? `${lastPaymentTx.date} - ${lastPaymentTx.paymentAmount.toLocaleString()} ${t('ecoAccounts.som')}` : '-',
       status: acc.status,
     }
   })

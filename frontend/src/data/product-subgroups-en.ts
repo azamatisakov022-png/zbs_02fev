@@ -403,8 +403,8 @@ export const subgroupLabelsEn: Record<string, string> = {
 export const tnvedNameEn: Record<string, string> = {
   // Accumulators / batteries
   'Аккумуляторы электрические, в том числе на электромобили, включая сепараторы для них, прямоугольной (в том числе квадратной) или иной формы: никель-кадмиевые, никель-железные, гидридно-никелевые, литий-ионные, аккумуляторы прочие': 'Electric accumulators, including for electric vehicles, including separators therefor, rectangular (including square) or other shape: nickel-cadmium, nickel-iron, nickel-metal hydride, lithium-ion, other accumulators',
-  'Аккумуляторы электрические, включая сепараторы для них, прямоугольной (в том числе квадратной) или иной формы - свинцовые, используемые для запуска поршневых двигателей': 'Electric accumulators, including separators therefor, rectangular (including square) or other shape — lead-acid, used for starting piston engines',
-  'Аккумуляторы электрические, включая сепараторы для них, прямоугольной (в том числе квадратной) или иной формы аккумуляторы свинцовые прочие': 'Electric accumulators, including separators therefor, rectangular (including square) or other shape — other lead-acid accumulators',
+  'Аккумуляторы электрические, включая сепараторы для них, прямоугольной (в том числе квадратной) или иной формы - свинцовые, используемые для запуска поршневых двигателей': 'Electric accumulators, including separators therefor, rectangular (including square) or other shape - lead-acid, used for starting piston engines',
+  'Аккумуляторы электрические, включая сепараторы для них, прямоугольной (в том числе квадратной) или иной формы аккумуляторы свинцовые прочие': 'Electric accumulators, including separators therefor, rectangular (including square) or other shape - other lead-acid accumulators',
   'Первичные элементы и первичные батареи': 'Primary cells and primary batteries',
 
   // Antennas / radio / TV

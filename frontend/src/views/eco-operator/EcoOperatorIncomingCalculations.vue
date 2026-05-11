@@ -77,7 +77,7 @@ const filteredCalculations = computed(() => {
       }
       return {
         ...c,
-        assignedName: c.assignedName || '—',
+        assignedName: c.assignedName || '-',
         totalAmountFormatted: c.totalAmount.toLocaleString() + ' ' + t('ecoIncomingCalcs.som'),
         payerTypeLabel: c.payerType === 'importer' ? t('ecoIncomingCalcs.importer') : t('ecoIncomingCalcs.producer'),
         itemCount: c.items.length,
@@ -619,14 +619,14 @@ const resetPaymentFilters = () => {
                       <td class="px-4 py-3 text-[#1e293b]">{{ getGroupLabel(item.group) }}</td>
                       <td class="px-4 py-3 text-[#64748b]">{{ getSubgroupLabel(item.group, item.subgroup) }}</td>
                       <template v-if="!isPackagingGroup(item.group)">
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '—' }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || '—' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.gskpCode || '-' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.tnvedCode || '-' }}</td>
                         <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedTnvedName(getSubgroupData(item.group, item.subgroup)?.tnvedName) }}</td>
                       </template>
                       <template v-else>
                         <td class="px-4 py-3 text-xs text-[#64748b]">{{ getTranslatedPackagingMaterial(getSubgroupData(item.group, item.subgroup)?.packagingMaterial) }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '—' }}</td>
-                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '—' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingLetterCode || '-' }}</td>
+                        <td class="px-4 py-3 font-mono text-xs text-[#64748b]">{{ getSubgroupData(item.group, item.subgroup)?.packagingDigitalCode || '-' }}</td>
                       </template>
                       <td class="px-4 py-3 text-right font-medium">{{ formatNum(item.volume) }}</td>
                       <td class="px-4 py-3 text-right">{{ formatNum(item.rate, 0) }} {{ $t('ecoIncomingCalcs.somPerTon') }}</td>

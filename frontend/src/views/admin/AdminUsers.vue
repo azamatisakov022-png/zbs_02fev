@@ -58,7 +58,7 @@ const users = ref<User[]>([
     role: 'ГП «Эко Оператор»', status: UserStatus.ACTIVE, registeredAt: '15.01.2025',
     email: 'asanov@eco.kg', phone: '+996 555 123 456',
     roleHistory: [
-      { date: '15.01.2025', oldRole: '—', newRole: 'ГП «Эко Оператор»', changedBy: 'Система (регистрация)' },
+      { date: '15.01.2025', oldRole: '-', newRole: 'ГП «Эко Оператор»', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '15.01.2025', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -69,7 +69,7 @@ const users = ref<User[]>([
     role: 'Сотрудник МПРЭТН КР', status: UserStatus.ACTIVE, registeredAt: '10.01.2025',
     email: 'mamytova@mpretn.kg', phone: '+996 555 234 567',
     roleHistory: [
-      { date: '10.01.2025', oldRole: '—', newRole: 'Сотрудник МПРЭТН КР', changedBy: 'Система (регистрация)' },
+      { date: '10.01.2025', oldRole: '-', newRole: 'Сотрудник МПРЭТН КР', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '10.01.2025', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -80,7 +80,7 @@ const users = ref<User[]>([
     role: 'Плательщик', status: UserStatus.ACTIVE, registeredAt: '05.01.2025',
     email: 'toktogul@kyrgyzimport.kg', phone: '+996 700 345 678',
     roleHistory: [
-      { date: '05.01.2025', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
+      { date: '05.01.2025', oldRole: '-', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '05.01.2025', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -91,7 +91,7 @@ const users = ref<User[]>([
     role: 'ГП «Эко Оператор»', status: UserStatus.BLOCKED, registeredAt: '28.12.2024',
     email: 'sydykov@greentech.kg', phone: '+996 770 456 789',
     roleHistory: [
-      { date: '28.12.2024', oldRole: '—', newRole: 'ГП «Эко Оператор»', changedBy: 'Система (регистрация)' },
+      { date: '28.12.2024', oldRole: '-', newRole: 'ГП «Эко Оператор»', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '28.12.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -103,7 +103,7 @@ const users = ref<User[]>([
     role: 'Плательщик', status: UserStatus.ACTIVE, registeredAt: '20.12.2024',
     email: 'jumabaeva@mail.kg', phone: '+996 550 567 890',
     roleHistory: [
-      { date: '20.12.2024', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
+      { date: '20.12.2024', oldRole: '-', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '20.12.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -123,7 +123,7 @@ const users = ref<User[]>([
     role: 'Сотрудник МПРЭТН КР', status: UserStatus.DEACTIVATED, registeredAt: '01.06.2024',
     email: 'isakov@mpretn.kg', phone: '+996 700 789 012',
     roleHistory: [
-      { date: '01.06.2024', oldRole: '—', newRole: 'Сотрудник МПРЭТН КР', changedBy: 'Система (регистрация)' },
+      { date: '01.06.2024', oldRole: '-', newRole: 'Сотрудник МПРЭТН КР', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '01.06.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -135,7 +135,7 @@ const users = ref<User[]>([
     role: 'Плательщик', status: UserStatus.DEACTIVATED, registeredAt: '15.03.2024',
     email: 'beishenalieva@ecoservice.kg', phone: '+996 550 890 123',
     roleHistory: [
-      { date: '15.03.2024', oldRole: '—', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
+      { date: '15.03.2024', oldRole: '-', newRole: 'Плательщик', changedBy: 'Система (регистрация)' },
     ],
     statusHistory: [
       { date: '15.03.2024', action: 'Активирован', changedBy: 'Система', reason: 'Регистрация подтверждена' },
@@ -499,32 +499,32 @@ const resetUserFilters = () => {
       </template>
       <template #actions="{ row }">
         <div class="flex items-center justify-end gap-2">
-          <!-- Просмотреть (green) — always -->
+          <!-- Просмотреть (green) - always -->
           <AppButton variant="primary" size="sm" @click="openViewUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             {{ $t('adminUsers.viewBtn') }}
           </AppButton>
-          <!-- Роль (blue) — not for deactivated -->
+          <!-- Роль (blue) - not for deactivated -->
           <AppButton v-if="row.status !== 'deactivated'" variant="ghost" size="sm" @click="openChangeRole(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             {{ $t('adminUsers.roleBtn') }}
           </AppButton>
-          <!-- Заблокировать (orange) — for active / pending -->
+          <!-- Заблокировать (orange) - for active / pending -->
           <AppButton v-if="row.status === 'active' || row.status === 'pending'" variant="secondary" size="sm" @click="openBlockUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
             {{ $t('adminUsers.blockBtn') }}
           </AppButton>
-          <!-- Разблокировать — for blocked or temporarily blocked -->
+          <!-- Разблокировать - for blocked or temporarily blocked -->
           <AppButton v-if="row.status === 'blocked' || row.status === 'temp_blocked'" variant="primary" size="sm" @click="openUnblockUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             {{ $t('adminUsers.unblockBtn') }}
           </AppButton>
-          <!-- Восстановить — for deactivated -->
+          <!-- Восстановить - for deactivated -->
           <AppButton v-if="row.status === 'deactivated'" variant="primary" size="sm" @click="openRestoreUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             {{ $t('adminUsers.restoreBtn') }}
           </AppButton>
-          <!-- Удалить (red, trash icon) — always -->
+          <!-- Удалить (red, trash icon) - always -->
           <AppButton variant="danger" size="sm" @click="openDeleteUser(row)">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             {{ $t('adminUsers.deleteBtn') }}
@@ -646,7 +646,7 @@ const resetUserFilters = () => {
                         <AppBadge :variant="getStatusBadgeVariant(entry.action)">{{ entry.action }}</AppBadge>
                       </td>
                       <td class="px-4 py-2.5 text-[#64748b]">{{ entry.changedBy }}</td>
-                      <td class="px-4 py-2.5 text-[#64748b]">{{ entry.reason || '—' }}</td>
+                      <td class="px-4 py-2.5 text-[#64748b]">{{ entry.reason || '-' }}</td>
                     </tr>
                   </tbody>
                 </table>

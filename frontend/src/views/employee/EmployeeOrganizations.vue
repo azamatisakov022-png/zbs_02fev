@@ -608,11 +608,11 @@ const copyLegalToActual = () => {
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
                 <p class="text-sm text-gray-500 mb-1">{{ $t('employeeOrgs.licenseNumber') }}</p>
-                <p class="font-mono font-medium text-gray-900">{{ selectedOrg.licenseNumber || '—' }}</p>
+                <p class="font-mono font-medium text-gray-900">{{ selectedOrg.licenseNumber || '-' }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
                 <p class="text-sm text-gray-500 mb-1">{{ $t('employeeOrgs.licenseExpiry') }}</p>
-                <p class="font-medium text-gray-900">{{ selectedOrg.licenseExpiry || '—' }}</p>
+                <p class="font-medium text-gray-900">{{ selectedOrg.licenseExpiry || '-' }}</p>
               </div>
             </div>
 

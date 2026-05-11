@@ -59,7 +59,8 @@ payment:
 
 calculation:
   penalty:
-    daily-rate: 0.0009   # 0.09% в день — ставка пени за просрочку
+    daily-rate: 0.003    # 0.3% в день - ставка пени за просрочку (по ТЗ)
+    cap-percent: 15      # cap пени: не более 15% от суммы первоначальной задолженности
 
 integration:
   default-timeout: 10000

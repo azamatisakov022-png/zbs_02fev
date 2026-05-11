@@ -14,7 +14,7 @@ function add(value: string) {
   const v = value.trim()
   if (!v) return
   if (props.modelValue.some(x => x.toLowerCase() === v.toLowerCase())) {
-    // Дубль — просто чистим инпут, не добавляя.
+    // Дубль - просто чистим инпут, не добавляя.
     query.value = ''
     return
   }
@@ -30,11 +30,11 @@ function remove(index: number) {
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' || e.key === ',') {
-    // Enter и запятая — добавляют чип.
+    // Enter и запятая - добавляют чип.
     e.preventDefault()
     if (query.value.trim()) add(query.value)
   } else if (e.key === 'Backspace' && !query.value && props.modelValue.length) {
-    // Backspace в пустом поле — удаляет последний чип.
+    // Backspace в пустом поле - удаляет последний чип.
     remove(props.modelValue.length - 1)
   }
 }
@@ -44,7 +44,7 @@ function focus() {
 }
 
 function onBlur() {
-  // На потере фокуса — добавляем pending-текст автоматически.
+  // На потере фокуса - добавляем pending-текст автоматически.
   // Распространённая UX-ошибка пользователей: ввели и забыли нажать Enter.
   if (query.value.trim()) add(query.value)
 }

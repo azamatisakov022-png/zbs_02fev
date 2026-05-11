@@ -33,7 +33,7 @@ const approveForm = ref({ validUntil: '' })
 const appId = computed(() => Number(route.params.id))
 
 // ─── Локализация бэкенд-значений (быстро, без доп. API) ──────────
-// Эти enum'ы бэк возвращает в raw-формате; пока нет отдельного API справочников —
+// Эти enum'ы бэк возвращает в raw-формате; пока нет отдельного API справочников -
 // переводим локально. При необходимости можно вынести в i18n.
 function labelApplicantEntity(v?: string): string {
   const map: Record<string, string> = {
@@ -44,7 +44,7 @@ function labelApplicantEntity(v?: string): string {
     INDIVIDUAL: 'Физическое лицо',
     IP: 'Индивидуальный предприниматель',
   }
-  return v ? map[v] || v : '—'
+  return v ? map[v] || v : '-'
 }
 
 function labelPaymentProvider(v?: string): string {
@@ -56,7 +56,7 @@ function labelPaymentProvider(v?: string): string {
     ODENGI: 'О!Деньги',
     BAKAI: 'Bakai Online',
   }
-  return v ? map[v] || v : '—'
+  return v ? map[v] || v : '-'
 }
 
 function labelPaymentStatus(v?: string): string {
@@ -68,11 +68,11 @@ function labelPaymentStatus(v?: string): string {
     REFUNDED: 'Возврат средств',
     CANCELED: 'Отменено',
   }
-  return v ? map[v] || v : '—'
+  return v ? map[v] || v : '-'
 }
 
 function labelApplicantType(v?: string): string {
-  if (!v) return '—'
+  if (!v) return '-'
   const fromEnum = licenseStore.state.licenseTypesEnum.find(e => e.value === v)?.labelRu
   return fromEnum || v
 }
@@ -222,7 +222,7 @@ function statusBadgeClass(s: LicenseApplicationStatus) {
 }
 
 function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '-'
 }
 
 const canAccept = computed(() => app.value?.status === 'submitted')
@@ -282,8 +282,8 @@ const canConfirmManualPayment = computed(
             <div><dt class="text-gray-500">Орг.-правовая форма</dt><dd>{{ labelApplicantEntity(app.applicantEntity) }}</dd></div>
             <div class="md:col-span-2"><dt class="text-gray-500">Юридический адрес</dt><dd>{{ app.legalAddress }}</dd></div>
             <div class="md:col-span-2"><dt class="text-gray-500">Фактический адрес</dt><dd>{{ app.actualAddress }}</dd></div>
-            <div><dt class="text-gray-500">Контакт</dt><dd>{{ app.contactPerson || '—' }}</dd></div>
-            <div><dt class="text-gray-500">Телефон/Email</dt><dd>{{ app.contactPhone || '—' }} / {{ app.contactEmail || '—' }}</dd></div>
+            <div><dt class="text-gray-500">Контакт</dt><dd>{{ app.contactPerson || '-' }}</dd></div>
+            <div><dt class="text-gray-500">Телефон/Email</dt><dd>{{ app.contactPhone || '-' }} / {{ app.contactEmail || '-' }}</dd></div>
           </dl>
         </div>
 
@@ -386,7 +386,7 @@ const canConfirmManualPayment = computed(
           <div class="max-w-sm mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Срок действия до *</label>
             <input v-model="approveForm.validUntil" type="date" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
-            <p class="text-xs text-gray-500 mt-1">Бессрочных лицензий не бывает. Обычная практика — 3–5 лет.</p>
+            <p class="text-xs text-gray-500 mt-1">Бессрочных лицензий не бывает. Обычная практика - 3–5 лет.</p>
           </div>
           <div class="flex gap-3">
             <button
@@ -441,7 +441,7 @@ const canConfirmManualPayment = computed(
             <div v-else class="bg-white rounded-md p-3 border border-dashed border-emerald-300">
               <p class="text-sm text-gray-600 mb-3">
                 Распечатайте бланк, подпишите у замминистра, поставьте печать, отсканируйте
-                и загрузите PDF — заявитель сможет скачать подписанную копию из своего ЛК.
+                и загрузите PDF - заявитель сможет скачать подписанную копию из своего ЛК.
               </p>
               <label class="inline-block cursor-pointer px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-medium">
                 {{ uploadingDoc ? 'Загрузка…' : 'Загрузить подписанный PDF' }}

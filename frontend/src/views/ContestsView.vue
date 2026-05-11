@@ -26,7 +26,7 @@ const formatDate = (iso: string): string => {
 }
 
 const formatGrant = (amount?: number, currency?: string): string => {
-  if (!amount) return '—'
+  if (!amount) return '-'
   const c = currency === 'KGS' ? 'сом' : (currency || '')
   return `${amount.toLocaleString('ru-RU')} ${c}`.trim()
 }
@@ -55,7 +55,7 @@ const goToApply = (id: number) => router.push(`/contests/${id}/apply`)
         </div>
         <button
           @click="router.push('/contests/status')"
-          class="text-[#0e888d] hover:text-[#0a6d71] font-medium text-base inline-flex items-center gap-2"
+          class="inline-flex items-center gap-2 px-5 py-3 rounded-full border-2 border-[#0e888d] bg-white text-[#0e888d] hover:bg-[#0e888d] hover:text-white font-semibold text-base shadow-sm transition-colors self-start md:self-auto"
         >
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -76,7 +76,14 @@ const goToApply = (id: number) => router.push(`/contests/${id}/apply`)
       <!-- Empty -->
       <div v-else-if="contests.length === 0"
            class="bg-white rounded-[30px] border border-gray-100 p-10 text-center">
-        <div class="text-[60px] mb-4">🏆</div>
+        <div class="mx-auto mb-5 w-20 h-20 rounded-full bg-[#e6f4f5] flex items-center justify-center">
+          <svg class="w-10 h-10 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />
+          </svg>
+        </div>
         <h2 class="text-xl font-bold text-[#415861] mb-2">{{ $t('contests.list.empty') }}</h2>
         <p class="text-gray-500">{{ $t('contests.list.emptyHint') }}</p>
       </div>

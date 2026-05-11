@@ -102,7 +102,7 @@ const licensesData = ref<LicenseRecord[]>([
   { id: 4, organization: 'ОсОО "МеталлПром"', licenseNumber: 'ЛП-2024-0041', licenseType: 'На переработку', issueDate: '05.04.2024', expiryDate: '05.04.2026', daysRemaining: 52, status: 'active' },
   { id: 5, organization: 'ИП Сыдыков Н.А.', licenseNumber: 'ЛП-2024-0048', licenseType: 'На сбор', issueDate: '10.07.2024', expiryDate: '10.07.2025', daysRemaining: null, status: 'expired' },
   { id: 6, organization: 'ОсОО "АвтоУтиль"', licenseNumber: 'ЛП-2025-0068', licenseType: 'На сбор', issueDate: '12.11.2025', expiryDate: '12.11.2027', daysRemaining: 638, status: 'active' },
-  { id: 7, organization: 'ОсОО "ЧистыйГород"', licenseNumber: 'ЛП-2026-0003', licenseType: 'Комплексная', issueDate: '—', expiryDate: '—', daysRemaining: null, status: 'pending' },
+  { id: 7, organization: 'ОсОО "ЧистыйГород"', licenseNumber: 'ЛП-2026-0003', licenseType: 'Комплексная', issueDate: '-', expiryDate: '-', daysRemaining: null, status: 'pending' },
   { id: 8, organization: 'ОсОО "ПластПром"', licenseNumber: 'ЛП-2025-0070', licenseType: 'На переработку', issueDate: '28.01.2026', expiryDate: '28.01.2028', daysRemaining: 715, status: 'active' },
 ])
 

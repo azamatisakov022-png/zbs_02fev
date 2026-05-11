@@ -19,8 +19,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/legislation',
-    name: 'legislation',
-    component: () => import('../views/LegislationView.vue'),
+    redirect: '/legal-base',
   },
   {
     path: '/licenses',
@@ -120,7 +119,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/auth/esi/callback',
     name: 'esi-callback',
-    // ESI callback — role determined after OAuth, default to home; login flow handles redirect
+    // ESI callback - role determined after OAuth, default to home; login flow handles redirect
     redirect: '/',
   },
 
@@ -168,7 +167,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'admin', breadcrumbLabel: 'breadcrumb.adminSettings' },
   },
   // ─── Публикации (CMS) ─ доступ: admin, employee/ministry, eco-operator ─
-  // role: 'cms-editor' — синтетическая роль, маппится на 4 backend-роли
+  // role: 'cms-editor' - синтетическая роль, маппится на 4 backend-роли
   // в guard'е ниже. Одна страница для всех редакторов.
   {
     path: '/admin/publications',
@@ -402,6 +401,12 @@ const routes: RouteRecordRaw[] = [
     path: '/business/calculator',
     name: 'business-calculator',
     component: () => import('../views/business/BusinessCalculator.vue'),
+    meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.businessCalculator' },
+  },
+  {
+    path: '/business/calculator-v2',
+    name: 'business-calculator-v2',
+    component: () => import('../views/business/BusinessCalculatorV2.vue'),
     meta: { requiresAuth: true, role: 'business', breadcrumbLabel: 'breadcrumb.businessCalculator' },
   },
   {
@@ -703,17 +708,17 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
   scrollBehavior(_to, _from, savedPosition) {
-    // Возврат «назад» — восстанавливаем позицию из истории
+    // Возврат «назад» - восстанавливаем позицию из истории
     if (savedPosition) return savedPosition
     // Ждём окончания leave-фазы page-transition (см. .page-leave-active в style.css = 150ms),
-    // чтобы скролл-сброс произошёл уже невидимым — иначе во время fade-out видно «прыжок» наверх.
+    // чтобы скролл-сброс произошёл уже невидимым - иначе во время fade-out видно «прыжок» наверх.
     return new Promise((resolve) => {
       setTimeout(() => resolve({ top: 0 }), 180)
     })
   },
 })
 
-// Auth guard — check real authentication state
+// Auth guard - check real authentication state
 router.beforeEach((to, _from, next) => {
   // Auto-logout when navigating to login pages (allow account/role switching)
   if ((to.path === '/login' || to.path === '/login/business') && authStore.isAuthenticated.value) {
@@ -721,7 +726,7 @@ router.beforeEach((to, _from, next) => {
   }
 
   // Для BUSINESS с business_type=APPLICANT дашборд /business не имеет смысла
-  // (разделы утильсбора пустые) — редиректим на список заявок на лицензию.
+  // (разделы утильсбора пустые) - редиректим на список заявок на лицензию.
   if (to.path === '/business' && authStore.state.user?.businessType === 'applicant') {
     return next('/business/license-applications')
   }
@@ -739,7 +744,7 @@ router.beforeEach((to, _from, next) => {
         'employee': ['employee', 'ministry'],
         'eco-operator': ['eco-operator'],
         'business': ['business'],
-        // Синтетическая роль для CMS «Публикации» — доступ редакторам
+        // Синтетическая роль для CMS «Публикации» - доступ редакторам
         // обоих ведомств плюс админу.
         'cms-editor': ['admin', 'employee', 'ministry', 'eco-operator'],
       }

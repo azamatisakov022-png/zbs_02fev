@@ -7,7 +7,7 @@ const api = axios.create({
   },
 })
 
-// Silent API instance — same config but never shows error toasts
+// Silent API instance - same config but never shows error toasts
 const silentApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1',
   headers: {
@@ -34,7 +34,7 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     // Spring Security отдаёт 403 при истёкшем JWT (через AccessDeniedException),
-    // поэтому refresh пробуем и на 401, и на 403. Флаг _retry страхует от рекурсии —
+    // поэтому refresh пробуем и на 401, и на 403. Флаг _retry страхует от рекурсии -
     // если после refresh снова 401/403, значит у пользователя реально нет прав.
     const status = error.response?.status
     const retryable = (status === 401 || status === 403) && !originalRequest._retry
@@ -53,8 +53,8 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.token}`
           return api(originalRequest)
         } catch {
-          // Refresh failed — clear auth только на 401 (на 403 может быть просто
-          // недостаточно прав — не надо выкидывать пользователя на /login).
+          // Refresh failed - clear auth только на 401 (на 403 может быть просто
+          // недостаточно прав - не надо выкидывать пользователя на /login).
           if (status === 401) {
             localStorage.removeItem('access_token')
             localStorage.removeItem('refresh_token')
@@ -73,7 +73,7 @@ api.interceptors.response.use(
   },
 )
 
-// Silent instance — no toasts, just reject
+// Silent instance - no toasts, just reject
 silentApi.interceptors.response.use(
   (response) => response,
   (error) => Promise.reject(error),

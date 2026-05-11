@@ -195,7 +195,7 @@ const saveDraft = () => {
               @change="onSelectCalculation"
               class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 bg-white"
             >
-              <option :value="null" disabled>— {{ $t('businessRefundNew.selectCalcOption') }} —</option>
+              <option :value="null" disabled>- {{ $t('businessRefundNew.selectCalcOption') }} -</option>
               <option v-for="calc in paidCalculations" :key="calc.id" :value="calc.id">
                 {{ calc.number }} | {{ calc.period }} | {{ formatAmount(calc.totalAmount) }}
               </option>
@@ -272,7 +272,7 @@ const saveDraft = () => {
                     </div>
                   </td>
                   <td class="px-4 py-3 text-right font-semibold" :class="getRefundAmount(item) > 0 ? 'text-[#10b981]' : 'text-[#64748b]'">
-                    {{ getRefundAmount(item) > 0 ? getRefundAmount(item).toLocaleString() : '—' }}
+                    {{ getRefundAmount(item) > 0 ? getRefundAmount(item).toLocaleString() : '-' }}
                   </td>
                 </tr>
               </tbody>
@@ -280,7 +280,7 @@ const saveDraft = () => {
                 <tr class="border-t-2 border-[#1e293b] bg-[#f8fafc]">
                   <td colspan="5" class="px-4 py-3 font-semibold text-[#1e293b]">{{ $t('businessRefundNew.totalRefund') }}</td>
                   <td class="px-4 py-3 text-right font-bold text-lg text-[#10b981]">
-                    {{ totalRefundAmount > 0 ? formatAmount(totalRefundAmount) : '—' }}
+                    {{ totalRefundAmount > 0 ? formatAmount(totalRefundAmount) : '-' }}
                   </td>
                 </tr>
               </tfoot>

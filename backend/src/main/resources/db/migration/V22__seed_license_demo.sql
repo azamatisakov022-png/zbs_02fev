@@ -6,7 +6,7 @@
 --   Платежи в разных состояниях
 
 -- ─── Компания и пользователь-заявитель ───
--- ИНН 20000000000001 — тестовый заявитель «Чистый Мир»
+-- ИНН 20000000000001 - тестовый заявитель «Чистый Мир»
 INSERT INTO companies (id, company_name, inn, legal_form, region, address, director, contact_person, phone, email)
 VALUES (100, 'ОсОО «Чистый Мир»', '20000000000001', 'ОсОО', 'Бишкек',
         'г. Бишкек, ул. Токтогула, 154', 'Асанов Б.А.', 'Асанов Б.А.',
@@ -23,7 +23,7 @@ ON CONFLICT (inn) DO NOTHING;
 
 -- ─── Заявки ───
 
--- #1: DRAFT — черновик, заявитель ещё не отправил
+-- #1: DRAFT - черновик, заявитель ещё не отправил
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -37,7 +37,7 @@ INSERT INTO license_applications (
     'DRAFT', 100, NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day'
 ) ON CONFLICT (id) DO NOTHING;
 
--- #2: SUBMITTED — подана, ожидает рассмотрения, онлайн-оплата успешна
+-- #2: SUBMITTED - подана, ожидает рассмотрения, онлайн-оплата успешна
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -57,7 +57,7 @@ VALUES (2001, 1002, 'MOCK', 'MOCK-DEMO-001', 1000, 'KGS', 'SUCCESS', 'CARD',
         NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days')
 ON CONFLICT (id) DO NOTHING;
 
--- #3: UNDER_REVIEW — принята к рассмотрению, ждёт выезда
+-- #3: UNDER_REVIEW - принята к рассмотрению, ждёт выезда
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -79,7 +79,7 @@ VALUES (2002, 1003, 'MANUAL', 1000, 'KGS', 'MANUAL_CONFIRMED', 'MANUAL_OFFLINE',
         NOW() - INTERVAL '9 days', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days')
 ON CONFLICT (id) DO NOTHING;
 
--- #4: REJECTED (устранимый отказ) — для демо сценария «Доработать»
+-- #4: REJECTED (устранимый отказ) - для демо сценария «Доработать»
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -92,7 +92,7 @@ INSERT INTO license_applications (
     'г. Ош, ул. Масалиева, 18', 'г. Ош, ул. Масалиева, 18',
     '+996 555 776699', NULL, 'Бекмаматов А.С.',
     'REJECTED', NOW() - INTERVAL '7 days', NOW() + INTERVAL '23 days',
-    'DOCUMENTS_MISMATCH', 'Свидетельство о регистрации неактуально — срок продления истёк. Обновите и подайте повторно.',
+    'DOCUMENTS_MISMATCH', 'Свидетельство о регистрации неактуально - срок продления истёк. Обновите и подайте повторно.',
     NOW() - INTERVAL '2 days', 100, NOW() - INTERVAL '7 days', NOW() - INTERVAL '2 days'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -101,7 +101,7 @@ VALUES (2003, 1004, 'MOCK', 'MOCK-DEMO-003', 1000, 'KGS', 'SUCCESS', 'CARD',
         NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days')
 ON CONFLICT (id) DO NOTHING;
 
--- #5: SITE_VISIT_DONE — выезд проведён, ждёт финального решения
+-- #5: SITE_VISIT_DONE - выезд проведён, ждёт финального решения
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -124,7 +124,7 @@ VALUES (2005, 1005, 'MOCK', 'MOCK-DEMO-005', 1000, 'KGS', 'SUCCESS', 'CARD',
         NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days', NOW() - INTERVAL '15 days')
 ON CONFLICT (id) DO NOTHING;
 
--- #6: APPROVED — уже выдана лицензия, первая в году
+-- #6: APPROVED - уже выдана лицензия, первая в году
 INSERT INTO license_applications (
     id, applicant_type, applicant_entity, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -171,7 +171,7 @@ VALUES (2007, 1007, 'MOCK', 'MOCK-DEMO-007', 1000, 'KGS', 'SUCCESS', 'CARD',
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── Выданные лицензии ───
--- #1: Первая лицензия 2026 года — выдана по заявке 1006
+-- #1: Первая лицензия 2026 года - выдана по заявке 1006
 INSERT INTO licenses (id, license_number, application_id,
     applicant_type, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,
@@ -185,7 +185,7 @@ VALUES (3001, 'ЛП-2026-0001', 1006,
     TRUE, FALSE, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days')
 ON CONFLICT (license_number) DO NOTHING;
 
--- #2: Вторая лицензия — выдана ранее, по заявке 1007
+-- #2: Вторая лицензия - выдана ранее, по заявке 1007
 INSERT INTO licenses (id, license_number, application_id,
     applicant_type, applicant_name, applicant_inn,
     license_type, activity_types, legal_address, actual_address,

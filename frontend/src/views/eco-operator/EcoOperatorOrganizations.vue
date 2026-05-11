@@ -532,7 +532,7 @@ const copyLegalToActual = () => {
                       +{{ org.productGroupValues.length - 2 }} {{ $t('ecoOrganizations.more') }}
                     </span>
                   </div>
-                  <span v-else class="text-sm text-gray-400">—</span>
+                  <span v-else class="text-sm text-gray-400">-</span>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.region }}</td>
                 <td class="px-6 py-4 text-sm text-gray-600">{{ org.registeredAt }}</td>
@@ -657,11 +657,11 @@ const copyLegalToActual = () => {
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
                 <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.licenseNumber') }}</p>
-                <p class="font-mono font-medium text-gray-900">{{ selectedOrg.licenseNumber || '—' }}</p>
+                <p class="font-mono font-medium text-gray-900">{{ selectedOrg.licenseNumber || '-' }}</p>
               </div>
               <div class="bg-gray-50 rounded-xl p-4">
                 <p class="text-sm text-gray-500 mb-1">{{ $t('ecoOrganizations.licenseExpiry') }}</p>
-                <p class="font-medium text-gray-900">{{ selectedOrg.licenseExpiry || '—' }}</p>
+                <p class="font-medium text-gray-900">{{ selectedOrg.licenseExpiry || '-' }}</p>
               </div>
             </div>
 

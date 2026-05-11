@@ -1,11 +1,11 @@
 <!--
-  KyrgyzstanCutoutMap — Leaflet-карта Кыргызстана с настоящими OSM-тайлами
+  KyrgyzstanCutoutMap - Leaflet-карта Кыргызстана с настоящими OSM-тайлами
   (улицы, дороги, рельеф, города), маской «вырезанной под фон страницы»
   снаружи страны и pin-маркерами объектов.
 
   - Внутри страны: настоящая OSM-карта с улицами и адресами
   - Снаружи: маска цвета фона (по умолчанию белый), визуально страна «вырезана»
-  - Маркеры — pin-shape (SVG flag), цвет по типу
+  - Маркеры - pin-shape (SVG flag), цвет по типу
   - Click на маркер: flyTo(latlng, 13) + popup
   - maxBounds + minZoom не дают пользователю выехать
 -->
@@ -145,7 +145,7 @@ function applyOverlays() {
   const map = mapRef.value?.leafletObject
   if (!map || !oblastsGeo.value) return
 
-  // Маска (inverse polygon) — цвет фона страницы
+  // Маска (inverse polygon) - цвет фона страницы
   if (maskLayer) {
     maskLayer.remove()
     maskLayer = null
@@ -185,7 +185,7 @@ watch(
 
 const onMapReady = () => {
   mapReady.value = true
-  // Не блокируем ready — загружаем GeoJSON отдельно
+  // Не блокируем ready - загружаем GeoJSON отдельно
   loadAndApplyMask()
 }
 
@@ -260,13 +260,13 @@ defineExpose({
   },
 })
 
-// При смене набора маркеров — ничего; vue-leaflet сам перерисует
+// При смене набора маркеров - ничего; vue-leaflet сам перерисует
 watch(validMarkers, async () => {
   await nextTick()
 })
 
 onMounted(() => {
-  // Если @ready уже сработал до загрузки GeoJSON — applyOverlays выйдет early
+  // Если @ready уже сработал до загрузки GeoJSON - applyOverlays выйдет early
   // и сработает после loadAndApplyMask.
 })
 </script>

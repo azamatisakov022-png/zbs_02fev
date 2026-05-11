@@ -244,9 +244,9 @@
   },
   "validation": {
     "required": "{field} is required",
-    "minLength": "{field} — minimum {min} characters",
-    "enterNumber": "{field} — enter a number",
-    "negativeNotAllowed": "{field} — value cannot be negative",
+    "minLength": "{field} - minimum {min} characters",
+    "enterNumber": "{field} - enter a number",
+    "negativeNotAllowed": "{field} - value cannot be negative",
     "maxValue": "{field} cannot exceed {max}",
     "inn": "TIN must contain 14 digits",
     "email": "Invalid email",
@@ -602,6 +602,14 @@
       "documents": "Documents",
       "reviewSubmit": "Review and submit"
     },
+    "stepCount": "Step {current} of {total}",
+    "hints": {
+      "orgType": "Choose organizational legal form and your role in the system",
+      "orgData": "Organization details: TIN, name, address",
+      "directorContacts": "Director's contact details for follow-up",
+      "documents": "Attach charter, extract and supporting documents",
+      "reviewSubmit": "Verify everything before submitting the application"
+    },
     "orgTypeGroups": {
       "businessEntities": "Business entities",
       "stateAndMunicipal": "State and municipal",
@@ -716,11 +724,9 @@
     }
   },
   "hero": {
-    "badge": "🌱 Sustainable Development",
-    "title": "About Us",
-    "description1": "Eco Operator Kyrgyzstan is the national operator in the field of waste management, established to develop an environmentally sustainable waste recycling and disposal system across the country.",
-    "description2": "We unite government agencies, the business community, recycling enterprises, and the public to create an effective and transparent waste management ecosystem.",
-    "description3": "Our activities are aimed at implementing modern recycling standards, supporting environmental infrastructure, and implementing Extended Producer Responsibility mechanisms. We strive to ensure Kyrgyzstan's transition to a \"green economy\" and reduce the negative impact of waste on the environment.",
+    "badge": "Eco Operator AIS · Recycling fee & licensing",
+    "title": "Records, licences and recycling fee in one digital system",
+    "description": "Eco Operator AIS handles the digital workflow for the recycling fee on 24 product groups and packaging, and for licensing waste recyclers. The personal account covers fee calculation and payment, submission of declarations and reports on recycling targets, licence applications, and registers of landfills, collection points and recyclers. All of this is part of the Extended Producer Responsibility (EPR) mechanism.",
     "submitReportTitle": "SUBMIT\nREPORT",
     "submitReportLink": "Submit report"
   },
@@ -796,7 +802,7 @@
     }
   },
   "ui": {
-    "selectPlaceholder": "— Select —",
+    "selectPlaceholder": "- Select -",
     "searchPlaceholder": "Search...",
     "nothingFound": "Nothing found",
     "selectDefault": "Select..."
@@ -829,24 +835,29 @@
   "roleSelection": {
     "title": "Sign in",
     "subtitle": "Select your role to access the dashboard",
+    "enter": "Sign in",
     "noAccount": "No account?",
     "register": "Register",
     "roles": {
       "admin": {
+        "tag": "Access",
         "title": "Administrator",
-        "description": "System management"
+        "description": "Full access to system management"
       },
       "employee": {
+        "tag": "Ministry",
         "title": "MNRE KR Employee",
-        "description": "Ministry of Natural Resources, Ecology and Technical Supervision"
+        "description": "Access to ministry's working tools"
       },
       "ecoOperator": {
+        "tag": "Recycling fee",
         "title": "SE \"Eco Operator\"",
-        "description": ""
+        "description": "Manage waste handling"
       },
       "business": {
+        "tag": "Payment",
         "title": "Payer",
-        "description": "Importers, producers of goods and packaging"
+        "description": "Recycling fees, reports and licenses"
       }
     }
   },
@@ -869,14 +880,15 @@
   },
   "strategy": {
     "title": "Strategy and mission",
-    "mission": "Mission — creating a modern waste management system that ensures environmental cleanliness and sustainable development of the country.",
+    "mission": "Mission - creating a modern waste management system that ensures environmental cleanliness and sustainable development of the country.",
     "item1": "Creating an integrated waste management system",
     "item2": "Economic sustainability of secondary raw materials recycling",
     "item3": "Building an eco-friendly culture among the population and businesses",
     "item4": "Increase in the share of recycled waste",
     "item5": "Reduction in landfill volumes",
     "item6": "Development of government-business-recycler partnerships",
-    "item7": "Implementation of environmental innovations"
+    "item7": "Implementation of environmental innovations",
+    "item8": "Transparency and digital control"
   },
   "documentType": {
     "gtd": "CCD",
@@ -984,7 +996,7 @@
     "subgroupName": "Subgroup name",
     "rate": "Rate",
     "ofPositions": "{filtered} of {total} items",
-    "rateSubtitle": "{name} — rate {rate} KGS/t"
+    "rateSubtitle": "{name} - rate {rate} KGS/t"
   },
   "mapPicker": {
     "title": "Specify coordinates on the map",
@@ -1036,7 +1048,7 @@
     "formulaLabel": "formula:",
     "formulaText": "RF = (Weight × Standard / 100) × Rate",
     "formulaNote": "If a subgroup is selected, the rate is adjusted by the subgroup coefficient.",
-    "ratesNote": "Basis: Rates — GD KR No. 730 dated 03.12.2024.",
+    "ratesNote": "Basis: Rates - GD KR No. 730 dated 03.12.2024.",
     "calculate": "Calculate",
     "clear": "Clear",
     "result": "Calculation result",
@@ -1054,9 +1066,9 @@
     "newCalc": "New calculation",
     "about": "About calculator",
     "aboutItem1": "Calculator for <strong class=\"text-[#1e293b]\">preliminary calculation</strong> of the recycling fee",
-    "aboutItem2": "Group + subgroup — <strong class=\"text-[#1e293b]\">same as in the payer's personal account</strong>",
+    "aboutItem2": "Group + subgroup - <strong class=\"text-[#1e293b]\">same as in the payer's personal account</strong>",
     "aboutItem3": "Rates: <strong class=\"text-[#1e293b]\">GD KR No. 730</strong> dated 03.12.2024",
-    "aboutItem4": "Official calculation — via <strong class=\"text-[#1e293b]\">Personal Account</strong>",
+    "aboutItem4": "Official calculation - via <strong class=\"text-[#1e293b]\">Personal Account</strong>",
     "questions": "For inquiries:",
     "loginLink": "Log in to Personal Account",
     "normsByYears": "Recycling standards by year",
@@ -1084,7 +1096,7 @@
     "heroKicker": "PRELIMINARY · CALCULATOR",
     "heroTitleA": "Calculate the fee",
     "heroTitleB": "in 30 seconds",
-    "heroSub": "Preliminary calculation under GD KR No. 730. Official declaration — via Personal Cabinet.",
+    "heroSub": "Preliminary calculation under GD KR No. 730. Official declaration - via Personal Cabinet.",
     "enterCabinet": "Enter Personal Cabinet",
     "totalDue": "TOTAL DUE",
     "liveLabel": "LIVE",
@@ -1623,6 +1635,11 @@
   "businessCalc": {
     "pageTitle": "Recycling fee calculation",
     "pageSubtitle": "Calculation of the recycling fee for goods and packaging",
+    "hints": {
+      "period": "Specify payer type, date and calculation year",
+      "products": "Add goods and packaging to calculate the fee",
+      "result": "Verify the total before submitting"
+    },
     "bannerTitle": "Calculate recycling fee",
     "bannerDescription": "Find out the recycling fee amount based on the weight of goods and packaging. Rates and recycling standards are applied automatically according to the product group.",
     "startCalc": "Start calculation",
@@ -1652,7 +1669,7 @@
     "payPenaltyBtn": "Pay penalty",
     "closedBadge": "Closed",
     "ratesTitle": "Current recycling fee rates (KGS/ton)",
-    "ratesExpand": "— click to expand",
+    "ratesExpand": "- click to expand",
     "backToList": "Back to list",
     "instructionBtn": "Instructions",
     "stepPeriod": "Period and data",
@@ -1680,7 +1697,7 @@
     "innLabel": "TIN",
     "addressLabel": "Address",
     "paymentTermsTitle": "Recycling fee payment deadlines",
-    "paymentTermsText": "a) by goods and packaging manufacturers — quarterly, no later than the 15th of the month following the quarter;<br/>b) by goods and packaging importers — upon actual import of goods and packaging into the Kyrgyz Republic, no later than 15 business days from the occurrence of such fact.",
+    "paymentTermsText": "a) by goods and packaging manufacturers - quarterly, no later than the 15th of the month following the quarter;<br/>b) by goods and packaging importers - upon actual import of goods and packaging into the Kyrgyz Republic, no later than 15 business days from the occurrence of such fact.",
     "productsTitle": "Goods and packaging",
     "importFromDeclaration": "Import from declaration",
     "positionN": "Item {n}",
@@ -1737,7 +1754,7 @@
     "paymentDetailsTitle": "Payment details",
     "paymentDetailsText": "Recipient: State Environmental Fund of KR<br/>TIN: 00000000000000 | Account: 1234567890123456 | Bank: NBKR",
     "g13Title": "Column 13. Payment reconciliation for the reporting period",
-    "g13Tooltip": "Filled in automatically based on account statement data. For producers — by quarterly payment amounts, for importers — by payment amounts upon actual import of goods.",
+    "g13Tooltip": "Filled in automatically based on account statement data. For producers - by quarterly payment amounts, for importers - by payment amounts upon actual import of goods.",
     "g13Charged": "Charged for the period",
     "g13Paid": "Paid for the period",
     "g13NotSubmitted": "Calculation not yet submitted",
@@ -1769,12 +1786,12 @@
     "transferAmountLabel": "Transfer amount (KGS) *",
     "paymentScanLabel": "Scan/photo of payment order *",
     "dropFileHere": "Drag a file here or click to select",
-    "fileFormats": "PDF, JPG, PNG — up to 10 MB",
+    "fileFormats": "PDF, JPG, PNG - up to 10 MB",
     "commentLabel": "Comment",
     "commentPlaceholder": "Additional information (optional)",
     "cancelBtn": "Cancel",
     "submitPaymentBtn": "Submit for review",
-    "instructionDrawerTitle": "Instructions — Recycling fee calculation",
+    "instructionDrawerTitle": "Instructions - Recycling fee calculation",
     "draftSaved": "Draft saved",
     "confirmDefaultTitle": "Confirm action",
     "confirmDefaultText": "Confirm",
@@ -1897,7 +1914,7 @@
     "supportingDocs": "Supporting documents",
     "supportingDocsHint": "Attach customs declarations, transfer acts, invoices and other documents",
     "dropFilesHere": "Drag files here or click",
-    "dropFilesFormats": "PDF, JPG, PNG, DOC — up to 10 MB, max 10 files",
+    "dropFilesFormats": "PDF, JPG, PNG, DOC - up to 10 MB, max 10 files",
     "chooseFiles": "Choose files",
     "calcTotals": "Calculation totals",
     "totalVolumeGr5": "Total volume (Col.5)",
@@ -1908,7 +1925,7 @@
     "tons": "tons",
     "som": "KGS",
     "g13Title": "Column 13. Payment reconciliation for the reporting period",
-    "g13Tooltip": "Filled in automatically based on account statement data. For producers — by quarterly payment amounts, for importers — by payment amounts upon actual import of goods.",
+    "g13Tooltip": "Filled in automatically based on account statement data. For producers - by quarterly payment amounts, for importers - by payment amounts upon actual import of goods.",
     "chargedForPeriod": "Charged for the period",
     "paidForPeriod": "Paid for the period",
     "fromPersonalAccount": "From account statement",
@@ -1961,7 +1978,7 @@
     "amountMismatch": "Amount does not match the calculation amount ({amount} KGS)",
     "paymentScanLabel": "Scan/photo of payment order",
     "dropFileHere": "Drag a file or click",
-    "dropFileFormats": "PDF, JPG, PNG — up to 10 MB",
+    "dropFileFormats": "PDF, JPG, PNG - up to 10 MB",
     "chooseFile": "Choose file",
     "comment": "Comment",
     "optional": "Optional",
@@ -2130,7 +2147,7 @@
       "versionLabel": "Version",
       "whatsNew": "What's new:",
       "systemUpToDate": "System is up to date",
-      "latestVersion": "Version {version} — latest",
+      "latestVersion": "Version {version} - latest",
       "updateChange1": "Improved report generation performance",
       "updateChange2": "Added support for mass declaration import",
       "updateChange3": "Fixed recycling fee calculation error for \"Electronics\" category",
@@ -2193,7 +2210,7 @@
     "backToList": "Back to list",
     "submitReportTitle": "Recycling report submission",
     "instruction": "Instructions",
-    "instructionDrawerTitle": "Instructions — Recycling report",
+    "instructionDrawerTitle": "Instructions - Recycling report",
     "step1Title": "Basic data",
     "step2Title": "Recycling data",
     "step3Title": "Documents",
@@ -2204,7 +2221,7 @@
     "companyName": "Name",
     "inn": "TIN",
     "address": "Address",
-    "normativeInfo": "Recycling standard for {year}: groups 1–4 — {high}%, groups 5–24 — {standard}%",
+    "normativeInfo": "Recycling standard for {year}: groups 1–4 - {high}%, groups 5–24 - {standard}%",
     "normativeDescription": "Recycling of at least the established standard of the declared goods and packaging weight must be ensured",
     "importFromDeclarations": "Import from declarations",
     "position": "Item {n}",
@@ -2600,7 +2617,7 @@
     "unitTon": "t",
     "unitSom": "KGS",
     "g13Title": "Column 13. Payment reconciliation for the reporting period",
-    "g13Tooltip": "Filled in automatically based on account statement data. For producers — by quarterly payment amounts, for importers — by payment amounts upon actual import of goods.",
+    "g13Tooltip": "Filled in automatically based on account statement data. For producers - by quarterly payment amounts, for importers - by payment amounts upon actual import of goods.",
     "chargedForPeriod": "Charged for the period",
     "paidForPeriod": "Paid for the period",
     "fromPersonalAccount": "From account statement",
@@ -3111,8 +3128,8 @@
     "totalAmount": "Total amount",
     "som": "KGS",
     "personalAccount": "Account statement",
-    "overpayment": "Overpayment — available for offset",
-    "debt": "Debt — payment required",
+    "overpayment": "Overpayment - available for offset",
+    "debt": "Debt - payment required",
     "noDebt": "No debt",
     "chartMonthlyTitle": "Recycling fee by month",
     "chartGroupsTitle": "Distribution by product groups",
@@ -3120,9 +3137,9 @@
     "recentDocuments": "Recent documents",
     "allDocuments": "All documents →",
     "reminderTitle": "Reporting deadline reminder:",
-    "reminderImporters": "— Recycling fee calculation (for importers) — within 15 business days from the date of import.",
-    "reminderProducers": "— For producers — quarterly, no later than the 15th of the month following the reporting quarter.",
-    "reminderDeclaration": "— Declaration and recycling report — annually, by April 1.",
+    "reminderImporters": "- Recycling fee calculation (for importers) - within 15 business days from the date of import.",
+    "reminderProducers": "- For producers - quarterly, no later than the 15th of the month following the reporting quarter.",
+    "reminderDeclaration": "- Declaration and recycling report - annually, by April 1.",
     "reminderFooter": "Please submit reports on time."
   },
   "ecoPayers": {
@@ -3283,7 +3300,7 @@
     "uploadConfirmationDoc": "After payment, upload a confirmation document",
     "dragFileOr": "Drag a file or",
     "selectFile": "select",
-    "fileFormats": "Payment order, receipt, statement — PDF, JPG, PNG up to 10 MB",
+    "fileFormats": "Payment order, receipt, statement - PDF, JPG, PNG up to 10 MB",
     "sendForConfirmation": "Send for confirmation",
     "ecoOperatorWillVerify": "Eco Operator will verify receipt of funds and confirm payment",
     "fileTooLarge": "File too large (max 10 MB)",
@@ -3644,7 +3661,7 @@
     "pageSubtitle": "Recycling standards and recycling fee rates for 24 product groups (GD KR No. 322)",
     "bannerTitle": "Standards and rates for {year}",
     "bannerDesc": "Mandatory recycling percentages and recycling fee rates per CM KR Resolution No. 322.",
-    "legislation": "Legislation",
+    "legislation": "Legal Base",
     "calculateFee": "Calculate fee",
     "tabNorms": "recycling standards",
     "tabRates": "rate recycling fee",
@@ -3788,7 +3805,7 @@
     "csvReceivedPayments": "RECEIVED PAYMENTS",
     "csvDebtsSection": "DEBTS",
     "pdfTitle": "Payment analytics report",
-    "pdfHeader": "Payment analytics — Eco Operator"
+    "pdfHeader": "Payment analytics - Eco Operator"
   },
   "adminCalcs": {
     "title": "setting calculation",
@@ -4268,7 +4285,7 @@
     "eqGarbageTruck": "Garbage truck",
     "eqGrader": "Grader",
     "labelTariffs": "Waste acceptance tariffs",
-    "tariffsHint": "Som per trip. If tariffs are still being clarified — fill in later.",
+    "tariffsHint": "Som per trip. If tariffs are still being clarified - fill in later.",
     "tariffPassengerCar": "Passenger car",
     "tariffLightTruck": "Light truck",
     "tariffTruck": "Truck",
@@ -4941,7 +4958,7 @@
     "uploadModalTitle": "Attach document",
     "docNameLabel": "Document name",
     "docNamePlaceholder": "E.g.: Registration certificate",
-    "fileLabel": "File (PDF, JPG, PNG — max 10 MB)",
+    "fileLabel": "File (PDF, JPG, PNG - max 10 MB)",
     "cancel": "Cancel",
     "upload": "Upload",
     "allowedFormats": "Allowed formats: PDF, JPG, PNG",
@@ -5066,7 +5083,7 @@
     "backToAccount": "Back to account statement",
     "title": "Submit correction",
     "instruction": "Instructions",
-    "instructionDrawerTitle": "Instructions — Recycling fee calculation",
+    "instructionDrawerTitle": "Instructions - Recycling fee calculation",
     "step1Title": "Select a paid calculation",
     "selectCalculation": "-- Select calculation --",
     "noPaidCalculations": "No paid calculations for correction.",
@@ -5549,7 +5566,7 @@
   "ecoOrganizations": {
     "addOrganization": "Add organization",
     "guideTitle": "Company profiles",
-    "guideDescription": "Organization data management — payers and recyclers.",
+    "guideDescription": "Organization data management - payers and recyclers.",
     "guideAction1": "View company profiles",
     "guideAction2": "Registration data verification",
     "guideAction3": "Information currency control",
@@ -6305,11 +6322,11 @@
     "participationConditions": "Participation Conditions",
     "condition1": "Legal entities registered in the Kyrgyz Republic",
     "condition2": "Project focused on waste recycling or disposal",
-    "condition3": "Implementation period — up to 12 months",
+    "condition3": "Implementation period - up to 12 months",
     "submitApplication": "Submit application",
     "list": {
       "empty": "No open contests at the moment",
-      "emptyHint": "Stay tuned — new programs are published regularly",
+      "emptyHint": "Stay tuned. New programs are published regularly",
       "deadline": "Deadline",
       "grant": "Grant amount",
       "applyNow": "Apply now",
@@ -6349,7 +6366,7 @@
       "submit": "Submit application",
       "cancel": "Cancel",
       "successTitle": "Application submitted!",
-      "successDescription": "Save the application number — you'll need it to check status",
+      "successDescription": "Save the application number - you'll need it to check status",
       "yourNumber": "Your application number",
       "successHint": "Remember the number. Use it any time to check status.",
       "checkStatusBtn": "Check status",
@@ -6402,7 +6419,7 @@
       "contestsDescription": "Programs management and applications intake",
       "newContest": "New contest",
       "noContests": "No contests yet",
-      "noContestsHint": "Create the first contest — it will appear publicly after publishing",
+      "noContestsHint": "Create the first contest - it will appear publicly after publishing",
       "publishedTab": "Published",
       "draftsTab": "Drafts",
       "closedTab": "Closed",
@@ -6535,7 +6552,7 @@
     "tabDecomposition": "Decomposition Times",
     "bannerTitleStart": "How Long Does",
     "bannerTitleAccent": "Your Waste Live?",
-    "bannerDescription": "Interactive timeline: discover how many years nature needs for each of the 24 waste categories — from 3 months to 1,000,000 years",
+    "bannerDescription": "Interactive timeline: discover how many years nature needs for each of the 24 waste categories - from 3 months to 1,000,000 years",
     "bannerButton": "View",
     "bannerBadge": "NEW"
   },
@@ -6543,11 +6560,11 @@
     "heroBadge": "♻️ Eco Operator · Publications",
     "heroTitleStart": "How Long Does",
     "heroTitleAccent": "Your Waste Live?",
-    "heroSubtitleText": "Every product eventually becomes waste. Discover how many centuries nature needs — and what harm it causes to the ecology of Kyrgyzstan.",
+    "heroSubtitleText": "Every product eventually becomes waste. Discover how many centuries nature needs - and what harm it causes to the ecology of Kyrgyzstan.",
     "monthsShort": "mo.",
     "yearsShort": "years",
     "statCategories": "category waste",
-    "statGlass": "Years — glass",
+    "statGlass": "Years - glass",
     "statBattery": "Water poisoned by 1 battery",
     "liters": "L",
     "factorsTitle": "What affects the rate of decomposition?",
@@ -6585,7 +6602,7 @@
     "items": {
       "washingMachine": {
         "name": "Washing Machines",
-        "description": "Body — 50–100 years. Drum plastic — 400–500 years. Rubber — 100+ years. Circuit boards — lead, cadmium, bromine. Without O₂ corrosion ×3–5.",
+        "description": "Body - 50–100 years. Drum plastic - 400–500 years. Rubber - 100+ years. Circuit boards - lead, cadmium, bromine. Without O₂ corrosion ×3–5.",
         "harm": "Up to 2 kg of hazardous substances per machine. Microplastics from the tank → soil. Compressor oil contaminates up to 50 m².",
         "factor1": "💨 Without O₂ = ×3–5 longer",
         "factor2": "🧪 Tank plastic 500 years",
@@ -6594,8 +6611,8 @@
       },
       "refrigerator": {
         "name": "Refrigerators and Freezers",
-        "description": "One of the most hazardous household waste items. Freon destroys the ozone layer. Polyurethane foam — 400+ years. PVC — hundreds of years.",
-        "harm": "One refrigerator — freon destroys ozone over 4 km². PU foam releases isocyanates. Oil → groundwater. PVC when burned → dioxins.",
+        "description": "One of the most hazardous household waste items. Freon destroys the ozone layer. Polyurethane foam - 400+ years. PVC - hundreds of years.",
+        "harm": "One refrigerator - freon destroys ozone over 4 km². PU foam releases isocyanates. Oil → groundwater. PVC when burned → dioxins.",
         "factor1": "🧪 Freon → ozone",
         "factor2": "💨 PU foam 400+ years",
         "factor3": "☠️ PVC → dioxins",
@@ -6603,7 +6620,7 @@
       },
       "electricStove": {
         "name": "Electric Stoves",
-        "description": "Steel and cast iron — 50–100 years. Glass-ceramic — 1000+ years. Plastic — 200–400 years. Electronics — lead solder.",
+        "description": "Steel and cast iron - 50–100 years. Glass-ceramic - 1000+ years. Plastic - 200–400 years. Electronics - lead solder.",
         "harm": "Glass-ceramic permanently takes up space. Electronics contain lead, tin, brominated flame retardants that accumulate in the food chain.",
         "factor1": "💧 Moisture corrodes metal",
         "factor2": "🧪 Glass-ceramic = forever",
@@ -6621,7 +6638,7 @@
       },
       "television": {
         "name": "Televisions",
-        "description": "CRT — up to 2 kg of lead. LED/OLED — mercury, indium, lithium. ABS plastic — 400–1000 years. Glass — forever.",
+        "description": "CRT - up to 2 kg of lead. LED/OLED - mercury, indium, lithium. ABS plastic - 400–1000 years. Glass - forever.",
         "harm": "Lead is a neurotoxin. Mercury evaporates when broken. Indium is toxic to lungs. ABS when burned → styrene (carcinogen).",
         "factor1": "☠️ 2 kg of lead",
         "factor2": "🧪 Mercury evaporates",
@@ -6630,7 +6647,7 @@
       },
       "computer": {
         "name": "Computers and Laptops",
-        "description": "Circuit boards: gold, silver, palladium + lead, cadmium, bromine. Li-ion → fires. Screen — mercury.",
+        "description": "Circuit boards: gold, silver, palladium + lead, cadmium, bromine. Li-ion → fires. Screen - mercury.",
         "harm": "1 laptop = 50 m² of poisoned soil. Brominated flame retardants → hormonal disorders. Li-ion → 600°C. 1 ton of circuit boards contains more gold than 1 ton of ore.",
         "factor1": "☠️ 50 m² of soil",
         "factor2": "🧪 Bromine → hormones",
@@ -6639,17 +6656,17 @@
       },
       "monitor": {
         "name": "Monitors",
-        "description": "LCD — liquid crystals + mercury. CRT — 3 kg of leaded glass. ABS — 400+ years.",
-        "harm": "Liquid crystals contain biphenyls — POPs that don't decompose and accumulate in organisms. 1 mercury lamp = 30,000 L of contaminated water.",
-        "factor1": "🧪 Biphenyls — POPs",
+        "description": "LCD - liquid crystals + mercury. CRT - 3 kg of leaded glass. ABS - 400+ years.",
+        "harm": "Liquid crystals contain biphenyls - POPs that don't decompose and accumulate in organisms. 1 mercury lamp = 30,000 L of contaminated water.",
+        "factor1": "🧪 Biphenyls - POPs",
         "factor2": "☠️ 3 kg of lead",
         "factor3": "💧 1 lamp = 30,000 L",
         "factor4": "🔬 Liquid crystals are eternal"
       },
       "printer": {
         "name": "Printers and Scanners",
-        "description": "Body — 400+ years. Toner — iron oxide, carbon black, polymers 5–15 microns, penetrating groundwater.",
-        "harm": "1 cartridge = 1000 L of contaminated water. Toner = PM2.5 → lungs. Photoreceptor — arsenic, selenium. 375 million cartridges/year worldwide.",
+        "description": "Body - 400+ years. Toner - iron oxide, carbon black, polymers 5–15 microns, penetrating groundwater.",
+        "harm": "1 cartridge = 1000 L of contaminated water. Toner = PM2.5 → lungs. Photoreceptor - arsenic, selenium. 375 million cartridges/year worldwide.",
         "factor1": "🧪 Toner 5–15 microns",
         "factor2": "☠️ Arsenic",
         "factor3": "🌍 375 million/year",
@@ -6657,7 +6674,7 @@
       },
       "mobilePhone": {
         "name": "Mobile Phones",
-        "description": "Lithium, cobalt, nickel, copper, lead, antimony, indium, tantalum — all in one body. 5.3 billion discarded/year.",
+        "description": "Lithium, cobalt, nickel, copper, lead, antimony, indium, tantalum - all in one body. 5.3 billion discarded/year.",
         "harm": "Cobalt is a carcinogen (lung cancer). Antimony → heart and lungs. 5.3 billion/year = 50,000 tons of toxic waste. 1 ton of phones contains 300 g of gold (ore contains 5 g).",
         "factor1": "☠️ 400 L of water",
         "factor2": "🧪 Cobalt → cancer",
@@ -6666,8 +6683,8 @@
       },
       "electricLamp": {
         "name": "Electric Lamps",
-        "description": "CFL: 3–5 mg mercury = 20 m³ of air. LED: arsenic, lead. Glass — 1000+ years.",
-        "harm": "Broken CFL = mercury MPC ×20. LED — gallium arsenide (arsenic). In KR, lamps are thrown into general waste.",
+        "description": "CFL: 3–5 mg mercury = 20 m³ of air. LED: arsenic, lead. Glass - 1000+ years.",
+        "harm": "Broken CFL = mercury MPC ×20. LED - gallium arsenide (arsenic). In KR, lamps are thrown into general waste.",
         "factor1": "☠️ 3–5 mg mercury",
         "factor2": "🧪 Arsenic in LED",
         "factor3": "💨 MPC ×20",
@@ -6675,17 +6692,17 @@
       },
       "tire": {
         "name": "Pneumatic Tires",
-        "description": "Rubber, carbon black, sulfur, zinc, cadmium. Does not biodegrade — breaks down into microparticles. In KR ~15,000 tons/year.",
-        "harm": "Up to 30 toxic chemicals per tire. When burned — benzo[a]pyrene (class 1 carcinogen). Microparticles — 2nd source of microplastics. Accumulate water → mosquitoes.",
-        "factor1": "☀️ UV — the only destroyer",
+        "description": "Rubber, carbon black, sulfur, zinc, cadmium. Does not biodegrade - breaks down into microparticles. In KR ~15,000 tons/year.",
+        "harm": "Up to 30 toxic chemicals per tire. When burned - benzo[a]pyrene (class 1 carcinogen). Microparticles - 2nd source of microplastics. Accumulate water → mosquitoes.",
+        "factor1": "☀️ UV - the only destroyer",
         "factor2": "🔥 Benzo[a]pyrene",
         "factor3": "🔬 Microparticles → soil",
         "factor4": "🦟 Water → mosquitoes"
       },
       "accumulator": {
         "name": "Accumulators",
-        "description": "Hazard class 1. Up to 15 kg lead + 5–7 L sulfuric acid. Lithium-ion — lithium, cobalt, nickel. Body — 400+ years.",
-        "harm": "Acid kills everything within meters. Lead accumulates in the brain — reduces IQ in children. Li-ion → thermal runaway → landfill fires.",
+        "description": "Hazard class 1. Up to 15 kg lead + 5–7 L sulfuric acid. Lithium-ion - lithium, cobalt, nickel. Body - 400+ years.",
+        "harm": "Acid kills everything within meters. Lead accumulates in the brain - reduces IQ in children. Li-ion → thermal runaway → landfill fires.",
         "factor1": "☠️ Hazard class 1",
         "factor2": "🧪 15 kg lead + acid",
         "factor3": "🔥 Li-ion → fires",
@@ -6693,7 +6710,7 @@
       },
       "battery": {
         "name": "Batteries",
-        "description": "Shell — 10–50 years, after which mercury, cadmium, zinc leach into soil for centuries.",
+        "description": "Shell - 10–50 years, after which mercury, cadmium, zinc leach into soil for centuries.",
         "harm": "1 battery = 20 m² of soil + 400 L of water. Mercury → Minamata disease (CNS). Cadmium → kidneys. In KR there are no battery recycling points.",
         "factor1": "☠️ 20 m² + 400 L",
         "factor2": "🧪 Mercury → Minamata",
@@ -6702,8 +6719,8 @@
       },
       "constructionPlastic": {
         "name": "Construction Materials (Plastic)",
-        "description": "PVC pipes, siding, panels. Without UV and O₂ — eternal. Neither bacteria nor fungi can break it down.",
-        "harm": "When burned → dioxins (strongest carcinogens). 57% chlorine → hydrochloric acid. Phthalates — endocrine disruptors.",
+        "description": "PVC pipes, siding, panels. Without UV and O₂ - eternal. Neither bacteria nor fungi can break it down.",
+        "harm": "When burned → dioxins (strongest carcinogens). 57% chlorine → hydrochloric acid. Phthalates - endocrine disruptors.",
         "factor1": "☠️ Dioxins",
         "factor2": "🧪 57% chlorine",
         "factor3": "💨 Without UV/O₂ = forever",
@@ -6711,8 +6728,8 @@
       },
       "constructionMetal": {
         "name": "Construction Materials (Metal)",
-        "description": "Regular steel — 50–100 years with moisture. Galvanized — 150–200. Stainless — 500+. Aluminum — up to 500 years.",
-        "harm": "Galvanization releases zinc, chrome-plated parts — chromium VI (carcinogen). But metal is infinitely recyclable: 1 ton of recycled steel saves 1.5 tons of ore.",
+        "description": "Regular steel - 50–100 years with moisture. Galvanized - 150–200. Stainless - 500+. Aluminum - up to 500 years.",
+        "harm": "Galvanization releases zinc, chrome-plated parts - chromium VI (carcinogen). But metal is infinitely recyclable: 1 ton of recycled steel saves 1.5 tons of ore.",
         "factor1": "💧 Humidity = rust",
         "factor2": "💨 O₂ is critical",
         "factor3": "🧪 Galvanization slows down",
@@ -6720,8 +6737,8 @@
       },
       "furniture": {
         "name": "Furniture",
-        "description": "Natural wood — 10–15 years. Particleboard — 50–100 years. Foam (polyurethane) — 200+ years. Varnish forms a protective film.",
-        "harm": "Particleboard emits formaldehyde — a carcinogen — for up to 10 years. Foam releases cyanides when burned. One particleboard panel pollutes air over an area of up to 30 m².",
+        "description": "Natural wood - 10–15 years. Particleboard - 50–100 years. Foam (polyurethane) - 200+ years. Varnish forms a protective film.",
+        "harm": "Particleboard emits formaldehyde - a carcinogen - for up to 10 years. Foam releases cyanides when burned. One particleboard panel pollutes air over an area of up to 30 m².",
         "factor1": "🧪 Formaldehyde from particleboard",
         "factor2": "💨 Polyurethane foam 200+ years",
         "factor3": "☀️ Varnish slows down",
@@ -6729,25 +6746,25 @@
       },
       "textile": {
         "name": "Textile Products",
-        "description": "Natural fabrics: cotton — 2–5 months, linen — 2 weeks. But 60% of modern clothing is synthetic, which decomposes over 200+ years, breaking into microplastic fibers.",
+        "description": "Natural fabrics: cotton - 2–5 months, linen - 2 weeks. But 60% of modern clothing is synthetic, which decomposes over 200+ years, breaking into microplastic fibers.",
         "harm": "One wash of synthetics releases up to 700,000 microfibers. Dyes contain formaldehyde, chromium. In landfills, textiles emit methane and hydrogen sulfide.",
         "factor1": "🧪 Synthetics = 200+ years",
-        "factor2": "🦠 Cotton — fast",
+        "factor2": "🦠 Cotton - fast",
         "factor3": "💧 Moisture accelerates natural fabrics",
         "factor4": "🔬 Microplastics into water"
       },
       "footwear": {
         "name": "Footwear",
-        "description": "Natural leather — 25–40 years. Rubber sole — 50–80 years. Modern sneakers — composite of 30+ materials: EVA foam, polyurethane, polyester, glue.",
+        "description": "Natural leather - 25–40 years. Rubber sole - 50–80 years. Modern sneakers - composite of 30+ materials: EVA foam, polyurethane, polyester, glue.",
         "harm": "Adhesive joints emit formaldehyde and toluene. Rubber releases zinc and sulfur. One pair = up to 14 kg CO₂ in production.",
         "factor1": "🧪 30+ materials",
-        "factor2": "💨 Without O₂ — longer",
+        "factor2": "💨 Without O₂ - longer",
         "factor3": "☀️ UV destroys rubber",
         "factor4": "🔬 EVA → microplastics"
       },
       "plasticPackaging": {
         "name": "Plastic Packaging",
-        "description": "PET — 450 years, HDPE — 1000 years, film — 200 years. No light means no photodegradation.",
+        "description": "PET - 450 years, HDPE - 1000 years, film - 200 years. No light means no photodegradation.",
         "harm": "Microplastics in the blood of 80% of people. Bisphenol A → infertility. 8 million tons/year into the ocean. By 2050 plastic > fish.",
         "factor1": "🔬 Microplastics in blood 80%",
         "factor2": "🧪 Bisphenol A",
@@ -6756,7 +6773,7 @@
       },
       "glassPackaging": {
         "name": "Glass Packaging",
-        "description": "SiO₂ — one of the most stable minerals. Artifacts 5000+ years in museums. Doesn't decompose — crumbles.",
+        "description": "SiO₂ - one of the most stable minerals. Artifacts 5000+ years in museums. Doesn't decompose - crumbles.",
         "harm": "Paradox: chemically inert (no toxins), but takes up space FOREVER. Shards are dangerous for animals. Production = 900°C. But 100% infinitely recyclable.",
         "factor1": "♾️ Practically forever",
         "factor2": "✅ No toxins",
@@ -6765,7 +6782,7 @@
       },
       "metalPackaging": {
         "name": "Metal Packaging",
-        "description": "Tin plate — 10 years. Aluminum — 80–500 years: oxide film stops corrosion. Foil — 100+ years.",
+        "description": "Tin plate - 10 years. Aluminum - 80–500 years: oxide film stops corrosion. Foil - 100+ years.",
         "harm": "Al³⁺ ions are toxic to plants and aquatic organisms. 1 can = 170 g CO₂. But recycling saves 95% of energy. 500 years in a landfill vs 60 days of recycling.",
         "factor1": "🧪 Oxide film = protection",
         "factor2": "💧 Humidity accelerates tin plate",
@@ -6774,9 +6791,9 @@
       },
       "paperPackaging": {
         "name": "Paper Packaging",
-        "description": "Cardboard — 3–4 months, newspaper — 1.5 months, office paper — up to 2 years due to bleach. Laminated cardboard — up to 5 years, as film blocks moisture access.",
+        "description": "Cardboard - 3–4 months, newspaper - 1.5 months, office paper - up to 2 years due to bleach. Laminated cardboard - up to 5 years, as film blocks moisture access.",
         "harm": "Printing inks may contain heavy metals. Mass paper decay in landfills is a major source of methane. Laminated packaging cannot be recycled by conventional means.",
-        "factor1": "💧 Humidity — key factor",
+        "factor1": "💧 Humidity - key factor",
         "factor2": "🦠 Bacteria and fungi",
         "factor3": "☀️ Light is not critical",
         "factor4": "🧪 Lamination blocks decomposition"
@@ -6792,11 +6809,11 @@
       },
       "woodPackaging": {
         "name": "Wooden Packaging",
-        "description": "Untreated wood decomposes in 1–3 years thanks to fungi and bacteria. Antiseptic-treated (pallets, crates) — 10–15 years, as treatment kills microorganisms. Deep in landfills without oxygen, even untreated wood is preserved for decades.",
-        "harm": "Minimal environmental harm. However, antiseptic treatments (creosote, copper sulfate) release toxic compounds into soil and groundwater. Wood during anaerobic decomposition in landfills emits methane — a greenhouse gas 25 times more potent than CO₂.",
+        "description": "Untreated wood decomposes in 1–3 years thanks to fungi and bacteria. Antiseptic-treated (pallets, crates) - 10–15 years, as treatment kills microorganisms. Deep in landfills without oxygen, even untreated wood is preserved for decades.",
+        "harm": "Minimal environmental harm. However, antiseptic treatments (creosote, copper sulfate) release toxic compounds into soil and groundwater. Wood during anaerobic decomposition in landfills emits methane - a greenhouse gas 25 times more potent than CO₂.",
         "factor1": "☀️ UV accelerates",
         "factor2": "💧 Humidity accelerates",
-        "factor3": "🦠 Microorganisms — the main factor",
+        "factor3": "🦠 Microorganisms - the main factor",
         "factor4": "💨 Without O₂ slows down 5–10 times"
       }
     }
@@ -6906,7 +6923,7 @@
     "totalPenalty": "Total penalty",
     "limit": "Limit",
     "limitNotReached": "100% (not reached)",
-    "limitReached": "Maximum reached — penalty = debt amount",
+    "limitReached": "Maximum reached - penalty = debt amount",
     "totalToPay": "Total Due (fee + penalty)",
     "legalBasis": "Art. 37 of the KR Code"
   },
@@ -6934,8 +6951,8 @@
     "paymentDue": "Payment deadline",
     "calDays": "calendar days",
     "ofLimit": "of limit",
-    "maxPenaltyNote": "Maximum penalty — 100% of the arrears amount",
-    "capReachedWarning": "Maximum reached — penalty equals the debt amount",
+    "maxPenaltyNote": "Maximum penalty - 100% of the arrears amount",
+    "capReachedWarning": "Maximum reached - penalty equals the debt amount",
     "feePaymentPurpose": "Recycling fee for {period}, calculation {number}",
     "penaltyPaymentPurpose": "Penalty for late recycling fee payment, calculation {number}, {days} days",
     "feeAccountDesc": "Ministry Special Account",
@@ -6943,7 +6960,7 @@
     "inlinePenaltyTitle": "Calculate Penalty for Late Payment"
   },
   "instructionCalc": {
-    "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Instructions for Filling Out the Recycling Fee Calculation Form</h2><p class=\"inst-subtitle\">for producers and importers</p><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 1</div><p>The sequential number is indicated.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 2</div><p>The group number of finished goods and their packaging released into circulation in the Kyrgyz Republic is indicated. Numbers and names are provided in accordance with the list approved by <em class=\"inst-legal-ref\">Cabinet of Ministers Resolution No. 322 dated 06/19/2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 3</div><p>Product and packaging codes are indicated according to the State Statistical Classifier of Products (SCCP). <strong>Filled in by producers.</strong> Not filled in by importers.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 4</div><p>The code for each finished product (packaging) is indicated according to the unified Commodity Nomenclature of Foreign Economic Activity of the Eurasian Economic Union (HS Code). <strong>Not filled in by producers.</strong></p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 5</div><p>Filled in based on accounting and financial records, as well as invoices and other supporting documents containing information about the total volume of finished products and packaging released into circulation in the Kyrgyz Republic during the reporting period.</p><p class=\"inst-note\">Indicators are reflected in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 6</div><p>Waste recycling standards for product use are indicated, as approved by <em class=\"inst-legal-ref\">Cabinet of Ministers of the KR Resolution No. 322 dated June 19, 2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 7</div><p>The total quantity of goods (finished products and packaging) subject to recycling is indicated, taking into account the recycling standard.</p><div class=\"inst-formula\">Column 7 = Column 5 × Column 6</div><p class=\"inst-note\">The result is indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 8</div><p>The quantity of waste from product use (finished products and packaging) actually transferred or planned for transfer to recycling in the reporting period in accordance with the agreement with a licensed waste recycler is indicated.</p><p class=\"inst-note\">Indicators are indicated in tons.</p><p>When importing goods and in the absence of actual waste transfer in the reporting period, the value entered in the column is <strong>«0»</strong>.</p><p>Actual waste transfer is confirmed by a contract and, if available, acceptance-transfer acts, and is reflected in the report for the period in which such transfer was carried out.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 9</div><p>The quantity of goods and packaging exported beyond the territory of the Kyrgyz Republic is indicated. Customs documents data is used for filling, and in their absence — documents provided by counterparties in the course of commercial activities.</p><p>In the absence of supporting documents on actual export, the value entered in the column is <strong>«0»</strong>.</p><p class=\"inst-note\">Indicators are indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 10</div><p>The difference between the established data (column 7) and actually recycled quantity (column 8), as well as export (column 9) is indicated.</p><div class=\"inst-formula\">Column 10 = Column 7 − Column 8 − Column 9</div><p class=\"inst-note\">The result is indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 11</div><p>Filled in according to the recycling fee rates established in <em class=\"inst-legal-ref\">Appendix 2 to the Cabinet of Ministers of the KR Resolution No. 730 dated December 3, 2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 12</div><p><strong>For producers and importers who do not provide independent recycling:</strong></p><div class=\"inst-formula\">Column 12 = Column 7 × Column 11</div><p class=\"inst-legal-ref-small\">in accordance with clause 13 of Appendix 1 to Resolution No. 730 dated December 3, 2024</p><p class=\"mt-3\"><strong>For producers and importers who provide independent recycling and/or carried out export:</strong></p><div class=\"inst-formula\">Column 12 = Column 10 × Column 11</div><p class=\"inst-legal-ref-small\">in accordance with clause 15 of Appendix 1 to Resolution No. 730 dated December 3, 2024</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 13</div><p>Filled in based on data on actually accrued and made payments for the reporting period:</p><ul class=\"inst-list\"><li><strong>Producers</strong> — based on quarterly payment amounts</li><li><strong>Importers</strong> — based on payment amounts calculated upon actual import of goods and packaging into the KR territory, 15 business days from the date of import</li></ul><p class=\"inst-note\">Indicators are specified with precision to two decimal places and are used to determine the presence of overpayment or arrears on the recycling fee.</p></div></div>"
+    "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Instructions for Filling Out the Recycling Fee Calculation Form</h2><p class=\"inst-subtitle\">for producers and importers</p><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 1</div><p>The sequential number is indicated.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 2</div><p>The group number of finished goods and their packaging released into circulation in the Kyrgyz Republic is indicated. Numbers and names are provided in accordance with the list approved by <em class=\"inst-legal-ref\">Cabinet of Ministers Resolution No. 322 dated 06/19/2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 3</div><p>Product and packaging codes are indicated according to the State Statistical Classifier of Products (SCCP). <strong>Filled in by producers.</strong> Not filled in by importers.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 4</div><p>The code for each finished product (packaging) is indicated according to the unified Commodity Nomenclature of Foreign Economic Activity of the Eurasian Economic Union (HS Code). <strong>Not filled in by producers.</strong></p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 5</div><p>Filled in based on accounting and financial records, as well as invoices and other supporting documents containing information about the total volume of finished products and packaging released into circulation in the Kyrgyz Republic during the reporting period.</p><p class=\"inst-note\">Indicators are reflected in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 6</div><p>Waste recycling standards for product use are indicated, as approved by <em class=\"inst-legal-ref\">Cabinet of Ministers of the KR Resolution No. 322 dated June 19, 2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 7</div><p>The total quantity of goods (finished products and packaging) subject to recycling is indicated, taking into account the recycling standard.</p><div class=\"inst-formula\">Column 7 = Column 5 × Column 6</div><p class=\"inst-note\">The result is indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 8</div><p>The quantity of waste from product use (finished products and packaging) actually transferred or planned for transfer to recycling in the reporting period in accordance with the agreement with a licensed waste recycler is indicated.</p><p class=\"inst-note\">Indicators are indicated in tons.</p><p>When importing goods and in the absence of actual waste transfer in the reporting period, the value entered in the column is <strong>«0»</strong>.</p><p>Actual waste transfer is confirmed by a contract and, if available, acceptance-transfer acts, and is reflected in the report for the period in which such transfer was carried out.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 9</div><p>The quantity of goods and packaging exported beyond the territory of the Kyrgyz Republic is indicated. Customs documents data is used for filling, and in their absence - documents provided by counterparties in the course of commercial activities.</p><p>In the absence of supporting documents on actual export, the value entered in the column is <strong>«0»</strong>.</p><p class=\"inst-note\">Indicators are indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 10</div><p>The difference between the established data (column 7) and actually recycled quantity (column 8), as well as export (column 9) is indicated.</p><div class=\"inst-formula\">Column 10 = Column 7 − Column 8 − Column 9</div><p class=\"inst-note\">The result is indicated in tons.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 11</div><p>Filled in according to the recycling fee rates established in <em class=\"inst-legal-ref\">Appendix 2 to the Cabinet of Ministers of the KR Resolution No. 730 dated December 3, 2024</em>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 12</div><p><strong>For producers and importers who do not provide independent recycling:</strong></p><div class=\"inst-formula\">Column 12 = Column 7 × Column 11</div><p class=\"inst-legal-ref-small\">in accordance with clause 13 of Appendix 1 to Resolution No. 730 dated December 3, 2024</p><p class=\"mt-3\"><strong>For producers and importers who provide independent recycling and/or carried out export:</strong></p><div class=\"inst-formula\">Column 12 = Column 10 × Column 11</div><p class=\"inst-legal-ref-small\">in accordance with clause 15 of Appendix 1 to Resolution No. 730 dated December 3, 2024</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 13</div><p>Filled in based on data on actually accrued and made payments for the reporting period:</p><ul class=\"inst-list\"><li><strong>Producers</strong> - based on quarterly payment amounts</li><li><strong>Importers</strong> - based on payment amounts calculated upon actual import of goods and packaging into the KR territory, 15 business days from the date of import</li></ul><p class=\"inst-note\">Indicators are specified with precision to two decimal places and are used to determine the presence of overpayment or arrears on the recycling fee.</p></div></div>"
   },
   "notif": {
     "newCalcForReviewTitle": "New Calculation for Review",
@@ -7013,7 +7030,7 @@
     "penaltyAmount": "Penalty",
     "totalAmount": "Total amount",
     "approvedDate": "Acceptance date",
-    "fixedPenaltyNote": "Penalty fixed on {date} — {days} days overdue",
+    "fixedPenaltyNote": "Penalty fixed on {date} - {days} days overdue",
     "noPenalty": "No Penalty",
     "calcClosed": "Calculation closed",
     "backToCalc": "Back to Calculation",
@@ -7023,17 +7040,37 @@
     "penaltyPurposeText": "Late penalty for recycling fee, calculation No. {number}, {days} days"
   },
   "instructionReport": {
-    "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Instructions for Filling Out the Reporting Form</h2><div class=\"inst-section\"><div class=\"inst-graph-label\">General Rules</div><p>A dash is placed in reporting positions that are not subject to filling. Paper-based reports are signed by the head of the legal entity or a person authorized to act on behalf of the legal entity or an individual entrepreneur or individual, stitched, numbered page by page, and sealed (if available).</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Table 1 — Products</div><p>Filled in for goods released into circulation in the Kyrgyz Republic, including packaging as a finished product. <strong>Information about product packaging is not included in this table.</strong></p><p>The table is filled in as follows: first, the number and name of the product group is indicated in accordance with section 1 of the list, and then product items are indicated line by line. Only those product groups for which there is an obligation to ensure waste recycling are included in the table.</p><p>Product names are provided according to <em class=\"inst-legal-ref\">State Statistical Classifier of Products (goods and services) SC 017-2015</em> in accordance with the first column of section 2 of the list.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 3 — SCCP</div><p>Filled in for goods, including packaging as a finished product, released into circulation in the KR by their <strong>producers</strong>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 4 — HS Code</div><p>The name and code for each product are indicated according to the unified Commodity Nomenclature of Foreign Economic Activity of the Eurasian Economic Union (HS Code EAEU), approved by <em class=\"inst-legal-ref\">EEC Council Decision No. 80 dated September 14, 2021</em>.</p><p>Filled in for goods released into circulation by their <strong>importers</strong>. A legal entity that is both a producer and an importer fills in columns 3–5.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 5 — Units of Measurement</div><p>The quantity of goods, product packaging, and waste quantity are indicated for each product in <strong>kilograms</strong>, rounded to a whole number according to mathematical rounding rules.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 6 — Quantity</div><p>Filled in based on information obtained during declaration by producers and importers of the quantity of goods and product packaging released into circulation. Information from the declaration for the current reporting year is used.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 7 — For Recycling</div><p>The quantity of goods released into circulation in the current reporting year for which there is an obligation to ensure compliance with recycling standards based on declaration information is indicated.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 8 — Recycled</div><p>The quantity of waste from product use collected in the KR and recycled during the reporting period is indicated based on information contained in <strong>waste recycling acts</strong>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 9 — Above Standard (for the previous period)</div><p>The quantity of waste recycled in the previous reporting period above the recycling standard is indicated based on information contained in the report for the previous reporting period.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 10 — Total Recycled</div><p>The total quantity of waste credited in the reporting period is determined by summing:</p><div class=\"inst-formula\">Column 10 = Column 8 + Column 9</div></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 11 — For Payment</div><p>The quantity of waste for which the recycling fee must be paid is determined by subtracting the total quantity of recycled waste from the total quantity of goods subject to recycling.</p><div class=\"inst-formula\">Column 11 = Column 7 − Column 10</div><p class=\"inst-note\">Filled in in case of non-compliance with recycling standards.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 12 — Recycling Documents</div><p>The following information is provided:</p><ul class=\"inst-list\"><li>When organizing <strong>own facilities</strong> for recycling — details (number, date) of waste recycling acts</li><li>When entering into <strong>contracts with recyclers</strong> — the name of the entity performing recycling, details of contracts and waste recycling acts</li><li>If compliance with standards was ensured through <strong>multiple recyclers</strong> — each entity is indicated (as multiple rows for one product)</li></ul></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 13 — Notes</div><p>Filled in mandatorily if the recycling standard is met through the recycling of <strong>interchangeable goods and packaging</strong> (of similar purpose and/or similar recycling method).</p><p>The column provides explanations allowing to correlate the product subject to recycling with recycled interchangeable goods. In other cases, the column is filled at the discretion of the producer/importer.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Table 2 — Product Packaging</div><p>The table includes information about product packaging <strong>(excluding packaging as a finished product)</strong>.</p><p>Filled in as follows: first, the product packaging group number is indicated in accordance with section 2 of the list, and then packaging positions are indicated line by line by the material from which the packaging is made.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Columns 14–15 — Packaging Classification</div><p>Filled in when it is possible to identify product packaging according to one of the specified classifications (alphabetic and numeric code).</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 16 — Total Recycled (packaging)</div><p>The total quantity of waste from product use (in terms of packaging) credited in the reporting period is determined by summing the quantity of waste recycled in the current period and the quantity of waste recycled in the previous period above the standard.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 17 — For Payment (packaging)</div><p>The quantity of waste (in terms of packaging) for which the recycling fee must be paid is determined by subtracting the total quantity of recycled waste from the total quantity of packaging subject to recycling.</p><p class=\"inst-note\">Filled in in case of non-compliance with recycling standards (in terms of product packaging).</p></div></div>"
+    "html": "<div class=\"inst-content\"><h2 class=\"inst-title\">Instructions for Filling Out the Reporting Form</h2><div class=\"inst-section\"><div class=\"inst-graph-label\">General Rules</div><p>A dash is placed in reporting positions that are not subject to filling. Paper-based reports are signed by the head of the legal entity or a person authorized to act on behalf of the legal entity or an individual entrepreneur or individual, stitched, numbered page by page, and sealed (if available).</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Table 1 - Products</div><p>Filled in for goods released into circulation in the Kyrgyz Republic, including packaging as a finished product. <strong>Information about product packaging is not included in this table.</strong></p><p>The table is filled in as follows: first, the number and name of the product group is indicated in accordance with section 1 of the list, and then product items are indicated line by line. Only those product groups for which there is an obligation to ensure waste recycling are included in the table.</p><p>Product names are provided according to <em class=\"inst-legal-ref\">State Statistical Classifier of Products (goods and services) SC 017-2015</em> in accordance with the first column of section 2 of the list.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 3 - SCCP</div><p>Filled in for goods, including packaging as a finished product, released into circulation in the KR by their <strong>producers</strong>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 4 - HS Code</div><p>The name and code for each product are indicated according to the unified Commodity Nomenclature of Foreign Economic Activity of the Eurasian Economic Union (HS Code EAEU), approved by <em class=\"inst-legal-ref\">EEC Council Decision No. 80 dated September 14, 2021</em>.</p><p>Filled in for goods released into circulation by their <strong>importers</strong>. A legal entity that is both a producer and an importer fills in columns 3–5.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 5 - Units of Measurement</div><p>The quantity of goods, product packaging, and waste quantity are indicated for each product in <strong>kilograms</strong>, rounded to a whole number according to mathematical rounding rules.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 6 - Quantity</div><p>Filled in based on information obtained during declaration by producers and importers of the quantity of goods and product packaging released into circulation. Information from the declaration for the current reporting year is used.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 7 - For Recycling</div><p>The quantity of goods released into circulation in the current reporting year for which there is an obligation to ensure compliance with recycling standards based on declaration information is indicated.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 8 - Recycled</div><p>The quantity of waste from product use collected in the KR and recycled during the reporting period is indicated based on information contained in <strong>waste recycling acts</strong>.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 9 - Above Standard (for the previous period)</div><p>The quantity of waste recycled in the previous reporting period above the recycling standard is indicated based on information contained in the report for the previous reporting period.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 10 - Total Recycled</div><p>The total quantity of waste credited in the reporting period is determined by summing:</p><div class=\"inst-formula\">Column 10 = Column 8 + Column 9</div></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 11 - For Payment</div><p>The quantity of waste for which the recycling fee must be paid is determined by subtracting the total quantity of recycled waste from the total quantity of goods subject to recycling.</p><div class=\"inst-formula\">Column 11 = Column 7 − Column 10</div><p class=\"inst-note\">Filled in in case of non-compliance with recycling standards.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 12 - Recycling Documents</div><p>The following information is provided:</p><ul class=\"inst-list\"><li>When organizing <strong>own facilities</strong> for recycling - details (number, date) of waste recycling acts</li><li>When entering into <strong>contracts with recyclers</strong> - the name of the entity performing recycling, details of contracts and waste recycling acts</li><li>If compliance with standards was ensured through <strong>multiple recyclers</strong> - each entity is indicated (as multiple rows for one product)</li></ul></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 13 - Notes</div><p>Filled in mandatorily if the recycling standard is met through the recycling of <strong>interchangeable goods and packaging</strong> (of similar purpose and/or similar recycling method).</p><p>The column provides explanations allowing to correlate the product subject to recycling with recycled interchangeable goods. In other cases, the column is filled at the discretion of the producer/importer.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Table 2 - Product Packaging</div><p>The table includes information about product packaging <strong>(excluding packaging as a finished product)</strong>.</p><p>Filled in as follows: first, the product packaging group number is indicated in accordance with section 2 of the list, and then packaging positions are indicated line by line by the material from which the packaging is made.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Columns 14–15 - Packaging Classification</div><p>Filled in when it is possible to identify product packaging according to one of the specified classifications (alphabetic and numeric code).</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 16 - Total Recycled (packaging)</div><p>The total quantity of waste from product use (in terms of packaging) credited in the reporting period is determined by summing the quantity of waste recycled in the current period and the quantity of waste recycled in the previous period above the standard.</p></div><div class=\"inst-section\"><div class=\"inst-graph-label\">Column 17 - For Payment (packaging)</div><p>The quantity of waste (in terms of packaging) for which the recycling fee must be paid is determined by subtracting the total quantity of recycled waste from the total quantity of packaging subject to recycling.</p><p class=\"inst-note\">Filled in in case of non-compliance with recycling standards (in terms of product packaging).</p></div></div>"
   },
   "feedback": {
     "system": "System",
+    "eyebrow": "Feedback · Submit appeal",
     "formTitle": "Citizen Feedback",
     "formDescription": "Fill out the form to submit a request to the Ministry of Natural Resources, Ecology and Technical Supervision of the Kyrgyz Republic",
     "personalInfo": "Applicant Information",
+    "personalInfoHint": "Used for contact and to deliver the response to your appeal",
     "requestInfo": "Request Information",
+    "requestInfoHint": "Describe the issue as specifically as possible - it speeds up review",
     "attachments": "Attached Files",
+    "attachmentsHint": "Photos, documents, screenshots - up to 5 files",
+    "dropZoneTitle": "Drag files here or click to select",
+    "dropZoneSubtitle": "Maximum 5 files · PDF, JPG, PNG, DOC, DOCX",
     "selectFiles": "Select files (up to 5)",
     "maxFiles": "Maximum 5 files. Formats: PDF, JPG, PNG, DOC, DOCX",
+    "trust": {
+      "review": {
+        "title": "Review timeline",
+        "desc": "up to 30 calendar days"
+      },
+      "confidential": {
+        "title": "Confidential",
+        "desc": "Personal data is protected"
+      },
+      "notify": {
+        "title": "Notifications",
+        "desc": "Response via email and SMS"
+      }
+    },
     "location": "Geolocation",
     "locationHint": "Mark a location on the map if the request is related to a specific area",
     "locationSelected": "Location selected",
@@ -7160,6 +7197,8 @@
     "found": "Found",
     "noResults": "No results found",
     "tryDifferentQuery": "Try changing the search query or filter",
+    "fileNotReady": "Source coming soon",
+    "openDocument": "Open document",
     "viewOnSite": "View source",
     "categories": {
       "laws": "KR Laws",
@@ -7190,7 +7229,7 @@
       },
       "d4": {
         "title": "KR Law \"On the Procedure for Reviewing Citizens' Appeals\"",
-        "desc": "Regulates the procedure for submitting and reviewing citizens' appeals by state bodies. Review period — 30 calendar days."
+        "desc": "Regulates the procedure for submitting and reviewing citizens' appeals by state bodies. Review period - 30 calendar days."
       },
       "d5": {
         "title": "KR Law \"On Technical Regulation\"",
@@ -7201,32 +7240,32 @@
         "desc": "Establishes the mechanism of extended responsibility of producers and importers for the disposal of goods and packaging after loss of consumer properties."
       },
       "d7": {
-        "title": "KR Government Decree \"On Utilization Fee Rates\"",
-        "desc": "Approves utilization fee rates by product groups and recycling standards."
+        "title": "KR Cabinet Decree No. 322 \"On Groups of Goods and Packaging\"",
+        "desc": "Approves 24 groups of goods and packaging subject to the recycling fee, with subgroups and TNVED codes."
       },
       "d8": {
-        "title": "KR Government Decree \"On the Procedure for Paying the Utilization Fee\"",
-        "desc": "Determines the procedure for calculating, paying and administering the utilization fee."
+        "title": "KR Cabinet Decree No. 730 \"Procedure for Paying the Recycling Fee\"",
+        "desc": "Defines the procedure for calculation, deadlines and form of recycling fee payments by producers and importers."
       },
       "d9": {
-        "title": "KR Government Decree \"On Approval of the Regulation on SE Eco Operator\"",
-        "desc": "Approves the regulation on the state enterprise 'Eco Operator' — the administrator of the EPR system."
+        "title": "KR Cabinet Decree No. 545 \"Regulation on Declaration by Producers and Importers\"",
+        "desc": "Regulates the procedure for declaring goods and packaging to calculate the recycling fee, with declaration deadlines."
       },
       "d10": {
-        "title": "KR Government Decree \"On the Registry of Utilization Fee Payers\"",
-        "desc": "Determines the procedure for maintaining the Registry of utilization fee payers and registration requirements."
+        "title": "KR Cabinet Decree No. 563 \"Procedure for Reporting by Producers and Importers\"",
+        "desc": "Establishes the procedure for submitting reports on compliance with recycling standards for goods and packaging."
       },
       "d11": {
-        "title": "KR Government Decree \"On Digitalization of the EPR System\"",
-        "desc": "Approves the transition plan to the digital platform AIS 'Digital Waste Registry' for automation of EPR processes."
+        "title": "KR Government Decree \"On the Registry of Recycling Fee Payers\"",
+        "desc": "Determines the procedure for maintaining the Registry of recycling fee payers and registration requirements."
       },
       "d12": {
-        "title": "MNRETS Order \"On Approval of Reporting Forms\"",
-        "desc": "Approves quarterly and annual reporting forms on waste management for enterprises."
-      },
-      "d13": {
         "title": "MNRETS Order \"On Licensing Procedure for Waste Recycling Activities\"",
         "desc": "Regulates the procedure for issuing, suspending and revoking licenses for waste recycling activities."
+      },
+      "d13": {
+        "title": "MNRETS Order \"Declaration Form and Filling Instructions\"",
+        "desc": "Approves the declaration form for producers and importers and detailed filling instructions."
       },
       "d14": {
         "title": "MNRETS Order \"On Approval of the Utilization Fee Calculation Methodology\"",
@@ -7245,11 +7284,11 @@
         "desc": "Hygienic requirements for the placement and neutralization of production and consumption waste."
       },
       "d18": {
-        "title": "ISO 14001 Standard — Environmental Management Systems",
+        "title": "ISO 14001 Standard - Environmental Management Systems",
         "desc": "International standard establishing requirements for environmental management systems for organizations."
       },
       "d19": {
-        "title": "GOST 30772-2001 — Resource Conservation. Waste Management. Terms and Definitions",
+        "title": "GOST 30772-2001 - Resource Conservation. Waste Management. Terms and Definitions",
         "desc": "Interstate standard defining basic terms and definitions in the field of waste management."
       },
       "d20": {
@@ -7269,7 +7308,7 @@
         "desc": "Convention on access to information, public participation in decision-making and access to justice in environmental matters."
       },
       "d24": {
-        "title": "UN Sustainable Development Goals — Goal 12",
+        "title": "UN Sustainable Development Goals - Goal 12",
         "desc": "SDG 12: Responsible Consumption and Production. Ensuring the transition to sustainable consumption and production patterns."
       },
       "d25": {
@@ -7285,13 +7324,13 @@
       "q3": "Who should register in the system?",
       "a3": "The following must register:\n• Producers of goods and packaging in KR\n• Importers of goods and packaging to KR\n• Organizations engaged in waste recycling\n• Landfill operators and collection points",
       "q4": "What roles exist in the system?",
-      "a4": "The system provides the following roles:\n• Payer — producer or importer obligated to pay the utilization fee\n• Eco Operator — SE 'Eco Operator', EPR system administrator\n• MNRETS Employee — Ministry specialist\n• Administrator — system administrator",
+      "a4": "The system provides the following roles:\n• Payer - producer or importer obligated to pay the utilization fee\n• Eco Operator - SE 'Eco Operator', EPR system administrator\n• MNRETS Employee - Ministry specialist\n• Administrator - system administrator",
       "q5": "Who is obligated to pay the utilization fee?",
       "a5": "Producers of goods and packaging registered in KR and importers of goods and packaging into KR are obligated to pay the utilization fee.",
       "q6": "How is the utilization fee calculated?",
       "a6": "The utilization fee is calculated using the formula:\n\nAmount = Volume (tons) × Recycling Standard (%) × Rate (som/ton)",
       "q7": "What are the deadlines for paying the utilization fee?",
-      "a7": "The utilization fee is paid quarterly:\n• Q1 — by April 25\n• Q2 — by July 25\n• Q3 — by October 25\n• Q4 — by January 25 of the following year",
+      "a7": "The utilization fee is paid quarterly:\n• Q1 - by April 25\n• Q2 - by July 25\n• Q3 - by October 25\n• Q4 - by January 25 of the following year",
       "q8": "What happens if the utilization fee is not paid on time?",
       "a8": "A penalty of 0.1% of the debt amount is charged for each day of delay. The maximum penalty cannot exceed 50% of the principal debt.",
       "q9": "Can the paid utilization fee be refunded?",
@@ -7305,17 +7344,17 @@
       "q13": "What types of waste are subject to recycling under EPR?",
       "a13": "Under EPR, packaging, tires, batteries, electronic equipment, and oils are subject to recycling.",
       "q14": "How to obtain a waste recycling license?",
-      "a14": "To obtain a license, submit an application to MNRETS KR with the required documents. Review period — up to 30 working days.",
+      "a14": "To obtain a license, submit an application to MNRETS KR with the required documents. Review period - up to 30 working days.",
       "q15": "What requirements are imposed on recyclers?",
       "a15": "Main requirements: MNRETS license, equipment compliant with environmental standards, reporting in AIS.",
       "q16": "Can a license be suspended or revoked?",
       "a16": "A license may be suspended or revoked in cases of violation of licensing conditions.",
       "q17": "How much does a recycling license cost?",
-      "a17": "License fee depends on the type of activity: MSW recycling — 5,000 som, industrial waste — 10,000 som, hazardous waste — 20,000 som.",
+      "a17": "License fee depends on the type of activity: MSW recycling - 5,000 som, industrial waste - 10,000 som, hazardous waste - 20,000 som.",
       "q18": "What reports need to be submitted in AIS?",
       "a18": "Quarterly calculation of utilization fee, annual declaration, and recycling reports are submitted through AIS.",
       "q19": "What are the reporting deadlines?",
-      "a19": "Quarterly calculation — by the 20th of the month following the quarter, annual declaration — by March 1 of the following year.",
+      "a19": "Quarterly calculation - by the 20th of the month following the quarter, annual declaration - by March 1 of the following year.",
       "q20": "What happens for failure to provide reporting?",
       "a20": "A warning for the first violation, a fine of 5,000 to 20,000 som for repeated violations.",
       "q21": "How to correct an error in a submitted report?",

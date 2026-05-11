@@ -57,7 +57,7 @@ const resetFilters = () => {
   yearFilter.value = ''
 }
 
-// Table columns — explicit pixel widths to prevent squeezing
+// Table columns - explicit pixel widths to prevent squeezing
 const columns = computed(() => [
   { key: 'number', label: t('ecoIncomingDecls.colNumber'), width: '120px' },
   { key: 'submittedAt', label: t('ecoIncomingDecls.colSubmittedAt'), width: '100px' },
@@ -288,7 +288,7 @@ const formatBalance = (value: number) => {
   min-width: 1200px;
 }
 
-/* ===== Status column (9th) — padding + center ===== */
+/* ===== Status column (9th) - padding + center ===== */
 .declarations-table-wrap :deep(thead th:nth-child(9)) {
   text-align: center;
 }
@@ -297,7 +297,7 @@ const formatBalance = (value: number) => {
   text-align: center;
 }
 
-/* ===== Actions column (10th) — override DataTable 100px → 130px ===== */
+/* ===== Actions column (10th) - override DataTable 100px → 130px ===== */
 .declarations-table-wrap :deep(thead th:nth-child(10)) {
   width: 130px !important;
   text-align: center;

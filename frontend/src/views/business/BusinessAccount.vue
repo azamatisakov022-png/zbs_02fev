@@ -44,13 +44,13 @@ const accountBalance = computed(() => totalPaid.value - totalCharged.value)
 const lastPaymentDate = computed(() => {
   const paidCalcs = calculationStore.getBusinessCalculations(companyName)
     .filter(c => c.status === CalcStatus.PAID && c.paidAt)
-  if (!paidCalcs.length) return '—'
+  if (!paidCalcs.length) return '-'
   const sorted = [...paidCalcs].sort((a, b) => {
     const [da, ma, ya] = (a.paidAt || '').split('.')
     const [db, mb, yb] = (b.paidAt || '').split('.')
     return new Date(+yb, +mb - 1, +db).getTime() - new Date(+ya, +ma - 1, +da).getTime()
   })
-  return sorted[0]?.paidAt || '—'
+  return sorted[0]?.paidAt || '-'
 })
 
 const unpaidCalcs = computed(() =>
@@ -175,8 +175,8 @@ const openPaymentDetail = (row: any) => {
     date: row.date,
     amount: row.paymentAmount,
     status: calc?.status === CalcStatus.PAID ? 'paid' : 'payment_pending',
-    paymentOrderNumber: calc?.payment?.paymentOrderNumber || '—',
-    bank: calc?.payment?.payerBank || '—',
+    paymentOrderNumber: calc?.payment?.paymentOrderNumber || '-',
+    bank: calc?.payment?.payerBank || '-',
     fileName: calc?.payment?.fileName || null,
   }
   showPaymentDetailModal.value = true
@@ -217,7 +217,7 @@ const closePayment = () => {
   paymentFileName.value = ''
 }
 
-// Bank details — use config
+// Bank details - use config
 const bankDetails = PAYMENT_ACCOUNTS.utilization_fee
 
 const copyRequisites = () => {

@@ -41,7 +41,7 @@ async function loadLicenses() {
 /**
  * Сотрудник МПРЭТН видит только РЕАЛЬНО ПОДАННЫЕ заявки.
  * Черновики (draft) и заявки, ожидающие оплаты госпошлины (payment_pending),
- * принадлежат заявителю — сотруднику их видеть не положено до факта подачи.
+ * принадлежат заявителю - сотруднику их видеть не положено до факта подачи.
  */
 const visibleApps = computed<LicenseApplication[]>(() =>
   licenseStore.state.adminApplications.filter(
@@ -102,7 +102,7 @@ function licenseStatusLabel(l: License) {
 }
 
 function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '-'
 }
 
 async function downloadCsv() {
@@ -262,7 +262,7 @@ function openApp(a: LicenseApplication) {
                   <span v-else-if="a.payment && a.payment.status === 'MANUAL_CONFIRMED'" class="text-emerald-600">✓ Подтв. вручную</span>
                   <span v-else-if="a.payment && a.payment.status === 'PENDING' && a.payment.paymentMethod === 'MANUAL_OFFLINE'" class="text-amber-600">Ждёт подтв.</span>
                   <span v-else-if="a.payment && a.payment.status === 'PENDING'" class="text-amber-600">Ожидание</span>
-                  <span v-else class="text-gray-400">—</span>
+                  <span v-else class="text-gray-400">-</span>
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ formatDate(a.submittedAt) }}</td>
                 <td class="px-4 py-3 text-xs">
@@ -271,7 +271,7 @@ function openApp(a: LicenseApplication) {
                     <span v-if="a.daysLeft < 0" class="block">просрочено</span>
                     <span v-else class="block">{{ a.daysLeft }} дн.</span>
                   </span>
-                  <span v-else>—</span>
+                  <span v-else>-</span>
                 </td>
               </tr>
             </tbody>

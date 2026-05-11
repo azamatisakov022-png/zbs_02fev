@@ -16,7 +16,7 @@ const { t } = useI18n()
 const { roleTitle, menuItems } = useEmployeeMenu()
 
 // Имя пользователя берём из authStore (заполняется при логине).
-const userName = computed(() => authStore.state.user?.companyName || '—')
+const userName = computed(() => authStore.state.user?.companyName || '-')
 
 // ─── Реальные метрики из stores ───────────────────────────────────
 
@@ -127,7 +127,7 @@ const alertBadgeClass = (severity: string) => {
 const isLoading = ref(true)
 onMounted(async () => {
   try {
-    // Параллельная загрузка. При ошибке любого stora — просто покажем 0,
+    // Параллельная загрузка. При ошибке любого stora - просто покажем 0,
     // dashboard не должен ломаться из-за одного неотвечающего эндпоинта.
     await Promise.allSettled([
       licenseStore.loadStatusCounts(),

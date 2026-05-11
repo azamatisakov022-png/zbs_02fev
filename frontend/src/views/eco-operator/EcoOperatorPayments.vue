@@ -270,7 +270,7 @@ const exportPaymentsReport = (format: 'excel' | 'pdf') => {
   if (format === 'excel') {
     let csvContent = '\uFEFF'
     csvContent += t('ecoPayments.csvPaymentsTitle') + '\n'
-    csvContent += `${t('ecoPayments.csvPeriod')}:,${paymentsFilters.value.dateFrom} — ${paymentsFilters.value.dateTo}\n\n`
+    csvContent += `${t('ecoPayments.csvPeriod')}:,${paymentsFilters.value.dateFrom} - ${paymentsFilters.value.dateTo}\n\n`
     csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvProductGroup')},${t('ecoPayments.csvPeriodCol')},${t('ecoPayments.csvAmount')},${t('ecoPayments.csvPaymentDate')}\n`
 
     filteredPayments.value.forEach(p => {
@@ -295,7 +295,7 @@ const exportDebtsReport = (format: 'excel' | 'pdf') => {
   if (format === 'excel') {
     let csvContent = '\uFEFF'
     csvContent += t('ecoPayments.csvDebtsTitle') + '\n'
-    csvContent += `${t('ecoPayments.csvPeriod')}:,${debtsFilters.value.dateFrom} — ${debtsFilters.value.dateTo}\n\n`
+    csvContent += `${t('ecoPayments.csvPeriod')}:,${debtsFilters.value.dateFrom} - ${debtsFilters.value.dateTo}\n\n`
     csvContent += `${t('ecoPayments.csvCompany')},${t('ecoPayments.csvInn')},${t('ecoPayments.csvExpectedAmount')},${t('ecoPayments.csvPaid')},${t('ecoPayments.csvDebt')},${t('ecoPayments.csvDaysOverdue')},${t('ecoPayments.csvStatus')}\n`
 
     filteredDebtors.value.forEach(d => {
@@ -438,7 +438,7 @@ const generatePDF = (type: 'payments' | 'debts' | 'full') => {
             ${monthlyData.value.map(m => `<th style="text-align: center">${m.month}</th>`).join('')}
           </tr>
           <tr>
-            ${monthlyData.value.map(m => `<td style="text-align: center">${m.amount > 0 ? formatCompactNumber(m.amount) : '—'}</td>`).join('')}
+            ${monthlyData.value.map(m => `<td style="text-align: center">${m.amount > 0 ? formatCompactNumber(m.amount) : '-'}</td>`).join('')}
           </tr>
         </table>
         <div style="text-align: right; font-weight: bold; margin-top: 10px;">${t('ecoPayments.yearTotal')}: ${formatNumber(yearTotal.value)} ${t('ecoPayments.som')}</div>

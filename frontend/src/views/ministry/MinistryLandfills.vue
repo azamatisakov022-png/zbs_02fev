@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
     try {
       maskLayer.remove()
     } catch {
-      /* layer мог быть уже на уничтоженной карте — игнорируем */
+      /* layer мог быть уже на уничтоженной карте - игнорируем */
     }
     maskLayer = null
   }
@@ -236,7 +236,7 @@ const getFillBarColorClass = (percent: number): string => {
 }
 
 const formatCapacity = (val: number | null | undefined): string => {
-  if (val === null || val === undefined || !Number.isFinite(val)) return '—'
+  if (val === null || val === undefined || !Number.isFinite(val)) return '-'
   return val.toLocaleString()
 }
 
@@ -263,7 +263,7 @@ const goToDetail = (landfill: Landfill) => {
 
 // ==================== ADD FORM ====================
 
-// «МП» подставляется автоматически — оператор всегда МП.
+// «МП» подставляется автоматически - оператор всегда МП.
 const OPERATOR_PREFIX = 'МП '
 
 interface PendingPhoto { dataUrl: string; fileName: string }
@@ -735,7 +735,7 @@ const guideActions = computed(() => [
 
             <!-- Bottom info -->
             <div class="flex items-center justify-between text-xs text-[#64748b] pt-3 border-t border-[#f1f5f9]">
-              <span>{{ $t('ministryLandfills.hazardClass') }} {{ (landfill.hazardClasses || []).join(', ') || '—' }}</span>
+              <span>{{ $t('ministryLandfills.hazardClass') }} {{ (landfill.hazardClasses || []).join(', ') || '-' }}</span>
               <span>{{ $t('ministryLandfills.expiryLabel') }} {{ landfill.expiryYear }} {{ $t('ministryLandfills.yearSuffix') }}</span>
             </div>
           </div>

@@ -17,7 +17,7 @@ const color = computed(() => {
   return k === 'expired' ? 'var(--lr-rose)' : k === 'expiring' ? 'var(--lr-amber)' : 'var(--lr-brand)'
 })
 const label = computed(() =>
-  props.lic.status.key === 'expired' ? '—' : Math.round((1 - pct.value) * 100) + '%'
+  props.lic.status.key === 'expired' ? '-' : Math.round((1 - pct.value) * 100) + '%'
 )
 </script>
 

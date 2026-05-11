@@ -22,11 +22,11 @@ const hasRealData = computed(() => realCalcs.value.length > 0)
 // Empty-state скрыт: для демо всегда показываем populated с mock-fallback.
 const isEmpty = false
 
-// Тип плательщика — выводится из payerType расчётов.
-// Производитель сдаёт ежеквартально; импортёр — по факту ввоза.
+// Тип плательщика - выводится из payerType расчётов.
+// Производитель сдаёт ежеквартально; импортёр - по факту ввоза.
 type PayerKind = 'importer' | 'producer' | 'both' | 'unknown'
 const payerKind = computed<PayerKind>(() => {
-  if (!hasRealData.value) return 'producer' // mock — показываем как производителя
+  if (!hasRealData.value) return 'producer' // mock - показываем как производителя
   const types = new Set<string>()
   realCalcs.value.forEach(c => { if (c.payerType) types.add(c.payerType) })
   if (types.has('importer') && types.has('producer')) return 'both'
@@ -46,7 +46,7 @@ const balanceTone = computed(() => {
   return { pill: 'bd-pill--neutral', label: 'Нулевой' }
 })
 
-// Последние 3 платежа из транзакций (тип 'payment') — fallback на mock.
+// Последние 3 платежа из транзакций (тип 'payment') - fallback на mock.
 const mockPayments = [
   { date: '12 апр 2026', amount: 257480, label: 'Платёж со счёта ОсОО «АКБ»' },
   { date: '28 фев 2026', amount: 180000, label: 'Платёж со счёта Демир Банк' },
@@ -69,13 +69,13 @@ const recentPayments = computed(() => {
 // Производитель сдаёт квартальный расчёт → срочно если приближается 15 мая.
 // Декларация (годовая) подаётся до 1 апреля.
 const urgent = computed(() => {
-  // Производитель — Q1 расчёт до 15 мая.
+  // Производитель - Q1 расчёт до 15 мая.
   if (payerKind.value === 'producer' || payerKind.value === 'both') {
     const deadline = new Date(currentYear, 4, 15)
     const daysLeft = Math.max(1, Math.ceil((deadline.getTime() - today.getTime()) / 86400000))
     return {
       title: `Подайте расчёт за Q1 ${currentYear}`,
-      body: 'Срок подачи — до 15 мая. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
+      body: 'Срок подачи - до 15 мая. Просрочка влечёт пени по ст. 37 Закона КР о налогах (0,09% от суммы за каждый день).',
       daysLabel: `${daysLeft} дн. до начисления пени`,
       cta: '/business/calculator',
     }
@@ -97,7 +97,7 @@ const urgent = computed(() => {
 })
 const postpone = () => { /* открыть модал переноса */ }
 
-// Иконки статусов — inline SVG-компоненты (currentColor).
+// Иконки статусов - inline SVG-компоненты (currentColor).
 const SvgCheck = () => h('svg', { viewBox: '0 0 24 24' }, [h('path', { d: 'm5 12 5 5 9-10' })])
 const SvgClock = () => h('svg', { viewBox: '0 0 24 24' }, [h('path', { d: 'M12 7v5l3 2' })])
 const SvgAlert = () => h('svg', { viewBox: '0 0 24 24' }, [h('path', { d: 'M12 8v5M12 17h.01' })])
@@ -119,7 +119,7 @@ type ObligationGroup = { title: string; done: number; total: number; items: Obli
 const obligationGroups = computed<ObligationGroup[]>(() => {
   const groups: ObligationGroup[] = []
 
-  // Декларация — годовая, до 1 апреля.
+  // Декларация - годовая, до 1 апреля.
   groups.push({
     title: 'Декларации', done: 1, total: 1,
     items: [
@@ -127,7 +127,7 @@ const obligationGroups = computed<ObligationGroup[]>(() => {
     ],
   })
 
-  // Расчёты — для производителя ежеквартально, для импортёра по партиям.
+  // Расчёты - для производителя ежеквартально, для импортёра по партиям.
   const calcs = realCalcs.value.slice(-3).reverse()
   if (calcs.length > 0) {
     const items: ObligationItem[] = calcs.map(c => {
@@ -167,7 +167,7 @@ const obligationGroups = computed<ObligationGroup[]>(() => {
     })
   }
 
-  // Отчёт о переработке — Q1 до 15 мая.
+  // Отчёт о переработке - Q1 до 15 мая.
   groups.push({
     title: 'Отчёты о переработке', done: 0, total: 1,
     items: [
@@ -180,8 +180,8 @@ const obligationGroups = computed<ObligationGroup[]>(() => {
 const totalDone = computed(() => obligationGroups.value.reduce((s, g) => s + g.done, 0))
 const totalAll  = computed(() => obligationGroups.value.reduce((s, g) => s + g.total, 0))
 
-// Норматив переработки — рассчитывается от того, что плательщик САМ ввёл в расчётах.
-// При пустом store — mock fallback для демо.
+// Норматив переработки - рассчитывается от того, что плательщик САМ ввёл в расчётах.
+// При пустом store - mock fallback для демо.
 const mockNormative = {
   overallPct: 78,
   done: 25.2,
@@ -227,7 +227,7 @@ const hasLaggingFraction = computed(() => normative.value.fractions.some(f => f.
 const fractionColor = (pct: number) =>
   pct >= 100 ? '#0e888d' : pct >= 80 ? '#10b981' : pct >= 50 ? '#fea629' : '#dc2626'
 
-// Календарь обязательств — 6 месяцев от текущего.
+// Календарь обязательств - 6 месяцев от текущего.
 const monthShort = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК']
 type CalChip = { tone: 'success' | 'inwork' | 'danger' | 'planned'; label: string }
 const calendar = computed(() => {
@@ -238,7 +238,7 @@ const calendar = computed(() => {
     const y = d.getFullYear()
     const items: CalChip[] = []
 
-    // Декларация — апрель. Если уже в текущем месяце или прошла — значит принята.
+    // Декларация - апрель. Если уже в текущем месяце или прошла - значит принята.
     if (m === 3) {
       items.push({
         tone: i === 0 ? 'success' : 'planned',
@@ -247,21 +247,21 @@ const calendar = computed(() => {
     }
 
     if (payerKind.value === 'producer' || payerKind.value === 'both') {
-      // Q1: апрель — в работе, май — дедлайн.
-      if (m === 3) items.push({ tone: 'inwork', label: 'Расчёт Q1 — в работе' })
+      // Q1: апрель - в работе, май - дедлайн.
+      if (m === 3) items.push({ tone: 'inwork', label: 'Расчёт Q1 - в работе' })
       if (m === 4) items.push({ tone: 'danger', label: 'Расчёт Q1 (до 15 мая)' })
       if (m === 4) items.push({ tone: 'inwork', label: 'Отчёт Q1 (до 15 мая)' })
-      // Q2: июль — старт, август — дедлайн.
-      if (m === 6) items.push({ tone: 'planned', label: 'Расчёт Q2 — старт' })
+      // Q2: июль - старт, август - дедлайн.
+      if (m === 6) items.push({ tone: 'planned', label: 'Расчёт Q2 - старт' })
       if (m === 7) items.push({ tone: 'planned', label: 'Расчёт Q2 (до 15 авг)' })
       if (m === 7) items.push({ tone: 'planned', label: 'Отчёт Q2 (до 15 авг)' })
-      // Q3: октябрь — старт, ноябрь — дедлайн.
-      if (m === 9) items.push({ tone: 'planned', label: 'Расчёт Q3 — старт' })
+      // Q3: октябрь - старт, ноябрь - дедлайн.
+      if (m === 9) items.push({ tone: 'planned', label: 'Расчёт Q3 - старт' })
       if (m === 10) items.push({ tone: 'planned', label: 'Расчёт Q3 (до 15 ноя)' })
     }
 
     if (payerKind.value === 'importer') {
-      // Импортёр платит по партиям — события генерируются по факту ввоза.
+      // Импортёр платит по партиям - события генерируются по факту ввоза.
       // Здесь показываем только декларацию.
     }
 
@@ -495,7 +495,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
                   целевых
                 </p>
                 <p class="bd-normative__sub">
-                  До цели —
+                  До цели -
                   <strong class="bd-normative__remain">{{ formatTons(normative.remain) }} т</strong>
                   · до конца года {{ normative.monthsLeft }} мес.
                 </p>
@@ -575,12 +575,10 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
 
 <style scoped>
 .bd-page {
-  font-family: 'Inter', 'Source Sans 3', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: #1e293b;
   display: grid;
   gap: 20px;
-  padding: 24px clamp(16px, 3vw, 32px) 48px;
-  max-width: 1280px;
 }
 
 .bd-page__header { margin-bottom: 4px; }
@@ -756,7 +754,7 @@ const formatTons   = (n: number) => n.toLocaleString('ru-RU', { minimumFractionD
   .bd-normative__inner { grid-template-columns: 1fr; justify-items: center; }
 }
 .bd-ring { position: relative; display: grid; place-items: center; }
-.bd-ring__label { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.bd-ring__label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .bd-ring__pct {
   font-size: 32px; font-weight: 700; color: #1e293b;
   letter-spacing: -0.6px; line-height: 1; font-variant-numeric: tabular-nums;

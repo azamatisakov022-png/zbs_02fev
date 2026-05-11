@@ -465,7 +465,7 @@ const changeStatus = (status: Ticket['status']) => {
               </td>
               <td class="px-4 py-3">
                 <span v-if="ticket.assignee" class="text-sm text-gray-700">{{ ticket.assignee }}</span>
-                <span v-else class="text-sm text-gray-400">—</span>
+                <span v-else class="text-sm text-gray-400">-</span>
               </td>
               <td class="px-4 py-3 text-center">
                 <div class="text-sm text-gray-900">{{ ticket.createdAt.split(' ')[0] }}</div>

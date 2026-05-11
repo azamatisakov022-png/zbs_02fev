@@ -78,7 +78,7 @@ async function reopen() {
 }
 
 function fmt(d?: string) {
-  return d ? new Date(d).toLocaleDateString('ru-RU') : '—'
+  return d ? new Date(d).toLocaleDateString('ru-RU') : '-'
 }
 function fmtDateTime(d?: string) {
   if (!d) return ''
@@ -142,7 +142,7 @@ const timelineEvents = computed<TimelineEvent[]>(() => {
   }
   if (a.siteVisitDone) {
     events.push({
-      at: fmtDateTime(a.siteVisitDate) || '—',
+      at: fmtDateTime(a.siteVisitDate) || '-',
       title: 'Выезд на объект проведён',
       desc: a.siteVisitInspector || '',
       icon: 'pin',
@@ -204,7 +204,7 @@ const statusBadge = computed(() => {
 })
 
 function initials(name?: string) {
-  if (!name) return '—'
+  if (!name) return '-'
   return name.split(' ').filter(Boolean).map(p => p[0]).slice(0, 2).join('').toUpperCase()
 }
 
@@ -268,7 +268,7 @@ function messageInspector() {
             <div style="flex:1">
               <div class="lf-detail__draft-eyebrow">{{ statusBadge.label }}</div>
               <div class="lf-detail__draft-title">
-                <template v-if="app.status === 'draft'">Заявка-черновик — продолжите заполнение</template>
+                <template v-if="app.status === 'draft'">Заявка-черновик - продолжите заполнение</template>
                 <template v-else-if="app.status === 'payment_pending'">Ожидается оплата госпошлины</template>
               </div>
               <div class="lf-detail__draft-lead">
@@ -366,7 +366,7 @@ function messageInspector() {
               <SectionLabel>Госпошлина</SectionLabel>
               <div class="lf-detail__fee-value mono">
                 <template v-if="app.payment">1 000 с.</template>
-                <template v-else>—</template>
+                <template v-else>-</template>
               </div>
               <div v-if="app.payment" class="lf-detail__fee-status" :class="`lf-detail__fee-status--${paymentStatusKey}`">
                 <svg

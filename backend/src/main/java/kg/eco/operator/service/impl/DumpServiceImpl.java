@@ -63,10 +63,10 @@ public class DumpServiceImpl implements DumpService {
     @Transactional
     public DumpResponse update(Long id, DumpCreateRequest request) {
         Dump dump = findDumpById(id);
-        String oldStatus = dump.getStatus() != null ? dump.getStatus().name() : "—";
+        String oldStatus = dump.getStatus() != null ? dump.getStatus().name() : "-";
         mapRequestToEntity(request, dump);
         dump = dumpRepository.save(dump);
-        String newStatus = dump.getStatus() != null ? dump.getStatus().name() : "—";
+        String newStatus = dump.getStatus() != null ? dump.getStatus().name() : "-";
         String details = "Обновлена свалка: " + dump.getName();
         if (!oldStatus.equals(newStatus)) {
             details += " (статус " + oldStatus + " → " + newStatus + ")";

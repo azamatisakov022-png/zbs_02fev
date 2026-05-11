@@ -558,11 +558,11 @@ const goToGisMap = () => {
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.website') }}</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.website || '—' }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.website || '-' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.director') }}</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.directorName || '—' }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.directorName || '-' }}</p>
             <p class="text-xs text-[#64748b]" v-if="recycler.directorPosition">{{ recycler.directorPosition }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.contactPerson">
@@ -653,7 +653,7 @@ const goToGisMap = () => {
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.employeesCount') }}</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.employeesCount || '—' }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.employeesCount || '-' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3" v-if="recycler.certifications.length > 0">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.certificates') }}</p>
@@ -702,7 +702,7 @@ const goToGisMap = () => {
             <tbody class="text-[#1e293b]">
               <tr v-for="cap in recycler.capacities" :key="cap.wasteType" class="border-t border-[#e2e8f0] hover:bg-[#f8fafc]">
                 <td class="px-4 py-3">{{ getGroupLabel(cap.wasteType) }}</td>
-                <td class="px-4 py-3 text-[#64748b]">{{ recycler.technologies?.[cap.wasteType] || '—' }}</td>
+                <td class="px-4 py-3 text-[#64748b]">{{ recycler.technologies?.[cap.wasteType] || '-' }}</td>
                 <td class="px-4 py-3 text-right font-mono">{{ cap.capacityTons }}</td>
                 <td class="px-4 py-3 text-right font-mono">{{ cap.currentLoadTons }}</td>
                 <td class="px-4 py-3 text-right font-mono" :style="{ color: (cap.capacityTons - cap.currentLoadTons) <= 0 ? '#EF4444' : '#059669' }">
@@ -998,11 +998,11 @@ const goToGisMap = () => {
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.lastInspectionDate') }}</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.lastInspectionDate || '—' }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.lastInspectionDate || '-' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.nextInspectionDate') }}</p>
-            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.nextInspectionDate || '—' }}</p>
+            <p class="text-sm font-medium text-[#1e293b]">{{ recycler.nextInspectionDate || '-' }}</p>
           </div>
           <div class="bg-[#f8fafc] rounded-lg p-3">
             <p class="text-sm text-[#64748b]">{{ $t('ecoRecyclerDetail.rating') }}</p>

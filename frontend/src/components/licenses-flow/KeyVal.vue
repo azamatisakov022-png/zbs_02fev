@@ -6,7 +6,7 @@ defineProps<{ label: string; value?: string | number; mono?: boolean }>()
   <div class="kv">
     <div class="kv__label">{{ label }}</div>
     <div class="kv__value" :class="{ mono }">
-      <slot>{{ value || '—' }}</slot>
+      <slot>{{ value || '-' }}</slot>
     </div>
   </div>
 </template>

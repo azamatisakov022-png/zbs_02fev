@@ -5,9 +5,9 @@ const props = withDefaults(defineProps<{
   title: string
   description: string
   actions: string[]
-  /** Устаревший — оставлен для обратной совместимости с вызовами из страниц. Не используется. */
+  /** Устаревший - оставлен для обратной совместимости с вызовами из страниц. Не используется. */
   icon?: string
-  /** Ключ для localStorage — запоминает раскрытое/свёрнутое состояние per-страница. */
+  /** Ключ для localStorage - запоминает раскрытое/свёрнутое состояние per-страница. */
   storageKey: string
 }>(), {
   icon: 'info',
@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<{
 const isExpanded = ref(false)
 
 onMounted(() => {
-  // По умолчанию свёрнуто. Если пользователь явно развернул раньше — запомнили.
+  // По умолчанию свёрнуто. Если пользователь явно развернул раньше - запомнили.
   isExpanded.value = localStorage.getItem(`guide_${props.storageKey}`) === 'expanded'
 })
 
@@ -50,7 +50,7 @@ function toggle() {
       <p class="sg-desc">{{ description }}</p>
       <ul class="sg-actions">
         <li v-for="(action, i) in actions" :key="i" class="sg-action">
-          <span class="sg-bullet" aria-hidden="true">—</span>
+          <span class="sg-bullet" aria-hidden="true">-</span>
           <span>{{ action }}</span>
         </li>
       </ul>
@@ -76,7 +76,7 @@ function toggle() {
   background: #ffffff;
 }
 
-/* Trigger (свёрнутое состояние — минимальная строка) */
+/* Trigger (свёрнутое состояние - минимальная строка) */
 .sg-trigger {
   width: 100%;
   display: flex;

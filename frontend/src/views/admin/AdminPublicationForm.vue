@@ -3,17 +3,17 @@
  * Форма создания/редактирования публикации.
  *
  * Маршруты:
- *   - /admin/publications/new        — создание
- *   - /admin/publications/:id/edit   — редактирование (загружает существующую)
+ *   - /admin/publications/new        - создание
+ *   - /admin/publications/:id/edit   - редактирование (загружает существующую)
  *
  * Многоязычность:
  *   - 3 языка (ru / ky / en) переключаются вкладками. RU обязателен,
- *     KY и EN — опциональны (если оставить пустыми, на публичной странице
+ *     KY и EN - опциональны (если оставить пустыми, на публичной странице
  *     при выборе KY/EN будет показан RU-fallback).
  *   - Поле title/excerpt/body хранится в локальном reactive-стейте
  *     отдельно для каждого языка; при сохранении формируется единый запрос.
  *
- * Тело статьи — HTML. Полноценный редактор (Tiptap) НЕ ставим: для редакторов
+ * Тело статьи - HTML. Полноценный редактор (Tiptap) НЕ ставим: для редакторов
  * АИС достаточно textarea с подсказкой по разрешённым тегам и кнопками
  * быстрой вставки h2 / lead / blockquote / списка. Это даёт правильный
  * результат без новой зависимости в bundle.
@@ -42,7 +42,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 
-// Меню/заголовок выбираем по роли — одна форма для admin/employee/eco-operator.
+// Меню/заголовок выбираем по роли - одна форма для admin/employee/eco-operator.
 const role = computed(() => authStore.userRole.value)
 const adminBundle = useAdminMenu()
 const employeeBundle = useEmployeeMenu()
@@ -55,7 +55,7 @@ const layoutBundle = computed(() => {
 
 // Категории, доступные конкретной роли:
 //   - CONTEST имеет право публиковать только Эко-Оператор и Admin
-//     (МПРЭТН-сотрудник конкурсы НЕ публикует — это ответственность Эко-Оператора).
+//     (МПРЭТН-сотрудник конкурсы НЕ публикует - это ответственность Эко-Оператора).
 const allowedCategories = computed<PublicationCategory[]>(() => {
   const all: PublicationCategory[] = ['news', 'contest', 'report_analytics', 'press']
   if (role.value === 'employee' || role.value === 'ministry') {
@@ -94,16 +94,16 @@ const form = reactive<{
   en: { title: '', excerpt: '', body: '' },
 })
 
-// Если у роли есть ограничения на категорию — синхронизируем default'.
+// Если у роли есть ограничения на категорию - синхронизируем default'.
 watch(allowedCategories, (cats) => {
   if (!cats.includes(form.category)) form.category = cats[0]
 }, { immediate: true })
 
 // ─── Load (edit) ──────────────────────────────────────────────────────
 //
-// Текущий бэк возвращает GET /publications/{id} только в RU-версии (hasKy/hasEn —
+// Текущий бэк возвращает GET /publications/{id} только в RU-версии (hasKy/hasEn -
 // флаги наличия). Если у записи есть KY/EN перевод, поля в форме придётся
-// заполнить заново при редактировании — это TODO для будущего расширения
+// заполнить заново при редактировании - это TODO для будущего расширения
 // бэка (вернуть all-langs payload отдельным эндпойнтом). Для MVP:
 // редактируем RU свободно, KY/EN дописываем при необходимости.
 async function loadExisting() {
@@ -205,7 +205,7 @@ async function onSave() {
       saved = await publicationsApi.create(payload)
     }
 
-    // Загрузка cover-картинки (если выбрана) — отдельный запрос.
+    // Загрузка cover-картинки (если выбрана) - отдельный запрос.
     if (coverFile.value && saved?.id) {
       try {
         await publicationsApi.uploadCover(saved.id, coverFile.value)
@@ -313,7 +313,7 @@ const langFilled = computed(() => ({
           <!-- Body -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="pubs-form-label !mb-0">Текст ({{ activeLang.toUpperCase() }}) — HTML</label>
+              <label class="pubs-form-label !mb-0">Текст ({{ activeLang.toUpperCase() }}) - HTML</label>
               <div class="text-[11px] text-slate-400">
                 Поддерживаются: &lt;p&gt;, &lt;h2&gt;, &lt;blockquote&gt;, &lt;ul&gt;/&lt;ol&gt;/&lt;li&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;
               </div>
@@ -347,7 +347,7 @@ const langFilled = computed(() => ({
               </option>
             </select>
             <p v-if="role === 'employee' || role === 'ministry'" class="text-[11px] text-slate-400 mt-1.5">
-              Конкурсы публикует Эко-Оператор — категория недоступна для сотрудников МПРЭТН.
+              Конкурсы публикует Эко-Оператор - категория недоступна для сотрудников МПРЭТН.
             </p>
           </div>
 
@@ -360,7 +360,7 @@ const langFilled = computed(() => ({
               placeholder="otchet-utilsbor-q1-2026"
             />
             <p class="text-[11px] text-slate-400 mt-1.5">
-              Если оставить пустым — сгенерируется автоматически из заголовка.
+              Если оставить пустым - сгенерируется автоматически из заголовка.
             </p>
           </div>
 
@@ -396,7 +396,7 @@ const langFilled = computed(() => ({
               placeholder="Авто (по объёму текста)"
             />
             <p class="text-[11px] text-slate-400 mt-1.5">
-              Если не задано — рассчитывается автоматически (~200 слов/мин).
+              Если не задано - рассчитывается автоматически (~200 слов/мин).
             </p>
           </div>
         </aside>

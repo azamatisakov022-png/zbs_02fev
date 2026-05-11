@@ -478,7 +478,7 @@ const formErrors = computed(() => {
 
 const hasErrors = computed(() => Object.keys(formErrors.value).filter(k => !k.endsWith('_warn')).length > 0)
 
-// Table data — from store
+// Table data - from store
 const columns = computed(() => [
   { key: 'number', label: t('businessReports.colNumber'), width: '10%' },
   { key: 'year', label: t('businessReports.colPeriod'), width: '8%' },
@@ -976,7 +976,7 @@ const downloadReportExcel = (reportId: number) => {
                   </div>
                 </div>
 
-                <!-- Row 6: Processing data — 4 fields at 25% each -->
+                <!-- Row 6: Processing data - 4 fields at 25% each -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                   <div>
                     <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessReports.processedMass') }}</label>

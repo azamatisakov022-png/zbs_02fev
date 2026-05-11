@@ -60,7 +60,7 @@ watch(category, () => {
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / SIZE)))
 
-// Hero — самая свежая публикация (только когда нет фильтра/поиска)
+// Hero - самая свежая публикация (только когда нет фильтра/поиска)
 const showHero = computed(() => !search.value && !category.value && items.value.length > 0)
 const heroPub = computed(() => (showHero.value ? items.value[0] : null))
 const gridItems = computed(() => (showHero.value ? items.value.slice(1) : items.value))
@@ -86,7 +86,7 @@ function goPage(p: number) {
            в шапке уже задаёт контекст страницы.
            Редакционные ленты не нуждаются в дополнительной обложке. -->
 
-      <!-- Hero — свежая публикация (скрыт при фильтре/поиске) -->
+      <!-- Hero - свежая публикация (скрыт при фильтре/поиске) -->
       <HeroCard v-if="heroPub" :pub="heroPub" class="pubs__hero" />
 
       <!-- Фильтры: поиск + dropdown категорий -->
@@ -161,7 +161,7 @@ function goPage(p: number) {
   margin: 0 auto;
   padding: 48px 40px 80px;
 }
-/* Заголовок «Публикации» удалён вместе с подзаголовком — стили
+/* Заголовок «Публикации» удалён вместе с подзаголовком - стили
    .pubs__head / .pubs__title / .pubs__lead больше не нужны. */
 .pubs__hero {
   margin-bottom: 36px;

@@ -42,7 +42,7 @@ const getGroupShortLabel = (value: string) => {
   return label
 }
 
-// Filtered recyclers — only active from store
+// Filtered recyclers - only active from store
 const filteredRecyclers = computed(() => {
   let result = recyclerStore.state.recyclers.filter(r => r.status === 'active')
 
