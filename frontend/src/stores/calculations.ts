@@ -166,6 +166,9 @@ function mapBackendCalc(c: any): Calculation {
     period: c.quarter ? `Q${c.quarter} ${c.period || ''}` : c.period || '',
     quarter: c.quarter ? `Q${c.quarter}` : 'Q1',
     year: c.period || '',
+    payerType: c.payerType || undefined,
+    importDate: c.importDate || undefined,
+    dueDate: c.dueDate || undefined,
     items: (c.items || []).map(mapBackendItem),
     totalAmount: parseFloat(c.totalAmount) || 0,
     status,
@@ -250,6 +253,8 @@ function addCalculation(data: {
     documentType: 'INVOICE',
     documentNumber: data.number,
     documentDate: new Date().toISOString().split('T')[0],
+    payerType: pt,
+    importDate: pt === 'importer' && data.importDate ? data.importDate : undefined,
     items: data.items.filter(i => i.group && parseFloat(i.volume) > 0).map(i => ({
       productGroup: i.group,
       productSubgroup: i.subgroup || undefined,

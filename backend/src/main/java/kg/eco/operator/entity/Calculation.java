@@ -65,6 +65,14 @@ public class Calculation {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    /** "producer" или "importer" - тип плательщика, нужен для пересчёта dueDate. */
+    @Column(name = "payer_type", length = 16)
+    private String payerType;
+
+    /** Дата ввоза (только для импортёров). dueDate = importDate + 15 рабочих дней. */
+    @Column(name = "import_date")
+    private LocalDate importDate;
+
     @Column(name = "penalty_fixed_date")
     private LocalDate penaltyFixedDate;
 

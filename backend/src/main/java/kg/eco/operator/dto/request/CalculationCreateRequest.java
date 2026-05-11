@@ -30,4 +30,16 @@ public class CalculationCreateRequest {
     @NotEmpty(message = "Необходимо указать хотя бы одну позицию")
     @Valid
     private List<ProductItemRequest> items;
+
+    /**
+     * Тип плательщика: "producer" (производитель) или "importer" (импортёр).
+     * Используется бэкендом для вычисления dueDate (срока оплаты).
+     */
+    private String payerType;
+
+    /**
+     * Дата ввоза товаров на территорию КР (только для импортёров).
+     * Срок оплаты = importDate + 15 рабочих дней (по ТЗ).
+     */
+    private LocalDate importDate;
 }

@@ -15,6 +15,7 @@ import kg.eco.operator.integration.banking.dto.BankPaymentVerificationResponse;
 import kg.eco.operator.service.CalculationService;
 import kg.eco.operator.service.FileStorageService;
 import kg.eco.operator.util.CalculationUtil;
+import kg.eco.operator.util.DueDateCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -152,6 +153,9 @@ public class CalculationServiceImpl implements CalculationService {
         calc.setDocumentType(request.getDocumentType());
         calc.setDocumentNumber(request.getDocumentNumber());
         calc.setDocumentDate(request.getDocumentDate());
+        calc.setPayerType(request.getPayerType());
+        calc.setImportDate(request.getImportDate());
+        calc.setDueDate(computeDueDate(request));
         calc.setStatus(CalculationStatus.DRAFT);
 
         calc = calculationRepository.save(calc);
@@ -178,6 +182,9 @@ public class CalculationServiceImpl implements CalculationService {
         calc.setDocumentType(request.getDocumentType());
         calc.setDocumentNumber(request.getDocumentNumber());
         calc.setDocumentDate(request.getDocumentDate());
+        calc.setPayerType(request.getPayerType());
+        calc.setImportDate(request.getImportDate());
+        calc.setDueDate(computeDueDate(request));
 
         calc.getItems().clear();
         List<CalculationItem> items = buildItems(calc, request.getItems());
@@ -665,6 +672,30 @@ public class CalculationServiceImpl implements CalculationService {
                 .map(CalculationItem::getAmount)
                 .filter(a -> a != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Вычисляет dueDate (срок оплаты) по полям request.
+     *   importer  → importDate + 15 рабочих дней
+     *   producer  → 15-е число месяца после квартала (по period+quarter)
+     * Если payerType пуст, fallback на producer-логику (если есть period+quarter).
+     */
+    private java.time.LocalDate computeDueDate(CalculationCreateRequest request) {
+        String payerType = request.getPayerType();
+        java.time.LocalDate importDate = request.getImportDate();
+        Integer year = null;
+        try {
+            if (request.getPeriod() != null) year = Integer.parseInt(request.getPeriod().trim());
+        } catch (NumberFormatException ignored) { /* keep null */ }
+
+        java.time.LocalDate due = DueDateCalculator.calculate(payerType, year, request.getQuarter(), importDate);
+        if (due != null) return due;
+
+        // Fallback: если payerType не передан, но есть period+quarter -> считаем как producer
+        if (year != null && request.getQuarter() != null && !request.getQuarter().isBlank()) {
+            return DueDateCalculator.forProducer(year, request.getQuarter());
+        }
+        return null;
     }
 
     private String generateNumber() {

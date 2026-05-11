@@ -32,6 +32,17 @@ public class CalculationResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate documentDate;
 
+    /** Тип плательщика: "producer" или "importer". */
+    private String payerType;
+
+    /** Дата ввоза товаров (только для импортёров). */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate importDate;
+
+    /** Срок оплаты утильсбора. После этой даты начинает идти пеня. */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate dueDate;
+
     private List<ProductItemResponse> items;
     private BigDecimal totalAmount;
     private String status;

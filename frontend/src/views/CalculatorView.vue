@@ -76,7 +76,7 @@ const isPenaltyFormValid = computed(() => {
 // проще и нагляднее чем выбор даты.
 const penaltyDebt = ref<number>(1_000_000)
 const penaltyDays = ref<number>(30)
-const PENALTY_RATE = 0.0009 // 0,09% в день, ст. 37 КР
+const PENALTY_RATE = 0.003 // 0,3% в день (по ТЗ, ст. 37 КР)
 
 const penaltyAmount = computed(() => {
   const d = Number.isFinite(penaltyDebt.value) ? penaltyDebt.value : 0

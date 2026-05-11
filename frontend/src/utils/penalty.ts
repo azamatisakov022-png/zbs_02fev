@@ -1,13 +1,14 @@
 /**
  * Penalty calculation utilities
- * Based on application.yml: calculation.penalty.daily-rate = 0.0009 (0.09% per day)
+ * Based on application.yml: calculation.penalty.daily-rate = 0.003 (0.3% per day),
+ * cap = 15% от тела долга (по ТЗ).
  */
 
-/** Daily penalty rate: 0.09% */
-export const PENALTY_DAILY_RATE = 0.0009
+/** Daily penalty rate: 0.3% (по ТЗ) */
+export const PENALTY_DAILY_RATE = 0.003
 
-/** Penalty cap: penalty cannot exceed the debt amount (multiplier = 1.0) */
-export const PENALTY_CAP_MULTIPLIER = 1.0
+/** Penalty cap: 15% от суммы первоначальной задолженности */
+export const PENALTY_CAP_MULTIPLIER = 0.15
 
 export type PenaltyExemptionReason =
   | 'force_majeure'
@@ -32,10 +33,37 @@ export interface PenaltyResult {
 }
 
 /**
+ * Парсит дату из разных форматов:
+ *   - Date (как есть)
+ *   - ISO "YYYY-MM-DD" (от бэкенда)
+ *   - "DD.MM.YYYY" (formatDateShort через toLocaleDateString('ru-RU'))
+ * Если не парсится - возвращает null (пеня не будет считаться).
+ */
+function parseDate(value: string | Date): Date | null {
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value
+  }
+  if (typeof value !== 'string' || !value.trim()) return null
+
+  // ru-RU локаль: "DD.MM.YYYY"
+  const ruMatch = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/)
+  if (ruMatch) {
+    const [, d, m, y] = ruMatch
+    return new Date(+y, +m - 1, +d)
+  }
+
+  // ISO YYYY-MM-DD или полный datetime
+  const parsed = new Date(value)
+  return isNaN(parsed.getTime()) ? null : parsed
+}
+
+/**
  * Calculate overdue days from a due date to today
  */
 export function getOverdueDays(dueDate: string | Date): number {
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate
+  const due = parseDate(dueDate)
+  if (!due) return 0
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   due.setHours(0, 0, 0, 0)
