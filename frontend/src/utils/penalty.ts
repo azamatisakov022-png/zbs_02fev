@@ -1,14 +1,18 @@
 /**
- * Penalty calculation utilities
- * Based on application.yml: calculation.penalty.daily-rate = 0.003 (0.3% per day),
- * cap = 15% от тела долга (по ТЗ).
+ * Penalty calculation utilities.
+ *
+ * Источник: ст. 37 Кодекса КР № 90 от 10.08.2018 «О неналоговых доходах».
+ * https://cbd.minjust.gov.kg/111820/edition/3673/ru
+ *   ч.6  - 0,09% размера недоимки за каждый календарный день просрочки;
+ *   ч.4  - общая сумма пени не может превышать 100% от тела долга;
+ *   ч.3  - начисление с дня, СЛЕДУЮЩЕГО за днём установленного срока.
  */
 
-/** Daily penalty rate: 0.3% (по ТЗ) */
-export const PENALTY_DAILY_RATE = 0.003
+/** Daily penalty rate: 0,09% (ст. 37 ч. 6 Кодекса КР № 90). */
+export const PENALTY_DAILY_RATE = 0.0009
 
-/** Penalty cap: 15% от суммы первоначальной задолженности */
-export const PENALTY_CAP_MULTIPLIER = 0.15
+/** Penalty cap: 100% от суммы недоимки (ст. 37 ч. 4 Кодекса КР № 90). */
+export const PENALTY_CAP_MULTIPLIER = 1.0
 
 export type PenaltyExemptionReason =
   | 'force_majeure'

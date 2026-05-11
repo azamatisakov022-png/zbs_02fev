@@ -43,10 +43,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CalculationServiceImpl implements CalculationService {
 
-    @Value("${calculation.penalty.daily-rate:0.003}")
+    // Параметры пени по ст. 37 Кодекса КР № 90 от 10.08.2018:
+    //   ч.6 - 0,09% в день, ч.4 - cap 100% от суммы недоимки.
+    @Value("${calculation.penalty.daily-rate:0.0009}")
     private BigDecimal dailyRate;
 
-    @Value("${calculation.penalty.cap-percent:15}")
+    @Value("${calculation.penalty.cap-percent:100}")
     private BigDecimal capPercent;
 
     private final CalculationRepository calculationRepository;
@@ -530,7 +532,8 @@ public class CalculationServiceImpl implements CalculationService {
             return PenaltyResponse.noPenalty(amount, LocalDate.now());
         }
 
-        // Cap по ТЗ: не более 15% от суммы первоначальной задолженности
+        // Cap по ст. 37 ч. 4 Кодекса КР № 90: общая сумма пени не может
+        // превышать 100% от суммы неуплаченного неналогового дохода.
         BigDecimal capMultiplier = capPercent.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
         BigDecimal maxPenalty = amount.multiply(capMultiplier).setScale(2, RoundingMode.HALF_UP);
 
