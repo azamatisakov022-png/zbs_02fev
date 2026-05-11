@@ -1105,51 +1105,51 @@ const downloadReceipt = () => {
 
       <template v-if="!isLoading">
       <!-- Stats -->
-      <div class="bcv-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bcv-stat bcv-stat--teal" style="--bcv-stat-delay: 0ms">
-          <div class="bcv-stat__head">
-            <p class="bcv-stat__label">{{ $t('businessCalc.totalCalcs') }}</p>
-            <span class="bcv-stat__icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.totalCalcs') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 2v6h6M9 13h6M9 17h6M9 9h2" />
               </svg>
             </span>
           </div>
-          <p class="bcv-stat__value bcv-stat__value--slate">12</p>
+          <p class="text-[28px] font-bold text-[#1e293b] leading-none">12</p>
         </div>
-        <div class="bcv-stat bcv-stat--emerald" style="--bcv-stat-delay: 80ms">
-          <div class="bcv-stat__head">
-            <p class="bcv-stat__label">{{ $t('businessCalc.paidForYear') }}</p>
-            <span class="bcv-stat__icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.paidForYear') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#10b981]/10 text-[#10b981] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
-          <p class="bcv-stat__value bcv-stat__value--emerald">161 050 <span class="bcv-stat__unit">{{ $t('businessCalc.som') }}</span></p>
+          <p class="text-[28px] font-bold text-[#10b981] leading-none">161 050 {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bcv-stat bcv-stat--amber" style="--bcv-stat-delay: 160ms">
-          <div class="bcv-stat__head">
-            <p class="bcv-stat__label">{{ $t('businessCalc.toPay') }}</p>
-            <span class="bcv-stat__icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.toPay') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#fea629]/10 text-[#fea629] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </span>
           </div>
-          <p class="bcv-stat__value bcv-stat__value--amber">0 <span class="bcv-stat__unit">{{ $t('businessCalc.som') }}</span></p>
+          <p class="text-[28px] font-bold text-[#fea629] leading-none">0 {{ $t('businessCalc.som') }}</p>
         </div>
-        <div class="bcv-stat bcv-stat--slate" style="--bcv-stat-delay: 240ms">
-          <div class="bcv-stat__head">
-            <p class="bcv-stat__label">{{ $t('businessCalc.lastCalc') }}</p>
-            <span class="bcv-stat__icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-[#e2e8f0] hover:border-[#0e888d]/40 hover:-translate-y-[1px] transition-all duration-200">
+          <div class="flex items-start justify-between mb-2">
+            <p class="text-sm text-[#64748b] font-medium">{{ $t('businessCalc.lastCalc') }}</p>
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#415861]/10 text-[#415861] flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </span>
           </div>
-          <p class="bcv-stat__value bcv-stat__value--slate">Q4 2025</p>
+          <p class="text-[28px] font-bold text-[#415861] leading-none">Q4 2025</p>
         </div>
       </div>
 
@@ -1452,47 +1452,63 @@ const downloadReceipt = () => {
         </div>
 
         <!-- Progress Steps -->
-        <div class="bcv-stepper">
-          <div class="bcv-stepper__track">
+        <div class="bg-white rounded-2xl p-4 lg:p-6 shadow-sm border border-[#e2e8f0] mb-6">
+          <div class="flex items-center justify-between">
             <template v-for="(step, index) in steps" :key="step.number">
               <button
                 @click="goToStep(step.number)"
                 :class="[
-                  'bcv-stepper__item',
-                  currentStep === step.number && 'is-active',
-                  currentStep > step.number && 'is-done',
-                  step.number > currentStep && 'is-future'
+                  'flex items-center gap-2 lg:gap-3',
+                  step.number <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'
                 ]"
-                :disabled="step.number > currentStep"
               >
-                <span class="bcv-stepper__bubble">
+                <div
+                  :class="[
+                    'w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center font-semibold text-sm lg:text-base transition-all',
+                    currentStep === step.number
+                      ? 'bg-[#0e888d] text-white ring-4 ring-[#0e888d]/20 step-active-pulse'
+                      : currentStep > step.number
+                        ? 'bg-[#0e888d] text-white'
+                        : 'bg-[#e2e8f0] text-[#64748b]'
+                  ]"
+                >
                   <!-- Completed: check -->
-                  <svg v-if="currentStep > step.number" class="bcv-stepper__check" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                  <svg v-if="currentStep > step.number" class="w-5 h-5 step-check-enter" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   <!-- Active: Lucide icon per step -->
                   <template v-else-if="currentStep === step.number">
                     <!-- Step 1: calendar -->
-                    <svg v-if="step.number === 1" class="bcv-stepper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <svg v-if="step.number === 1" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <!-- Step 2: package -->
-                    <svg v-else-if="step.number === 2" class="bcv-stepper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <svg v-else-if="step.number === 2" class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M20 7L12 3 4 7m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     <!-- Step 3: calculator -->
-                    <svg v-else class="bcv-stepper__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <svg v-else class="w-5 h-5 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m-6 4h.01M12 11h.01M15 11h.01M9 14h.01M12 14h.01M15 14h.01M9 17h6M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   </template>
                   <!-- Future: number -->
-                  <span v-else class="bcv-stepper__num">{{ step.number }}</span>
+                  <span v-else>{{ step.number }}</span>
+                </div>
+                <span
+                  :class="[
+                    'hidden sm:block text-sm lg:text-base font-medium',
+                    currentStep >= step.number ? 'text-[#415861]' : 'text-[#64748b]'
+                  ]"
+                >
+                  {{ step.title }}
                 </span>
-                <span class="bcv-stepper__title">{{ step.title }}</span>
               </button>
               <div
                 v-if="index < steps.length - 1"
-                :class="['bcv-stepper__line', currentStep > step.number && 'is-filled']"
+                :class="[
+                  'flex-1 h-1 mx-2 lg:mx-4 rounded-full transition-all duration-500',
+                  currentStep > step.number ? 'bg-[#0e888d]' : 'bg-[#e2e8f0]'
+                ]"
               ></div>
             </template>
           </div>
@@ -1518,32 +1534,27 @@ const downloadReceipt = () => {
               <!-- Payer Type Toggle -->
               <div>
                 <label class="block text-sm font-medium text-[#1e293b] mb-3">{{ $t('businessCalc.payerTypeLabel') }}</label>
-                <div :class="['bcv-toggle', payerType === 'importer' && 'is-importer']" role="tablist">
-                  <span class="bcv-toggle__indicator" aria-hidden="true"></span>
+                <div class="inline-flex rounded-xl border border-[#e2e8f0] overflow-hidden bg-[#f8fafc]">
                   <button
                     type="button"
-                    role="tab"
-                    :aria-selected="payerType === 'producer'"
                     @click="payerType = 'producer'"
-                    :class="['bcv-toggle__btn', payerType === 'producer' && 'is-active']"
-                  >
-                    <svg class="bcv-toggle__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V8l5-3v16M14 21V11l5 3v7M9 9h.01M9 13h.01M9 17h.01M16 14h.01M16 18h.01" />
-                    </svg>
-                    {{ $t('businessCalc.producer') }}
-                  </button>
+                    :class="[
+                      'px-6 py-3 text-sm font-medium transition-all duration-200',
+                      payerType === 'producer'
+                        ? 'bg-[#0e888d] text-white shadow-sm'
+                        : 'text-[#64748b] hover:text-[#415861] hover:bg-white'
+                    ]"
+                  >{{ $t('businessCalc.producer') }}</button>
                   <button
                     type="button"
-                    role="tab"
-                    :aria-selected="payerType === 'importer'"
                     @click="payerType = 'importer'"
-                    :class="['bcv-toggle__btn', payerType === 'importer' && 'is-active']"
-                  >
-                    <svg class="bcv-toggle__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-                    {{ $t('businessCalc.importer') }}
-                  </button>
+                    :class="[
+                      'px-6 py-3 text-sm font-medium transition-all duration-200',
+                      payerType === 'importer'
+                        ? 'bg-[#0e888d] text-white shadow-sm'
+                        : 'text-[#64748b] hover:text-[#415861] hover:bg-white'
+                    ]"
+                  >{{ $t('businessCalc.importer') }}</button>
                 </div>
               </div>
 
@@ -1557,7 +1568,7 @@ const downloadReceipt = () => {
                       'w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2',
                       (validationErrors.quarter || (formSubmitted && formErrors.quarter))
                         ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
-                        : 'border-[#e2e8f0] focus:border-[#0e888d] focus:ring-[#0e888d]/20'
+                        : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
                     ]"
                     @change="validationErrors.quarter && delete validationErrors.quarter"
                   >
@@ -1576,7 +1587,7 @@ const downloadReceipt = () => {
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.yearLabel') }}</label>
                   <select
                     v-model="calculationYear"
-                    class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                    class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
                   >
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
@@ -1617,7 +1628,7 @@ const downloadReceipt = () => {
                         importDate ? '' : 'date-empty',
                         (validationErrors.importDate || (formSubmitted && formErrors.importDate))
                           ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20 vld-input--error'
-                          : 'border-[#e2e8f0] focus:border-[#0e888d] focus:ring-[#0e888d]/20'
+                          : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'
                       ]"
                       @change="validationErrors.importDate && delete validationErrors.importDate"
                     />
@@ -1632,7 +1643,7 @@ const downloadReceipt = () => {
                   <label class="block text-sm font-medium text-[#1e293b] mb-2">{{ $t('businessCalc.yearLabel') }}</label>
                   <select
                     v-model="calculationYear"
-                    class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                    class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
                   >
                     <option value="2025">2025</option>
                     <option value="2026">2026</option>
@@ -1670,41 +1681,40 @@ const downloadReceipt = () => {
                 </div>
               </div>
 
-              <div class="bcv-payer-card">
-                <div class="bcv-payer-card__head">
-                  <span class="bcv-payer-card__avatar">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <div class="bg-[#f8fafc] rounded-xl p-5 border border-[#e2e8f0]">
+                <div class="flex items-center gap-3 mb-4">
+                  <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#0e888d]/10 text-[#0e888d] flex-shrink-0">
+                    <svg class="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </span>
-                  <h3 class="bcv-payer-card__title">{{ $t('businessCalc.payerDataTitle') }}</h3>
-                  <span class="bcv-payer-card__badge">{{ $t('businessCalc.fromProfile') }}</span>
+                  <h3 class="font-medium text-[#415861]">{{ $t('businessCalc.payerDataTitle') }}</h3>
                 </div>
-                <div class="bcv-payer-card__grid">
-                  <div class="bcv-payer-card__field">
-                    <span class="bcv-payer-card__label">{{ $t('businessCalc.companyNameLabel') }}</span>
-                    <span class="bcv-payer-card__value">{{ companyData.name }}</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.companyNameLabel') }}</label>
+                    <input type="text" :value="companyData.name" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
-                  <div class="bcv-payer-card__field">
-                    <span class="bcv-payer-card__label">{{ $t('businessCalc.innLabel') }}</span>
-                    <span class="bcv-payer-card__value bcv-payer-card__value--mono">{{ companyData.inn }}</span>
+                  <div>
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.innLabel') }}</label>
+                    <input type="text" :value="companyData.inn" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
-                  <div class="bcv-payer-card__field bcv-payer-card__field--wide">
-                    <span class="bcv-payer-card__label">{{ $t('businessCalc.addressLabel') }}</span>
-                    <span class="bcv-payer-card__value">{{ companyData.address }}</span>
+                  <div class="sm:col-span-2">
+                    <label class="block text-xs text-[#64748b] mb-1">{{ $t('businessCalc.addressLabel') }}</label>
+                    <input type="text" :value="companyData.address" readonly class="w-full px-3 py-2 bg-white border border-[#e2e8f0] rounded-lg text-[#1e293b] cursor-not-allowed" />
                   </div>
                 </div>
               </div>
 
-              <div class="bcv-info-block">
-                <span class="bcv-info-block__icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-start gap-3">
+                <div class="w-8 h-8 rounded-lg bg-[#0e888d]/10 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-[#0e888d]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </span>
+                </div>
                 <div>
-                  <p class="bcv-info-block__title">{{ $t('businessCalc.paymentTermsTitle') }}</p>
-                  <p class="bcv-info-block__text" v-html="$t('businessCalc.paymentTermsText')"></p>
+                  <p class="font-medium text-[#415861]">{{ $t('businessCalc.paymentTermsTitle') }}</p>
+                  <p class="text-sm text-[#64748b]" v-html="$t('businessCalc.paymentTermsText')"></p>
                 </div>
               </div>
             </div>
@@ -1725,7 +1735,7 @@ const downloadReceipt = () => {
                   </div>
                   <p class="mt-1.5 ml-12 text-sm text-gray-500">{{ $t('businessCalc.hints.products') }}</p>
                 </div>
-                <button @click="importFromDeclaration" class="flex items-center gap-2 text-[#0e888d] hover:bg-[#0e888d]/10 px-4 py-2 rounded-lg transition-colors flex-shrink-0 font-medium">
+                <button @click="importFromDeclaration" class="flex items-center gap-2 text-[#f59e0b] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
@@ -1738,7 +1748,7 @@ const downloadReceipt = () => {
               <span class="vld-error__icon">&#9888;</span> {{ formErrors.products }}
             </p>
 
-            <TransitionGroup tag="div" name="bcv-product" class="space-y-4">
+            <div class="space-y-4">
               <div v-for="(item, index) in productItems" :key="item.id" class="cf-card">
                 <!-- Card header -->
                 <div class="flex items-center justify-between mb-4">
@@ -1758,7 +1768,7 @@ const downloadReceipt = () => {
                     @update:group="(v: string) => { item.group = v; item.subgroup = ''; item.tnvedCode = ''; updateItemRate(item) }"
                     @update:subgroup="(v: string) => { item.subgroup = v; updateItemRate(item) }"
                     @subgroup-selected="(data: ProductSubgroup | null) => { if (data) item.tnvedCode = data.code }"
-                    accent-color="#0e888d"
+                    accent-color="#f59e0b"
                   />
                   <p v-if="validationErrors[`product_${index}_group`]" class="mt-1 text-xs text-[#EF4444]">{{ validationErrors[`product_${index}_group`] }}</p>
                   <p v-else-if="formSubmitted && formErrors[`product_${index}_group`]" class="vld-error" data-validation-error>
@@ -1772,7 +1782,7 @@ const downloadReceipt = () => {
                       type="text"
                       v-model="item.gskpCode"
                       :placeholder="$t('businessCalc.gskpCodePlaceholder')"
-                      class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20 text-sm"
+                      class="w-full max-w-xs px-3 py-2 border border-[#e2e8f0] rounded-lg focus:outline-none focus:border-[#f59e0b] text-sm"
                     />
                   </div>
                 </div>
@@ -1934,14 +1944,12 @@ const downloadReceipt = () => {
                   </div>
                 </div>
               </div>
-            </TransitionGroup>
+            </div>
 
-            <button @click="addProductItem" class="bcv-add-product">
-              <span class="bcv-add-product__icon">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </span>
+            <button @click="addProductItem" class="mt-4 flex items-center gap-2 text-[#f59e0b] hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
               {{ $t('businessCalc.addPosition') }}
             </button>
 
@@ -2013,26 +2021,21 @@ const downloadReceipt = () => {
               </div>
             </div>
 
-            <div class="bcv-hero-total">
-              <div class="bcv-hero-total__inner">
-                <div class="bcv-hero-total__main">
-                  <span class="bcv-hero-total__eyebrow">
-                    <span class="bcv-hero-total__eyebrow-dot"></span>
-                    {{ $t('businessCalc.feeAmountLabel') }}
-                  </span>
-                  <p class="bcv-hero-total__value">{{ formattedTotalAmount }}</p>
-                  <p v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="bcv-hero-total__penalty">
+            <div class="bg-gradient-to-r from-[#f59e0b] to-[#d97706] rounded-2xl p-6 text-white mb-6">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p class="text-white/80 mb-1">{{ $t('businessCalc.feeAmountLabel') }}</p>
+                  <p class="text-3xl lg:text-4xl font-bold">{{ formattedTotalAmount }}</p>
+                  <p v-if="isOverdue && penaltyData && penaltyData.overdueDays > 0" class="text-xs mt-1.5" style="color: #fecaca">
                     {{ $t('payment.overduePreview', { days: penaltyData.overdueDays, penalty: penaltyData.totalPenalty.toLocaleString() }) }}
                   </p>
                 </div>
-                <div class="bcv-hero-total__chip">
-                  <svg class="bcv-hero-total__chip-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  {{ payerType === 'producer' ? calculationQuarter + ' ' + calculationYear : $t('businessCalc.importPrefix') + ' ' + (importDate ? new Date(importDate).toLocaleDateString() : '') }}
+                <div class="flex items-center gap-2">
+                  <span class="px-4 py-2 bg-white/20 rounded-lg text-sm font-medium">
+                    {{ payerType === 'producer' ? calculationQuarter + ' ' + calculationYear : $t('businessCalc.importPrefix') + ' ' + (importDate ? new Date(importDate).toLocaleDateString() : '') }}
+                  </span>
                 </div>
               </div>
-              <div class="bcv-hero-total__glow" aria-hidden="true"></div>
             </div>
 
             <div class="bg-white rounded-xl border border-[#e2e8f0] overflow-hidden mb-6">
@@ -2068,7 +2071,7 @@ const downloadReceipt = () => {
                       <td class="px-4 py-3 text-right text-[#2563eb]">{{ item.exportedFromKR || '0' }}</td>
                       <td class="px-4 py-3 text-right font-medium">{{ item.taxableVolume.toFixed(2) }}</td>
                       <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
-                      <td class="px-4 py-3 text-right font-bold text-[#0e888d]">{{ item.amount.toLocaleString() }}</td>
+                      <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
                     </tr>
                   </tbody>
                   <tfoot class="bg-[#f8fafc] font-semibold">
@@ -2081,7 +2084,7 @@ const downloadReceipt = () => {
                       <td class="px-4 py-3 text-right text-[#2563eb]">{{ totalExported }}</td>
                       <td class="px-4 py-3 text-right">{{ totalTaxableVolume }}</td>
                       <td class="px-4 py-3 text-right">-</td>
-                      <td class="px-4 py-3 text-right text-[#0e888d]">{{ totalAmount.toLocaleString() }}</td>
+                      <td class="px-4 py-3 text-right text-[#f59e0b]">{{ totalAmount.toLocaleString() }}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -2386,7 +2389,7 @@ const downloadReceipt = () => {
                 v-model="paymentForm.paymentOrderNumber"
                 type="text"
                 :placeholder="$t('businessCalc.paymentOrderPlaceholder')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>
 
@@ -2402,7 +2405,7 @@ const downloadReceipt = () => {
                 :max="dateInputMax"
                 onfocus="this.type='date'"
                 onblur="if(!this.value)this.type='text'"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>
 
@@ -2413,7 +2416,7 @@ const downloadReceipt = () => {
                 v-model="paymentForm.payerBank"
                 type="text"
                 :placeholder="$t('businessCalc.payerBankPlaceholder')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               />
             </div>
 
@@ -2426,7 +2429,7 @@ const downloadReceipt = () => {
                 type="number"
                 :placeholder="paymentCalcAmount.toLocaleString()"
                 class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2"
-                :class="paymentAmountError ? 'border-red-300 focus:border-red-400 focus:ring-red-200' : 'border-[#e2e8f0] focus:border-[#0e888d] focus:ring-[#0e888d]/20'"
+                :class="paymentAmountError ? 'border-red-300 focus:border-red-400 focus:ring-red-200' : 'border-[#e2e8f0] focus:border-[#f59e0b] focus:ring-[#f59e0b]/20'"
               />
               <p v-if="paymentAmountError" class="mt-1 text-sm text-red-600">{{ paymentAmountError }}</p>
             </div>
@@ -2479,7 +2482,7 @@ const downloadReceipt = () => {
                 v-model="paymentForm.comment"
                 rows="3"
                 :placeholder="$t('businessCalc.commentPlaceholder')"
-                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#0e888d] focus:ring-2 focus:ring-[#0e888d]/20"
+                class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl focus:outline-none focus:border-[#f59e0b] focus:ring-2 focus:ring-[#f59e0b]/20"
               ></textarea>
             </div>
           </div>
@@ -3351,630 +3354,5 @@ const downloadReceipt = () => {
 /* Hide native date placeholder when empty so translated overlay is visible */
 .date-empty::-webkit-datetime-edit {
   color: transparent;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Visual uplift (2026-05-11) — пеня и калькулятор. Палитра teal/emerald.
-   Все анимации <= 400ms, кроме hero-counter (1.2 с). Уважают prefers-reduced-motion.
-   ═══════════════════════════════════════════════════════════════════════ */
-
-/* ── Stepper ─────────────────────────────────────────────────────── */
-.bcv-stepper {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  padding: 18px 20px;
-  margin-bottom: 24px;
-}
-@media (min-width: 1024px) {
-  .bcv-stepper { padding: 22px 28px; }
-}
-
-.bcv-stepper__track {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.bcv-stepper__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.bcv-stepper__item.is-future {
-  cursor: not-allowed;
-  opacity: 0.85;
-}
-.bcv-stepper__item:focus-visible {
-  outline: 2px solid #0e888d;
-  outline-offset: 4px;
-  border-radius: 6px;
-}
-
-.bcv-stepper__bubble {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  color: #94a3b8;
-  font-weight: 600;
-  font-size: 14px;
-  flex-shrink: 0;
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
-}
-@media (min-width: 1024px) {
-  .bcv-stepper__bubble { width: 48px; height: 48px; }
-}
-.bcv-stepper__item.is-active .bcv-stepper__bubble {
-  background: #0e888d;
-  color: #ffffff;
-}
-.bcv-stepper__item.is-done .bcv-stepper__bubble {
-  background: #10b981;
-  color: #ffffff;
-}
-.bcv-stepper__item:hover:not(.is-future) .bcv-stepper__bubble {
-  transform: translateY(-1px);
-}
-
-.bcv-stepper__icon,
-.bcv-stepper__check {
-  width: 20px;
-  height: 20px;
-}
-@media (min-width: 1024px) {
-  .bcv-stepper__icon,
-  .bcv-stepper__check { width: 22px; height: 22px; }
-}
-
-.bcv-stepper__title {
-  display: none;
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-  letter-spacing: -0.005em;
-  transition: color 0.2s ease, font-weight 0.2s ease;
-}
-@media (min-width: 640px) {
-  .bcv-stepper__title { display: inline; }
-}
-@media (min-width: 1024px) {
-  .bcv-stepper__title { font-size: 15px; }
-}
-.bcv-stepper__item.is-active .bcv-stepper__title {
-  color: #0e888d;
-  font-weight: 700;
-}
-.bcv-stepper__item.is-done .bcv-stepper__title {
-  color: #415861;
-  font-weight: 600;
-}
-
-.bcv-stepper__line {
-  position: relative;
-  flex: 1;
-  height: 3px;
-  background: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-  min-width: 12px;
-}
-.bcv-stepper__line::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  width: 0;
-  background: linear-gradient(90deg, #0e888d 0%, #10b981 100%);
-  border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.bcv-stepper__line.is-filled::after {
-  width: 100%;
-}
-
-/* Pulse glow на активном шаге - только если пользователь не выключил движение */
-@media (prefers-reduced-motion: no-preference) {
-  .bcv-stepper__item.is-active .bcv-stepper__bubble::before {
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(14, 136, 141, 0.22) 0%, rgba(14, 136, 141, 0) 70%);
-    animation: bcvStepperPulse 2.4s ease-in-out infinite;
-    pointer-events: none;
-    z-index: -1;
-  }
-}
-@keyframes bcvStepperPulse {
-  0%, 100% { transform: scale(0.95); opacity: 0.85; }
-  50%      { transform: scale(1.18); opacity: 0.35; }
-}
-
-/* Завершённый шаг - чекмарк появляется со scale-in */
-@media (prefers-reduced-motion: no-preference) {
-  .bcv-stepper__check {
-    animation: bcvStepperCheckIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-}
-@keyframes bcvStepperCheckIn {
-  0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
-  100% { transform: scale(1) rotate(0deg);   opacity: 1; }
-}
-
-/* ── Шаг 1: pill toggle Производитель / Импортёр ─────────────────── */
-.bcv-toggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  padding: 4px;
-  background: #f1f5f9;
-  border-radius: 999px;
-  gap: 0;
-}
-.bcv-toggle__indicator {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  background: #ffffff;
-  border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(14, 136, 141, 0.06);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.bcv-toggle.is-importer .bcv-toggle__indicator {
-  transform: translateX(100%);
-}
-.bcv-toggle__btn {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 22px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #64748b;
-  background: transparent;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  white-space: nowrap;
-}
-.bcv-toggle__btn:focus-visible {
-  outline: 2px solid #0e888d;
-  outline-offset: 3px;
-}
-.bcv-toggle__btn.is-active {
-  color: #0e888d;
-  font-weight: 600;
-}
-.bcv-toggle__icon {
-  width: 18px;
-  height: 18px;
-  color: currentColor;
-}
-
-/* ── Шаг 1: payer-card (read-only summary) ───────────────────────── */
-.bcv-payer-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px 22px;
-}
-.bcv-payer-card__head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.bcv-payer-card__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(14, 136, 141, 0.10);
-  color: #0e888d;
-  flex-shrink: 0;
-}
-.bcv-payer-card__avatar svg { width: 20px; height: 20px; }
-.bcv-payer-card__title {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 600;
-  color: #415861;
-  margin: 0;
-}
-.bcv-payer-card__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #0e888d;
-  background: rgba(14, 136, 141, 0.10);
-  border-radius: 999px;
-}
-.bcv-payer-card__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-@media (min-width: 640px) {
-  .bcv-payer-card__grid { grid-template-columns: 1fr 1fr; gap: 16px 22px; }
-}
-.bcv-payer-card__field--wide {
-  grid-column: 1 / -1;
-}
-.bcv-payer-card__field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.bcv-payer-card__label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #94a3b8;
-}
-.bcv-payer-card__value {
-  font-size: 15px;
-  font-weight: 500;
-  color: #1e293b;
-  line-height: 1.4;
-}
-.bcv-payer-card__value--mono {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-/* ── Шаг 1: info-block (сроки уплаты) ────────────────────────────── */
-.bcv-info-block {
-  position: relative;
-  display: flex;
-  gap: 14px;
-  background: rgba(14, 136, 141, 0.04);
-  border: 1px solid rgba(14, 136, 141, 0.18);
-  border-left: 4px solid #0e888d;
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-.bcv-info-block__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: rgba(14, 136, 141, 0.10);
-  color: #0e888d;
-  flex-shrink: 0;
-}
-.bcv-info-block__icon svg { width: 18px; height: 18px; }
-.bcv-info-block__title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #415861;
-  margin: 0 0 4px;
-}
-.bcv-info-block__text {
-  font-size: 13px;
-  line-height: 1.55;
-  color: #64748b;
-  margin: 0;
-}
-
-/* ── Шаг 2: TransitionGroup появления/удаления карточек товаров ───── */
-@media (prefers-reduced-motion: no-preference) {
-  .bcv-product-enter-active {
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .bcv-product-leave-active {
-    transition: opacity 0.2s ease, transform 0.2s ease-in;
-    position: relative;
-  }
-  .bcv-product-enter-from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-  }
-  .bcv-product-leave-to {
-    opacity: 0;
-    transform: translateX(32px);
-  }
-  .bcv-product-move {
-    transition: transform 0.3s ease;
-  }
-}
-
-/* ── Шаг 2: dashed "Добавить товарную группу" ──────────────────────── */
-.bcv-add-product {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  margin-top: 16px;
-  padding: 18px 24px;
-  background: rgba(14, 136, 141, 0.03);
-  border: 2px dashed #cbd5e1;
-  border-radius: 16px;
-  color: #0e888d;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.bcv-add-product:hover {
-  background: rgba(14, 136, 141, 0.08);
-  border-color: #0e888d;
-  transform: translateY(-1px);
-}
-.bcv-add-product:focus-visible {
-  outline: 2px solid #0e888d;
-  outline-offset: 3px;
-}
-.bcv-add-product__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: rgba(14, 136, 141, 0.10);
-  flex-shrink: 0;
-  transition: background 0.2s ease;
-}
-.bcv-add-product__icon svg {
-  width: 18px;
-  height: 18px;
-}
-.bcv-add-product:hover .bcv-add-product__icon {
-  background: rgba(14, 136, 141, 0.18);
-}
-
-/* ── Шаг 3: hero-сумма (teal gradient + анимированное появление) ─── */
-.bcv-hero-total {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  padding: 32px 28px;
-  margin-bottom: 24px;
-  color: #ffffff;
-  background:
-    radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.16), transparent 50%),
-    linear-gradient(135deg, #0e888d 0%, #0a6d71 50%, #14a3a8 100%);
-  box-shadow:
-    0 20px 40px rgba(14, 136, 141, 0.22),
-    0 4px 12px rgba(14, 136, 141, 0.12);
-}
-@media (min-width: 768px) {
-  .bcv-hero-total { padding: 36px 36px; }
-}
-
-.bcv-hero-total__inner {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-@media (min-width: 640px) {
-  .bcv-hero-total__inner {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 28px;
-  }
-}
-
-.bcv-hero-total__main {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.bcv-hero-total__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.20em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-}
-.bcv-hero-total__eyebrow-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.bcv-hero-total__value {
-  font-size: 38px;
-  line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-@media (min-width: 768px) {
-  .bcv-hero-total__value { font-size: 52px; }
-}
-@media (min-width: 1024px) {
-  .bcv-hero-total__value { font-size: 60px; }
-}
-
-.bcv-hero-total__penalty {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: #fecaca;
-}
-
-.bcv-hero-total__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  padding: 9px 16px;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-  white-space: nowrap;
-}
-.bcv-hero-total__chip-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.9;
-}
-
-.bcv-hero-total__glow {
-  position: absolute;
-  right: -40px;
-  bottom: -40px;
-  width: 220px;
-  height: 220px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 70%);
-  pointer-events: none;
-}
-
-/* Анимация появления hero-суммы (scale-in для числа, fade для остального) */
-@media (prefers-reduced-motion: no-preference) {
-  .bcv-hero-total {
-    animation: bcvHeroFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-  .bcv-hero-total__eyebrow {
-    animation: bcvHeroFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
-  }
-  .bcv-hero-total__value {
-    animation: bcvHeroValueIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
-  }
-  .bcv-hero-total__chip {
-    animation: bcvHeroFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
-  }
-}
-@keyframes bcvHeroFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes bcvHeroValueIn {
-  from { opacity: 0; transform: scale(0.88); letter-spacing: 0.05em; }
-  to   { opacity: 1; transform: scale(1);    letter-spacing: -0.025em; }
-}
-
-/* ── List-view: stat-карточки с accent-stripe и каскадным появлением ─ */
-.bcv-stat {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 22px 22px 20px;
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.bcv-stat::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--bcv-stat-accent, #0e888d);
-}
-.bcv-stat:hover {
-  transform: translateY(-2px);
-  border-color: rgba(14, 136, 141, 0.35);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
-}
-.bcv-stat--teal    { --bcv-stat-accent: #0e888d; --bcv-stat-icon: rgba(14, 136, 141, 0.12); --bcv-stat-icon-color: #0e888d; }
-.bcv-stat--emerald { --bcv-stat-accent: #10b981; --bcv-stat-icon: rgba(16, 185, 129, 0.12); --bcv-stat-icon-color: #10b981; }
-.bcv-stat--amber   { --bcv-stat-accent: #fea629; --bcv-stat-icon: rgba(254, 166, 41, 0.14); --bcv-stat-icon-color: #fea629; }
-.bcv-stat--slate   { --bcv-stat-accent: #415861; --bcv-stat-icon: rgba(65, 88, 97, 0.10);  --bcv-stat-icon-color: #415861; }
-
-.bcv-stat__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.bcv-stat__label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.35;
-}
-.bcv-stat__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--bcv-stat-icon, rgba(14, 136, 141, 0.12));
-  color: var(--bcv-stat-icon-color, #0e888d);
-  flex-shrink: 0;
-}
-.bcv-stat__icon svg {
-  width: 18px;
-  height: 18px;
-}
-.bcv-stat__value {
-  font-size: 28px;
-  line-height: 1.05;
-  font-weight: 700;
-  color: #1e293b;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.bcv-stat__value--emerald { color: #10b981; }
-.bcv-stat__value--amber   { color: #fea629; }
-.bcv-stat__value--slate   { color: #415861; }
-.bcv-stat__unit {
-  font-size: 16px;
-  font-weight: 600;
-  color: inherit;
-  opacity: 0.7;
-  letter-spacing: 0;
-  margin-left: 2px;
-}
-
-/* Каскадное появление карточек при mount */
-@media (prefers-reduced-motion: no-preference) {
-  .bcv-stat {
-    animation: bcvStatIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: var(--bcv-stat-delay, 0ms);
-  }
-}
-@keyframes bcvStatIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 </style>
