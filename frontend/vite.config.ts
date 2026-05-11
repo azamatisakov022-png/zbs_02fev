@@ -131,12 +131,13 @@ export default defineConfig({
     }),
   ],
   server: {
-    // Wildcard для любого ngrok-URL — не нужно править файл при каждом рестарте.
-    allowedHosts: ['.ngrok-free.dev', '.ngrok.app', '.ngrok.io', 'localhost', '127.0.0.1'],
+    // allowedHosts: true - разрешаем любой хост (для ngrok-туннеля).
+    // Безопасно: vite dev слушает только 127.0.0.1, наружу попадает только через явный туннель.
+    allowedHosts: true,
     // Один ngrok-туннель покрывает и UI, и API: vite сам проксирует /api/* на backend.
     proxy: {
       '/api': {
-        target: 'http://localhost:8081',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },
