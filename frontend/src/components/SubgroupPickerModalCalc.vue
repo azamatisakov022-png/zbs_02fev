@@ -472,7 +472,7 @@ watch(isOpen, (val) => {
 
 .spm-td-num { text-align: center; color: #94a3b8; font-size: 12px; }
 .spm-td-name { white-space: normal; word-wrap: break-word; line-height: 1.4; font-weight: 500; }
-.spm-td-code { font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace; font-size: 12px; white-space: nowrap; color: #475569; }
+.spm-td-code { font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace; font-size: 12px; color: #475569; white-space: normal; word-break: break-word; line-height: 1.4; }
 .spm-td-tnved { white-space: normal; word-wrap: break-word; line-height: 1.4; color: #475569; font-size: 12px; }
 .spm-td-material { white-space: normal; word-wrap: break-word; line-height: 1.4; color: #475569; }
 

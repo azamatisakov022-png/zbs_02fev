@@ -67,7 +67,9 @@ function hideTooltip() {
 <style scoped>
 .tnved-code {
   display: inline;
-  white-space: nowrap;
+  /* Разрешаем перенос длинных кодов ТН ВЭД, иначе ячейка обрезает их. */
+  white-space: normal;
+  word-break: break-word;
 }
 .tnved-code__text {
   /* inherits parent styles */

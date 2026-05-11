@@ -319,7 +319,19 @@ async function submit() {
         currentApp.value.id,
         window.location.origin + `/business/license-applications/${currentApp.value.id}`,
       )
-      window.location.href = intent.paymentUrl
+      const paymentUrl = intent?.paymentUrl
+      if (!paymentUrl) {
+        error.value = 'Не удалось получить адрес платёжного шлюза. Попробуйте ещё раз.'
+        return
+      }
+      // SPA-маршрут (наш mock-payment) - через router без full page reload,
+      // это сохраняет состояние и не требует свежего JWT для bootstrap.
+      // Абсолютный URL (реальный платёжный шлюз) - через window.location.
+      if (paymentUrl.startsWith('/') && !paymentUrl.startsWith('//')) {
+        router.push(paymentUrl)
+      } else {
+        window.location.href = paymentUrl
+      }
     }
   } catch (e: unknown) {
     error.value = extractErrorMessage(e, 'Ошибка отправки')

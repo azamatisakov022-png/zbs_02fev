@@ -514,8 +514,10 @@ watch(() => props.groupId, () => {
 .spm-td-code {
   font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', monospace;
   font-size: 12px;
-  white-space: nowrap;
   color: #475569;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .spm-td-tnved {
