@@ -279,7 +279,8 @@ function fmtDec(n: number): string {
 }
 function fmtT(n: number): string {
   if (!Number.isFinite(n)) return '-'
-  return n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  // Тонны - до 3 знаков, чтобы малые партии (0,013 т = 13 кг) не округлялись в 0.
+  return n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 3 })
 }
 function fmtSom(n: number): string {
   return Number.isFinite(n) ? n.toLocaleString('ru-RU') : '-'

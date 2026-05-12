@@ -313,12 +313,14 @@ const updateItemRate = (item: ProductItem) => {
 const calculateAmount = (item: ProductItem) => {
   const vol = parseFloat(item.volume) || 0
   // Гр.7: Объём к переработке = Гр.5 × Гр.6 / 100
-  item.volumeToRecycle = Math.round(vol * item.recyclingStandard / 100 * 100) / 100
+  // Полная точность - округление до 2 знаков обрезало 0,013 × 20 % = 0,0026 → 0,00,
+  // что давало нулевой сбор для малых партий. Округляем ТОЛЬКО при отображении (.toFixed(3)).
+  item.volumeToRecycle = vol * item.recyclingStandard / 100
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
   // Гр.10: Облагаемый объём = max(0, Гр.7 - Гр.8 - Гр.9)
-  item.taxableVolume = Math.max(0, Math.round((item.volumeToRecycle - transferred - exported) * 100) / 100)
-  // Гр.12: Сумма = Гр.10 × Гр.11
+  item.taxableVolume = Math.max(0, item.volumeToRecycle - transferred - exported)
+  // Гр.12: Сумма = Гр.10 × Гр.11 (округляем до целых сом - копейки в утильсборе не показываются)
   item.amount = Math.round(item.taxableVolume * item.rate)
 }
 
@@ -345,7 +347,7 @@ const getNormStatus = (item: ProductItem): NormStatus | null => {
   }
   const taxable = item.taxableVolume
   if (taxable > 0) {
-    return { met: false, message: t('businessCalc.normNotMet', { volume: taxable.toFixed(2) }) }
+    return { met: false, message: t('businessCalc.normNotMet', { volume: taxable.toFixed(3) }) }
   }
   return null
 }
@@ -411,35 +413,35 @@ const canProceedStep2 = computed(() => {
 const totalVolume = computed(() => {
   return productItems.value
     .reduce((sum, item) => sum + (parseFloat(item.volume) || 0), 0)
-    .toFixed(2)
+    .toFixed(3)
 })
 
 // Гр.7 total
 const totalVolumeToRecycle = computed(() => {
   return productItems.value
     .reduce((sum, item) => sum + (item.volumeToRecycle || 0), 0)
-    .toFixed(2)
+    .toFixed(3)
 })
 
 // Гр.8 total
 const totalTransferred = computed(() => {
   return productItems.value
     .reduce((sum, item) => sum + (parseFloat(item.transferredToRecycling) || 0), 0)
-    .toFixed(2)
+    .toFixed(3)
 })
 
 // Гр.9 total
 const totalExported = computed(() => {
   return productItems.value
     .reduce((sum, item) => sum + (parseFloat(item.exportedFromKR) || 0), 0)
-    .toFixed(2)
+    .toFixed(3)
 })
 
 // Гр.10 total
 const totalTaxableVolume = computed(() => {
   return productItems.value
     .reduce((sum, item) => sum + (item.taxableVolume || 0), 0)
-    .toFixed(2)
+    .toFixed(3)
 })
 
 const totalAmount = computed(() => {
@@ -1921,15 +1923,15 @@ const downloadReceipt = () => {
                     </div>
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.toRecycleLabel') }}</span>
-                      <span class="cf-data__computed-value" style="color:#6366f1">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(2) + ' ' + $t('businessCalc.ton') : '0.00 ' + $t('businessCalc.ton') }}</span>
+                      <span class="cf-data__computed-value" style="color:#6366f1">{{ item.volumeToRecycle ? item.volumeToRecycle.toFixed(3) + ' ' + $t('businessCalc.ton') : '0.000 ' + $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.taxableVolumeLabel') }}</span>
-                      <span class="cf-data__computed-value">{{ item.taxableVolume ? item.taxableVolume.toFixed(2) + ' ' + $t('businessCalc.ton') : '0.00 ' + $t('businessCalc.ton') }}</span>
+                      <span class="cf-data__computed-value">{{ item.taxableVolume ? item.taxableVolume.toFixed(3) + ' ' + $t('businessCalc.ton') : '0.000 ' + $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.remainingLabel') }}</span>
-                      <span class="cf-data__computed-value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b' }">{{ getRemaining(item).toFixed(2) }} {{ $t('businessCalc.ton') }}</span>
+                      <span class="cf-data__computed-value" :style="{ color: getRemaining(item) <= 0 ? '#10b981' : '#f59e0b' }">{{ getRemaining(item).toFixed(3) }} {{ $t('businessCalc.ton') }}</span>
                     </div>
                     <div class="cf-data__computed-cell">
                       <span class="cf-data__computed-label">{{ $t('businessCalc.rateLabel') }}</span>
@@ -2066,10 +2068,10 @@ const downloadReceipt = () => {
                       </td>
                       <td class="px-4 py-3 text-right font-medium">{{ item.volume }}</td>
                       <td class="px-4 py-3 text-right">{{ item.recyclingStandard }}%</td>
-                      <td class="px-4 py-3 text-right text-[#6366f1]">{{ item.volumeToRecycle.toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-right text-[#6366f1]">{{ item.volumeToRecycle.toFixed(3) }}</td>
                       <td class="px-4 py-3 text-right text-[#10b981]">{{ item.transferredToRecycling || '0' }}</td>
                       <td class="px-4 py-3 text-right text-[#2563eb]">{{ item.exportedFromKR || '0' }}</td>
-                      <td class="px-4 py-3 text-right font-medium">{{ item.taxableVolume.toFixed(2) }}</td>
+                      <td class="px-4 py-3 text-right font-medium">{{ item.taxableVolume.toFixed(3) }}</td>
                       <td class="px-4 py-3 text-right">{{ item.rate.toLocaleString() }}</td>
                       <td class="px-4 py-3 text-right font-bold text-[#f59e0b]">{{ item.amount.toLocaleString() }}</td>
                     </tr>

@@ -62,10 +62,12 @@ function cancelEditing() {
 
 function recalcItem(item: ProductItem) {
   const vol = parseFloat(item.volume) || 0
-  item.volumeToRecycle = Math.round(vol * item.recyclingStandard / 100 * 100) / 100
+  // Полная точность - округление до сотых обрезало малые объёмы
+  // (например, 0,013 × 20 % = 0,0026 → 0,00 → нулевой сбор).
+  item.volumeToRecycle = vol * item.recyclingStandard / 100
   const transferred = parseFloat(item.transferredToRecycling) || 0
   const exported = parseFloat(item.exportedFromKR) || 0
-  item.taxableVolume = Math.max(0, Math.round((item.volumeToRecycle - transferred - exported) * 100) / 100)
+  item.taxableVolume = Math.max(0, item.volumeToRecycle - transferred - exported)
   item.amount = Math.round(item.taxableVolume * item.rate)
 }
 
@@ -232,19 +234,19 @@ const getStatusClass = (status: string) => {
 const displayItems = computed(() => isEditing.value ? editItems.value : (calc.value?.items || []))
 
 const totalVolume = computed(() => {
-  return displayItems.value.reduce((s, i) => s + (parseFloat(i.volume) || 0), 0).toFixed(2)
+  return displayItems.value.reduce((s, i) => s + (parseFloat(i.volume) || 0), 0).toFixed(3)
 })
 
 const totalTransferred = computed(() => {
-  return displayItems.value.reduce((s, i) => s + (parseFloat(i.transferredToRecycling || '0') || 0), 0).toFixed(2)
+  return displayItems.value.reduce((s, i) => s + (parseFloat(i.transferredToRecycling || '0') || 0), 0).toFixed(3)
 })
 
 const totalExported = computed(() => {
-  return displayItems.value.reduce((s, i) => s + (parseFloat(i.exportedFromKR || '0') || 0), 0).toFixed(2)
+  return displayItems.value.reduce((s, i) => s + (parseFloat(i.exportedFromKR || '0') || 0), 0).toFixed(3)
 })
 
 const totalTaxableVolume = computed(() => {
-  return displayItems.value.reduce((s, i) => s + (i.taxableVolume || 0), 0).toFixed(2)
+  return displayItems.value.reduce((s, i) => s + (i.taxableVolume || 0), 0).toFixed(3)
 })
 
 const displayTotalAmount = computed(() => isEditing.value ? editTotalAmount.value : (calc.value?.totalAmount || 0))
@@ -610,24 +612,24 @@ function submitPaymentConfirmation() {
                 <!-- Volume -->
                 <td class="px-5 py-3 text-right font-medium text-[#1e293b]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.volume" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ formatNum(item.volume) }}</template>
+                  <template v-else>{{ formatNum(item.volume, 3) }}</template>
                 </td>
                 <!-- Standard -->
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ item.recyclingStandard ?? '-' }}%</td>
                 <!-- VolumeToRecycle -->
-                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle) : '-' }}</td>
+                <td class="px-5 py-3 text-right text-[#64748b]">{{ item.volumeToRecycle != null ? formatNum(item.volumeToRecycle, 3) : '-' }}</td>
                 <!-- Transferred -->
                 <td class="px-5 py-3 text-right text-[#10b981]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.transferredToRecycling" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ formatNum(item.transferredToRecycling || '0') }}</template>
+                  <template v-else>{{ formatNum(item.transferredToRecycling || '0', 3) }}</template>
                 </td>
                 <!-- Exported -->
                 <td class="px-5 py-3 text-right text-[#2563eb]">
                   <input v-if="isEditing" type="number" step="0.01" min="0" v-model="item.exportedFromKR" @input="recalcItem(item)" class="edit-input text-right" />
-                  <template v-else>{{ formatNum(item.exportedFromKR || '0') }}</template>
+                  <template v-else>{{ formatNum(item.exportedFromKR || '0', 3) }}</template>
                 </td>
                 <!-- Taxable -->
-                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume) : '-' }}</td>
+                <td class="px-5 py-3 text-right text-[#1e293b]">{{ item.taxableVolume != null ? formatNum(item.taxableVolume, 3) : '-' }}</td>
                 <!-- Rate -->
                 <td class="px-5 py-3 text-right text-[#64748b]">{{ formatNum(item.rate, 0) }}</td>
                 <!-- Amount -->
