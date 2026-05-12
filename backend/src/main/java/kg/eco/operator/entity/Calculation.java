@@ -69,7 +69,7 @@ public class Calculation {
     @Column(name = "payer_type", length = 16)
     private String payerType;
 
-    /** Дата ввоза (только для импортёров). dueDate = importDate + 15 рабочих дней. */
+    /** Дата ввоза (только для импортёров). dueDate = importDate + 15 календарных дней. */
     @Column(name = "import_date")
     private LocalDate importDate;
 
