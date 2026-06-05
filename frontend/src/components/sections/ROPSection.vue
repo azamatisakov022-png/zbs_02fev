@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ropImg from '../../assets/images/rop-hands-plant.webp'
 
 const { t } = useI18n()
 
@@ -52,7 +53,7 @@ const responsibilities = computed(() => [
         <div class="relative">
           <div class="rounded-[24px] lg:rounded-[32px] overflow-hidden h-[260px] md:h-[340px] lg:h-[380px] w-full">
             <img
-              src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600"
+              :src="ropImg"
               :alt="$t('rop.imageAlt')"
               class="w-full h-full object-cover"
             />
