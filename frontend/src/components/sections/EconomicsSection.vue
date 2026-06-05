@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import bigTreeImg from '../../assets/images/big-tree.jpg'
+import economicsImg from '../../assets/images/green-forest-aerial.webp'
 
 const { t } = useI18n()
 
@@ -30,7 +30,7 @@ const benefits = computed(() => [
         <div class="relative order-2 lg:order-1">
           <div class="rounded-[24px] lg:rounded-[32px] overflow-hidden h-[260px] md:h-[340px] lg:h-[380px] w-full">
             <img
-              :src="bigTreeImg"
+              :src="economicsImg"
               :alt="$t('economics.title')"
               class="w-full h-full object-cover"
             />
