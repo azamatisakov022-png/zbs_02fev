@@ -16,31 +16,31 @@ const features = computed<Feature[]>(() => [
     id: 1,
     title: t('features.items.title1'),
     description: t('features.items.desc1'),
-    image: '/images/features/administration-3d.webp',
+    image: '/images/features/administration.webp',
   },
   {
     id: 2,
     title: t('features.items.title2'),
     description: t('features.items.desc2'),
-    image: '/images/features/infrastructure-3d.webp',
+    image: '/images/features/infrastructure.webp',
   },
   {
     id: 3,
     title: t('features.items.title3'),
     description: t('features.items.desc3'),
-    image: '/images/features/recycling-3d.webp',
+    image: '/images/features/recycling.webp',
   },
   {
     id: 4,
     title: t('features.items.title4'),
     description: t('features.items.desc4'),
-    image: '/images/features/education-3d.webp',
+    image: '/images/features/education.webp',
   },
   {
     id: 5,
     title: t('features.items.title5'),
     description: t('features.items.desc5'),
-    image: '/images/features/monitoring-3d.webp',
+    image: '/images/features/monitoring.webp',
   },
 ])
 </script>
@@ -66,9 +66,14 @@ const features = computed<Feature[]>(() => [
           <!-- Top accent -->
           <div class="feature-card-accent-top bg-[#0e888d]"></div>
 
-          <!-- Image container -->
-          <div class="mt-5 flex h-[120px] w-[55%] max-w-[160px] items-center justify-center self-center md:h-[140px] lg:h-[150px]">
-            <img :src="feature.image" :alt="feature.title" class="w-full h-full object-contain" />
+          <!-- Cover photo -->
+          <div class="h-[150px] w-full overflow-hidden md:h-[160px] lg:h-[170px]">
+            <img
+              :src="feature.image"
+              :alt="feature.title"
+              loading="lazy"
+              class="h-full w-full object-cover"
+            />
           </div>
 
           <!-- Content -->
