@@ -52,10 +52,10 @@ const toggleMobileMenu = () => {
       <!-- Top bar -->
       <div class="flex items-center justify-between py-4 lg:py-5 h-[100px] lg:h-[144px]">
         <!-- Logo -->
-        <router-link to="/" class="flex items-center gap-2">
+        <router-link to="/" class="flex items-center gap-1">
           <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 36px; width: 36px; object-fit: cover; object-position: left;" class="lg:hidden" />
           <img src="/images/logo-eco.png" :alt="$t('common.companyName')" style="height: 72px; width: 72px; object-fit: cover; object-position: left;" class="hidden lg:block" />
-          <div class="flex flex-col whitespace-nowrap">
+          <div class="flex flex-col whitespace-nowrap -ml-1 lg:-ml-2.5">
             <span class="text-[13px] lg:text-[16px] font-bold text-[#065f46] uppercase" style="letter-spacing: 0.5px">{{ $t('common.companyName') }}</span>
             <span class="text-[10px] lg:text-[12px] font-normal text-[#6b7280]">{{ $t('common.companyType') }}</span>
           </div>

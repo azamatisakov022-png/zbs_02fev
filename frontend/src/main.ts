@@ -3,6 +3,7 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import i18n from './i18n'
+import { vReveal } from './directives/fx'
 
 // В dev-режиме принудительно сносим оставшийся от прод-сборок service worker
 // и его кэши - иначе он отдаёт старый bundle и dev-правки не видны.
@@ -18,4 +19,5 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 const app = createApp(App)
 app.use(router)
 app.use(i18n)
+app.directive('reveal', vReveal)
 app.mount('#app')

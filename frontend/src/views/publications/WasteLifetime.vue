@@ -462,9 +462,9 @@ function getYearsColor(dangerLevel: number): string {
 }
 
 function getFactorIcon(type: string): string {
-  if (type === 'accelerate') return 'ACC'
-  if (type === 'slow') return 'SLOW'
-  return 'LAB'
+  if (type === 'accelerate') return '↑'
+  if (type === 'slow') return '↓'
+  return '•'
 }
 
 const materialCodes: Record<number, string> = {
@@ -552,12 +552,8 @@ function cleanFactorLabel(label: string): string {
 
         <div class="wl-exhibit-head">
           <div>
-            <span class="wl-module-eyebrow">Interactive timeline</span>
+            <span class="wl-module-eyebrow">Интерактивная шкала</span>
             <h2 class="wl-module-title">Период распада: от месяцев до геологического времени</h2>
-          </div>
-          <div class="wl-live-chip">
-            <span class="wl-live-dot"></span>
-            Активная модель
           </div>
         </div>
 
@@ -727,11 +723,10 @@ function cleanFactorLabel(label: string): string {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800;900&display=swap');
-
-/* Hybrid premium shell + light timeline exhibit */
+/* Chrome выровнен под дизайн портала: шрифт Inter, фирменная зелёно-бирюзовая палитра.
+   Семантическая шкала баров (зелёный→жёлтый→красный) намеренно сохранена. */
 .wl {
-  font-family: 'Onest', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #ffffff;
   color: #13251f;
   line-height: 1.6;
@@ -761,7 +756,7 @@ function cleanFactorLabel(label: string): string {
   overflow: hidden;
   border: 1px solid rgba(195, 213, 204, 0.72);
   border-radius: 28px;
-  background: linear-gradient(115deg, rgba(236, 253, 245, 0.96) 0%, rgba(241, 250, 229, 0.92) 50%, rgba(255, 246, 197, 0.9) 100%);
+  background: linear-gradient(115deg, #ecfdf5 0%, #f4faf6 52%, #e9f5ee 100%);
   box-shadow: 0 22px 70px rgba(15, 23, 42, 0.08);
   padding: 42px 46px;
 }
@@ -789,7 +784,7 @@ function cleanFactorLabel(label: string): string {
   border: 0;
   border-radius: 999px;
   padding: 5px 12px;
-  background: #008b7a;
+  background: #0e888d;
   color: #ffffff;
   font-size: 11px;
   font-weight: 800;
@@ -801,16 +796,16 @@ function cleanFactorLabel(label: string): string {
 
 .wl-hero-title {
   max-width: 760px;
-  font-size: clamp(34px, 5.4vw, 64px);
-  font-weight: 900;
-  color: #0f172a;
-  line-height: 0.98;
+  font-size: clamp(34px, 5.4vw, 60px);
+  font-weight: 800;
+  color: #143a2c;
+  line-height: 1.0;
   letter-spacing: 0;
   margin: 0 0 20px;
 }
 
 .wl-hero-accent {
-  background: linear-gradient(90deg, #07866f 0%, #ef9c2f 52%, #f05d43 100%);
+  background: linear-gradient(90deg, #2D8B4E 0%, #0e888d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -836,7 +831,7 @@ function cleanFactorLabel(label: string): string {
   background:
     radial-gradient(circle at 50% 50%, rgba(0, 139, 122, 0.24) 0 8px, transparent 9px),
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.75) 0 38px, transparent 39px),
-    conic-gradient(from 90deg, rgba(0, 139, 122, 0.02), rgba(0, 139, 122, 0.36), rgba(239, 156, 47, 0.32), rgba(240, 93, 67, 0.32), rgba(0, 139, 122, 0.02));
+    conic-gradient(from 90deg, rgba(45, 139, 78, 0.02), rgba(45, 139, 78, 0.34), rgba(14, 136, 141, 0.34), rgba(6, 95, 70, 0.30), rgba(45, 139, 78, 0.02));
   box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.78);
   animation: wl-orbit 18s linear infinite;
 }
@@ -846,13 +841,13 @@ function cleanFactorLabel(label: string): string {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #008b7a;
-  box-shadow: 0 0 24px rgba(0, 139, 122, 0.48);
+  background: #0e888d;
+  box-shadow: 0 0 24px rgba(14, 136, 141, 0.48);
 }
 
 .wl-hero-orbit span:nth-child(1) { top: 19%; left: 24%; }
-.wl-hero-orbit span:nth-child(2) { right: 16%; top: 43%; background: #ef9c2f; }
-.wl-hero-orbit span:nth-child(3) { left: 45%; bottom: 13%; background: #f05d43; }
+.wl-hero-orbit span:nth-child(2) { right: 16%; top: 43%; background: #2D8B4E; }
+.wl-hero-orbit span:nth-child(3) { left: 45%; bottom: 13%; background: #065f46; }
 
 .wl-stats {
   padding: 18px 0 22px;
@@ -912,9 +907,9 @@ function cleanFactorLabel(label: string): string {
   border: 1px solid rgba(180, 213, 198, 0.9);
   border-radius: 28px;
   background:
-    radial-gradient(circle at 12% 14%, rgba(20, 184, 166, 0.18), transparent 30%),
-    radial-gradient(circle at 92% 18%, rgba(245, 158, 11, 0.15), transparent 28%),
-    linear-gradient(140deg, rgba(248, 255, 251, 0.98) 0%, rgba(236, 253, 245, 0.96) 48%, rgba(255, 251, 235, 0.95) 100%);
+    radial-gradient(circle at 12% 14%, rgba(45, 139, 78, 0.14), transparent 30%),
+    radial-gradient(circle at 92% 18%, rgba(14, 136, 141, 0.12), transparent 28%),
+    linear-gradient(140deg, #f8fffb 0%, #ecfdf5 48%, #eef6f0 100%);
   box-shadow: 0 30px 84px rgba(15, 23, 42, 0.1);
   color: #10251f;
   padding: 30px;
@@ -962,7 +957,7 @@ function cleanFactorLabel(label: string): string {
 
 .wl-module-eyebrow {
   display: block;
-  color: #008b7a;
+  color: #0e888d;
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -974,33 +969,10 @@ function cleanFactorLabel(label: string): string {
   max-width: 760px;
   margin: 0;
   color: #0f172a;
-  font-size: clamp(24px, 3vw, 38px);
-  line-height: 1.08;
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.1;
   letter-spacing: 0;
-  font-weight: 900;
-}
-
-.wl-live-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid rgba(20, 184, 166, 0.28);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #0f766e;
-  font-size: 12px;
   font-weight: 800;
-  white-space: nowrap;
-}
-
-.wl-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #14b8a6;
-  box-shadow: 0 0 18px rgba(20, 184, 166, 0.7);
 }
 
 .wl-sensors {
@@ -1412,45 +1384,38 @@ function cleanFactorLabel(label: string): string {
 
 .wl-factor-tags {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
 }
 
+/* Редакционный список вместо цветных «таблеток»: тонкие разделители,
+   цветом помечена только стрелка-направление, текст нейтральный. */
 .wl-factor-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid;
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 750;
-  line-height: 1.25;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 8px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #3a4a44;
+  border-bottom: 1px solid rgba(15, 42, 33, 0.06);
+}
+
+.wl-factor-tag:last-child {
+  border-bottom: 0;
 }
 
 .wl-factor-tag span {
-  font-size: 9px;
-  font-weight: 950;
-  letter-spacing: 0.04em;
+  flex: 0 0 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
 }
 
-.wl-tag-accel {
-  background: rgba(20, 184, 166, 0.1);
-  border-color: rgba(20, 184, 166, 0.24);
-  color: #0f766e;
-}
-
-.wl-tag-slow {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: rgba(248, 113, 113, 0.22);
-  color: #991b1b;
-}
-
-.wl-tag-neutral {
-  background: rgba(148, 163, 184, 0.1);
-  border-color: rgba(148, 163, 184, 0.22);
-  color: #475569;
-}
+.wl-tag-accel span { color: #2D8B4E; }
+.wl-tag-slow span { color: #c0492b; }
+.wl-tag-neutral span { color: #8a988f; }
 
 .wl-card-harm {
   border: 1px solid;

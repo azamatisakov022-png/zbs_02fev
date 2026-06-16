@@ -59,8 +59,9 @@ const features = computed<Feature[]>(() => [
       <!-- Features grid - 5 cards in a row on desktop -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 lg:gap-6">
         <div
-          v-for="feature in features"
+          v-for="(feature, i) in features"
           :key="feature.id"
+          v-reveal="i * 100"
           class="feature-card flex flex-col"
         >
           <!-- Top accent -->

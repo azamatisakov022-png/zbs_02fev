@@ -13,13 +13,13 @@ import CTASection from '../components/sections/CTASection.vue'
 <template>
   <div>
     <HeroSection />
-    <FeaturesSection />
-    <EconomicsSection />
-    <ROPSection />
-    <StrategySection />
-    <WasteLifetimePromoSection />
-    <DocumentsSection />
-    <FAQSection />
-    <CTASection />
+    <FeaturesSection v-reveal />
+    <EconomicsSection v-reveal />
+    <ROPSection v-reveal />
+    <StrategySection v-reveal />
+    <WasteLifetimePromoSection v-reveal />
+    <DocumentsSection v-reveal />
+    <FAQSection v-reveal />
+    <CTASection v-reveal />
   </div>
 </template>

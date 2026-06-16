@@ -11,7 +11,7 @@ interface StrategyItem {
 
 const { t } = useI18n()
 
-// Иконки — Material Symbols Rounded (Google, Apache 2.0): hub, savings, groups,
+// Иконки - Material Symbols Rounded (Google, Apache 2.0): hub, savings, groups,
 // trending_up, trending_down, handshake, lightbulb, verified_user.
 const strategyItems = computed<StrategyItem[]>(() => [
   {
@@ -102,7 +102,7 @@ const strategyItems = computed<StrategyItem[]>(() => [
 </template>
 
 <style scoped>
-/* Icon medallion — Material Symbols в фирменной бирюзе на мягкой подложке с обводкой */
+/* Icon medallion - Material Symbols в фирменной бирюзе на мягкой подложке с обводкой */
 .strategy-medallion {
   width: 72px;
   height: 72px;
