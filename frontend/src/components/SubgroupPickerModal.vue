@@ -16,14 +16,17 @@ const { t } = useI18n()
 const props = defineProps<{
   groupId: string
   modelValue: string
+  enableAllGroups?: boolean   // allow cross-group search (find product by code without picking group first)
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   'subgroupSelected': [data: ProductSubgroup | null]
+  'groupSelected': [value: string]   // emitted in all-groups mode so parent can set the owning group
 }>()
 
 const isOpen = ref(false)
+const allMode = ref(false)   // search across all 24 groups
 const searchQuery = ref('')
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
@@ -66,13 +69,67 @@ const filteredSubgroups = computed(() => {
   })
 })
 
+// ── Cross-group search (all 24 groups) ──
+interface AllRow { sub: ProductSubgroup; groupValue: string; groupLabel: string; packaging: boolean }
+
+const groupLabelFor = (value: string, fallback: string): string => {
+  const key = `productGroupNames.${value}`
+  const tr = t(key)
+  return tr !== key ? tr : fallback
+}
+
+const allSubgroups = computed<AllRow[]>(() => {
+  const out: AllRow[] = []
+  for (const g of productGroups) {
+    const subs = productSubgroups[g.value] || []
+    const packaging = isPackagingGroup(g.value)
+    const gLabel = groupLabelFor(g.value, g.label)
+    for (const sub of subs) out.push({ sub, groupValue: g.value, groupLabel: gLabel, packaging })
+  }
+  return out
+})
+
+const filteredAll = computed<AllRow[]>(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return allSubgroups.value
+  return allSubgroups.value.filter(({ sub, groupLabel }) => {
+    if (sub.label.toLowerCase().includes(q)) return true
+    if (subLabel(sub).toLowerCase().includes(q)) return true
+    if (groupLabel.toLowerCase().includes(q)) return true
+    if (sub.gskpCode?.toLowerCase().includes(q)) return true
+    if (sub.tnvedCode?.toLowerCase().includes(q)) return true
+    if (sub.tnvedName?.toLowerCase().includes(q)) return true
+    if (sub.packagingMaterial?.toLowerCase().includes(q)) return true
+    if (sub.packagingLetterCode?.toLowerCase().includes(q)) return true
+    if (sub.packagingDigitalCode?.toLowerCase().includes(q)) return true
+    return false
+  })
+})
+
+/** Compact codes string for the cross-group results table */
+const codesText = (sub: ProductSubgroup, packaging: boolean): string => {
+  const parts = packaging
+    ? [getTranslatedPackagingMaterial(sub.packagingMaterial), sub.packagingLetterCode, sub.packagingDigitalCode]
+    : [sub.gskpCode ? `ГСКП ${sub.gskpCode}` : '', sub.tnvedCode ? `ТН ВЭД ${sub.tnvedCode}` : '']
+  return parts.filter(Boolean).join(' · ') || '-'
+}
+
 const openModal = () => {
-  if (!props.groupId) return
+  if (!props.groupId && !props.enableAllGroups) return
   searchQuery.value = ''
+  // No group selected → start in all-groups mode; group selected → that group's view
+  allMode.value = props.enableAllGroups ? !props.groupId : false
   isOpen.value = true
   nextTick(() => {
     searchInputRef.value?.focus()
   })
+}
+
+const selectFromAll = (row: AllRow) => {
+  emit('groupSelected', row.groupValue)
+  emit('update:modelValue', row.sub.value)
+  emit('subgroupSelected', row.sub)
+  isOpen.value = false
 }
 
 const closeModal = () => {
@@ -118,8 +175,8 @@ watch(() => props.groupId, () => {
     <button
       type="button"
       class="spm-trigger"
-      :class="{ 'spm-trigger--disabled': !groupId, 'spm-trigger--has-value': !!selectedSubgroupData }"
-      :disabled="!groupId"
+      :class="{ 'spm-trigger--disabled': !groupId && !enableAllGroups, 'spm-trigger--has-value': !!selectedSubgroupData }"
+      :disabled="!groupId && !enableAllGroups"
       @click="openModal"
     >
       <span class="spm-trigger-text" :title="selectedSubgroupData ? subLabel(selectedSubgroupData) : ''">
@@ -142,7 +199,7 @@ watch(() => props.groupId, () => {
           <div class="spm-header">
             <div>
               <h2 class="spm-title">{{ $t('subgroupPicker.title') }}</h2>
-              <p v-if="groupData" class="spm-subtitle">{{ $t(`productGroupNames.${groupData.value}`) !== `productGroupNames.${groupData.value}` ? $t(`productGroupNames.${groupData.value}`) : groupData.label }}</p>
+              <p v-if="groupData && !allMode" class="spm-subtitle">{{ $t(`productGroupNames.${groupData.value}`) !== `productGroupNames.${groupData.value}` ? $t(`productGroupNames.${groupData.value}`) : groupData.label }}</p>
             </div>
             <button class="spm-close" @click="closeModal">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -170,9 +227,17 @@ watch(() => props.groupId, () => {
             </button>
           </div>
 
+          <!-- All-groups toggle -->
+          <div v-if="enableAllGroups" class="spm-allmode-row">
+            <label class="spm-allmode-toggle">
+              <input type="checkbox" v-model="allMode" />
+              <span>{{ $t('subgroupPicker.allGroupsToggle') }}</span>
+            </label>
+          </div>
+
           <!-- Table -->
           <div class="spm-table-wrap">
-            <table class="spm-table">
+            <table v-if="!allMode" class="spm-table">
               <thead>
                 <tr v-if="!isPackaging">
                   <th class="spm-th spm-th-num">#</th>
@@ -225,11 +290,46 @@ watch(() => props.groupId, () => {
                 </tr>
               </tbody>
             </table>
+
+            <!-- All-groups results table -->
+            <table v-else class="spm-table">
+              <thead>
+                <tr>
+                  <th class="spm-th spm-th-num">#</th>
+                  <th class="spm-th spm-th-group">{{ $t('subgroupPicker.groupColumn') }}</th>
+                  <th class="spm-th spm-th-name">{{ $t('subgroupPicker.subgroupName') }}</th>
+                  <th class="spm-th spm-th-tnved">{{ $t('productGroup.gskpCode') }} / {{ $t('productGroup.tnvedCode') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template v-if="filteredAll.length > 0">
+                  <tr
+                    v-for="(row, idx) in filteredAll"
+                    :key="row.groupValue + '|' + row.sub.value"
+                    class="spm-row"
+                    :class="{ 'spm-row--selected': row.sub.value === modelValue && row.groupValue === groupId }"
+                    @click="selectFromAll(row)"
+                  >
+                    <td class="spm-td spm-td-num">{{ idx + 1 }}</td>
+                    <td class="spm-td spm-td-group">{{ row.groupLabel }}</td>
+                    <td class="spm-td spm-td-name">{{ subLabel(row.sub) }}</td>
+                    <td class="spm-td spm-td-code">{{ codesText(row.sub, row.packaging) }}</td>
+                  </tr>
+                </template>
+                <tr v-else>
+                  <td :colspan="4" class="spm-td text-center py-8 text-[#94a3b8]">
+                    {{ $t('ui.nothingFound') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <!-- Footer -->
           <div class="spm-footer">
-            <span class="spm-footer-count">{{ $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: availableSubgroups.length }) }}</span>
+            <span class="spm-footer-count">{{ allMode
+              ? $t('subgroupPicker.ofPositions', { filtered: filteredAll.length, total: allSubgroups.length })
+              : $t('subgroupPicker.ofPositions', { filtered: filteredSubgroups.length, total: availableSubgroups.length }) }}</span>
             <button class="spm-cancel" @click="closeModal">{{ $t('common.cancel') }}</button>
           </div>
         </div>
@@ -415,6 +515,29 @@ watch(() => props.groupId, () => {
   color: #64748b;
 }
 
+/* === All-groups toggle === */
+.spm-allmode-row {
+  padding: 0 24px 12px;
+  flex-shrink: 0;
+}
+
+.spm-allmode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+  user-select: none;
+}
+
+.spm-allmode-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0e888d;
+  cursor: pointer;
+}
+
 /* === Table === */
 .spm-table-wrap {
   flex: 1;
@@ -467,6 +590,20 @@ watch(() => props.groupId, () => {
 .spm-th-material {
   min-width: 150px;
   width: 25%;
+}
+
+.spm-th-group {
+  min-width: 160px;
+  width: 22%;
+}
+
+.spm-td-group {
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.35;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .spm-th-rate {

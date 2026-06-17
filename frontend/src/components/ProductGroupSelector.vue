@@ -71,6 +71,12 @@ const onGroupChange = (value: string) => {
   emit('subgroupSelected', null)
 }
 
+// Cross-group search: picker reports the owning group; set it WITHOUT clearing
+// the subgroup (the subgroup value arrives in the same tick via update:subgroup).
+const onGroupAutoSelected = (value: string) => {
+  emit('update:group', value)
+}
+
 const onSubgroupChange = (value: string) => {
   emit('update:subgroup', value)
 }
@@ -120,7 +126,9 @@ watch(() => props.subgroup, () => {
         <SubgroupPickerModal
           :groupId="group"
           :modelValue="subgroup"
+          enableAllGroups
           @update:modelValue="onSubgroupChange"
+          @groupSelected="onGroupAutoSelected"
           @subgroupSelected="onSubgroupSelected"
         />
       </template>
