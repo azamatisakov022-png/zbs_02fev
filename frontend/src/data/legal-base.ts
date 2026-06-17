@@ -16,6 +16,8 @@ export interface LegalDocument {
   url?: string                    // External link (only when it points to a *specific* doc, not just a portal homepage)
   localFile?: string              // File name in /public/docs/laws/ (when we host it locally)
   fileType?: FileType             // Required when localFile is set
+  status?: 'active' | 'repealed'  // действует / утратил силу (по умолчанию 'active')
+  editionDate?: string            // ISO "YYYY-MM-DD" — дата актуальной редакции (если отличается от date)
 }
 
 export interface FaqItem {
@@ -27,7 +29,7 @@ export interface FaqItem {
 
 // ========== LEGAL DOCUMENTS ==========
 //
-// 25 актов в 5 категориях. У 7 документов есть локальный файл в
+// 24 акта в 5 категориях. У части документов есть локальный файл в
 // /public/docs/laws/ - открываются через Google Docs Viewer (DOC/DOCX)
 // или напрямую (PDF). У части - реальная внешняя ссылка. Остальные
 // без источника помечены в UI «Источник готовится».
@@ -90,17 +92,9 @@ export const legalDocuments: LegalDocument[] = [
     localFile: 'zakon-181-ob-othodah.pdf',
     fileType: 'pdf',
   },
-  {
-    id: 6,
-    category: 'laws',
-    titleKey: 'legalBase.docs.d6.title',
-    number: '-',
-    date: '2024-01-15',
-    descriptionKey: 'legalBase.docs.d6.desc',
-    // Fallback: РОП регулируется Законом №181, открываем его как связанный документ
-    localFile: 'zakon-181-ob-othodah.pdf',
-    fileType: 'pdf',
-  },
+  // Закон «О расширенной ответственности производителей (импортёров)» исключён:
+  // по уточнению юр-отдела Заказчика такого отдельного закона нет (РОП регулируется
+  // Законом №181 «Об отходах…» и ПКМ). i18n-ключи legalBase.docs.d6.* оставлены неиспользуемыми.
 
   // ─────────── DECREES / Постановления Кабинета Министров КР ───────────
   {

@@ -323,10 +323,22 @@ const toggleFaq = (id: number) => {
                   </span>
                 </template>
               </div>
-              <span class="text-xs text-gray-400 flex-shrink-0">{{ formatDate(doc.date) }}</span>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full',
+                    doc.status === 'repealed' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700',
+                  ]"
+                >
+                  <span :class="['w-1.5 h-1.5 rounded-full', doc.status === 'repealed' ? 'bg-slate-400' : 'bg-emerald-500']" />
+                  {{ doc.status === 'repealed' ? $t('legalBase.statusRepealed') : $t('legalBase.statusActive') }}
+                </span>
+                <span class="text-xs text-gray-400">{{ formatDate(doc.date) }}</span>
+              </div>
             </div>
 
             <h3 class="text-sm font-semibold text-[#415861] mb-2 leading-snug">{{ $t(doc.titleKey) }}</h3>
+            <p v-if="doc.editionDate" class="text-[11px] text-gray-400 mb-1">{{ $t('legalBase.editionFrom') }} {{ formatDate(doc.editionDate) }}</p>
 
             <p class="text-xs text-gray-500 leading-relaxed mb-3">{{ $t(doc.descriptionKey) }}</p>
 
