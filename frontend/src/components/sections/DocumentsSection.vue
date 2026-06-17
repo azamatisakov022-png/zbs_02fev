@@ -35,7 +35,7 @@ const documents = computed<Document[]>(() => [
 </script>
 
 <template>
-  <section class="py-10 md:py-14 lg:py-[80px] bg-white">
+  <section class="py-10 md:py-14 lg:py-[80px] bg-[#f3f7f5]">
     <div class="container-main">
       <!-- Section header -->
       <div class="mb-8 md:mb-10 lg:mb-[48px]">

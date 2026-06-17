@@ -15,6 +15,9 @@ const { t } = useI18n()
         class="absolute inset-0 w-full h-full object-cover"
       />
 
+      <!-- Scrim: ensures white text stays readable over the photo (esp. on mobile) -->
+      <div class="absolute inset-0 bg-gradient-to-br from-black/60 via-black/35 to-black/10"></div>
+
       <!-- Content wrapper -->
       <div class="relative h-full flex flex-col lg:flex-row">
         <!-- Left content -->
