@@ -960,7 +960,7 @@ const processPaymentFile = (file: File) => {
     toastStore.show({ type: 'warning', title: t('businessCalc.invalidFormat'), message: t('businessCalc.allowedFormats') })
     return
   }
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     toastStore.show({ type: 'warning', title: t('businessCalc.fileTooLarge'), message: t('businessCalc.maxFileSize') })
     return
   }

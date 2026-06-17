@@ -46,7 +46,7 @@ const onFileSelect = (e: Event) => {
   if (!input.files || !input.files[0]) return
   const f = input.files[0]
   errors.value.document = ''
-  if (f.size > 10 * 1024 * 1024) {
+  if (f.size > 50 * 1024 * 1024) {
     errors.value.document = t('contests.errors.documentTooLarge')
     input.value = ''
     return

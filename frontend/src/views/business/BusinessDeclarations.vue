@@ -157,7 +157,7 @@ const handleDocUpload = (event: Event) => {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
   for (const file of Array.from(input.files)) {
-    if (file.size > 10 * 1024 * 1024) continue
+    if (file.size > 50 * 1024 * 1024) continue
     attachedDocs.value.push({
       id: nextDocId++,
       name: file.name,

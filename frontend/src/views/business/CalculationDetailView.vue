@@ -148,7 +148,7 @@ function saveAndSubmit() {
 // ---- Document upload state ----
 const dragOver = ref(false)
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_FILE_SIZE = 50 * 1024 * 1024
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return bytes + ' ' + t('calcDetail.sizeB')
@@ -434,7 +434,7 @@ function processPaymentFile(file: File) {
     toastStore.show({ type: 'warning', title: t('calcDetail.invalidFormat'), description: t('calcDetail.allowedFormats') })
     return
   }
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     toastStore.show({ type: 'warning', title: t('calcDetail.fileTooLarge'), description: t('calcDetail.maxFileSize') })
     return
   }

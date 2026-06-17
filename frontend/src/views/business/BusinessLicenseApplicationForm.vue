@@ -522,7 +522,7 @@ const submitButtonLabel = computed(() =>
               </div>
               <div class="lf-dropzone-big__title">Перетащите документы сюда</div>
               <div class="lf-dropzone-big__sub">
-                или используйте кнопки «Загрузить» в списке ниже · PDF, JPG, PNG до 10 МБ
+                или используйте кнопки «Загрузить» в списке ниже · PDF, JPG, PNG до 50 МБ
               </div>
             </div>
 
@@ -763,7 +763,7 @@ const submitButtonLabel = computed(() =>
                     <div class="lf-dropzone__sub">
                       {{ offlineReceiptFile
                         ? `${(offlineReceiptFile.size / 1024).toFixed(0)} КБ - кликните чтобы заменить`
-                        : 'PDF или JPG, до 10 МБ' }}
+                        : 'PDF или JPG, до 50 МБ' }}
                     </div>
                   </div>
                   <input type="file" accept="application/pdf,image/*" class="lf-dropzone__input" @change="onReceiptFile" />

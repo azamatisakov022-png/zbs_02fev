@@ -131,7 +131,7 @@ function onFileSelected(e: Event) {
     uploadFile.value = null
     return
   }
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     uploadError.value = t('ministryPayerDetail.maxFileSize')
     uploadFile.value = null
     return

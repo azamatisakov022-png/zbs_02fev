@@ -242,7 +242,7 @@ const handlePaymentFileSelect = (e: Event) => {
   if (input.files?.length) pickPaymentFile(input.files[0])
 }
 const pickPaymentFile = (file: File) => {
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     toastStore.show({ type: 'error', title: t('businessAccount.fileTooLarge') })
     return
   }

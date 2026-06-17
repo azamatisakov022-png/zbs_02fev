@@ -453,7 +453,7 @@ const handleFileSelect = (e: Event, category: UploadedFile['category']) => {
 
 const addFiles = (files: FileList) => {
   const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
-  const maxSize = 10 * 1024 * 1024
+  const maxSize = 50 * 1024 * 1024
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
