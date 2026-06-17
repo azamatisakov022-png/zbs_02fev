@@ -12,6 +12,7 @@ import { useEcoOperatorMenu } from '../../composables/useRoleMenu'
 import { toastStore } from '../../stores/toast'
 import { analyticsStore } from '../../stores/analytics'
 import SectionGuide from '../../components/common/SectionGuide.vue'
+import OSVReport from '../../components/analytics/OSVReport.vue'
 
 const { roleTitle, menuItems } = useEcoOperatorMenu()
 const { t, locale: i18nLocale } = useI18n()
@@ -22,7 +23,7 @@ const dateLang = computed(() => {
 })
 
 // ─── Tabs ───
-type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports'
+type TabId = 'summary' | 'finance' | 'products' | 'regional' | 'reports' | 'osv'
 const activeTab = ref<TabId>('summary')
 const tabs = computed<{ id: TabId; label: string }[]>(() => [
   { id: 'summary', label: t('ecoAnalytics.tabs.summary') },
@@ -30,6 +31,7 @@ const tabs = computed<{ id: TabId; label: string }[]>(() => [
   { id: 'products', label: t('ecoAnalytics.tabs.products') },
   { id: 'regional', label: t('ecoAnalytics.tabs.regional') },
   { id: 'reports', label: t('ecoAnalytics.tabs.reports') },
+  { id: 'osv', label: t('ecoAnalytics.tabs.osv') },
 ])
 
 // ─── Period filter ───
@@ -2555,6 +2557,12 @@ const selectedSummaryRegion = ref('all')
           </button>
         </div>
       </div>
+    </template>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB: ОСВ (оборотно-сальдовая ведомость)      -->
+    <!-- ═══════════════════════════════════════════ -->
+    <template v-if="activeTab === 'osv'">
+      <OSVReport />
     </template>
   </DashboardLayout>
 </template>

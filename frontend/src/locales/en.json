@@ -990,6 +990,29 @@
     "E": "Household appliances and filters",
     "F": "Packaging (polymers, composite, cardboard, paper, glass)"
   },
+  "osv": {
+    "title": "Turnover & balance sheet (OSV)",
+    "subtitle": "Recycling fee accrual and payment by period, product group and payer",
+    "byGroups": "By product groups",
+    "byPayers": "By payers",
+    "period": "Period",
+    "region": "Region",
+    "allRegions": "All regions",
+    "colGroup": "Product / packaging group",
+    "colPayer": "Payer",
+    "openingBalance": "Opening balance",
+    "closingBalance": "Closing balance",
+    "debit": "Dr",
+    "credit": "Cr",
+    "accrued": "Accrued",
+    "paid": "Paid",
+    "total": "Total",
+    "export": "Download Excel",
+    "debitHint": "amount owed by payers",
+    "creditHint": "overpayment",
+    "currencyNote": "Amounts in KGS.",
+    "mockNote": "Demo data. Once accrual and payment data is connected, the sheet will be generated automatically for each reporting period."
+  },
   "subgroupPicker": {
     "clickToSelect": "Click to select a subgroup",
     "title": "Select product subgroup",
@@ -1385,7 +1408,8 @@
       "finance": "Finance",
       "products": "Products and recycling",
       "regional": "Regional statistics",
-      "reports": "Report export"
+      "reports": "Report export",
+      "osv": "OSV"
     },
     "months": {
       "jan": "Jan",
