@@ -61,36 +61,6 @@ const toggleMobileMenu = () => {
           </div>
         </router-link>
 
-        <!-- Contact info - hidden on mobile -->
-        <div class="hidden lg:flex items-center gap-[50px]">
-          <!-- Phone -->
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/phone.svg" alt="phone" class="w-6 h-6" />
-            <div class="text-[#415861] text-xs leading-[15px]">
-              <p>+996 (312) 54-15-16</p>
-              <p>+996 (312) 54-15-17</p>
-            </div>
-          </div>
-
-          <!-- Working hours -->
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/clock.svg" alt="clock" class="w-6 h-6" />
-            <div class="text-[#415861] text-xs leading-[15px]">
-              <p>{{ $t('common.workHours') }}</p>
-              <p>{{ $t('common.weekendHours') }}</p>
-            </div>
-          </div>
-
-          <!-- Address -->
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/map-pin.svg" alt="location" class="w-6 h-6" />
-            <div class="text-[#415861] text-xs leading-[15px]">
-              <p>{{ $t('common.addressZip') }}</p>
-              <p>{{ $t('common.addressStreet') }}</p>
-            </div>
-          </div>
-        </div>
-
         <!-- Right side: Language + Auth -->
         <div class="flex items-center gap-2 md:gap-4 lg:gap-[30px]">
           <!-- Language selector dropdown -->
@@ -177,22 +147,6 @@ const toggleMobileMenu = () => {
 
       <!-- Mobile menu -->
       <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 py-4">
-        <!-- Contact info -->
-        <div class="space-y-3 mb-4">
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/phone.svg" alt="phone" class="w-5 h-5" />
-            <span class="text-[#415861] text-sm">+996 (312) 54-15-16</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/clock.svg" alt="clock" class="w-5 h-5" />
-            <span class="text-[#415861] text-sm">{{ $t('common.workHours') }}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <img src="/images/icons/map-pin.svg" alt="location" class="w-5 h-5" />
-            <span class="text-[#415861] text-sm">{{ $t('common.addressFull') }}</span>
-          </div>
-        </div>
-
         <!-- Language switcher (mobile) -->
         <div class="sm:hidden flex items-center gap-3 mb-4 pt-3 border-t border-gray-100">
           <button
